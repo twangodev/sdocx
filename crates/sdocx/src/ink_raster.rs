@@ -3,7 +3,7 @@
 pub use crate::ink::pencil2::offset_candidate::{
     Pencil2V14HostGrainState, pencil2_v14_host_grain_offset,
 };
-use crate::ink::{pencil2, pencil2::device_raster, watercolor};
+use crate::ink::{colored_pencil, pencil2, pencil2::device_raster, watercolor};
 use crate::{RenderedPage, Stroke};
 use base64::Engine as _;
 
@@ -33,6 +33,54 @@ impl InkRasterContext {
     /// Validate the context and return the bounded destination pixel count.
     pub fn pixel_count(self) -> Result<usize, InkRasterError> {
         pixel_count(self)
+    }
+}
+
+/// Native depth bitmap parameters for the explicit ColoredPencil host profile.
+/// RGBA rows use native upload order: row zero is sampled at low V near the
+/// canvas bottom. Only red is sampled; bitmap alpha is independent of coverage.
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct InkRasterDepthContext {
+    pub width: u32,
+    pub height: u32,
+    pub background_scale: f32,
+}
+
+impl InkRasterDepthContext {
+    /// Reconstruct GLV4's native background scale from explicit system-display
+    /// dimensions. Output page dimensions do not establish the display context.
+    pub fn from_colored_pencil_display(
+        width: u32,
+        height: u32,
+        display_width: u32,
+        display_height: u32,
+    ) -> Result<Self, InkRasterError> {
+        if !(1..=16_384).contains(&display_width) || !(1..=16_384).contains(&display_height) {
+            return Err(InkRasterError::InvalidContext);
+        }
+        let context = Self {
+            width,
+            height,
+            background_scale: display_width.min(display_height) as f32 / 1440.,
+        };
+        context.pixel_count()?;
+        Ok(context)
+    }
+
+    pub fn pixel_count(self) -> Result<usize, InkRasterError> {
+        if !(1..=8192).contains(&self.width)
+            || !(1..=8192).contains(&self.height)
+            || !self.background_scale.is_finite()
+            || !(1. / 1440. ..=16_384. / 1440.).contains(&self.background_scale)
+        {
+            return Err(InkRasterError::InvalidDepthMap);
+        }
+        let count = self.width as usize * self.height as usize;
+        if count > MAX_PIXELS {
+            return Err(InkRasterError::WorkLimit);
+        }
+        Ok(count)
     }
 }
 
@@ -75,6 +123,15 @@ pub enum InkRasterProfile {
         screen_width: u32,
         screen_height: u32,
     },
+    /// Fresh GLV4 redraw with literal `4;`, glibc TYPE_3 RNG and portable libm,
+    /// selected PenData spacing-extra zero, and RTV1. Ordinary paint has no
+    /// depth map; paint_with_depth_map supplies the optional native bitmap.
+    /// Native selected size clamps to 0.4..=800; explicit system-display
+    /// dimensions must each be in 1..=16384 and are independent of page size.
+    ColoredPencilV4Host {
+        pen_data_width: u32,
+        pen_data_height: u32,
+    },
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -84,6 +141,8 @@ pub enum InkRasterError {
     InvalidContext,
     #[error("backdrop must contain exactly one premultiplied RGBA8 pixel per frame pixel")]
     InvalidBackdrop,
+    #[error("invalid native depth bitmap or background scale")]
+    InvalidDepthMap,
     #[error("unsupported native ink input: {0}")]
     UnsupportedStroke(&'static str),
     #[error("invalid native ink input: {0}")]
@@ -181,6 +240,13 @@ impl InkRasterCanvas {
     ) -> Result<(), InkRasterError> {
         if self.remaining_submissions == 0 {
             return Err(InkRasterError::WorkLimit);
+        }
+        if let InkRasterProfile::ColoredPencilV4Host {
+            pen_data_width,
+            pen_data_height,
+        } = profile
+        {
+            return self.paint_colored_pencil(stroke, [pen_data_width, pen_data_height], None);
         }
         if let InkRasterProfile::Pencil2V14 { inverse_scale } = profile {
             return self.paint_pencil2_with_grain_offset(stroke, inverse_scale, [0., 0.], [0., 0.]);
@@ -315,7 +381,8 @@ impl InkRasterCanvas {
             return Err(InkRasterError::WorkLimit);
         }
         let inverse_scale = match profile {
-            InkRasterProfile::WaterColorHostRtv1 { .. }
+            InkRasterProfile::ColoredPencilV4Host { .. }
+            | InkRasterProfile::WaterColorHostRtv1 { .. }
             | InkRasterProfile::FountainPenV14Host { .. }
             | InkRasterProfile::FountainPenV14DirectHost { .. } => {
                 unreachable!("family raster branch returned above")
@@ -441,6 +508,68 @@ impl InkRasterCanvas {
         }
         self.remaining_work = remaining;
         self.remaining_submissions -= 1;
+        Ok(())
+    }
+
+    /// Paint with the supplied native depth bitmap, atomically. Currently this
+    /// requires ColoredPencilV4Host; depth pixels need not be premultiplied.
+    /// The map is borrowed for this submission and is not retained by the canvas.
+    pub fn paint_with_depth_map(
+        &mut self,
+        stroke: &Stroke,
+        profile: InkRasterProfile,
+        depth: InkRasterDepthContext,
+        depth_pixels: &[[u8; 4]],
+    ) -> Result<(), InkRasterError> {
+        let InkRasterProfile::ColoredPencilV4Host {
+            pen_data_width,
+            pen_data_height,
+        } = profile
+        else {
+            return Err(InkRasterError::UnsupportedStroke(
+                "depth map requires ColoredPencilV4Host",
+            ));
+        };
+        if depth.pixel_count()? != depth_pixels.len() {
+            return Err(InkRasterError::InvalidDepthMap);
+        }
+        self.paint_colored_pencil(
+            stroke,
+            [pen_data_width, pen_data_height],
+            Some(colored_pencil::raster::DepthMap {
+                width: depth.width as usize,
+                height: depth.height as usize,
+                background_scale: depth.background_scale,
+                pixels: depth_pixels,
+            }),
+        )
+    }
+
+    fn paint_colored_pencil(
+        &mut self,
+        stroke: &Stroke,
+        pen_data: [u32; 2],
+        depth: Option<colored_pencil::raster::DepthMap<'_>>,
+    ) -> Result<(), InkRasterError> {
+        if self.remaining_submissions == 0 {
+            return Err(InkRasterError::WorkLimit);
+        }
+        let (rows, argb) = colored_pencil::prepare_stroke(stroke, pen_data)?;
+        let plan = if let Some(depth) = depth {
+            colored_pencil::raster::prepare_depth(
+                &rows,
+                self.context,
+                argb,
+                self.remaining_work,
+                Some(depth),
+            )?
+        } else {
+            colored_pencil::raster::prepare(&rows, self.context, argb, self.remaining_work)?
+        };
+        let pixels = plan.render(&self.pixels)?;
+        self.remaining_work -= plan.work();
+        self.remaining_submissions -= 1;
+        self.pixels = pixels;
         Ok(())
     }
 

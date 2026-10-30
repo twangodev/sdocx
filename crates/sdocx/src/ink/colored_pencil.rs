@@ -1,4 +1,4 @@
-//! Test-only Colored Pencil GLV4 saved-stroke sampler.
+//! Explicit ColoredPencil GLV4 host sampler and RTV1 raster profile.
 //!
 //! This reconstructs the native saved-stroke route only for the explicit
 //! profiles in `conformance/colored-pencil-native.json`. The path measurement
@@ -29,6 +29,7 @@ struct PenData {
     spacing_extra: i32,
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug)]
 struct PathSample {
     distance: f32,
@@ -45,7 +46,9 @@ struct DabInput {
 
 #[derive(Debug)]
 struct Dab {
+    #[cfg(test)]
     seed: u32,
+    #[cfg(test)]
     input: DabInput,
     accepted: bool,
     row: Option<f32>,
@@ -54,9 +57,13 @@ struct Dab {
 
 #[derive(Debug)]
 struct Sampled {
+    #[cfg(test)]
     paths: Vec<PathSample>,
+    #[cfg(test)]
     dabs: Vec<Dab>,
+    #[cfg(test)]
     stream: Vec<u8>,
+    records: Vec<[f32; 5]>,
 }
 
 /// glibc 2.41 TYPE_3 `rand` sequence, including `srand(0)` normalization.
@@ -141,7 +148,7 @@ fn rotate(candidate: P, center: P, angle: f32) -> P {
     }
 }
 
-fn draw_point(input: DabInput, pen_size: f32, seed: u32, rng: &mut GlibcRand) -> Dab {
+fn draw_point(input: DabInput, _seed: u32, rng: &mut GlibcRand) -> Dab {
     let dab_size = input.size.max(2.0);
     let r0 = rng.next();
     let r1 = rng.next();
@@ -168,7 +175,9 @@ fn draw_point(input: DabInput, pen_size: f32, seed: u32, rng: &mut GlibcRand) ->
     let radius = dx.mul_add(dx, dy * dy).sqrt();
     if radius > half {
         return Dab {
-            seed,
+            #[cfg(test)]
+            seed: _seed,
+            #[cfg(test)]
             input,
             accepted: false,
             row: None,
@@ -177,9 +186,10 @@ fn draw_point(input: DabInput, pen_size: f32, seed: u32, rng: &mut GlibcRand) ->
     }
     let row = (rng.next() % 3) as f32;
     let center = rotate(candidate, input.point, input.angle);
-    let _record_half_size = pen_size.max(1.5) * 2.35 * 0.7 * 0.5;
     Dab {
-        seed,
+        #[cfg(test)]
+        seed: _seed,
+        #[cfg(test)]
         input,
         accepted: true,
         row: Some(row),
@@ -227,12 +237,19 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
         return Err("PenData profile is outside the bounded captured range");
     }
     let mut seed = input.points[0].x.trunc() as i32 as u32;
+    let mut path_count = 0;
+    let mut dab_count = 0;
+    #[cfg(test)]
     let mut paths = Vec::new();
+    #[cfg(test)]
     let mut dabs = Vec::new();
     let mut records = Vec::<[f32; 5]>::new();
     let mut emit = |point: P, dab_size: f32, angle: f32| -> Result<(), &'static str> {
-        if dabs.len() >= MAX_OUTPUT_SAMPLES {
+        if dab_count >= MAX_OUTPUT_SAMPLES {
             return Err("Colored Pencil output sample limit exceeded");
+        }
+        if !dab_size.is_finite() {
+            return Err("nonfinite ColoredPencil derived dab size");
         }
         let current_seed = seed;
         let mut rng = GlibcRand::seeded(current_seed);
@@ -242,7 +259,6 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
                 size: dab_size,
                 angle,
             },
-            pen.size,
             current_seed,
             &mut rng,
         );
@@ -252,6 +268,8 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
             let half_size = pen.size.max(1.5) * 2.35 * 0.7 * 0.5;
             records.push([center.x, center.y, half_size, row, 0.3]);
         }
+        dab_count += 1;
+        #[cfg(test)]
         dabs.push(dab);
         seed = next_seed(current_seed);
         Ok(())
@@ -292,15 +310,16 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
         terminal_size = dab_size;
         let mut distance = carry;
         while distance <= curve.length {
-            if paths.len() >= MAX_OUTPUT_SAMPLES {
+            if path_count >= MAX_OUTPUT_SAMPLES {
                 return Err("Colored Pencil path sample limit exceeded");
             }
             let point = curve.at(distance);
-            let tangent = curve.normalized_tangent(distance);
+            path_count += 1;
+            #[cfg(test)]
             paths.push(PathSample {
                 distance,
                 point,
-                tangent,
+                tangent: curve.normalized_tangent(distance),
             });
             emit(point, dab_size, input.orientations[i])?;
             let next_distance = distance + step;
@@ -319,16 +338,20 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
         *input.orientations.last().unwrap(),
     )?;
 
-    let mut stream = Vec::with_capacity(records.len() * 20);
-    for record in records {
-        for lane in record {
-            stream.extend_from_slice(&lane.to_le_bytes());
-        }
-    }
+    #[cfg(test)]
+    let stream = records
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
     Ok(Sampled {
+        #[cfg(test)]
         paths,
+        #[cfg(test)]
         dabs,
+        #[cfg(test)]
         stream,
+        records,
     })
 }
 
@@ -340,176 +363,6 @@ mod tests {
 
     const FIXTURE: &str = include_str!("../../../../conformance/colored-pencil-native.json");
     const NATIVE: &[u8] = include_bytes!("../../../../conformance/colored-pencil-native.bin");
-
-    // The selected PenData and host RNG are external to the public Stroke.
-    // Metadata and unused channels below are synthetic adapter inputs, not
-    // evidence of fields in a serialized note or a production admission rule.
-    #[derive(Clone, Copy)]
-    struct PublicStrokeContext {
-        gl_version: u32,
-        host_glibc_type3: bool,
-        pen: PenData,
-    }
-
-    fn sample_public_stroke(
-        stroke: &crate::Stroke,
-        context: PublicStrokeContext,
-    ) -> Result<super::Sampled, &'static str> {
-        let rendering = stroke
-            .rendering
-            .as_ref()
-            .ok_or("missing rendering metadata")?;
-        let style = &rendering.style;
-        let properties = rendering.properties;
-        let size = style.pen_size.ok_or("missing pen size")?;
-        if context.gl_version != 4
-            || !context.host_glibc_type3
-            || context.pen.width != 1920
-            || context.pen.height != 1080
-            || context.pen.spacing_extra != 0
-            || context.pen.size.to_bits() != size.to_bits()
-            || ![8.0_f32.to_bits(), 16.0_f32.to_bits()].contains(&size.to_bits())
-            || stroke.pen_width.to_bits() != size.to_bits()
-            || rendering.pen_name.as_deref()
-                != Some("com.samsung.android.sdk.pen.pen.preload.ColoredPencil")
-            || rendering.advanced_settings.as_deref() != Some("4;")
-            || rendering.tool_type_raw != 2
-            || !properties.compressed
-            || !properties.stylus_channels
-            || properties.replay_only
-            || properties.eraser
-            || properties.fixed_width
-            || properties.millisecond_timestamps
-            || properties.top_layer_pen
-            || properties.alpha_lock
-            || properties.binary_added
-            || properties.generated
-            || properties.fixed_opacity
-            || properties.rainbow_effect
-            || properties.straighten
-            || properties.reveal_mode
-            || style.size_level != Some(0)
-            || style.stroke_type_raw != Some(0)
-            || style.color_type_raw != Some(0)
-            || style.color_argb != Some(0x8044_aaee)
-            || stroke.color
-                != Some(crate::Color {
-                    r: 0x44,
-                    g: 0xaa,
-                    b: 0xee,
-                })
-        {
-            return Err("stroke or context outside captured ColoredPencil GLV4 profile");
-        }
-        let n = stroke.points.len();
-        if stroke.pressures.len() != n
-            || stroke.timestamps.len() != n
-            || stroke.tilts.len() != n
-            || stroke.orientations.len() != n
-        {
-            return Err("public stroke channels must align");
-        }
-        fn exact(value: f64) -> Result<f32, &'static str> {
-            let narrowed = value as f32;
-            if !value.is_finite() || f64::from(narrowed) != value {
-                return Err("channel is not exactly representable as finite f32");
-            }
-            Ok(narrowed)
-        }
-        let points = stroke
-            .points
-            .iter()
-            .map(|p| {
-                Ok(P {
-                    x: exact(p.x)?,
-                    y: exact(p.y)?,
-                })
-            })
-            .collect::<Result<Vec<_>, &'static str>>()?;
-        let tilts = stroke
-            .tilts
-            .iter()
-            .copied()
-            .map(exact)
-            .collect::<Result<Vec<_>, _>>()?;
-        let orientations = stroke
-            .orientations
-            .iter()
-            .copied()
-            .map(exact)
-            .collect::<Result<Vec<_>, _>>()?;
-        for &pressure in &stroke.pressures {
-            exact(pressure)?;
-        }
-        for &timestamp in &stroke.timestamps {
-            i32::try_from(timestamp).map_err(|_| "timestamp outside i32 range")?;
-        }
-        sample(
-            &StrokeInput {
-                points,
-                tilts,
-                orientations,
-                size,
-                curve_enabled: properties.compressed,
-                tool_type: i32::from(rendering.tool_type_raw),
-            },
-            context.pen,
-        )
-    }
-
-    fn public_stroke(input: &StrokeInput) -> crate::Stroke {
-        crate::Stroke {
-            rendering: Some(crate::StrokeRendering {
-                metadata: None,
-                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.ColoredPencil".into()),
-                advanced_settings: Some("4;".into()),
-                tool_type_raw: 2,
-                properties: crate::StrokeProperties {
-                    compressed: true,
-                    replay_only: false,
-                    stylus_channels: true,
-                    eraser: false,
-                    fixed_width: false,
-                    millisecond_timestamps: false,
-                    top_layer_pen: false,
-                    alpha_lock: false,
-                    binary_added: false,
-                    generated: false,
-                    fixed_opacity: false,
-                    rainbow_effect: false,
-                    straighten: false,
-                    reveal_mode: false,
-                },
-                style: crate::StrokeStyle {
-                    pen_size: Some(input.size),
-                    color_argb: Some(0x8044_aaee),
-                    size_level: Some(0),
-                    stroke_type_raw: Some(0),
-                    color_type_raw: Some(0),
-                    ..Default::default()
-                },
-            }),
-            bbox: crate::BoundingBox::default(),
-            points: input
-                .points
-                .iter()
-                .map(|p| crate::Point {
-                    x: f64::from(p.x),
-                    y: f64::from(p.y),
-                })
-                .collect(),
-            pressures: vec![0.5; input.points.len()],
-            timestamps: vec![0; input.points.len()],
-            tilts: input.tilts.iter().copied().map(f64::from).collect(),
-            orientations: input.orientations.iter().copied().map(f64::from).collect(),
-            color: Some(crate::Color {
-                r: 0x44,
-                g: 0xaa,
-                b: 0xee,
-            }),
-            pen_width: input.size,
-        }
-    }
 
     fn hex_bytes(value: &str) -> Vec<u8> {
         assert_eq!(value.len() % 2, 0);
@@ -615,22 +468,7 @@ mod tests {
                 height: case["pen_data"]["height"].as_i64().unwrap() as i32,
                 spacing_extra: case["pen_data"]["spacing_extra"].as_i64().unwrap() as i32,
             };
-            let stroke = public_stroke(&input);
-            let context = PublicStrokeContext {
-                gl_version: 4,
-                host_glibc_type3: true,
-                pen,
-            };
-            let result = sample_public_stroke(&stroke, context).unwrap();
-            let mut wrong_context = context;
-            wrong_context.host_glibc_type3 = false;
-            assert!(sample_public_stroke(&stroke, wrong_context).is_err());
-            let mut lossy = stroke.clone();
-            lossy.points[0].x = 0.1;
-            assert!(sample_public_stroke(&lossy, context).is_err());
-            let mut incomplete = stroke.clone();
-            incomplete.tilts.pop();
-            assert!(sample_public_stroke(&incomplete, context).is_err());
+            let result = sample(&input, pen).unwrap();
 
             let expected_paths = case["native_path_samples"].as_array().unwrap();
             assert_eq!(
@@ -808,7 +646,7 @@ mod tests {
                 };
                 failures.push((
                     case["id"].clone(),
-                    actual.stream.len() / 20,
+                    actual.records.len(),
                     expected.len() / 20,
                     first,
                     floats(&actual.stream),
@@ -1023,15 +861,7 @@ mod tests {
                 height: case["pen_data"]["height"].as_i64().unwrap() as i32,
                 spacing_extra: case["pen_data"]["spacing_extra"].as_i64().unwrap() as i32,
             };
-            let sampled = super::sample_public_stroke(
-                &super::public_stroke(&input),
-                super::PublicStrokeContext {
-                    gl_version: 4,
-                    host_glibc_type3: true,
-                    pen,
-                },
-            )
-            .unwrap();
+            let sampled = super::sample(&input, pen).unwrap();
             let stream_meta = &case["native_stream"];
             let geometry_offset = stream_meta["offset"].as_u64().unwrap() as usize;
             let geometry_len = stream_meta["length"].as_u64().unwrap() as usize;
@@ -1183,3 +1013,7 @@ mod tests {
         }
     }
 }
+
+pub(crate) mod raster;
+mod source;
+pub(crate) use source::prepare_stroke;

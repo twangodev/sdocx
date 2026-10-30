@@ -7,8 +7,8 @@ pub(crate) mod brushpen;
 pub use brushpen::sample_brushpen_glv10_host;
 pub(crate) mod calligraphy;
 pub(crate) mod chinesebrush_glv123;
-#[cfg(all(test, feature = "serde"))]
-mod colored_pencil;
+#[cfg(feature = "render")]
+pub(crate) mod colored_pencil;
 #[cfg(test)]
 mod crayon2;
 mod host_half;
