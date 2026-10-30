@@ -16,6 +16,13 @@ the image is not painted. All frames must equal the native capture and SVG
 rasterization byte for byte. Cache lifecycle controls cover repeated objects,
 a following short stroke and a new Drawing using three retained captures.
 
+A separate retained capture replaces the pen canvas after source 29 while
+keeping the Drawing and destination. Its following source 30 uses a different
+instance stream from a fresh Drawing, and a repeated draw reuses that stream
+without new AddPoint arguments. The scene API reproduces the three captured
+frames with one caller-managed scene and output canvas; the Rust replay does
+not itself replace a pen canvas. This observation covers this sequence and does not infer general native cache keys.
+
 Preparation commits scene state before painting. Failed source preparation
 preserves the previous scene; failed painting preserves canvas pixels and
 budgets but does not roll back a successful preparation. Host bounds are
@@ -48,3 +55,9 @@ sha256sum conformance/fountain-v14-saved-scene-native.json crates/sdocx/tests/as
 
 The comparator records the SHA-256 of the crate-local receipt it actually reads.
 Rebuild the test artifacts after changing either fixture; do not reuse prior PDFs.
+
+The fresh-canvas regression uses crate-local `fountain-v14-fresh-canvas-native.json`
+and `fountain-v14-fresh-drawing-native.json` receipts beside the lifecycle fixture.
+After recapturing with `fresh_canvas_capture.py` or `fresh_drawing_capture.py`,
+copy its matching conformance JSON to `crates/sdocx/tests/assets/fountain-v14/`
+and run `cargo test -p sdocx --features "render serde" --test fountain_v14_cache_lifecycle`.
