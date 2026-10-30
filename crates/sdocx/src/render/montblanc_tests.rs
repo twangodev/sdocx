@@ -132,10 +132,6 @@ fn unsupported_inputs_keep_generic_output() {
     s.pressures.push(0.5);
     s.points.push(Point { x: 210., y: 130. });
     s.pressures.push(0.5);
-    let mut narrow_nine = s.clone();
-    narrow_nine.pen_width = 0.49;
-    narrow_nine.rendering.as_mut().unwrap().style.pen_size = Some(0.49);
-    cases.push(narrow_nine);
     s.points.push(Point { x: 220., y: 130. });
     s.pressures.push(0.5);
     cases.push(s);
@@ -411,7 +407,11 @@ fn nine_point_profiles_admit_bounded_sizes() {
         [48., 12.],
         [55., 6.],
     ];
-    for size in [0.5, 2.0] {
+    let mut too_narrow = source(&points, &[0.5; 9]);
+    too_narrow.pen_width = 0.09;
+    too_narrow.rendering.as_mut().unwrap().style.pen_size = Some(0.09);
+    assert!(crate::ink::montblanc::prepare(&too_narrow).is_none());
+    for size in [0.1, 0.2, 0.4, 0.49, 0.5, 2.0] {
         let mut stroke = source(&points, &[0.5; 9]);
         stroke.pen_width = size;
         stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);

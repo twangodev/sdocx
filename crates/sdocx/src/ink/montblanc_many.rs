@@ -258,6 +258,10 @@ fn many_point_matches_native_streams() {
         "../../../../tools/montblanc/narrow-probe/diverse-v8-receipt.json"
     ))
     .unwrap();
+    let nine_narrow: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/montblanc/nine-narrow/streams.json"
+    ))
+    .unwrap();
     for (name, case) in fixture["cases"]
         .as_object()
         .unwrap()
@@ -267,6 +271,7 @@ fn many_point_matches_native_streams() {
         .chain(narrow["cases"].as_object().unwrap().iter())
         .chain(narrow_independent["cases"].as_object().unwrap().iter())
         .chain(narrow_diverse["cases"].as_object().unwrap().iter())
+        .chain(nine_narrow["cases"].as_object().unwrap().iter())
     {
         let number = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
         let points: Vec<[f32; 2]> = case["input"]["points"]
