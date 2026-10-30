@@ -231,6 +231,17 @@ impl InkRasterCanvas {
         self.context
     }
 
+    /// Change the uniform source scale for subsequent paint operations while
+    /// retaining the destination pixels and the remaining work budgets.
+    /// Prepared Fountain snapshots must be regenerated for the new scale.
+    pub fn set_pixels_per_unit(&mut self, pixels_per_unit: u32) -> Result<(), InkRasterError> {
+        let mut context = self.context;
+        context.pixels_per_unit = pixels_per_unit;
+        context.pixel_count()?;
+        self.context = context;
+        Ok(())
+    }
+
     pub fn pixels(&self) -> &[[u8; 4]] {
         &self.pixels
     }
@@ -774,6 +785,97 @@ mod fountain_snapshot_budget_tests {
                 .outgoing_direction(),
             expected
         );
+    }
+
+    #[test]
+    fn scale_change_applies_to_both_fountain_profiles() {
+        let inputs: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/fountain-v14-saved-scene-inputs.json"
+        ))
+        .unwrap();
+        let stroke: Stroke = serde_json::from_value(
+            inputs["strokes"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|entry| entry["index"] == 29)
+                .unwrap()["stroke"]
+                .clone(),
+        )
+        .unwrap();
+        let initial = InkRasterContext {
+            width: 128,
+            height: 256,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        };
+        let profiles = [
+            InkRasterProfile::FountainPenV14DirectHost {
+                source_origin: [104, 168],
+                paint_argb: 0xff254a83,
+            },
+            InkRasterProfile::FountainPenV14Host {
+                source_origin: [104, 168],
+                paint_argb: 0xff254a83,
+            },
+        ];
+        for (profile, origin) in profiles.into_iter().flat_map(|profile| {
+            [InkRasterOrigin::TopLeft, InkRasterOrigin::BottomLeft].map(|origin| (profile, origin))
+        }) {
+            let initial = InkRasterContext { origin, ..initial };
+            let prior = [40, 30, 20, 128];
+            let mut transitioned = InkRasterCanvas::new(initial, prior).unwrap();
+            transitioned.set_pixels_per_unit(2).unwrap();
+            let mut fresh = InkRasterCanvas::new(transitioned.context(), prior).unwrap();
+            transitioned.paint(&stroke, profile).unwrap();
+            fresh.paint(&stroke, profile).unwrap();
+            assert_eq!(transitioned.pixels(), fresh.pixels());
+            assert!(fresh.pixels().iter().any(|pixel| *pixel != prior));
+        }
+    }
+
+    #[test]
+    fn scale_change_preserves_budgets_and_rejects_stale_snapshot() {
+        let inputs: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/fountain-v14-saved-scene-inputs.json"
+        ))
+        .unwrap();
+        let stroke: Stroke =
+            serde_json::from_value(inputs["strokes"][0]["stroke"].clone()).unwrap();
+        let context = InkRasterContext {
+            width: 8,
+            height: 8,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        };
+        let prepared =
+            FountainV14Prepared::new(&stroke, context, crate::Point { x: 0., y: 1. }).unwrap();
+        let mut canvas = InkRasterCanvas::new(context, [0; 4]).unwrap();
+        canvas.remaining_work = 123;
+        canvas.remaining_submissions = 7;
+        let pixels = canvas.pixels.clone();
+
+        canvas.set_pixels_per_unit(2).unwrap();
+        assert_eq!(canvas.context.pixels_per_unit, 2);
+        assert_eq!(canvas.pixels, pixels);
+        assert_eq!(canvas.remaining_work, 123);
+        assert_eq!(canvas.remaining_submissions, 7);
+        assert!(matches!(
+            canvas.paint_fountain_v14_prepared(&prepared, [0, 0], 0xff000000),
+            Err(InkRasterError::InvalidContext)
+        ));
+        assert_eq!(canvas.pixels, pixels);
+        assert_eq!(canvas.remaining_work, 123);
+        assert_eq!(canvas.remaining_submissions, 7);
+
+        assert!(matches!(
+            canvas.set_pixels_per_unit(3),
+            Err(InkRasterError::InvalidContext)
+        ));
+        assert_eq!(canvas.context.pixels_per_unit, 2);
+        assert_eq!(canvas.pixels, pixels);
+        assert_eq!(canvas.remaining_work, 123);
+        assert_eq!(canvas.remaining_submissions, 7);
     }
 
     #[test]

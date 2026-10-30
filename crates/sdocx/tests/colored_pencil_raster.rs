@@ -644,3 +644,33 @@ fn exhausted_submission_budget_preserves_pixels() {
     ));
     assert_eq!(canvas.pixels(), before);
 }
+
+#[test]
+fn scale_change_preserves_prior_paint_and_matches_fresh_context() {
+    for (stroke, profile) in [(source("saved-glv4-size-8", 0x8044aaee), profile())] {
+        for origin in [InkRasterOrigin::TopLeft, InkRasterOrigin::BottomLeft] {
+            let mut canvas = InkRasterCanvas::new(
+                InkRasterContext {
+                    width: 256,
+                    height: 256,
+                    pixels_per_unit: 1,
+                    origin,
+                },
+                [30, 20, 10, 128],
+            )
+            .unwrap();
+            canvas.paint(&stroke, profile).unwrap();
+            for scale in [2, 1] {
+                let prior = canvas.pixels().to_vec();
+                canvas.set_pixels_per_unit(scale).unwrap();
+                assert_eq!(canvas.pixels(), prior);
+                let mut fresh =
+                    InkRasterCanvas::from_pixels(canvas.context(), prior.clone()).unwrap();
+                canvas.paint(&stroke, profile).unwrap();
+                fresh.paint(&stroke, profile).unwrap();
+                assert_eq!(canvas.pixels(), fresh.pixels());
+                assert_ne!(canvas.pixels(), prior);
+            }
+        }
+    }
+}
