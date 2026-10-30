@@ -1,0 +1,14 @@
+[package]
+name = "sdocx-pencil2-generic"
+version = "0.1.0"
+edition = "2021"
+autobins = false
+
+[dependencies]
+sdocx = { path = "../../crates/sdocx", features = ["pdf"] }
+
+[workspace]
+
+[[bin]]
+name = "pencil2-mask-control-runner"
+path = "../../conformance/pencil2_v14_svg_pdf_runner.rs"
