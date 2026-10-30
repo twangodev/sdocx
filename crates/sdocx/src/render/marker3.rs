@@ -1353,6 +1353,14 @@ mod tool_one_export_control {
             baseline,
             crate::render_document_svg(&document, &double)[0].svg
         );
+        let quadruple = RenderOptions {
+            marker3_output_scale: Some(crate::Marker3OutputScale::Four),
+            ..Default::default()
+        };
+        assert_ne!(
+            baseline,
+            crate::render_document_svg(&document, &quadruple)[0].svg
+        );
         let mut straight = document.clone();
         if let crate::PageObjectContent::Stroke(stroke) = &mut straight.pages[0].objects[0].content
         {
@@ -1364,6 +1372,10 @@ mod tool_one_export_control {
         assert_eq!(
             crate::render_document_svg(&straight, &RenderOptions::default())[0].svg,
             crate::render_document_svg(&straight, &double)[0].svg
+        );
+        assert_eq!(
+            crate::render_document_svg(&straight, &RenderOptions::default())[0].svg,
+            crate::render_document_svg(&straight, &quadruple)[0].svg
         );
         for (size, color) in [
             (Some(3.99), Some(0x8033cc55)),
@@ -1384,10 +1396,13 @@ mod tool_one_export_control {
                 crate::render_document_svg(&unsupported, &RenderOptions::default())[0].svg,
                 crate::render_document_svg(&unsupported, &double)[0].svg
             );
+            assert_eq!(
+                crate::render_document_svg(&unsupported, &RenderOptions::default())[0].svg,
+                crate::render_document_svg(&unsupported, &quadruple)[0].svg
+            );
         }
         for scale in [
             crate::Marker3OutputScale::Half,
-            crate::Marker3OutputScale::Four,
             crate::Marker3OutputScale::Eight,
         ] {
             let outside = RenderOptions {
@@ -1419,6 +1434,10 @@ mod tool_one_export_control {
         assert_eq!(
             crate::render_document_svg(&unsupported, &RenderOptions::default())[0].svg,
             crate::render_document_svg(&unsupported, &options)[0].svg
+        );
+        assert_eq!(
+            crate::render_document_svg(&unsupported, &RenderOptions::default())[0].svg,
+            crate::render_document_svg(&unsupported, &quadruple)[0].svg
         );
         let Some(dir) = std::env::var_os("SDOCX_MARKER3_TOOL1_EXPORT") else {
             return;

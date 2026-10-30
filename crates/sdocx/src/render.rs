@@ -4867,9 +4867,11 @@ fn render_stroke(
             (rendering.tool_type_raw == 2
                 || (rendering.tool_type_raw == 1
                     && (marker3_output_scale == Some(Marker3OutputScale::One)
-                        || (marker3_output_scale == Some(Marker3OutputScale::Two)
-                            && rendering.pen_name.as_deref()
-                                == Some("com.samsung.android.sdk.pen.pen.preload.Marker3")))))
+                        || (matches!(
+                            marker3_output_scale,
+                            Some(Marker3OutputScale::Two | Marker3OutputScale::Four)
+                        ) && rendering.pen_name.as_deref()
+                            == Some("com.samsung.android.sdk.pen.pen.preload.Marker3")))))
                 && matches!(
                     rendering.pen_name.as_deref(),
                     Some(
