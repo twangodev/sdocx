@@ -453,7 +453,8 @@ impl InkRasterCanvas {
         let mut context = device_context(self.context);
         context.translation = translation;
         context.grain_offset = grain_offset;
-        let plan = device_raster::prepare(&records, context).map_err(|error| match error {
+        let plan = device_raster::prepare_with_work_limit(&records, context, self.remaining_work)
+            .map_err(|error| match error {
             device_raster::RasterError::Context => InkRasterError::InvalidContext,
             device_raster::RasterError::Record => {
                 InkRasterError::InvalidStroke("unrepresentable derived stamp")
@@ -701,6 +702,68 @@ fn device_context(context: InkRasterContext) -> device_raster::Context {
         translation: [0., 0.],
         grain_offset: [0., 0.],
         y_up: context.origin == InkRasterOrigin::BottomLeft,
+    }
+}
+
+#[cfg(all(test, feature = "serde"))]
+mod pencil_budget_atomic_tests {
+    use super::*;
+
+    #[test]
+    fn rejected_pencil_paint_preserves_pixels_and_counters() {
+        let mut style = serde_json::to_value(crate::StrokeStyle::default()).unwrap();
+        style["pen_size"] = serde_json::json!(2.);
+        style["color_argb"] = serde_json::json!(0xff000000u32);
+        style["size_level"] = serde_json::json!(0);
+        style["stroke_type_raw"] = serde_json::json!(0);
+        style["color_type_raw"] = serde_json::json!(0);
+        let rendering = serde_json::from_value(serde_json::json!({
+            "metadata": null, "pen_name": "com.samsung.android.sdk.pen.pen.preload.Pencil2",
+            "advanced_settings": "14;", "tool_type_raw": 2, "style": style,
+            "properties": {"compressed":true,"stylus_channels":true,"replay_only":false,"eraser":false,"fixed_width":false,"millisecond_timestamps":false,"top_layer_pen":false,"alpha_lock":false,"binary_added":false,"generated":false,"fixed_opacity":false,"rainbow_effect":false,"straighten":false,"reveal_mode":false}
+        })).unwrap();
+        let stroke = Stroke {
+            bbox: Default::default(),
+            points: vec![
+                crate::Point { x: 0., y: 0. },
+                crate::Point { x: 10., y: 0. },
+                crate::Point { x: 20., y: 0. },
+                crate::Point { x: 30., y: 10. },
+            ],
+            pressures: vec![0.25, 0.5, 0.75, 1.],
+            tilts: vec![0.4; 4],
+            orientations: vec![0.; 4],
+            timestamps: vec![10, 20, 30, 40],
+            color: Some(crate::Color { r: 0, g: 0, b: 0 }),
+            pen_width: 2.,
+            rendering: Some(rendering),
+        };
+        let context = InkRasterContext {
+            width: 192,
+            height: 192,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        };
+        let mut canvas = InkRasterCanvas::new(context, [0; 4]).unwrap();
+        let profile = InkRasterProfile::Pencil2V14 {
+            inverse_scale: InkRasterInverseScale::One,
+        };
+        canvas.paint(&stroke, profile).unwrap();
+        assert!(canvas.pixels.iter().any(|pixel| pixel[3] != 0));
+        // Sampling succeeds independently; the raster's base pixel cost exceeds
+        // this budget, so the second submission is rejected at raster preflight.
+        assert!(pencil2::prepare_stroke(&stroke, 1.).is_ok());
+        canvas.remaining_work = 1;
+        let before = canvas.pixels.clone();
+        let work = canvas.remaining_work;
+        let submissions = canvas.remaining_submissions;
+        assert!(matches!(
+            canvas.paint(&stroke, profile),
+            Err(InkRasterError::WorkLimit)
+        ));
+        assert_eq!(canvas.pixels, before);
+        assert_eq!(canvas.remaining_work, work);
+        assert_eq!(canvas.remaining_submissions, submissions);
     }
 }
 

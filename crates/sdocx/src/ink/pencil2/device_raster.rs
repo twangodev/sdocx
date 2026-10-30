@@ -196,9 +196,18 @@ impl RasterPlan<'_> {
 }
 
 /// Validate the whole batch and bound work before allocating pixel storage.
+#[cfg(test)]
 pub(crate) fn prepare(
     records: &[[f32; 14]],
     context: Context,
+) -> Result<RasterPlan<'_>, RasterError> {
+    prepare_with_work_limit(records, context, usize::MAX)
+}
+
+pub(crate) fn prepare_with_work_limit(
+    records: &[[f32; 14]],
+    context: Context,
+    work_limit: usize,
 ) -> Result<RasterPlan<'_>, RasterError> {
     let [width, height] = context.frame.map(|v| v as usize);
     let pixels = width.checked_mul(height).ok_or(RasterError::Context)?;
@@ -220,10 +229,9 @@ pub(crate) fn prepare(
     if records.len() > MAX_RECORDS {
         return Err(RasterError::WorkLimit);
     }
-    let mut stamps = Vec::new();
-    stamps
-        .try_reserve_exact(records.len())
-        .map_err(|_| RasterError::Allocation)?;
+    let base_work = pixels
+        .checked_add(records.len())
+        .ok_or(RasterError::WorkLimit)?;
     let mut samples = 0usize;
     for r in records {
         if r.iter().any(|v| !v.is_finite())
@@ -250,12 +258,22 @@ pub(crate) fn prepare(
         if samples > MAX_SAMPLES {
             return Err(RasterError::WorkLimit);
         }
-        stamps.push(stamp);
     }
-    let work = samples
-        .checked_add(pixels)
-        .and_then(|n| n.checked_add(records.len()))
+    let work = base_work
+        .checked_add(samples)
         .ok_or(RasterError::WorkLimit)?;
+    if work > work_limit {
+        return Err(RasterError::WorkLimit);
+    }
+    // Projection is repeated after admission so rejected caller budgets do not
+    // allocate the stamp array; intrinsic record errors retain their precedence.
+    let mut stamps = Vec::new();
+    stamps
+        .try_reserve_exact(records.len())
+        .map_err(|_| RasterError::Allocation)?;
+    for record in records {
+        stamps.push(ProjectedStamp::new(record, context)?);
+    }
     Ok(RasterPlan {
         records,
         context,
@@ -277,4 +295,97 @@ pub(crate) fn render_with_backdrop(
     backdrop: Option<&[[u8; 4]]>,
 ) -> Option<Vec<[u8; 4]>> {
     prepare(records, context).ok()?.render(backdrop)
+}
+
+#[cfg(test)]
+mod work_budget_tests {
+    use super::*;
+
+    #[test]
+    fn preflight_accepts_exact_work_and_rejects_less() {
+        let record = [10., 10., 3., 3., 0.5, 0.5, 0., 0., 0., 0.4, 1., 0., 0., 0.];
+        let records = [record];
+        let context = Context::default();
+        let work = prepare(&records, context).ok().unwrap().work();
+        assert!(prepare_with_work_limit(&records, context, work).is_ok());
+        assert!(matches!(
+            prepare_with_work_limit(&records, context, work - 1),
+            Err(RasterError::WorkLimit)
+        ));
+        assert!(matches!(
+            prepare_with_work_limit(&records, context, 192 * 192),
+            Err(RasterError::WorkLimit)
+        ));
+    }
+
+    #[test]
+    fn invalid_later_record_precedes_caller_budget_failure() {
+        let valid = [10., 10., 3., 3., 0.5, 0.5, 0., 0., 0., 0.4, 1., 0., 0., 0.];
+        let mut invalid = valid;
+        invalid[2] = 0.;
+        assert!(matches!(
+            prepare_with_work_limit(&[valid, invalid], Context::default(), 0),
+            Err(RasterError::Record)
+        ));
+    }
+
+    #[test]
+    fn clipped_records_and_invalid_dimensions_are_bounded() {
+        let clipped = [
+            10000., 10000., 3., 3., 0.5, 0.5, 0., 0., 0., 0.4, 1., 0., 0., 0.,
+        ];
+        let context = Context::default();
+        let work = 192 * 192 + 1;
+        assert_eq!(
+            prepare_with_work_limit(&[clipped], context, work)
+                .ok()
+                .unwrap()
+                .work(),
+            work
+        );
+        assert!(matches!(
+            prepare_with_work_limit(&[clipped], context, work - 1),
+            Err(RasterError::WorkLimit)
+        ));
+        for frame in [[0, 192], [u32::MAX, u32::MAX]] {
+            assert!(matches!(
+                prepare_with_work_limit(&[], Context { frame, ..context }, usize::MAX),
+                Err(RasterError::Context)
+            ));
+        }
+    }
+
+    #[test]
+    fn translated_partial_clip_and_unrepresentable_projection() {
+        let record = [0., 10., 3., 3., 0.5, 0.5, 0., 0., 0., 0.4, 1., 0., 0., 0.];
+        let context = Context {
+            translation: [1., 0.],
+            ..Context::default()
+        };
+        // Projected bounds are x=[0,4), y=[7,13): 24 samples.
+        let expected = 192 * 192 + 1 + 24;
+        assert_eq!(
+            prepare_with_work_limit(&[record], context, expected)
+                .ok()
+                .unwrap()
+                .work(),
+            expected
+        );
+        assert!(matches!(
+            prepare_with_work_limit(&[record], context, expected - 1),
+            Err(RasterError::WorkLimit)
+        ));
+        let mut invalid = record;
+        invalid[0] = f32::NAN;
+        assert!(matches!(
+            prepare_with_work_limit(&[invalid], context, usize::MAX),
+            Err(RasterError::Record)
+        ));
+        invalid[0] = f32::MAX;
+        invalid[2] = f32::MAX;
+        assert!(matches!(
+            prepare_with_work_limit(&[invalid], context, usize::MAX),
+            Err(RasterError::Record)
+        ));
+    }
 }
