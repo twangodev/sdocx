@@ -71,9 +71,9 @@ pub use formula::{
 };
 #[cfg(feature = "render")]
 pub use ink::{
-    CoverageMesh, CoverageTriangle, CoverageVertex, Crayon2HostMaterial, InkSupport, OrderedDiskReplay,
+    CoverageMesh, CoverageTriangle, CoverageVertex, Crayon2HostGrid, Crayon2HostMaterial, InkSupport, OrderedDiskReplay,
     PEN_PROFILES, PenProfile, PreparedInkPen2V9, PreparedStroke, RectStamp, prepare_stroke,
-    render_crayon2_host_svg, sample_brushpen_glv10_host,
+    render_crayon2_host_grid_svg, render_crayon2_host_svg, sample_brushpen_glv10_host,
 };
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;

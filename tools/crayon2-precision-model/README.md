@@ -153,10 +153,10 @@ PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-precision-model/compar
 
 ## Rust fixed-grid control
 
-The test-only `ink::crayon2::grid_test` samples Rust-produced stroke records
+The `ink::crayon2::grid_test` implementation samples Rust-produced stroke records
 with an explicit axis-aligned clip transform, viewport, RGBA and texture
 planes. It emits transparent ordered rectangles, leaving the prior to its
-caller. Its checked work limit is capped at one million samples. This remains
+caller. Its checked work limit is capped at 100,000 samples. This remains
 an output-grid experiment, not a document renderer profile: rotation,
 perspective, arbitrary saved metadata and scalable replay are not established.
 It is compiled only for tests and does not enable public renderer dispatch.
@@ -239,7 +239,7 @@ outputs are large, reproducible intermediates.
 
 ## Normalized repeat candidate
 
-A further test-only candidate wraps the scaled normalized background coordinate
+A further candidate wraps the scaled normalized background coordinate
 into `[0, 1)` in f32 before multiplying by 150 in f32. This models repeat in
 normalized texture space; it is a candidate, not a measurement of the native
 texture unit's internal arithmetic. It selects texel (3,117) at the retained
@@ -269,3 +269,26 @@ The independent control uses `compare_output_grid.py` as above. Both source
 writers verify the input texture hashes and do not read native framebuffers.
 `cargo test -p sdocx --features render --lib ink::crayon2::grid_test` checks
 repeat boundary examples and input bounds.
+
+## Explicit source API
+
+`Crayon2HostGrid` and `render_crayon2_host_grid_svg` expose this candidate
+for a single supported source stroke with caller-supplied phase tables, texture
+bytes, axis-aligned clip viewport, effective color and optional opaque background. The caller supplies the paint color; it is not derived from saved stroke metadata. The
+caller supplies a sample budget; the implementation also enforces a 100,000
+sample ceiling. Output comprises per-sample rectangles and is tied to that exact
+resolution, so scaling the SVG is not a new native render. It is not wired into
+normal document rendering or direct document PDF. The ignored writers above now
+exercise this public API. The two native comparisons were rerun through it and
+retain exactly the normalized-repeat reader metrics above; the [public-route receipt](public-grid-receipt.json) records their hashes. PDF figures use SVG-page
+conversion; they do not validate direct document PDF or arbitrary prior content.
+
+The caller must provide the 10×30 point atlas, 150×150 background texture, and
+phase tables from the same host context; the API does not infer these from a
+saved document. Width and height are output pixels in 1..=4096. Positive
+axis-aligned clip scales and translations map source coordinates into GL clip
+space; the GL bottom-up Y coordinate is flipped into top-down SVG. Records emit
+in source order with source-over rectangle compositing, so overlaps accumulate.
+The grid API rejects the active unsupported paint and geometry flags described
+in its source; this guard is specific to the grid and does not describe the
+separate scalable material experiment's admission rules.

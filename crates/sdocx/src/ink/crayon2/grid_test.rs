@@ -1,4 +1,4 @@
-//! Test-only fixed output-grid approximation. This is not a scalable material.
+//! Fixed output-grid approximation. This is not a scalable material.
 use super::Record;
 use std::fmt::Write;
 
@@ -124,7 +124,7 @@ pub(super) fn fragments(records: &[Record], g: &Grid<'_>) -> Result<String, &'st
         work = work
             .checked_add(u64::from(right - left) * u64::from(top - bottom))
             .ok_or("grid work limit")?;
-        if work > g.max_samples.min(1_000_000) {
+        if work > g.max_samples.min(100_000) {
             return Err("grid work limit");
         }
         if left == right || bottom == top {

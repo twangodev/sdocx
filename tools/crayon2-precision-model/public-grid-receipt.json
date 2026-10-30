@@ -1,0 +1,72 @@
+{
+  "scope": "Public single-stroke fixed-grid SVG and SVG-page PDF against two retained synthetic native host frames; not direct document PDF, arbitrary rescaling, Android, or saved-page parity",
+  "metric_order": [
+    "differing_pixels",
+    "maximum_channel_error",
+    "absolute_rgb_error"
+  ],
+  "independent": {
+    "reader_metrics": {
+      "resvg": [
+        282,
+        2,
+        406
+      ],
+      "mupdf": [
+        410,
+        6,
+        1044
+      ],
+      "pdfium": [
+        411,
+        6,
+        1038
+      ]
+    },
+    "output_sha256": {
+      "svg": "4e3443bae17ce2e492e75642818d687a43a986bc4ec3cdccb505ae05f0ff17ee",
+      "png": "86c42b59ff3644371c4c210d6f76b538856fe8ff39b90cd3fe05f01b3454f7b9",
+      "pdf": "eed566ce16068e6cccf093f003a6dc8bd2f4cac11cf5133e09468edacabd6edf"
+    }
+  },
+  "matched": {
+    "reader_metrics": {
+      "resvg": [
+        182,
+        2,
+        270
+      ],
+      "mupdf": [
+        239,
+        5,
+        730
+      ],
+      "pdfium": [
+        240,
+        5,
+        753
+      ]
+    },
+    "output_sha256": {
+      "svg": "d8fa35ec1dbe7c2147c068fd9065308ffb24a247ef18354d1dcaaf17676b711b",
+      "png": "d99a047ecd5526880026b76e5db23caea9f4882d7b21f79932c97a542aa5bbd6",
+      "pdf": "69b9efcdc659071f3a736dbe077409a261639beacfbdead2005fa23436a99f49"
+    }
+  },
+  "versions": {
+    "resvg": "0.47.0 (Cargo.lock)",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "pdfium": "150.0.7869.0"
+  },
+  "input_and_script_sha256": {
+    "crates/sdocx/src/ink/crayon2.rs": "f1015a5397250349a70b0b92c42c682c00d4931f83f6644b2f1246ba2b2bd231",
+    "crates/sdocx/src/ink/crayon2/grid_test.rs": "7d5393c5b93d472ea2ee81997ab22995dfe11ad99a270ae523a636923b5b36c2",
+    "crates/sdocx/examples/crayon2_host_export.rs": "4e2483d4c5a9dbde4cf424cef935e6ebd61810097fdd812a4bf0cc24c9ea9088",
+    "tools/crayon2-precision-model/compare_output_grid.py": "b91520ca5d13b179f86d16d4236436f0245c5406191bbef67249a2c73da92034",
+    "tools/crayon2-varied-path/compare_host.py": "d8f9ae04081ae6ba47b63bd09f2f679612a3e47e515b0e5722da5dfdbff2e9cd",
+    "tools/crayon2-independent-control/native-frame.z": "da2b32e482b5a15035691b2e4c1c8805c0e0794ae2900b2465377b9e0eced283",
+    "crates/sdocx/tests/assets/crayon2-v2-native/matched-opaque.json.gz": "907d4f8f09c5d959bb8c05f3a2f774d6b710e100d2ee0a66d95cb8ea01e5dc32"
+  },
+  "validation": "Clean scoped source: production check with pdf,serde; all 14 Crayon2 tests and both public source writers passed; retained native references and paired resvg, MuPDF and PDFium comparisons reproduced all metrics and output hashes. Native frames were not recaptured."
+}

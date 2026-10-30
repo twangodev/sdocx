@@ -8,7 +8,7 @@
 #[cfg(feature = "render")]
 mod material;
 
-#[cfg(test)]
+#[cfg(feature = "render")]
 mod grid_test;
 
 use super::path::{P, Quad};
@@ -69,6 +69,74 @@ pub fn render_crayon2_host_svg(
         material.background,
         material.k4,
     )
+}
+
+/// Explicit fixed-output-grid host context. Each sample becomes an SVG rectangle;
+/// output is resolution-dependent and is bounded to 100,000 sample visits.
+/// Width and height are output pixels, each in 1..=4096. The axis-aligned
+/// projection maps source coordinates to GL clip space via `scale * coord +
+/// translation`, with positive scale on both axes. GL bottom-up Y is flipped
+/// into top-down SVG coordinates. The 10x30 point atlas, 150x150 background
+/// texture and phase tables must come from the same captured host context;
+/// this API does not extract them from a saved document. Records are emitted
+/// in order as source-over rectangles; overlapping samples accumulate.
+/// This candidate does not establish rescaling, Android, or saved-page fidelity.
+pub struct Crayon2HostGrid<'a> {
+    pub phase_x: [u32; 50],
+    pub phase_y: [u32; 50],
+    pub point_atlas: &'a [u8],
+    pub background_texture: &'a [u8],
+    pub width: u32,
+    pub height: u32,
+    pub clip_scale: [f32; 2],
+    pub clip_translation: [f32; 2],
+    pub background_scale: [f32; 2],
+    /// Caller-selected effective paint color; it is not derived from stroke metadata.
+    pub rgba: [f32; 4],
+    pub background: Option<[u8; 3]>,
+    /// Maximum visited samples, also subject to the hard 100,000 limit.
+    pub max_samples: u64,
+}
+
+/// Render a supported source stroke using the explicit, fixed-resolution host grid.
+/// The optional opaque background is part of the output, not a sampled prior page.
+/// This grid API rejects active unsupported paint/geometry flags; the separate
+/// `render_crayon2_host_svg` material experiment has its own admission rules.
+pub fn render_crayon2_host_grid_svg(
+    stroke: &crate::Stroke,
+    context: &Crayon2HostGrid<'_>,
+) -> Result<String, String> {
+    let rendering = stroke.rendering.as_ref().ok_or("missing rendering metadata")?;
+    let p = &rendering.properties;
+    let style = &rendering.style;
+    if p.eraser || p.fixed_width || p.alpha_lock || p.fixed_opacity || p.rainbow_effect
+        || p.straighten || p.reveal_mode || p.replay_only
+        || style.line_type_raw.is_some_and(|v| v != 0)
+        || style.color_type_raw.is_some_and(|v| v != 0)
+        || style.gradient_colors_argb.as_ref().is_some_and(|v| !v.is_empty())
+    {
+        return Err("unsupported Crayon2 paint or geometry flags".into());
+    }
+    let profile = NativeProfile {
+        phase_x: context.phase_x,
+        phase_y: context.phase_y,
+        rng: RngProfile::CapturedHostType3,
+    };
+    let output = sample_stroke(stroke, &profile).map_err(|e| e.to_string())?;
+    let grid = grid_test::Grid {
+        width: context.width, height: context.height,
+        clip_scale: context.clip_scale, clip_translation: context.clip_translation,
+        background_scale: context.background_scale, rgba: context.rgba,
+        point: context.point_atlas, background: context.background_texture,
+        max_samples: context.max_samples,
+    };
+    let fragments = grid_test::fragments(&output.records, &grid).map_err(str::to_owned)?;
+    let background = context.background.map(|c| format!(
+        "<rect width=\"{}\" height=\"{}\" fill=\"#{:02x}{:02x}{:02x}\"/>\n",
+        context.width, context.height, c[0], c[1], c[2]
+    )).unwrap_or_default();
+    Ok(format!("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"0 0 {} {}\" shape-rendering=\"crispEdges\">{}{}</svg>",
+        context.width, context.height, context.width, context.height, background, fragments))
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -878,36 +946,85 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires local native texture inputs and writes test-only grid SVG"]
+    fn grid_source_rejects_unsupported_flags() {
+        let points = [P { x: 64.0, y: 64.0 }, P { x: 72.0, y: 70.0 }, P { x: 82.0, y: 60.0 }];
+        let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
+        let profile = parse_profile(&fixture());
+        let point = [128; 300];
+        let background = [128; 22500];
+        let grid = Crayon2HostGrid {
+            phase_x: profile.phase_x, phase_y: profile.phase_y,
+            point_atlas: &point, background_texture: &background,
+            width: 256, height: 256, clip_scale: [0.0078125; 2], clip_translation: [-1.; 2],
+            background_scale: [2.2755556; 2], rgba: [0.2, 0.4, 0.6, 0.5],
+            background: None, max_samples: 100_000,
+        };
+        assert!(render_crayon2_host_grid_svg(&stroke, &grid).is_ok());
+        let cases: &[(&str, fn(&mut crate::StrokeRendering))] = &[
+            ("eraser", |r| r.properties.eraser = true),
+            ("fixed width", |r| r.properties.fixed_width = true),
+            ("alpha lock", |r| r.properties.alpha_lock = true),
+            ("fixed opacity", |r| r.properties.fixed_opacity = true),
+            ("rainbow", |r| r.properties.rainbow_effect = true),
+            ("straighten", |r| r.properties.straighten = true),
+            ("reveal", |r| r.properties.reveal_mode = true),
+            ("replay only", |r| r.properties.replay_only = true),
+            ("line type", |r| r.style.line_type_raw = Some(1)),
+            ("color type", |r| r.style.color_type_raw = Some(1)),
+            ("gradient", |r| r.style.gradient_colors_argb = Some(vec![0xff123456])),
+        ];
+        for (name, mutate) in cases {
+            let mut candidate = stroke.clone();
+            mutate(candidate.rendering.as_mut().unwrap());
+            assert!(render_crayon2_host_grid_svg(&candidate, &grid).is_err(), "{name}");
+        }
+        let mut neutral = stroke.clone();
+        let style = &mut neutral.rendering.as_mut().unwrap().style;
+        style.line_type_raw = Some(0);
+        style.color_type_raw = Some(0);
+        style.gradient_colors_argb = Some(vec![]);
+        assert!(render_crayon2_host_grid_svg(&neutral, &grid).is_ok());
+    }
+
+    #[test]
+    #[ignore = "requires local native texture inputs and writes fixed-grid SVG"]
     fn write_independent_rust_grid() {
         let points = [P { x: 40.0, y: 45.0 }, P { x: 53.0, y: 28.0 }, P { x: 75.0, y: 49.0 }];
         let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
-        let output = sample_stroke(&stroke, &parse_profile(&fixture())).unwrap();
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
         let point = std::fs::read(dir.join("g_Crayon2PointPtn.source.bin")).unwrap();
         let background = std::fs::read(dir.join("g_Crayon2BgPtn.source.bin")).unwrap();
         assert_eq!(sha(&point), "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405");
         assert_eq!(sha(&background), "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3");
-        let grid = grid_test::Grid { width: 192, height: 192, clip_scale: [0.010416666977107525; 2], clip_translation: [-1.; 2], background_scale: [1.7066665887832642; 2], rgba: [184. / 255., 76. / 255., 41. / 255., 170. / 255.], point: &point, background: &background, max_samples: 1_000_000 };
-        let fragments = grid_test::fragments(&output.records, &grid).unwrap();
-        let svg = format!("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"192\" height=\"192\" viewBox=\"0 0 192 192\" shape-rendering=\"crispEdges\"><rect width=\"192\" height=\"192\" fill=\"#4080c0\"/>\n{fragments}</svg>");
+        let profile = parse_profile(&fixture());
+        let svg = render_crayon2_host_grid_svg(&stroke, &Crayon2HostGrid {
+            phase_x: profile.phase_x, phase_y: profile.phase_y,
+            point_atlas: &point, background_texture: &background,
+            width: 192, height: 192, clip_scale: [0.010416666977107525; 2], clip_translation: [-1.; 2],
+            background_scale: [1.7066665887832642; 2], rgba: [184. / 255., 76. / 255., 41. / 255., 170. / 255.],
+            background: Some([64, 128, 192]), max_samples: 1_000_000,
+        }).unwrap();
         std::fs::write(std::env::var_os("SDOCX_CRAYON2_GRID_SVG").expect("output SVG"), svg).unwrap();
     }
 
     #[test]
-    #[ignore = "requires local native texture inputs and writes test-only grid SVG"]
+    #[ignore = "requires local native texture inputs and writes fixed-grid SVG"]
     fn write_matched_rust_grid() {
         let points = [P { x: 64.0, y: 64.0 }, P { x: 72.0, y: 70.0 }, P { x: 82.0, y: 60.0 }];
         let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
-        let output = sample_stroke(&stroke, &parse_profile(&fixture())).unwrap();
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
         let point = std::fs::read(dir.join("g_Crayon2PointPtn.source.bin")).unwrap();
         let background = std::fs::read(dir.join("g_Crayon2BgPtn.source.bin")).unwrap();
         assert_eq!(sha(&point), "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405");
         assert_eq!(sha(&background), "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3");
-        let grid = grid_test::Grid { width: 256, height: 256, clip_scale: [0.0078125; 2], clip_translation: [-1.; 2], background_scale: [2.2755556106567383; 2], rgba: [51. / 255., 102. / 255., 153. / 255., 128. / 255.], point: &point, background: &background, max_samples: 1_000_000 };
-        let fragments = grid_test::fragments(&output.records, &grid).unwrap();
-        let svg = format!("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"256\" height=\"256\" viewBox=\"0 0 256 256\" shape-rendering=\"crispEdges\"><rect width=\"256\" height=\"256\" fill=\"#4080c0\"/>\n{fragments}</svg>");
+        let profile = parse_profile(&fixture());
+        let svg = render_crayon2_host_grid_svg(&stroke, &Crayon2HostGrid {
+            phase_x: profile.phase_x, phase_y: profile.phase_y,
+            point_atlas: &point, background_texture: &background,
+            width: 256, height: 256, clip_scale: [0.0078125; 2], clip_translation: [-1.; 2],
+            background_scale: [2.2755556106567383; 2], rgba: [51. / 255., 102. / 255., 153. / 255., 128. / 255.],
+            background: Some([64, 128, 192]), max_samples: 1_000_000,
+        }).unwrap();
         std::fs::write(std::env::var_os("SDOCX_CRAYON2_GRID_SVG").expect("output SVG"), svg).unwrap();
     }
 

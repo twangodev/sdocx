@@ -257,6 +257,13 @@ nonzero paint error; paired SVG-page PDF also has reader-dependent error.
 retain these limits. Normal saved-page Crayon2 rendering remains generic;
 Android, arbitrary-input and saved-note parity are unverified.
 
+The experimental `render_crayon2_host_grid_svg` API additionally accepts an
+explicit fixed-resolution viewport and captured host material, with a 100,000
+sample ceiling. Its [two public source controls](../tools/crayon2-precision-model/public-grid-receipt.json)
+have nonzero errors in resvg and both SVG-page PDF readers. The grid depends on
+output resolution and does not establish direct document PDF, saved-page or
+Android fidelity.
+
 A [Crayon2 saved-playback paint oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/crayon2-saved-playback-paint-native.json)
 joins native source getters, 285 packed records, queued upload and host Mesa Draw,
 with clipped/interior and transparent/opaque controls. That V1 route supplies
