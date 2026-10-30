@@ -1,0 +1,5 @@
+# Pencil2 render message without a separate update
+
+Run `python3 tools/pencil2-worker-v248/probe.py`. This repeats v247 with the explicit host call to `Pencil2StrokeDrawableRTV4::Update(bool)` removed. The native renderer is still explicitly initialized. The deferred render message is explicitly run after the synthetic worker has drained and its canvas pointer is replaced with the same fabricated bitmap hierarchy used by v247.
+
+The count recorded before message execution is zero; an entry hook on RTV4 `Update(bool)` observes one invocation on the selected renderer with argument zero during the message run, before Draw. The run reaches RTV4 Draw and produces the same 322 nonzero bytes and SHA-256 `a0230ba18bf716851b4079facb415b265ade62b80ef28bbfcaa0b1853776672e` as v247, with no GL error. The equality is a host framebuffer observation, not proof that Update has no effect in other states. The script verifies 84 AddPoint calls and the message-to-draw receiver and matrix. This does not establish ordinary initialization, scheduling, bitmap contracts, saved-page behavior, or device fidelity. Mesa and transitive runtime dependencies are not pinned.
