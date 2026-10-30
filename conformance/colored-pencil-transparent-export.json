@@ -1,0 +1,1879 @@
+{
+  "schema": "sdocx-colored-pencil-transparent-export-v1",
+  "capture": {
+    "script": "tools/colored_pencil/transparent_export_compare.py",
+    "script_sha256": "dfa029dc758daa5a2be76f6e0e8d957f531e0955e3e56079e3f0037ee6299eeb",
+    "native_receipt_sha256": "d5161ca9224c1c2ca02bb4c9602d94d4cd6a98cb6d1a0945e33da6d3ec97e9a3",
+    "source_sha256": {
+      "crates/sdocx/tests/colored_pencil_raster.rs": "e622e24f23aa64a7568b3253bae3fa19701154fe802fc74c1ebddaf93bf0c5c7",
+      "crates/sdocx/src/ink_raster.rs": "1c601344c04b9ee4960e9582925ea606131bf552bc3cf3252c39034d6637ad0f",
+      "crates/sdocx/src/ink/colored_pencil/raster.rs": "8bfd483ba7e596f3eff9d8a9b4203a751f6d07e29b765638bca35989525fc932",
+      "Cargo.lock": "5bd9bda9da7b4d02adc97ae3df5ffcea0b596e8dc02d6428c082c1093bea8153"
+    }
+  },
+  "frames": 64,
+  "dpi": 72,
+  "readers": {
+    "mupdf": "1.28.2",
+    "pdfium": "150.0.7869.0"
+  },
+  "scope": "Same synthetic native clear and translucent-prior frames as the canvas receipt. PNG matches the defined premultiplied-to-straight conversion and SVG embeds that PNG. Both PDFium PDF routes match straight PNG exactly. MuPDF returns premultiplied samples; its differences from the native premultiplied frame are reported, not claimed exact. Source hashes identify selected inputs, not a complete build provenance or proof that artifacts came from those sources. Intrinsic size only; not saved-note or device parity.",
+  "results": {
+    "8044aaee_saved-glv4-size-8_top_1_clear": {
+      "sha256": {
+        "rgba": "8e29fd268088e4945bf0472f694fe7879b09ef39d59d0a51c07a6e5ab4e24509",
+        "png": "e013d691e53cf168f3362ba2df587625aeb60288d576691084a3ae38b28eecac",
+        "svg": "f5b59c8132ccae6187ac82b6b9f031236bb4269a60727a2dbe0e1ae7032d3c33",
+        "direct_pdf": "fafd7c40c1296308bdfe9e657f20e4ad26be7dc6b0783f8c0557b971cb07d884",
+        "svg_pdf": "289f009a107586581ad9bf326dc12430b1b305d21010f0b7103101b158f2a5e4"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 493,
+        "absolute_sum": 493,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 493,
+        "absolute_sum": 493,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-8_top_1_purple": {
+      "sha256": {
+        "rgba": "dbcd270b6c4f4500a21f89057214bedb5288f9ca59df8ce87ba7e9c6c0b49520",
+        "png": "e9e5f4808308e2336aa0381e6c94864bb19ccb808034611cf3dc5fc817cdd889",
+        "svg": "b2be06ce7f858a21a2df5c8281dfb1981db99c35f568f57f672ad5c2ae3a59ed",
+        "direct_pdf": "957495d8b6926f64c2b84c978d5e401beba3fcccce52ed86362bcdffd172c94c",
+        "svg_pdf": "2243947e712ec8e2cc2578e01caedaa054aa2cbc6d8bdf9d9ee09ff80a44b46c"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 39,
+        "absolute_sum": 39,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 39,
+        "absolute_sum": 39,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-8_top_2_clear": {
+      "sha256": {
+        "rgba": "a7dad3fb36a015fc02a50c408ac358cca0af259bc462f3f0129ee328f961de8b",
+        "png": "d3f32ba49b6f04c8daa5b4921b795311c120339ce511073286736bb35bbea5b8",
+        "svg": "baed7b717d26246f9362f7a719202d40d45bccc5b2cf1fdf2d3a4191600c65f5",
+        "direct_pdf": "cf65ee2cba194d5de251b72e7138bcdd4dd06fbea30535aedb58fbf9ebcebfaa",
+        "svg_pdf": "d1c17a97b69c7a91261bacc6524e76ae4b8ee0fb6f1a4ad7664970a126c3e234"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 1981,
+        "absolute_sum": 1981,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 1981,
+        "absolute_sum": 1981,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-8_top_2_purple": {
+      "sha256": {
+        "rgba": "6783a7bf8d257c4973b27ba6e23cd8c71c3f11d9c1bcce9ba973e6defafbc44d",
+        "png": "6f9310971d085b3b89a9f46a06d89a4caf142bdb6800dc17a838fd03df1cae1a",
+        "svg": "309a48255570929e2eb8a086e8a8c28ffb0f762b31ceb3bd02cf07cc87d1a8da",
+        "direct_pdf": "554dc879c667197ae21e11a6215ebc61dc9e169419215d2b89a8a5c7b4c59bc1",
+        "svg_pdf": "b84ee7b84083fd8302bb3382c9c005d9360ccd7e768f71944d524661f6ffbf0a"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 178,
+        "absolute_sum": 178,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 178,
+        "absolute_sum": 178,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-8_bottom_1_clear": {
+      "sha256": {
+        "rgba": "0bdbe9f41441e4c6886643803669daee0e844b11ae38aa1fe7e0ce28d34459b9",
+        "png": "751a3df174fc64813c001060b5d7c7d6a1f0931679e77926b38931e4e1894343",
+        "svg": "103fd86a0e9f1618346a90edb5a93a582c57f09ab184b0c3e8a2506f16550728",
+        "direct_pdf": "082da6c5efdfbce97d9a2fc03810115de2842a90b3bf8204b13bbd007f43c4b2",
+        "svg_pdf": "411f7fd046a2fc1e01e19d5bc389ffd76435d751f3ee6cbde84b324e85a4d757"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 493,
+        "absolute_sum": 493,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 493,
+        "absolute_sum": 493,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-8_bottom_1_purple": {
+      "sha256": {
+        "rgba": "81ca97d775df4059facbc278ecb43e580aa7fd295c20f91f0c9f5ab0206e9225",
+        "png": "38f1ccacecee26fa145ea433fa1f77825f61dd30a34381a842b74191adb21744",
+        "svg": "870fcd61e64e3b3cbc7553ad85329a2277c71a03d6d65a6d00699af405d695a7",
+        "direct_pdf": "8d846dd2f969ee1b6a94ed59b34b6170ce18a12f21d77a9030c5fb84461ccc0c",
+        "svg_pdf": "ed85292b05fd658dc7d4a498f07fdb1520109d53260e68a51120716a9d8e3075"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 39,
+        "absolute_sum": 39,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 39,
+        "absolute_sum": 39,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-8_bottom_2_clear": {
+      "sha256": {
+        "rgba": "5f28759e7177c0ca2eb4c4f48a558c45a48dc0d1abf5d9ede973ad89548cffc1",
+        "png": "f47b9547d6a53bf06fba294d1269adbb5cbbe7ce1d4734a701479c18df15367e",
+        "svg": "895420994b213ffc53438980897b4fa29d5417dd4a82fdd2f5a3dd06f1f1c92b",
+        "direct_pdf": "e1dfc92a65e68cf058cd47710ebb3c624666ad64c9baa3b29b70ecffca359fe1",
+        "svg_pdf": "3c0590c0537a788bca2443785de5e9db74bdae66c0e877bbe449d6a61291332c"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 1981,
+        "absolute_sum": 1981,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 1981,
+        "absolute_sum": 1981,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-8_bottom_2_purple": {
+      "sha256": {
+        "rgba": "f6f0ef64e5968c922901698c9c0ae1c9d5cae72bfd400ac0133fb5866c585924",
+        "png": "cf694d07e0dbc935b8bdcac69ddabb5b78acedbd352239dafc203cdc48766b4c",
+        "svg": "e8e2c460ad294b4ee568576fc9be1bc444bee6cf7314f9c468d294d0839343ea",
+        "direct_pdf": "63243b55e1b7387ee96068d72a24fa83273f4f26679cbaf1eab0ab7874e54c0a",
+        "svg_pdf": "7b8036d348202afd355c037ae2d8c45de336e8c4a659c72edfcec7b71ee84cf5"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 178,
+        "absolute_sum": 178,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 178,
+        "absolute_sum": 178,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-16_top_1_clear": {
+      "sha256": {
+        "rgba": "12b643b9e0f7ad08e7bad574a11a2473c1d9a857201527826ec82094b4d492b4",
+        "png": "845c3da947c0c5a219492c7f870728c725e15d2fa9b2beb265aac89b3247d06b",
+        "svg": "4defc5ac69e596ef48555964717348c7c78f4419d32288c0af5e21a7ee390b64",
+        "direct_pdf": "cf4c7bb8a9dbc02ebc5b738ab2b198ebc63769bb58899ed999c270231aed9c0f",
+        "svg_pdf": "3f5d055641d331c258e974ccad4eb12bb7043a8022e4dc5b8d2c795621c5af0b"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 1494,
+        "absolute_sum": 1494,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 1494,
+        "absolute_sum": 1494,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-16_top_1_purple": {
+      "sha256": {
+        "rgba": "f25d5ff3d7637d8a7b81da3cd44295c2bd43ec6b7b24b44f73efa134bf20b0a6",
+        "png": "518582fddb3d24f1038b7423c8d0d26bd8c95e5fa2dd577df68018d8abe26963",
+        "svg": "f011015706a788a293666d6bd96e56cc888c0381014af5d2ff2689bb7e5e9f5b",
+        "direct_pdf": "69af29b5ce8232b6ef8667c3de8bed01915c1218ebf1762be71289fb4251a0ec",
+        "svg_pdf": "81a465db8e42323f25a07eb6280538e30507095a4b2318bd805ee736717c8c4d"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 108,
+        "absolute_sum": 108,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 108,
+        "absolute_sum": 108,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-16_top_2_clear": {
+      "sha256": {
+        "rgba": "0f28ab70420b36d8f9e157ac1f6bb3e5815dd42deef629ec03e23b7dac28f1ec",
+        "png": "a4871d4155e92428873396db2aecefd1397ecd68573e62d3309e80aea56ed910",
+        "svg": "cb83f10f494b01ffbf9abab21c1ba305e510a69b2fc93e9568bd83aeb21254c9",
+        "direct_pdf": "53cbb5be86029c8e0d3c95f89a9ceb02d7e1ec6a8bfdacf01bb3b10f7aca8cc8",
+        "svg_pdf": "d3305fef5eee59068d491aef8ad4378fd7472f00c33f8812ea656b9988252700"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 5826,
+        "absolute_sum": 5826,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 5826,
+        "absolute_sum": 5826,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-16_top_2_purple": {
+      "sha256": {
+        "rgba": "22c7a659ba3d934d55a7578520999e0e1812e79350a5424e6bfa10b0a12d741e",
+        "png": "f2358fe594dc7933ccf0b68c2ec660d357dc2fc03d6156d81eb917695a24b086",
+        "svg": "b5146c2bd5cd7d2fad73544cca584e56a160296122580a48fd7a9dd65e8aabab",
+        "direct_pdf": "79fb6bd5f5efcb89f1e8a2d7182fb0c8c974312d88ff347b1e95c1ebd63df945",
+        "svg_pdf": "4d74e77779e272514e43426c4af8877f9dcb1aeb49547c04fd78bbcaad343575"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 443,
+        "absolute_sum": 443,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 443,
+        "absolute_sum": 443,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-16_bottom_1_clear": {
+      "sha256": {
+        "rgba": "3b1fb29416f3d4210e4f0e9bb2bf2944f16b9ae483224cadbcb5126a7bbbb785",
+        "png": "41ffaf8240df9d80a6d401740b3ebd4d5e0d5974fca72c4386fece122a99e3c3",
+        "svg": "51a725d51106e49b9f50b1a4fc70c46734a7bfb7e08b250c35e7c19db0a87550",
+        "direct_pdf": "125d3ea72e021d8605c470eb32b134cd58dc3ef76cf0e91f28e39d8fc2e6efd0",
+        "svg_pdf": "be4e4141f9314eff5af8f86f5edec13fdab9bdfe847a63e9259cb59313d1c151"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 1494,
+        "absolute_sum": 1494,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 1494,
+        "absolute_sum": 1494,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-16_bottom_1_purple": {
+      "sha256": {
+        "rgba": "d1d3152d3c09d634de624b44414278c84bfc28001f033a62aacff67b789a888d",
+        "png": "971884b3d16cf38ae046196c3a4fab58a5b7004a40f22aa0ee6773ae8a812a34",
+        "svg": "0411cee9a800be33e9eb312a9cea3d573e3cc75f2a72a85f3df32609954188e3",
+        "direct_pdf": "f6cce407c7c9cc24c287bd1df756efb9992d9bb86437d8064c617dfddb2ffd36",
+        "svg_pdf": "4be5ce48f2adf25c7559918daf82e95b706477fd1cf6a3de1bfbc031212f6ded"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 108,
+        "absolute_sum": 108,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 108,
+        "absolute_sum": 108,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-16_bottom_2_clear": {
+      "sha256": {
+        "rgba": "9ad012d337fe0cf123172417f570d9d9108fbab45b0df4cd8ca095b57f8b8f4d",
+        "png": "3629040fa45049ce1874da9acfe4e6d69324d982c139c389ce5cc89a982540c2",
+        "svg": "d86713bce56a01273c913169ce85bcffb0e7425b469cf667c388ca35bf8a44f8",
+        "direct_pdf": "7384895673053178c3dd5a8bf49f0751584241e78ccc0c628cc0ee35c8c54dfc",
+        "svg_pdf": "2d79ef771d59c8fd370496aa3548aee030716af50a5805595380d9ce547f3a1f"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 5826,
+        "absolute_sum": 5826,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 5826,
+        "absolute_sum": 5826,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_saved-glv4-size-16_bottom_2_purple": {
+      "sha256": {
+        "rgba": "e4849376fba148d55842738ed7da0210fb8b678851c2bb249a3ea59badcd174f",
+        "png": "3ddca970a26626952f45df1b782c6e83f6b8bf52a78378a512c22c60c78622f6",
+        "svg": "a1437edcf65d82329c09da837347cf8e28566869a0e35e265ac5d9274b3837f1",
+        "direct_pdf": "bcf45148b7f5daf10085846a0a4a62360c85850e2c6ce2c7bc995090f01d19c3",
+        "svg_pdf": "a9c51cb3647a9f2f0f1ac503ae6fcadb62d76283e3ad68306e15946d841c5b2e"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 443,
+        "absolute_sum": 443,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 443,
+        "absolute_sum": 443,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_negative_initial_x_minus2_top_1_clear": {
+      "sha256": {
+        "rgba": "b3b22980df39e3d6c917251cf4aac664d041b662b1f67e0c0fd9537b0549cf04",
+        "png": "5931f1a3559e470e58903696c98979860b883a74e224a5b9754e4b2eacbe5135",
+        "svg": "4e698f44143963311c043b129ad892671bcc284a11c931003c1efb2a35ad8c3b",
+        "direct_pdf": "b58449bbd29d2a5ec6964358cfb41c1867c62f6094e173b04714e7e7b03ba1ca",
+        "svg_pdf": "369e3a0ab6f6732d8ed4c616abedeb8c1f6e0383065589df5f541767e5f241e9"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 717,
+        "absolute_sum": 717,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 717,
+        "absolute_sum": 717,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_negative_initial_x_minus2_top_1_purple": {
+      "sha256": {
+        "rgba": "9a1a9c82052e0678e51f4653f7a4c82770345943bd051722cb79fd5b80ba065a",
+        "png": "bcd193185e8d9c9b0452ed3b33ef221112e3aaa6235edd2760142587202411f6",
+        "svg": "42adc08ff4b54996bc2dc1edb6f9b9c2dbddbd9cd08bd0d36a36e0009455d176",
+        "direct_pdf": "258c24a27123baf054588abfa8b6cb54e4853be9b7df268e23069b8d50a9dd54",
+        "svg_pdf": "cf63b2f2307c0c40f7f55d1091ebd7f3d700a56549aa995b0ae531174337ce38"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 69,
+        "absolute_sum": 69,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 69,
+        "absolute_sum": 69,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_negative_initial_x_minus2_top_2_clear": {
+      "sha256": {
+        "rgba": "93cd15e5de8c8afbda365271e40bdf001b834ad214eb7ac3ea2f0bc254b5d1c8",
+        "png": "ca47b36698caf022609435b9ccf5a879fbc76e205114ca9a0bad2ed8cf930034",
+        "svg": "0617848f8603421ec5dd177cb91942a7b00bc4d729fab006ea0db66afe477f32",
+        "direct_pdf": "83c77028d0f383e9fc62f15bf593c5663fb2252446ecaa082db03a88cfe68a20",
+        "svg_pdf": "f9d1aa52fa4d092b34b2bf933549c06cb125c32dbfca007174d240549e5b22e7"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 2969,
+        "absolute_sum": 2969,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 2969,
+        "absolute_sum": 2969,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_negative_initial_x_minus2_top_2_purple": {
+      "sha256": {
+        "rgba": "cdf4ece3c895411edb39d673b292d3c967da501619c09306aff6bf079f481a2b",
+        "png": "52b06dbe6203bb93190f20299c00aafead13b9a644dbaa0ab939138e70b34792",
+        "svg": "b144c7cae49686a1464251f4da7c2879b4d822f17768915fa3b276aa6bb5680c",
+        "direct_pdf": "022bd2133aa8b8ef6fd79499dfc3f6a8158a50bdf3d3534138601d04b7b7957c",
+        "svg_pdf": "99a95f025ad9ad4f42794fd925773b15216742509519e880264b012ce1c39591"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 271,
+        "absolute_sum": 271,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 271,
+        "absolute_sum": 271,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_negative_initial_x_minus2_bottom_1_clear": {
+      "sha256": {
+        "rgba": "5043bdeaa633ceeefdfc5ea4211fe561c29f23dfeb4770e8b875da2a4b1a9895",
+        "png": "d5c73ff39789a0f1b1bca7e0327d3f4ec8d3dd544ae3d61266a98f60e1ba5299",
+        "svg": "311276cf7b2104b3976a76f8be037362e93bbdd88e2d73185a7eaf5851935a22",
+        "direct_pdf": "2f614301f251dc48227475c2f0dfd86c4d56bce126176e109823e6ceadf994bf",
+        "svg_pdf": "22ad0fd96b5052c62f6ad1c45d606225842f66f63a6f0e39c8fa47e5bfd291a8"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 717,
+        "absolute_sum": 717,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 717,
+        "absolute_sum": 717,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_negative_initial_x_minus2_bottom_1_purple": {
+      "sha256": {
+        "rgba": "c3891f2e135d7b5034d02353ad3295d1b3a4253f655f5f4dd41688249abadc47",
+        "png": "b5a70ce3ddddd6a6f5437735ccdc1f7f5cdcb9ded511a6b1ad1c538a6a73457f",
+        "svg": "cd74cf1255478060cf2d8854e31d61b70b2cb6fed41038d9874dd5cfafa858b2",
+        "direct_pdf": "e2834c8bc6b96f5b2f2d9fa05dc38ac839008d7125631c97d1e55b8606737eeb",
+        "svg_pdf": "ffb3dff9cb61c7b7940f6f2768490c890601ef17afe8227768e23cabf902a4fb"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 69,
+        "absolute_sum": 69,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 69,
+        "absolute_sum": 69,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_negative_initial_x_minus2_bottom_2_clear": {
+      "sha256": {
+        "rgba": "c8f16fe5f96ae2c63371d80746b3090e3771b394f3688e6c88b548432b884326",
+        "png": "26bee226dd4c4d76a77b3f88e9f0cf7869c8240d9ffc26ae9c9b5e762ef8fa29",
+        "svg": "5855e9e0f7ad9428f17fe86142b16275d7ea1a58c9f106149643b04bea9b701f",
+        "direct_pdf": "ae807fa0311f37feda207fa31530e9808bff2218f7238efced43741c7aaef6c9",
+        "svg_pdf": "86d543c976531ebab1c1565fd88d03b5659f95207ba39bdac9167d62992caed2"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 2969,
+        "absolute_sum": 2969,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 2969,
+        "absolute_sum": 2969,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_negative_initial_x_minus2_bottom_2_purple": {
+      "sha256": {
+        "rgba": "d84298e2fdf4f2ab0d61c28de6df6639e5b4d4fedbcc996b9b6212bb11061531",
+        "png": "bc282f8d601a764e6d1af869a443ab76362497e37b2904ca550852d7e6c22057",
+        "svg": "a027eefb340912f9088d1bc429fb0bbd1fafe07412069617939d70b88da3fa0c",
+        "direct_pdf": "63d10bcd5acdb010eb7a7b2cfdacf95909f8b4eab47e1f0fa6bc2cf4e9e3db3d",
+        "svg_pdf": "59fda156e74b50528c75c6507255121a4774f4291273b7f052097d841bc9beba"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 271,
+        "absolute_sum": 271,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 271,
+        "absolute_sum": 271,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_079_top_1_clear": {
+      "sha256": {
+        "rgba": "7ccbfcf681a03424acd2e38375008d7a616e43fb203dbf3d6a83d210944d16ff",
+        "png": "7e7ffb5e4e5ed3aae58b9ce7f5588e7f8f1e7e66a2ce31a56db42a543490698e",
+        "svg": "1bae00be58b53c11f91e2b50ef1959aa130bdfdc52876c2f1d0b0c68a0dccf9a",
+        "direct_pdf": "4edd11356dcfcdde5d9386bf640a10e11ab9895c2f1f9fee11f82a17a78d24b3",
+        "svg_pdf": "404ee15efc83a30d72faac3f353a900acc2e9c6afdc0d73ff7f50caa5312e1ac"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 928,
+        "absolute_sum": 928,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 928,
+        "absolute_sum": 928,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_079_top_1_purple": {
+      "sha256": {
+        "rgba": "10ae23ad4acb5df169f3384887e5824c87264778171d5f661e1abbac16e8ca9f",
+        "png": "fda834068af9ea0674eb42b7bf08cb5f453af7ac0a3d575371d2060454b26e77",
+        "svg": "5f33a8bff1d539d84395a4381828d78329c5c14f25aa6cf2beb36a85252b09af",
+        "direct_pdf": "013452fce92f86e925a169da0980cd10ec04f240388009ba95eae7792c4a0f92",
+        "svg_pdf": "e0f6b5ff3bdd7e2e8d87b62d07b42ee9f44711e154e8140ae2613cb35803bc51"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 68,
+        "absolute_sum": 68,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 68,
+        "absolute_sum": 68,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_079_top_2_clear": {
+      "sha256": {
+        "rgba": "7e6c824da02c8737da443e46f7b28837fa4a020ad2519580e2dd2397d4341001",
+        "png": "a2fb4dec37be9e7b3b54923f3ca431f2602b7dc50c6539ad1460ff41bf82ae14",
+        "svg": "375ec9598a40905e84b49cf6400329f4b8669c43fb8d82810c1002bc0c437bd4",
+        "direct_pdf": "3927ce977646963d9cf6e28de5323cd9fcf6624e638af49f57d437677af136e6",
+        "svg_pdf": "d101702433b97f91136bb27c96d3818a26330bdf59cc4cce53aceded5fa680f5"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 3685,
+        "absolute_sum": 3685,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 3685,
+        "absolute_sum": 3685,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_079_top_2_purple": {
+      "sha256": {
+        "rgba": "a06f5c663dc439944f57d6c3738b65c710e77c6f591909abf9032884e43a52b6",
+        "png": "324cebdd56f7c75337afcc19f80c25fef14537fb3d675b7b2f57f506803e8ba3",
+        "svg": "91fa7ff557e1851eb7a53d73fe4dc604b2cf1dc01e89716090c78715d42682b6",
+        "direct_pdf": "9fb05e52447774bbc0dbbd0bce94ce4fcbc806f36cea0c1f3161f93a92de932a",
+        "svg_pdf": "bbbec5e9b1c47fcf887e56beb87ad2afea71c8be250c002b75177e58010a81fa"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 237,
+        "absolute_sum": 237,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 237,
+        "absolute_sum": 237,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_079_bottom_1_clear": {
+      "sha256": {
+        "rgba": "cbdd28d683ee6b42c4a684d08458255ccba0179a943d952d6c1be55ff2def4d9",
+        "png": "d3f061f33f23240a2d1a601313d2fdeeaf529d0bf43ced1fbe38987736bdfe12",
+        "svg": "c54886cd9e45a5e3c022c4301ebac8b8bb61903eed2dd1b6b17818e6b6c38aa8",
+        "direct_pdf": "701d1652b4b6461d5b6a94b18e583f9919ddc63fd28b4d12a85f90807fddac6c",
+        "svg_pdf": "ede06571bd2bf6c6d279987f1fd959664ec635ab3b755d8a0e29a3a3e8aeb8b2"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 928,
+        "absolute_sum": 928,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 928,
+        "absolute_sum": 928,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_079_bottom_1_purple": {
+      "sha256": {
+        "rgba": "15b28c533f3e323b86064c0335c1b082819d9942d7b9df8ac0828c8aebd12db2",
+        "png": "06a10471397870873d98fa33d1c40b96f8cf201b51113176186aa59a6f08c7cc",
+        "svg": "b3f0987343fe5a97c3711dc6b1798c5678bbcb33e8d529e72099d91e8e8f1d18",
+        "direct_pdf": "a6be8b2f8d54c98aba4fc75b6f1b065044490e9126eefc5c24394977d31307fd",
+        "svg_pdf": "75cbdc627aff799cc60b040c4f6a1432e3b4bc102477c759bcd3a3eeb03d9ba0"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 68,
+        "absolute_sum": 68,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 68,
+        "absolute_sum": 68,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_079_bottom_2_clear": {
+      "sha256": {
+        "rgba": "6cb11e702e10a47d1e1d2e18894f724e5d3219f7f7945c9c6c5ff11dd51ecb0b",
+        "png": "4ca521f732e549bb23fe32285737c67ca1672e0f0b3c6f8a6e66ff2c2b2a78a4",
+        "svg": "2bd22602a4b3ba002811727736bc5f6f268129ed394b349a1da24dab20806e5c",
+        "direct_pdf": "c355bd61c8ea385adf2d4f15fc44b8414801a642aa08bbed7f75c1b22bb81f4b",
+        "svg_pdf": "58728b129007a5e038c47b0840c7504a9a9a3dea38a379a65517a86cad8d1c0c"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 3685,
+        "absolute_sum": 3685,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 3685,
+        "absolute_sum": 3685,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_079_bottom_2_purple": {
+      "sha256": {
+        "rgba": "e60d0675ee4b8648af88b6a3422a224b26599172f784344d18b8b4b8bc488ba1",
+        "png": "fded627dc72a818b679d439dafd1d07612390f5647e355a0f509a18a564a06cd",
+        "svg": "098d71641498ca51bd41de4ac6941e8877903d48c852235a2c70cab744f28271",
+        "direct_pdf": "0b3c448728688a1b3b6b32164b1a2d9d10aba2b6b47403c298d2ec72ee10c556",
+        "svg_pdf": "07c6770c5b8edde7f35220f9cb7d07a8b923c2c563596cea9b966000b49333fb"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 237,
+        "absolute_sum": 237,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 237,
+        "absolute_sum": 237,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_065_top_1_clear": {
+      "sha256": {
+        "rgba": "8e29fd268088e4945bf0472f694fe7879b09ef39d59d0a51c07a6e5ab4e24509",
+        "png": "e013d691e53cf168f3362ba2df587625aeb60288d576691084a3ae38b28eecac",
+        "svg": "f5b59c8132ccae6187ac82b6b9f031236bb4269a60727a2dbe0e1ae7032d3c33",
+        "direct_pdf": "fafd7c40c1296308bdfe9e657f20e4ad26be7dc6b0783f8c0557b971cb07d884",
+        "svg_pdf": "289f009a107586581ad9bf326dc12430b1b305d21010f0b7103101b158f2a5e4"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 493,
+        "absolute_sum": 493,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 493,
+        "absolute_sum": 493,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_065_top_1_purple": {
+      "sha256": {
+        "rgba": "dbcd270b6c4f4500a21f89057214bedb5288f9ca59df8ce87ba7e9c6c0b49520",
+        "png": "e9e5f4808308e2336aa0381e6c94864bb19ccb808034611cf3dc5fc817cdd889",
+        "svg": "b2be06ce7f858a21a2df5c8281dfb1981db99c35f568f57f672ad5c2ae3a59ed",
+        "direct_pdf": "957495d8b6926f64c2b84c978d5e401beba3fcccce52ed86362bcdffd172c94c",
+        "svg_pdf": "2243947e712ec8e2cc2578e01caedaa054aa2cbc6d8bdf9d9ee09ff80a44b46c"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 39,
+        "absolute_sum": 39,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 39,
+        "absolute_sum": 39,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_065_top_2_clear": {
+      "sha256": {
+        "rgba": "a7dad3fb36a015fc02a50c408ac358cca0af259bc462f3f0129ee328f961de8b",
+        "png": "d3f32ba49b6f04c8daa5b4921b795311c120339ce511073286736bb35bbea5b8",
+        "svg": "baed7b717d26246f9362f7a719202d40d45bccc5b2cf1fdf2d3a4191600c65f5",
+        "direct_pdf": "cf65ee2cba194d5de251b72e7138bcdd4dd06fbea30535aedb58fbf9ebcebfaa",
+        "svg_pdf": "d1c17a97b69c7a91261bacc6524e76ae4b8ee0fb6f1a4ad7664970a126c3e234"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 1981,
+        "absolute_sum": 1981,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 1981,
+        "absolute_sum": 1981,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_065_top_2_purple": {
+      "sha256": {
+        "rgba": "6783a7bf8d257c4973b27ba6e23cd8c71c3f11d9c1bcce9ba973e6defafbc44d",
+        "png": "6f9310971d085b3b89a9f46a06d89a4caf142bdb6800dc17a838fd03df1cae1a",
+        "svg": "309a48255570929e2eb8a086e8a8c28ffb0f762b31ceb3bd02cf07cc87d1a8da",
+        "direct_pdf": "554dc879c667197ae21e11a6215ebc61dc9e169419215d2b89a8a5c7b4c59bc1",
+        "svg_pdf": "b84ee7b84083fd8302bb3382c9c005d9360ccd7e768f71944d524661f6ffbf0a"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 178,
+        "absolute_sum": 178,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 178,
+        "absolute_sum": 178,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_065_bottom_1_clear": {
+      "sha256": {
+        "rgba": "0bdbe9f41441e4c6886643803669daee0e844b11ae38aa1fe7e0ce28d34459b9",
+        "png": "751a3df174fc64813c001060b5d7c7d6a1f0931679e77926b38931e4e1894343",
+        "svg": "103fd86a0e9f1618346a90edb5a93a582c57f09ab184b0c3e8a2506f16550728",
+        "direct_pdf": "082da6c5efdfbce97d9a2fc03810115de2842a90b3bf8204b13bbd007f43c4b2",
+        "svg_pdf": "411f7fd046a2fc1e01e19d5bc389ffd76435d751f3ee6cbde84b324e85a4d757"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 493,
+        "absolute_sum": 493,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 493,
+        "absolute_sum": 493,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_065_bottom_1_purple": {
+      "sha256": {
+        "rgba": "81ca97d775df4059facbc278ecb43e580aa7fd295c20f91f0c9f5ab0206e9225",
+        "png": "38f1ccacecee26fa145ea433fa1f77825f61dd30a34381a842b74191adb21744",
+        "svg": "870fcd61e64e3b3cbc7553ad85329a2277c71a03d6d65a6d00699af405d695a7",
+        "direct_pdf": "8d846dd2f969ee1b6a94ed59b34b6170ce18a12f21d77a9030c5fb84461ccc0c",
+        "svg_pdf": "ed85292b05fd658dc7d4a498f07fdb1520109d53260e68a51120716a9d8e3075"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 39,
+        "absolute_sum": 39,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 39,
+        "absolute_sum": 39,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_065_bottom_2_clear": {
+      "sha256": {
+        "rgba": "5f28759e7177c0ca2eb4c4f48a558c45a48dc0d1abf5d9ede973ad89548cffc1",
+        "png": "f47b9547d6a53bf06fba294d1269adbb5cbbe7ce1d4734a701479c18df15367e",
+        "svg": "895420994b213ffc53438980897b4fa29d5417dd4a82fdd2f5a3dd06f1f1c92b",
+        "direct_pdf": "e1dfc92a65e68cf058cd47710ebb3c624666ad64c9baa3b29b70ecffca359fe1",
+        "svg_pdf": "3c0590c0537a788bca2443785de5e9db74bdae66c0e877bbe449d6a61291332c"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 1981,
+        "absolute_sum": 1981,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 1981,
+        "absolute_sum": 1981,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "8044aaee_all_tilt_065_bottom_2_purple": {
+      "sha256": {
+        "rgba": "f6f0ef64e5968c922901698c9c0ae1c9d5cae72bfd400ac0133fb5866c585924",
+        "png": "cf694d07e0dbc935b8bdcac69ddabb5b78acedbd352239dafc203cdc48766b4c",
+        "svg": "e8e2c460ad294b4ee568576fc9be1bc444bee6cf7314f9c468d294d0839343ea",
+        "direct_pdf": "63243b55e1b7387ee96068d72a24fa83273f4f26679cbaf1eab0ab7874e54c0a",
+        "svg_pdf": "7b8036d348202afd355c037ae2d8c45de336e8c4a659c72edfcec7b71ee84cf5"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 178,
+        "absolute_sum": 178,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 178,
+        "absolute_sum": 178,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "ff44aaee_saved-glv4-size-8_top_1_clear": {
+      "sha256": {
+        "rgba": "d821f29f26753be0e4604967d1018b4d6c2a4c40c3d36ae8c4dd0a3cea929a6b",
+        "png": "bf5b5bf7f3d0aa6316c22f72a2276a2870543e52ef5d41e3c818eb09da63a1a4",
+        "svg": "eeb3d52343673eba9b94780296b982fd767ce1647a23666a930af18f45b77842",
+        "direct_pdf": "886c184cd2df911b4bcc7f3e7c889313a800f8fd6e5cecdf36d84d9c352341ed",
+        "svg_pdf": "652d545c1437ae707030d8c4f110aa2b9e86f15d480f47d43e8cb85b8af848c9"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 398,
+        "absolute_sum": 398,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 398,
+        "absolute_sum": 398,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "ff44aaee_saved-glv4-size-8_top_1_purple": {
+      "sha256": {
+        "rgba": "b2aa25cb840dd15f4655fa4f93545f9f4ca800e1d77cff5cb9b3c7874f4bb0c8",
+        "png": "005ca1c7218c8c3ad4bea8adccd31a9fabc2048491309cef07246f144c274a74",
+        "svg": "72155500537156e5f248a8a345e810c7f25e5831fadca932a4892458905c8d6a",
+        "direct_pdf": "c1858edc7b6dbe13aad631c58f6e46ad410ff1d6b23b3ef7db130c42c3401f35",
+        "svg_pdf": "d767e7574d7ad2680c9431f329c5e51a58b52fd826a03eb47f9dd3740289f682"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 63,
+        "absolute_sum": 63,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 63,
+        "absolute_sum": 63,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "ff44aaee_saved-glv4-size-8_top_2_clear": {
+      "sha256": {
+        "rgba": "2afc66990d6dc69d081056e061a330acda5c58275ba632a3f15f35aba053c27d",
+        "png": "96ee37fdaeecf958e7cfc10009dbac001147b54a58750226da222a7acc36c096",
+        "svg": "0191c23f079d9f6c37fad62c214e396e449ae2a76e0e2b2204283628a02faa98",
+        "direct_pdf": "532b1679036537f9c2a6f1f9dfd59cfb2ce62b72e38705d645c98211efe3892a",
+        "svg_pdf": "4f3e09c46f6e84dd3e1f3f6070b19df6b9b1a64a7adc19a7bacf6039cb316d40"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 1588,
+        "absolute_sum": 1588,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 1588,
+        "absolute_sum": 1588,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "ff44aaee_saved-glv4-size-8_top_2_purple": {
+      "sha256": {
+        "rgba": "14a22e383aeb26f8e5b4517ca47d1bc91bd7ad1b332f244bb16c55fe4ed9ed4a",
+        "png": "042f4ef4b8e490ea992b1176c8bfcc4f7b592b329f35e679f5203e2dad00c01a",
+        "svg": "6ea177a36220e9a9c080299efc618001a00f3962d57caf6202991530afca9061",
+        "direct_pdf": "f4dde50492d1be6aaa38a0106cf03daf7635ff42867d3189d61a8e13dadfc2d1",
+        "svg_pdf": "c970f7e6af3d86d6314c94b6dfa774f2e050e72e31e94d80e5e91f61e691f61a"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 258,
+        "absolute_sum": 258,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 258,
+        "absolute_sum": 258,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "ff44aaee_saved-glv4-size-8_bottom_1_clear": {
+      "sha256": {
+        "rgba": "af3a43abde58d18842f3ac451181e76397f0ffad647ac6e91968789f0d4baa13",
+        "png": "3df20d443ed6031cbad836c2eda973d31e5076b8dbcc4f2e8318eda74c0e3634",
+        "svg": "7bd5e3f2ecfb42474cba6ad3e9a1600662bdd7d8203669b00044484c038845b9",
+        "direct_pdf": "e8d0713cbee2425c96d3a8de3bf50c7bc9a8d46cef7e536c14d5fd3a97ec9e94",
+        "svg_pdf": "316b9f8bd885a6bfefd5d3bbcfbd72a7cff336640f3aef42540fa11e2370d6f9"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 398,
+        "absolute_sum": 398,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 398,
+        "absolute_sum": 398,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "ff44aaee_saved-glv4-size-8_bottom_1_purple": {
+      "sha256": {
+        "rgba": "84e6aa9e633468322bb863e2c52fab28f891ab76388e0dcb42be6bb5178327d7",
+        "png": "47f8caf9464926dd5048f5379ad70a8f60e12f3bcd673e9094251dc8478253ba",
+        "svg": "ccdc92cdb8d17302d011be1772beb69745afcd88947d846c26f65a938e7cdf2f",
+        "direct_pdf": "5e3ac9cde1021d2a56aef1ba50ce4a58be625a88a11b9ca4c0f9b12aa8bb413a",
+        "svg_pdf": "5c1f0e9c89394a7a3aa98c288e580ed5b507c1008f335867e64e297e3ca6494f"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 63,
+        "absolute_sum": 63,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 63,
+        "absolute_sum": 63,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "ff44aaee_saved-glv4-size-8_bottom_2_clear": {
+      "sha256": {
+        "rgba": "f82c2cd28e12533df478a153a6a7e085cfabc5e797097c7040dddcfb33c4e3f3",
+        "png": "54c6a5277a33c304967666372735d9e5f8a7b8826172f30282f437bcb9ce6e85",
+        "svg": "238b970f758b820ede0785834c045fff93d44d31c14466b32ff89bf8089b6182",
+        "direct_pdf": "5774b8a7c5ab78e96502b3e2ac980e51a58ea2ce368444e4cc1e1181ed167749",
+        "svg_pdf": "095977dcfc28d704563c67abeb743243e9797f2531f7860eaa8e777654a8e740"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 1588,
+        "absolute_sum": 1588,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 1588,
+        "absolute_sum": 1588,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "ff44aaee_saved-glv4-size-8_bottom_2_purple": {
+      "sha256": {
+        "rgba": "d5771b354a3a39221a8cfd878c60ae9d5ba4310aa61d11f40266d9b12efdf5ec",
+        "png": "8c1ca267f7bfd5896ac17dce77c97c2a8c78d8d2d52129b2949c8ad613136c1f",
+        "svg": "059550c8b285bfb8bb506201a7191ede544984810bd2aa2eadaa9d995e9ab488",
+        "direct_pdf": "6b871d147da610ff010508958866222845328cc30e84a5467cdddf918c3e7684",
+        "svg_pdf": "e00599f7e10a3e40d739cfea728af8c38493948b885eaed35308d1562e7c95ee"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 258,
+        "absolute_sum": 258,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 258,
+        "absolute_sum": 258,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "0044aaee_saved-glv4-size-8_top_1_clear": {
+      "sha256": {
+        "rgba": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "png": "b83790df8b85f4d85a09c7ede2848c3193984e75ceed3ff3e30549f74d5054d4",
+        "svg": "30774d0f808cf4885e011871d2854308be8a905bae5941d5c674bf833a8b2a09",
+        "direct_pdf": "f61a43a3136e70bc62d86da330cd77cdc5742859d982e9e2eee3fc70dd92ccb1",
+        "svg_pdf": "3defbe0e7fc1eac39b6a1fd7eacc8e5fd23ece01838e6f91081f8e00d35e0c69"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "0044aaee_saved-glv4-size-8_top_1_purple": {
+      "sha256": {
+        "rgba": "adfeb95af82709a4b8b5cfa685831c86b290df3de24bf9da0a3ac9721ba4aa2d",
+        "png": "5a6b968ef384d5d178d35f905f8dad41f95680c4d37db44e8a47821ff3435861",
+        "svg": "58b3e2f782a2e9e674e95af02c542018caca7a36d9b6f93f4275a3f25b630909",
+        "direct_pdf": "0ad9464265924e98b98f6c741a1acd9c9e0b91c6ce0a511831475110110bc865",
+        "svg_pdf": "9a230110cfcd845eb6fcc0366a31600377008d260653abdcd975824f056a36a2"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "0044aaee_saved-glv4-size-8_top_2_clear": {
+      "sha256": {
+        "rgba": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "png": "b83790df8b85f4d85a09c7ede2848c3193984e75ceed3ff3e30549f74d5054d4",
+        "svg": "30774d0f808cf4885e011871d2854308be8a905bae5941d5c674bf833a8b2a09",
+        "direct_pdf": "f61a43a3136e70bc62d86da330cd77cdc5742859d982e9e2eee3fc70dd92ccb1",
+        "svg_pdf": "3defbe0e7fc1eac39b6a1fd7eacc8e5fd23ece01838e6f91081f8e00d35e0c69"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "0044aaee_saved-glv4-size-8_top_2_purple": {
+      "sha256": {
+        "rgba": "adfeb95af82709a4b8b5cfa685831c86b290df3de24bf9da0a3ac9721ba4aa2d",
+        "png": "5a6b968ef384d5d178d35f905f8dad41f95680c4d37db44e8a47821ff3435861",
+        "svg": "58b3e2f782a2e9e674e95af02c542018caca7a36d9b6f93f4275a3f25b630909",
+        "direct_pdf": "0ad9464265924e98b98f6c741a1acd9c9e0b91c6ce0a511831475110110bc865",
+        "svg_pdf": "9a230110cfcd845eb6fcc0366a31600377008d260653abdcd975824f056a36a2"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "0044aaee_saved-glv4-size-8_bottom_1_clear": {
+      "sha256": {
+        "rgba": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "png": "b83790df8b85f4d85a09c7ede2848c3193984e75ceed3ff3e30549f74d5054d4",
+        "svg": "30774d0f808cf4885e011871d2854308be8a905bae5941d5c674bf833a8b2a09",
+        "direct_pdf": "f61a43a3136e70bc62d86da330cd77cdc5742859d982e9e2eee3fc70dd92ccb1",
+        "svg_pdf": "3defbe0e7fc1eac39b6a1fd7eacc8e5fd23ece01838e6f91081f8e00d35e0c69"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "0044aaee_saved-glv4-size-8_bottom_1_purple": {
+      "sha256": {
+        "rgba": "adfeb95af82709a4b8b5cfa685831c86b290df3de24bf9da0a3ac9721ba4aa2d",
+        "png": "5a6b968ef384d5d178d35f905f8dad41f95680c4d37db44e8a47821ff3435861",
+        "svg": "58b3e2f782a2e9e674e95af02c542018caca7a36d9b6f93f4275a3f25b630909",
+        "direct_pdf": "0ad9464265924e98b98f6c741a1acd9c9e0b91c6ce0a511831475110110bc865",
+        "svg_pdf": "9a230110cfcd845eb6fcc0366a31600377008d260653abdcd975824f056a36a2"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "0044aaee_saved-glv4-size-8_bottom_2_clear": {
+      "sha256": {
+        "rgba": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "png": "b83790df8b85f4d85a09c7ede2848c3193984e75ceed3ff3e30549f74d5054d4",
+        "svg": "30774d0f808cf4885e011871d2854308be8a905bae5941d5c674bf833a8b2a09",
+        "direct_pdf": "f61a43a3136e70bc62d86da330cd77cdc5742859d982e9e2eee3fc70dd92ccb1",
+        "svg_pdf": "3defbe0e7fc1eac39b6a1fd7eacc8e5fd23ece01838e6f91081f8e00d35e0c69"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "0044aaee_saved-glv4-size-8_bottom_2_purple": {
+      "sha256": {
+        "rgba": "adfeb95af82709a4b8b5cfa685831c86b290df3de24bf9da0a3ac9721ba4aa2d",
+        "png": "5a6b968ef384d5d178d35f905f8dad41f95680c4d37db44e8a47821ff3435861",
+        "svg": "58b3e2f782a2e9e674e95af02c542018caca7a36d9b6f93f4275a3f25b630909",
+        "direct_pdf": "0ad9464265924e98b98f6c741a1acd9c9e0b91c6ce0a511831475110110bc865",
+        "svg_pdf": "9a230110cfcd845eb6fcc0366a31600377008d260653abdcd975824f056a36a2"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "80c04020_saved-glv4-size-8_top_1_clear": {
+      "sha256": {
+        "rgba": "950c8cb12135d852298fe74ec2975f8a45697e16504c8f52047003db21e8738d",
+        "png": "92fff31e855bf8d3a941eaa93c1c1a8990eacaf42737c37b778afba7f5b6c6b6",
+        "svg": "259e17c61afbc2ca4acd6ea9d29efd85f0da7082c9f182b1e5ba0eb00b492d77",
+        "direct_pdf": "8a6e6d0cfb1564b92f4650be7c409d72a6541fc09568d420acf652a3d90b24a8",
+        "svg_pdf": "abc30cb2ccdcaae6d5af101a8d1b7fd9f5cafc78dd358bac8a301fbf85cbf5d2"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 412,
+        "absolute_sum": 412,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 412,
+        "absolute_sum": 412,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "80c04020_saved-glv4-size-8_top_1_purple": {
+      "sha256": {
+        "rgba": "e274aac0fcfa2baf9e3028e25963d3be2e16e4bdac9ae2555335324d62870966",
+        "png": "8244b394f7f56689b48c73cc474ab6febd60b6a875fdc1786b0bbcd6a0e856da",
+        "svg": "9a701f85467542399028be6dd6de8dbd062cf4ed87ff4fb7da8df35b5502a291",
+        "direct_pdf": "c042dd454fdd0daedc7577456fb1d7c477029e14f4f28a97582652161dc13c4f",
+        "svg_pdf": "ec69ed8a1f8764e270caed60ea0d7364424dd3c3dc895ac2d5030ecb0452db9f"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 41,
+        "absolute_sum": 41,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 41,
+        "absolute_sum": 41,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "80c04020_saved-glv4-size-8_top_2_clear": {
+      "sha256": {
+        "rgba": "c0011de31676905e31075d2c66809f0cd518668a348f4d2449ce57171cf8683e",
+        "png": "9060895e461cd528ab13b7701878587c78969af42c0bc664c2b767b33f8c7765",
+        "svg": "4e8ea018cf1bdb43411ef53b0ec260da4df747a352ba6978d1a11b6a1b5377a7",
+        "direct_pdf": "8c1474e65b5dc624e22e1d2afc6be1173c872337496b211750c3e58452128324",
+        "svg_pdf": "c6667d47c84bf174ee79e695caf996741676f7e9be2b19296b8bb0eb808cf488"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 1628,
+        "absolute_sum": 1628,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 1628,
+        "absolute_sum": 1628,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "80c04020_saved-glv4-size-8_top_2_purple": {
+      "sha256": {
+        "rgba": "0754708459ae56ad3ae333a7ff40ea77e1f8548806f006d668ae55d8875430c1",
+        "png": "37b886a23fc9383ba2e06f106d2319793b1d35855c7e2d5dad401c8a5dbc0922",
+        "svg": "5f129f709fb4096de3dd8b60583a8564d8d7cb96d4dc18c6a0dbff26897ea564",
+        "direct_pdf": "3e0179ccb9ee55b7fda005a14819cbd40723e867c214227d1e8fd1563edac15b",
+        "svg_pdf": "974b5fc2e29097972ba6d50e7462ff194b8189636bd51dbe31bb486cc145fea3"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 185,
+        "absolute_sum": 185,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 185,
+        "absolute_sum": 185,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "80c04020_saved-glv4-size-8_bottom_1_clear": {
+      "sha256": {
+        "rgba": "ad94cb283fd77758b96ca4cbfecbd7125c44343329a37bc23245cf4b3bd89443",
+        "png": "da084ffc040ff9a48f3c2921ccd4f506db32a95aa3d238999afaf79a0f670e49",
+        "svg": "31dad556ec35a118d1f523b8da2eee43207b201a0c7f84ceb781c8c9c02d3ae2",
+        "direct_pdf": "f94ad70af2c7fa0198ef237e8563f466837ceef1de9346e94aa7832de6f9c201",
+        "svg_pdf": "4c6291c8447e1484e21d8c98893ded36202a73d2f3e45f33884abb4b7247f7fe"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 412,
+        "absolute_sum": 412,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 412,
+        "absolute_sum": 412,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "80c04020_saved-glv4-size-8_bottom_1_purple": {
+      "sha256": {
+        "rgba": "65c27f2100619d65626e6e5f42e909552d2363a7af61632c047d286d2cdb723f",
+        "png": "155525bb31d6dfc073b0d2fbdbf549016328bd15cf0722d6914bb489ed2bc90e",
+        "svg": "c35e6d5170bb23fdea32642cfe1522d625d3dcd2bd0a73eb5c4eac6066c74b39",
+        "direct_pdf": "e091b74d2d42023aae102afe88d2d3f1e2a3b02ead22f6db78cf1930921d8a48",
+        "svg_pdf": "0ff6fc8f4ce5d255722faae062154e70c65c859f4ab025df891e26885d64a19d"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 41,
+        "absolute_sum": 41,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 41,
+        "absolute_sum": 41,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "80c04020_saved-glv4-size-8_bottom_2_clear": {
+      "sha256": {
+        "rgba": "a11986e01f79c2efd54dc5f639a86a499434418867f96001359a3b67eeb37361",
+        "png": "028489ebce935c7dafface9f40534656678857e17c26a089d86ec55b2ec2ee2a",
+        "svg": "3ce427b410f6a036915a29f2ada1b60374712e5a4b1c0100a3e9d09e2369df36",
+        "direct_pdf": "abd16ca9d2c8f4a471deb040d338dbc015cb38647865180d2827e8f4bfb156bc",
+        "svg_pdf": "4d5dc5e7e6975507078c5088a62b2adf7b28c648b31d3e49f61512b270e8a77e"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 1628,
+        "absolute_sum": 1628,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 1628,
+        "absolute_sum": 1628,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    },
+    "80c04020_saved-glv4-size-8_bottom_2_purple": {
+      "sha256": {
+        "rgba": "820720b4e7bdc714f654b59bfcd07935e0c40b3c523958710a7cf659cd135d3f",
+        "png": "e9fccde8485850df200f9007b893b99c7246ab20c9ff6909e526c49ddefcbc19",
+        "svg": "eb76e2b5a729f35aec33c49aa0ef5ac8379853cb2c2cd7ae07b685f789eba7cc",
+        "direct_pdf": "bc6dc6940ef65d751328f4ac6849030126a7cf36c765cb2fb307b111871ea1ff",
+        "svg_pdf": "566ccb858dd2363319427f649e4240d60bade9e8eec0fb28abc3ddf1134ffec2"
+      },
+      "direct_mupdf_vs_native_premultiplied": {
+        "different_channels": 185,
+        "absolute_sum": 185,
+        "maximum": 1
+      },
+      "direct_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      },
+      "svg_mupdf_vs_native_premultiplied": {
+        "different_channels": 185,
+        "absolute_sum": 185,
+        "maximum": 1
+      },
+      "svg_pdfium_vs_png_straight": {
+        "different_channels": 0,
+        "absolute_sum": 0,
+        "maximum": 0
+      }
+    }
+  }
+}

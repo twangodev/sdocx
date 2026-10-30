@@ -11,9 +11,9 @@ of 4,096 input points and 65,536 samples; canvas work is budgeted after sampling
 
 The retained native receipts cover 856 source/context/backdrop frames, including
 both origins, 1x/2x projection, alpha, depth filtering and display scale. The 288
-opaque frames match PNG and SVG/direct PDF through MuPDF and PDFium. Translucent
-PDF carriers, default document dispatch, native cached drawing state, mixed-tool
-pages, Android RNG/device behavior and saved-note context are outside this claim.
+opaque frames match PNG and SVG/direct PDF through MuPDF and PDFium. Default document dispatch, native cached drawing state, mixed-tool pages,
+Android RNG/device behavior and saved-note context are outside this claim.
+Transparent export controls are measured separately below.
 
 Validation from the repository root (Pillow, PyMuPDF and pypdfium2 required):
 
@@ -35,3 +35,30 @@ and pinned helper scripts under `tmp/vector-parity-plan` and `scratch`; these
 external dependencies are not included in this commit. Rust replay and export
 validation need only the checked-in receipts. Generated PNG/PDF/RGBA exports can
 be removed after comparison.
+
+The measurement environment needs existing Pillow, PyMuPDF and pypdfium2;
+reuse their installed environment or expose an existing package directory through
+`PYTHONPATH` rather than installing another harness.
+
+Generate and measure the transparent artifacts in a fresh directory. The
+receipt path must not already exist:
+
+```sh
+artifact_dir=$(mktemp -d /tmp/sdocx-colored-transparent-XXXXXX)
+SDOCX_COLORED_PENCIL_ARTIFACTS="$artifact_dir" \
+  cargo test -p sdocx --all-features --test colored_pencil_raster \
+  public_source_to_pixels_matches_all_native_backdrops_and_projection_controls
+python3 tools/colored_pencil/transparent_export_compare.py \
+  --artifacts "$artifact_dir" --output "$artifact_dir/receipt.json"
+```
+
+Use the shared Cargo environment above. This checks the 64 clear and
+translucent-prior native frames in the base capture.
+The [receipt](../../conformance/colored-pencil-transparent-export.json) verifies
+the native frame hash and the PNG straight-alpha conversion, and checks that SVG
+embeds the same PNG. Both direct and SVG-page PDFs match that PNG in PDFium.
+It records hashes of each measured artifact and selected source inputs; these
+source hashes are not complete build provenance.
+MuPDF returns premultiplied samples: 56 frames differ from the original native
+premultiplied bytes, by at most one channel value. This measures intrinsic-size
+transport of synthetic host frames, not saved-note or device fidelity.

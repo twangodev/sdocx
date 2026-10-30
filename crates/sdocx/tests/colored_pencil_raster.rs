@@ -184,9 +184,6 @@ fn artifacts(name: &str, canvas: &InkRasterCanvas, stroke: &Stroke) {
             .collect::<Vec<_>>(),
     )
     .unwrap();
-    if canvas.pixels().iter().any(|pixel| pixel[3] != 255) {
-        return;
-    }
     std::fs::write(path.join(format!("{name}.png")), canvas.to_png().unwrap()).unwrap();
     let page = canvas.rendered_page(0).unwrap();
     std::fs::write(path.join(format!("{name}.svg")), &page.svg).unwrap();
