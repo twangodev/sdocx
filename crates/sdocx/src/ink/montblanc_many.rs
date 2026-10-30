@@ -27,7 +27,7 @@ impl Curve {
 
 pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     let n = input.points.len();
-    if !(6..=14).contains(&n) {
+    if !(6..=20).contains(&n) {
         return Err(Error::PointCount);
     }
     if input.pressure.len() != n {
@@ -440,6 +440,14 @@ fn long_independent_native_stream() {
         "../../../../tools/montblanc/long-sizes/streams.json"
     ))
     .unwrap();
+    let double_sizes: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/montblanc/long-2x-sizes/streams.json"
+    ))
+    .unwrap();
+    let fresh: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/montblanc/long-fresh/streams.json"
+    ))
+    .unwrap();
     for case in receipt["cases"]
         .as_object()
         .unwrap()
@@ -448,6 +456,8 @@ fn long_independent_native_stream() {
         .chain(holdout.as_object().unwrap().values())
         .chain(double.as_object().unwrap().values())
         .chain(sizes.as_object().unwrap().values())
+        .chain(fresh.as_object().unwrap().values())
+        .chain(double_sizes.as_object().unwrap().values())
     {
         let number = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
         let points: Vec<[f32; 2]> = case["input"]["points"]
