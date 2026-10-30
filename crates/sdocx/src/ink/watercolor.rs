@@ -1,15 +1,15 @@
-//! Test-only saved WaterColorBrush RT dab sampler.
-//!
-//! This follows the confirmed single-ObjectStroke Drawing route through native
-//! SmPath sampling and RTV1 AddPoint records. It does not produce the GL tip
-//! bitmap or production paint. A separate test reconstructs one captured paint
-//! profile through generated SVG. Both stay within their fixture's context.
+//! Saved WaterColorBrush dab sampling for an explicit captured host profile.
+//! Source-screen dimensions and output canvas dimensions are separate inputs.
 
 use super::path::{P, Quad};
 use crate::Point;
 
-#[cfg(feature = "render")]
+#[cfg(all(test, feature = "serde"))]
 mod paint;
+pub(crate) mod raster;
+mod shader;
+mod source;
+pub(crate) use source::prepare_stroke;
 
 const MAX_INPUT_POINTS: usize = 4096;
 const MAX_OUTPUT_DABS: usize = 65_536;
@@ -110,10 +110,12 @@ enum MathProfile {
     GlibcSincosfFma,
     /// V22 capture callback: Python `math.sin` and `math.cos` on the exact f32
     /// input promoted to f64, each result independently rounded back to f32.
+    #[cfg(test)]
     CapturePythonDoubleSinCos,
 }
 
 impl DrawableVersion {
+    #[cfg(test)]
     fn from_observed_class(name: &str) -> Option<Self> {
         match name {
             "WaterColorBrushStrokeDrawableGLV1" => Some(Self::V1),
@@ -239,6 +241,9 @@ fn sample_saved_stroke_with_math(
         // midpoint), then the repository's source-matched SmPath subdivision.
         let curve = Quad::new(smooth, previous, midpoint);
         let length = curve.length;
+        if length == 0. {
+            return Err("empty measured WaterColor curve");
+        }
         if !length.is_finite() || !spacing.is_finite() || spacing <= 0.0 {
             return Err("invalid curve length or dab spacing");
         }
@@ -270,11 +275,13 @@ fn sample_saved_stroke_with_math(
             let p = curve.at(distance);
             let (sin, cos) = match math_profile {
                 MathProfile::GlibcSincosfFma => host_math::sincosf_bounded(phase),
+                #[cfg(test)]
                 MathProfile::CapturePythonDoubleSinCos
                     if phase.is_finite() && (0.0..=TAU).contains(&phase) =>
                 {
                     Some(((phase as f64).sin() as f32, (phase as f64).cos() as f32))
                 }
+                #[cfg(test)]
                 MathProfile::CapturePythonDoubleSinCos => None,
             }
             .ok_or("phase outside the selected captured host math profile")?;

@@ -31,6 +31,10 @@ mod fountain;
 mod geometry;
 mod gradient;
 mod image_crop;
+#[cfg(feature = "pdf")]
+mod ink_canvas;
+#[cfg(feature = "pdf")]
+pub(crate) use ink_canvas::raster_scene as raster_canvas_scene;
 mod inkpen2_vector;
 #[cfg(all(test, feature = "pdf"))]
 mod legacy_marker_alpha_tests;

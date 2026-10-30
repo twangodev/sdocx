@@ -1,0 +1,195 @@
+{
+  "schema": "sdocx-watercolor-host-pipeline-v1",
+  "capture": {
+    "script": "tools/watercolor_host/ir_capture.py",
+    "script_sha256": "b881ec3ebbb7f26f2182f1ea258553a0516a03facd2e29a110a8e2e622a7e69f",
+    "frame_helper_sha256": "d87055488b895e4ee6dce35ca06f615f69c04a2d2f1cf28d3b7ad9786618ffd8",
+    "stderr_sha256": "cc444da9a28d8256821bc78d70e3da6d9cc7781263595dcdd33ee8b1861d8253",
+    "stderr_bytes": 2128984,
+    "environment": {
+      "GALLIVM_DEBUG": "ir,asm",
+      "MESA_SHADER_CACHE_DISABLE": "true"
+    }
+  },
+  "native": {
+    "mask_sha256": "9bcb71e5a3a0b91ab27eccf750d22f686f1210dcafa705b71071446387789f88",
+    "final_sha256": "5f25ade248a9c2277a39928072e993ab80a5e09c285a3518e36191616b2ba245",
+    "gles": {
+      "egl_version": "1.5",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "shading_language": "OpenGL ES GLSL ES 3.20",
+      "vendor": "Mesa",
+      "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+    },
+    "libraries": {
+      "airbrushpen_sha256": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "base_sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "fountainpen_sha256": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "graphics_sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "host_libc_sha256": "9792e3cbb541c8f44c7acf5f14f4022ea62998ecc787d326bed4d8b6547dfd92",
+      "host_libm_sha256": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+      "libcxx_shared_sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+      "pencommon_sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "renderer_sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "watercolor_sha256": "ae17e7e63abdc0f5bac9ef4d78676d096779f3586f41c88b029dacfa157020ea"
+    }
+  },
+  "redraw_contract": {
+    "libraries_sha256": {
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "WaterColorBrush": "ae17e7e63abdc0f5bac9ef4d78676d096779f3586f41c88b029dacfa157020ea"
+    },
+    "blocks": {
+      "PenCommon": {
+        "rva": "0x4a4a4",
+        "bytes_hex": "01640039c0035fd6",
+        "claim": "SetRedrawState(bool) stores w1 at this+25, then returns."
+      },
+      "WaterColorBrush": {
+        "rva": "0x65c18",
+        "bytes_hex": "0864403928010035280040f900e4002f01e4002f02e4002f03e4002fe00301aa081d40f900013fd6",
+        "claim": "drawComposite loads this+25; nonzero skips the supplied target ClearColor virtual call with four zero float arguments."
+      }
+    },
+    "scope": "Ordinary ELF byte reads and native public-API state controls, not REA decompilation. The older first-use-clear interpretation is replaced by the named redraw-state gate."
+  },
+  "excerpts": {
+    "mask_fragment_nir": {
+      "first_line": 18318,
+      "lines": [
+        "shader: MESA_SHADER_FRAGMENT",
+        "source_blake3: {0x8def6e3a, 0x62fa660d, 0xdd83889d, 0x40d82b0d, 0x5f088683, 0xde7c1eb4, 0xcd424beb, 0x6d8338ee}",
+        "name: GLSL3",
+        "next_stage: MESA_SHADER_FRAGMENT",
+        "num_textures: 1",
+        "inputs_read: 32",
+        "outputs_written: 4",
+        "textures_used: 0x00000000'00000000'00000000'00000001",
+        "samplers_used: 0x00000001",
+        "subgroup_size: 1",
+        "bit_sizes_float: 0x30",
+        "bit_sizes_int: 0x20",
+        "first_ubo_is_default_ubo: true",
+        "flrp_lowered: true",
+        "needs_quad_helper_invocations: true",
+        "inputs: 1",
+        "outputs: 1",
+        "decl_var uniform INTERP_MODE_NONE none lowp sampler2D uPatternTexture (1, 0, 0)",
+        "decl_var shader_in INTERP_MODE_SMOOTH none mediump vec3 VARYING_SLOT_VAR0 (VARYING_SLOT_VAR0.xyz, 0, 0)",
+        "decl_var shader_out INTERP_MODE_NONE none mediump vec4 FragColor (FRAG_RESULT_DATA0.xyzw, 0, 0)",
+        "decl_function main () (entrypoint)",
+        "",
+        "impl main {",
+        "    block b0:   // preds:",
+        "    32     %0 = load_const (0x00000000 = 0.000000)",
+        "    32     %1 = deref_var &VARYING_SLOT_VAR0 (shader_in vec3)",
+        "    32x3   %2 = @load_deref (%1) (access=none)",
+        "    32x2   %3 = vec2 %2.y, %2.z",
+        "    16x4   %4 = (float16)tex %3 (coord), 0 (texture), 0 (sampler)",
+        "    16     %5 = f2f16 %2.x",
+        "    16     %6 = fmul %4.y, %5",
+        "    32     %7 = f2f32 %4.x",
+        "    32     %8 = f2f32 %6",
+        "    32     %9 = load_const (0x3f800000 = 1.000000)",
+        "    32x4  %10 = vec4 %7, %8, %0 (0x0), %9 (0x3f800000)",
+        "    32    %11 = deref_var &FragColor (shader_out vec4)",
+        "                @store_deref (%11, %10) (wrmask=xyzw, access=none)",
+        "                // succs: b1",
+        "    block b1:",
+        "}",
+        ""
+      ]
+    },
+    "mask_interpolation_llvm": {
+      "first_line": 18523,
+      "lines": [
+        "  %109 = fadd <8 x float> %104, %108",
+        "  %110 = insertelement <8 x float> undef, float %19, i32 0",
+        "  %111 = shufflevector <8 x float> %110, <8 x float> undef, <8 x i32> zeroinitializer",
+        "  %112 = fadd <8 x float> %106, %111",
+        "  %113 = shufflevector <4 x float> %31, <4 x float> undef, <8 x i32> zeroinitializer",
+        "  %114 = shufflevector <4 x float> %33, <4 x float> undef, <8 x i32> zeroinitializer",
+        "  %115 = shufflevector <4 x float> %35, <4 x float> undef, <8 x i32> zeroinitializer",
+        "  %116 = call <8 x float> @llvm.fmuladd.v8f32(<8 x float> %113, <8 x float> %109, <8 x float> %115) #3",
+        "  %117 = call <8 x float> @llvm.fmuladd.v8f32(<8 x float> %114, <8 x float> %112, <8 x float> %116) #3",
+        "  %118 = fdiv <8 x float> <float 1.000000e+00, float 1.000000e+00, float 1.000000e+00, float 1.000000e+00, float 1.000000e+00, float 1.000000e+00, float 1.000000e+00, float 1.000000e+00>, %102",
+        "  %119 = fmul <8 x float> %117, %118",
+        "  %120 = shufflevector <4 x float> %31, <4 x float> undef, <8 x i32> <i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1>",
+        "  %121 = shufflevector <4 x float> %33, <4 x float> undef, <8 x i32> <i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1>",
+        "  %122 = shufflevector <4 x float> %35, <4 x float> undef, <8 x i32> <i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1>",
+        "  %123 = call <8 x float> @llvm.fmuladd.v8f32(<8 x float> %120, <8 x float> %109, <8 x float> %122) #3",
+        "  %124 = call <8 x float> @llvm.fmuladd.v8f32(<8 x float> %121, <8 x float> %112, <8 x float> %123) #3",
+        "  %125 = fmul <8 x float> %124, %118",
+        "  %126 = shufflevector <4 x float> %31, <4 x float> undef, <8 x i32> <i32 2, i32 2, i32 2, i32 2, i32 2, i32 2, i32 2, i32 2>",
+        "  %127 = shufflevector <4 x float> %33, <4 x float> undef, <8 x i32> <i32 2, i32 2, i32 2, i32 2, i32 2, i32 2, i32 2, i32 2>",
+        "  %128 = shufflevector <4 x float> %35, <4 x float> undef, <8 x i32> <i32 2, i32 2, i32 2, i32 2, i32 2, i32 2, i32 2, i32 2>",
+        "  %129 = call <8 x float> @llvm.fmuladd.v8f32(<8 x float> %126, <8 x float> %109, <8 x float> %128) #3",
+        "  %130 = call <8 x float> @llvm.fmuladd.v8f32(<8 x float> %127, <8 x float> %112, <8 x float> %129) #3",
+        "  %131 = fmul <8 x float> %130, %118"
+      ]
+    },
+    "setup_coefficients": {
+      "first_line": 19147,
+      "lines": [
+        "define void @setup_variant_0(ptr noalias %0, ptr noalias %1, ptr noalias %2, i32 %3, ptr noalias %4, ptr noalias %5, ptr noalias %6, ptr noalias %7) {",
+        "entry:",
+        "  %8 = getelementptr <4 x float>, ptr %0, i32 0",
+        "  %v0a = load <4 x float>, ptr %8, align 16",
+        "  %9 = getelementptr <4 x float>, ptr %1, i32 0",
+        "  %v1a = load <4 x float>, ptr %9, align 16",
+        "  %10 = getelementptr <4 x float>, ptr %2, i32 0",
+        "  %v2a = load <4 x float>, ptr %10, align 16",
+        "  %xy0_center = fsub <4 x float> %v0a, <float 5.000000e-01, float 5.000000e-01, float 5.000000e-01, float 5.000000e-01>",
+        "  %dxy01 = fsub <4 x float> %v0a, %v1a",
+        "  %dxy20 = fsub <4 x float> %v2a, %v0a",
+        "  %11 = shufflevector <4 x float> %dxy20, <4 x float> %dxy20, <4 x i32> <i32 1, i32 0, i32 poison, i32 poison>",
+        "  %ef = fmul <4 x float> %dxy01, %11",
+        "  %12 = extractelement <4 x float> %ef, i32 0",
+        "  %13 = extractelement <4 x float> %ef, i32 1",
+        "  %14 = fsub float %12, %13",
+        "  %ooa = fdiv float 1.000000e+00, %14",
+        "  %15 = insertelement <4 x float> undef, float %ooa, i32 0",
+        "  %16 = shufflevector <4 x float> %15, <4 x float> undef, <4 x i32> zeroinitializer",
+        "  %17 = fmul <4 x float> %dxy20, %16",
+        "  %18 = fmul <4 x float> %dxy01, %16",
+        "  %19 = shufflevector <4 x float> %17, <4 x float> undef, <4 x i32> <i32 1, i32 1, i32 1, i32 1>",
+        "  %20 = shufflevector <4 x float> %18, <4 x float> undef, <4 x i32> <i32 1, i32 1, i32 1, i32 1>",
+        "  %21 = shufflevector <4 x float> %17, <4 x float> undef, <4 x i32> zeroinitializer",
+        "  %22 = shufflevector <4 x float> %18, <4 x float> undef, <4 x i32> zeroinitializer",
+        "  %23 = shufflevector <4 x float> %xy0_center, <4 x float> undef, <4 x i32> zeroinitializer",
+        "  %24 = shufflevector <4 x float> %xy0_center, <4 x float> undef, <4 x i32> <i32 1, i32 1, i32 1, i32 1>",
+        "  %da01 = fsub <4 x float> %v0a, %v1a",
+        "  %da20 = fsub <4 x float> %v2a, %v0a",
+        "  %da01_dy20_ooa = fmul <4 x float> %da01, %19",
+        "  %da20_dy01_ooa = fmul <4 x float> %da20, %20",
+        "  %dadx = fsub <4 x float> %da01_dy20_ooa, %da20_dy01_ooa",
+        "  %da01_dx20_ooa = fmul <4 x float> %da01, %21",
+        "  %da20_dx01_ooa = fmul <4 x float> %da20, %22",
+        "  %dady = fsub <4 x float> %da20_dx01_ooa, %da01_dx20_ooa",
+        "  %dadx_x0 = fmul <4 x float> %dadx, %23",
+        "  %dady_y0 = fmul <4 x float> %dady, %24",
+        "  %attr_v0 = fadd <4 x float> %dadx_x0, %dady_y0",
+        "  %attr_0 = fsub <4 x float> %v0a, %attr_v0",
+        "  %25 = insertelement <4 x float> %attr_0, float 0.000000e+00, i32 0",
+        "  %26 = getelementptr <4 x float>, ptr %4, i32 0",
+        "  store <4 x float> %25, ptr %26, align 16",
+        "  %27 = getelementptr <4 x float>, ptr %5, i32 0",
+        "  store <4 x float> %dadx, ptr %27, align 16",
+        "  %28 = getelementptr <4 x float>, ptr %6, i32 0",
+        "  store <4 x float> %dady, ptr %28, align 16"
+      ]
+    },
+    "nearest_sampling_llvm": {
+      "first_line": 18596,
+      "lines": [
+        "  %173 = fmul <8 x float> %143, %171",
+        "  %174 = fmul <8 x float> %144, %172",
+        "  %175 = call <8 x float> @llvm.floor.v8f32(<8 x float> %173) #3",
+        "  %ifloor.res = fptosi <8 x float> %175 to <8 x i32>",
+        "  %176 = call <8 x float> @llvm.floor.v8f32(<8 x float> %174) #3",
+        "  %ifloor.res9 = fptosi <8 x float> %176 to <8 x i32>"
+      ]
+    }
+  },
+  "scope": "Unchanged native shaders and fresh redraw=true native RTV1 Draw; explicit Mesa/glibc host boundary. Retains active plane setup, ordered FMA interpolation and floor/clamp nearest sampling. Not Android GPU or saved-page selection evidence."
+}

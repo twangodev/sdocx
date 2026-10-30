@@ -11,9 +11,8 @@ pub(crate) mod chinesebrush_glv123;
 mod colored_pencil;
 #[cfg(test)]
 mod crayon2;
-#[cfg(test)]
+mod host_half;
 mod host_raster;
-#[cfg(test)]
 mod host_rgba8;
 pub(crate) mod montblanc;
 #[cfg(all(test, feature = "serde"))]
@@ -23,8 +22,7 @@ mod pencil2;
 pub(crate) mod simplebrush;
 #[cfg(test)]
 mod smudge;
-#[cfg(all(test, feature = "serde"))]
-mod watercolor;
+pub(crate) mod watercolor;
 
 #[cfg(test)]
 pub(crate) fn calligraphy_saved_native_mesh_for_test() -> Option<[Vec<[f32; 4]>; 3]> {

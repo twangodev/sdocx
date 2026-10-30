@@ -1,10 +1,13 @@
 //! Saved WaterColor stroke -> native six-lane dabs -> generated SVG -> resvg frame.
 //! RNE is a named, V13-captured host position profile; this is not universal GLSL behavior.
+use super::shader::{half_add, half_mul, half_rne, input_color, source_shader_rgba};
 use super::{
     DrawableVersion, MathProfile, NEG_TAU, PHASE_STEP, SavedStrokeInput, TAU, host_math,
     sample_saved_stroke, sample_saved_stroke_with_math,
 };
 use crate::Point;
+use crate::ink::host_raster::linear_coeff as mesa_linear_coeff;
+use crate::ink::host_rgba8::sample_unorm8_half_rtz;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -22,16 +25,6 @@ const DENSE_STREAM_SHA256: &str =
 
 // PenCommon SetPenData normalizes ARGB; WaterColor getColor applies this FMA
 // before passing alpha to the shader. This is separate from mask blending.
-fn input_color(argb: u32) -> [f32; 4] {
-    let lane = |shift: u32| ((argb >> shift) & 0xff_u32) as f32 / 255.0;
-    [
-        lane(16),
-        lane(8),
-        lane(0),
-        lane(24).mul_add(f32::from_bits(0x3f66_6666), f32::from_bits(0x3dcc_cccd)),
-    ]
-}
-
 #[derive(Clone, Copy)]
 struct Vertex {
     x: f64,
@@ -41,91 +34,6 @@ struct Vertex {
 }
 fn sha256(b: &[u8]) -> String {
     format!("{:x}", Sha256::digest(b))
-}
-fn round_shift_even(v: u32, s: u32) -> u32 {
-    if s == 0 {
-        return v;
-    }
-    if s >= 32 {
-        return 0;
-    }
-    let b = v >> s;
-    let r = v & ((1 << s) - 1);
-    let h = 1 << (s - 1);
-    b + u32::from(r > h || (r == h && b & 1 != 0))
-}
-fn f32_to_f16_rne(x: f32) -> u16 {
-    let b = x.to_bits();
-    let sign = ((b >> 16) & 0x8000) as u16;
-    let e = ((b >> 23) & 255) as i32;
-    let f = b & 0x7fffff;
-    if e == 255 {
-        return sign | if f == 0 { 0x7c00 } else { 0x7e00 };
-    }
-    if e == 0 {
-        return sign;
-    }
-    let e = e - 127;
-    let sig = 0x800000 | f;
-    if e > 15 {
-        return sign | 0x7c00;
-    }
-    if e >= -14 {
-        let mut r = round_shift_even(sig, 13);
-        let mut he = e + 15;
-        if r == 0x800 {
-            r = 0x400;
-            he += 1
-        }
-        if he >= 31 {
-            return sign | 0x7c00;
-        }
-        return sign | ((he as u16) << 10) | (r as u16 & 0x3ff);
-    }
-    if e < -25 {
-        return sign;
-    }
-    sign | round_shift_even(sig, (-e - 1) as u32) as u16
-}
-fn half_rne(x: f32) -> f32 {
-    f16_to_f32(f32_to_f16_rne(x))
-}
-
-fn sample_unorm8_half_rtz(byte: u8) -> f32 {
-    // Captured Mesa sampler: normalize in F32, narrow toward zero, then widen.
-    let normalized = f32::from(byte) * f32::from_bits(0x3b80_8081);
-    let mut bits = f32_to_f16_rne(normalized);
-    if f16_to_f32(bits) > normalized {
-        bits -= 1;
-    }
-    f16_to_f32(bits)
-}
-fn f16_to_f32(b: u16) -> f32 {
-    let s = ((b & 0x8000) as u32) << 16;
-    let e = ((b >> 10) & 31) as i32;
-    let f = (b & 1023) as u32;
-    let bits = match e {
-        0 if f == 0 => s,
-        0 => {
-            let mut m = f;
-            let mut q = -14;
-            while m & 0x400 == 0 {
-                m <<= 1;
-                q -= 1
-            }
-            m &= 1023;
-            s | (((q + 127) as u32) << 23) | (m << 13)
-        }
-        31 => s | 0x7f800000 | (f << 13),
-        _ => s | (((e - 15 + 127) as u32) << 23) | (f << 13),
-    };
-    f32::from_bits(bits)
-}
-fn half_mul(a: f32, b: f32) -> f32 {
-    half_rne(a * b)
-}
-fn half_add(a: f32, b: f32) -> f32 {
-    half_rne(a + b)
 }
 fn vertices(r: [f32; 6]) -> [Vertex; 4] {
     let [x, y, lane2, lane3, radius, _] = r;
@@ -176,84 +84,13 @@ fn vertices(r: [f32; 6]) -> [Vertex; 4] {
 /// widens `gl_Position`; mirror its multiply/add ordering before viewport map.
 /// The historical `vertices` helper above models the older centered profile.
 fn vertices_with_projection(r: [f32; 6], matrix: [f32; 16]) -> [Vertex; 4] {
-    let [x, y, lane2, lane3, radius, _] = r;
-    let (x, y, lane2, lane3, radius) = (
-        half_rne(x),
-        half_rne(y),
-        half_rne(lane2),
-        half_rne(lane3),
-        half_rne(radius),
-    );
-    let rect = [
-        (-1.0f32, -1.0f32, 0.0f32, 1.0f32),
-        (-1.0, 1.0, 0.0, 0.0),
-        (1.0, -1.0, 1.0, 1.0),
-        (1.0, 1.0, 1.0, 0.0),
-    ];
-    rect.map(|(rx, ry, u, v)| {
-        let lx = half_mul(half_rne(rx), radius);
-        let ly = half_mul(half_rne(ry), radius);
-        let xx = half_mul(lane3, lx);
-        let xy = half_mul(lane2, lx);
-        let yx = half_mul(lane2, ly);
-        let yy = half_mul(lane3, ly);
-        let mx = half_add(half_add(xx, x), half_rne(-yx));
-        let my = half_add(half_add(xy, y), yy);
-
-        // Captured Mesa NIR source BLAKE3
-        // 1fb6ed1d6f0d83fc69a07fd1fb1d803d8fb7a2055c5e79d19a9e71c7cf3f7c95
-        // (debug stderr lines 1262-1357) shows f16 column products, translation
-        // add, then other-axis add; `gl_Position` widens only afterward.
-        let clip_x = half_add(
-            half_add(half_mul(half_rne(matrix[0]), mx), half_rne(matrix[12])),
-            half_mul(half_rne(matrix[4]), my),
-        );
-        let clip_y = half_add(
-            half_add(half_mul(half_rne(matrix[1]), mx), half_rne(matrix[13])),
-            half_mul(half_rne(matrix[5]), my),
-        );
-        let bottom_x = (clip_x + 1.0_f32) * 128.0_f32;
-        let bottom_y = (clip_y + 1.0_f32) * 128.0_f32;
-        Vertex {
-            x: f64::from(bottom_x),
-            y: f64::from(256.0_f32 - bottom_y),
-            u: f64::from(u),
-            v: f64::from(v),
-        }
+    super::shader::vertices_with_projection(r, matrix).map(|v| Vertex {
+        x: f64::from(v.position[0].mul_add(128., 128.)),
+        y: f64::from(256. - v.position[1].mul_add(128., 128.)),
+        u: f64::from(v.uv[0]),
+        v: f64::from(v.uv[1]),
     })
 }
-fn mesa_linear_coeff(pos: [(f32, f32); 3], values: [f32; 3]) -> (f32, f32, f32) {
-    let [(x0, y0), (x1, y1), (x2, y2)] = pos;
-    let [a0, a1, a2] = values;
-    let x0_center = x0 - 0.5;
-    let y0_center = y0 - 0.5;
-    let dx01 = x0 - x1;
-    let dy01 = y0 - y1;
-    let dx20 = x2 - x0;
-    let dy20 = y2 - y0;
-    let e = dx01 * dy20;
-    let f = dy01 * dx20;
-    let area = e - f;
-    let ooa = 1.0 / area;
-    let dy20_ooa = dy20 * ooa;
-    let dy01_ooa = dy01 * ooa;
-    let dx20_ooa = dx20 * ooa;
-    let dx01_ooa = dx01 * ooa;
-    let da01 = a0 - a1;
-    let da20 = a2 - a0;
-    let dadx_left = da01 * dy20_ooa;
-    let dadx_right = da20 * dy01_ooa;
-    let dadx = dadx_left - dadx_right;
-    let dady_left = da20 * dx01_ooa;
-    let dady_right = da01 * dx20_ooa;
-    let dady = dady_left - dady_right;
-    let origin_x = dadx * x0_center;
-    let origin_y = dady * y0_center;
-    let origin_offset = origin_x + origin_y;
-    let origin = a0 - origin_offset;
-    (origin, dadx, dady)
-}
-
 fn triangle_image_transform(v: [Vertex; 4], t: [usize; 3]) -> [f64; 6] {
     let pos: [(f32, f32); 3] = t.map(|i| (v[i].x as f32, 256.0_f32 - v[i].y as f32));
     let values_u = t.map(|i| v[i].u as f32);
@@ -298,55 +135,6 @@ fn points(v: [Vertex; 4], t: [usize; 3]) -> String {
 }
 fn matrix(m: [f64; 6]) -> String {
     format!("matrix({})", m.map(f).join(" "))
-}
-fn unorm(x: f32) -> u8 {
-    (x.clamp(0.0, 1.0) * 255.0)
-        .round_ties_even()
-        .clamp(0.0, 255.0) as u8
-}
-fn mul_norm8(a: u8, b: u8) -> u8 {
-    let mut x = u32::from(a) * u32::from(b);
-    x += x >> 8;
-    x += 128;
-    (x >> 8).min(255) as u8
-}
-fn source_shader_rgba(g: u8, color: [f32; 4], mask_r: u8) -> ([u8; 4], [u8; 4]) {
-    // Program-4 non-eraser NIR formula. Texture conversion is source-proven
-    // RTZ. Fragment half-ALU RNE is a model validated by these frames; V13
-    // observes vertex-side rounding only, not fragment worker MXCSR.
-    let sample = sample_unorm8_half_rtz(g);
-    let threshold = half_rne(0.7);
-    let max_alpha = half_rne(0.8);
-    let input = color.map(half_rne);
-    let (rgb, alpha) = if sample < threshold {
-        let ratio = half_rne(sample / threshold);
-        let alpha = half_mul(half_mul(ratio, max_alpha), input[3]);
-        ([input[0], input[1], input[2]], alpha)
-    } else {
-        assert_eq!(
-            mask_r, 255,
-            "high branch requires saturated-red mask evidence"
-        );
-        let mut delta = half_rne(sample + half_rne(-threshold));
-        delta = half_mul(delta, half_rne(0.5));
-        delta = half_mul(delta, sample_unorm8_half_rtz(mask_r));
-        (
-            [
-                half_add(input[0], delta),
-                half_add(input[1], delta),
-                half_add(input[2], delta),
-            ],
-            half_mul(max_alpha, input[3]),
-        )
-    };
-    let source = [unorm(rgb[0]), unorm(rgb[1]), unorm(rgb[2]), unorm(alpha)];
-    let blended = [
-        mul_norm8(source[0], source[3]),
-        mul_norm8(source[1], source[3]),
-        mul_norm8(source[2], source[3]),
-        source[3],
-    ];
-    (source, blended)
 }
 fn resvg_mul_u8(u: u8, a: u8) -> u8 {
     let x = f32::from(u) / 255.0;
@@ -1292,3 +1080,5 @@ fn controlled_drawing_capture_v22_geometry_and_full_frame() {
         native["sha256"].as_str().unwrap()
     );
 }
+
+mod pixel_model;

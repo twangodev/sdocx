@@ -1,0 +1,275 @@
+{
+  "schema": "sdocx-watercolor-public-canvas-export-v1",
+  "capture": {
+    "script": "tools/watercolor_host/export_compare.py",
+    "script_sha256": "955789757052c21923fd8e09d421b2704e0d1350288434910b7061f6002d6c9d",
+    "native_receipt_sha256": "77545656689b530ba46275e6e157b85b64ba4ffbe62be0d5a6eb181e48875f3a"
+  },
+  "readers": {
+    "mupdf": "1.28.2",
+    "pdfium": "150.0.7869.0",
+    "svg": "Rust integration test with resvg 0.47"
+  },
+  "dpi": 72,
+  "binding": "rust",
+  "api": "Public Stroke + explicit WaterColorHostRtv1 -> InkRasterCanvas -> PNG/SVG plus SVG-page and retained-scene PDF APIs",
+  "results": {
+    "v1_scale1_8044aaee": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v1_scale1_ff44aaee": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v1_scale2_8044aaee": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v1_scale2_ff44aaee": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v2_scale1_8044aaee": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v2_scale1_ff44aaee": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v2_scale2_8044aaee": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v2_scale2_ff44aaee": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    }
+  },
+  "scope": "Eight controlled source profiles, GLV1/GLV2, 1x/2x projection and two saved alpha values. All export readers must preserve canvas pixels exactly. SVG/PDF retain intrinsic destination pixel dimensions. Not normal document dispatch, saved-note page layout, Android GPU or device fidelity."
+}

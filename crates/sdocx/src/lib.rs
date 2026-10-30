@@ -27,6 +27,8 @@ mod frame;
 mod image;
 #[cfg(feature = "render")]
 mod ink;
+#[cfg(feature = "render")]
+mod ink_raster;
 mod integrity;
 mod layer;
 mod layout;
@@ -274,3 +276,6 @@ pub fn parse_bytes_detailed_with_progress(
 pub fn archive_zip_length(bytes: &[u8]) -> Result<u64> {
     Ok(archive_tail::ArchiveTail::read(&mut std::io::Cursor::new(bytes))?.archive_length)
 }
+
+#[cfg(feature = "render")]
+pub use ink_raster::{InkRasterCanvas, InkRasterContext, InkRasterError, InkRasterOrigin, InkRasterProfile};

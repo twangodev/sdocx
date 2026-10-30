@@ -1,0 +1,276 @@
+#![cfg(all(feature = "render", feature = "serde"))]
+
+use sdocx::{
+    BoundingBox, Color, InkRasterCanvas, InkRasterContext, InkRasterError, InkRasterOrigin,
+    InkRasterProfile, Point, Stroke, StrokeRendering, StrokeStyle,
+};
+use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
+
+fn stroke(version: u32, argb: u32) -> Stroke {
+    let fixture: Value =
+        serde_json::from_str(include_str!("../../../conformance/watercolor-native.json")).unwrap();
+    let input = &fixture["cases"][0]["input"];
+    let mut style = serde_json::to_value(StrokeStyle::default()).unwrap();
+    style["color_argb"] = json!(argb);
+    style["pen_size"] = json!(8.);
+    let rendering:StrokeRendering=serde_json::from_value(json!({
+        "metadata":null,"pen_name":"com.samsung.android.sdk.pen.pen.preload.WaterColorBrush","advanced_settings":if version==1{Value::Null}else{json!("")},"tool_type_raw":2,"style":style,
+        "properties":{"compressed":true,"stylus_channels":true,"replay_only":false,"eraser":false,"fixed_width":false,"millisecond_timestamps":false,"top_layer_pen":false,"alpha_lock":false,"binary_added":false,"generated":false,"fixed_opacity":false,"rainbow_effect":false,"straighten":false,"reveal_mode":false}
+    })).unwrap();
+    Stroke {
+        bbox: BoundingBox::default(),
+        points: input["points_xy"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| Point {
+                x: p[0].as_f64().unwrap(),
+                y: p[1].as_f64().unwrap(),
+            })
+            .collect(),
+        pressures: input["pressure"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| p.as_f64().unwrap())
+            .collect(),
+        tilts: Vec::new(),
+        orientations: Vec::new(),
+        timestamps: input["timestamps"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| p.as_i64().unwrap())
+            .collect(),
+        pen_width: 8.,
+        color: Some(Color {
+            r: (argb >> 16) as u8,
+            g: (argb >> 8) as u8,
+            b: argb as u8,
+        }),
+        rendering: Some(rendering),
+    }
+}
+
+fn profile() -> InkRasterProfile {
+    InkRasterProfile::WaterColorHostRtv1 {
+        screen_width: 1920,
+        screen_height: 1080,
+    }
+}
+
+fn expected(case: &Value) -> Vec<[u8; 4]> {
+    let [width, height] = [
+        case["frame"][0].as_u64().unwrap() as usize,
+        case["frame"][1].as_u64().unwrap() as usize,
+    ];
+    let prior = std::array::from_fn(|c| case["background"][c].as_u64().unwrap() as u8);
+    let mut pixels = vec![prior; width * height];
+    let packed = case["final_sparse_hex"].as_str().unwrap().as_bytes();
+    assert!(packed.len().is_multiple_of(16));
+    let byte = |h: &[u8]| u8::from_str_radix(std::str::from_utf8(h).unwrap(), 16).unwrap();
+    for record in packed.as_chunks::<16>().0 {
+        let index =
+            u32::from_le_bytes(std::array::from_fn(|i| byte(&record[i * 2..i * 2 + 2]))) as usize;
+        pixels[index] = std::array::from_fn(|c| byte(&record[8 + c * 2..10 + c * 2]));
+    }
+    let raw: Vec<_> = pixels.iter().flatten().copied().collect();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&raw)),
+        case["final_sha256"].as_str().unwrap()
+    );
+    pixels
+        .chunks_exact(width)
+        .rev()
+        .flatten()
+        .copied()
+        .collect()
+}
+
+#[cfg(feature = "pdf")]
+fn svg_pixels(page: &sdocx::RenderedPage) -> Vec<[u8; 4]> {
+    let tree = resvg::usvg::Tree::from_str(&page.svg, &resvg::usvg::Options::default()).unwrap();
+    let size = tree.size().to_int_size();
+    let mut image = resvg::tiny_skia::Pixmap::new(size.width(), size.height()).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut image.as_mut(),
+    );
+    image.data().as_chunks::<4>().0.to_vec()
+}
+
+fn artifacts(name: &str, canvas: &InkRasterCanvas, case: &Value) {
+    let Some(directory) = std::env::var_os("SDOCX_WATERCOLOR_ARTIFACTS") else {
+        return;
+    };
+    let directory = std::path::PathBuf::from(directory);
+    std::fs::create_dir_all(&directory).unwrap();
+    let page = canvas.rendered_page(0).unwrap();
+    std::fs::write(
+        directory.join(format!("{name}.rgba")),
+        canvas
+            .pixels()
+            .iter()
+            .flatten()
+            .copied()
+            .collect::<Vec<_>>(),
+    )
+    .unwrap();
+    std::fs::write(
+        directory.join(format!("{name}.png")),
+        canvas.to_png().unwrap(),
+    )
+    .unwrap();
+    std::fs::write(directory.join(format!("{name}.svg")), &page.svg).unwrap();
+    #[cfg(feature = "pdf")]
+    {
+        let mut options = sdocx::PdfOptions::default();
+        options.dpi = 72.;
+        std::fs::write(
+            directory.join(format!("{name}.direct.pdf")),
+            canvas.to_pdf(&options).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(
+            directory.join(format!("{name}.pdf")),
+            sdocx::render_svg_pages_pdf(&[page], &options).unwrap(),
+        )
+        .unwrap();
+    }
+    std::fs::write(
+        directory.join(format!("{name}.stroke.json")),
+        serde_json::to_vec(&stroke(
+            case["version"].as_u64().unwrap() as u32,
+            case["argb"].as_u64().unwrap() as u32,
+        ))
+        .unwrap(),
+    )
+    .unwrap();
+}
+
+#[test]
+fn public_source_profiles_match_native_rgb_and_svg_at_both_scales() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../conformance/watercolor-public-source-native.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["cases"].as_object().unwrap().len(), 8);
+    for (name, case) in fixture["cases"].as_object().unwrap() {
+        let scale = case["scale"].as_u64().unwrap() as u32;
+        let context = InkRasterContext {
+            width: 384 * scale,
+            height: 320 * scale,
+            pixels_per_unit: scale,
+            origin: InkRasterOrigin::TopLeft,
+        };
+        let mut canvas = InkRasterCanvas::new(context, [255; 4]).unwrap();
+        canvas
+            .paint(
+                &stroke(
+                    case["version"].as_u64().unwrap() as u32,
+                    case["argb"].as_u64().unwrap() as u32,
+                ),
+                profile(),
+            )
+            .unwrap();
+        assert!(
+            canvas.pixels() == expected(case),
+            "{name}: native pixels differ"
+        );
+        let page = canvas.rendered_page(0).unwrap();
+        #[cfg(feature = "pdf")]
+        assert!(
+            svg_pixels(&page) == canvas.pixels(),
+            "{name}: intrinsic SVG pixels differ"
+        );
+        artifacts(name, &canvas, case);
+    }
+}
+
+#[test]
+fn invalid_source_context_and_exhausted_work_preserve_the_canvas() {
+    let context = InkRasterContext {
+        width: 384,
+        height: 320,
+        pixels_per_unit: 1,
+        origin: InkRasterOrigin::TopLeft,
+    };
+    let mut canvas = InkRasterCanvas::new(context, [255; 4]).unwrap();
+    let valid = stroke(1, 0x8044aaee);
+    let mut invalid = valid.clone();
+    invalid.rendering.as_mut().unwrap().advanced_settings = Some("1;".into());
+    for _ in 0..300 {
+        assert!(matches!(
+            canvas.paint(&invalid, profile()),
+            Err(InkRasterError::UnsupportedStroke(_))
+        ));
+    }
+    assert!(matches!(
+        canvas.paint(
+            &valid,
+            InkRasterProfile::WaterColorHostRtv1 {
+                screen_width: 0,
+                screen_height: 1080
+            }
+        ),
+        Err(InkRasterError::InvalidContext)
+    ));
+    invalid = valid.clone();
+    invalid.pressures[0] = f64::NAN;
+    assert!(matches!(
+        canvas.paint(&invalid, profile()),
+        Err(InkRasterError::InvalidStroke(_))
+    ));
+    assert!(canvas.pixels().iter().all(|p| *p == [255; 4]));
+    let mut closed = valid.clone();
+    closed.points = vec![
+        Point { x: 0., y: 0. },
+        Point { x: 2., y: 0. },
+        Point { x: 0., y: 0. },
+    ];
+    closed.pressures = vec![1.; 3];
+    closed.timestamps = vec![0, 8, 16];
+    assert!(matches!(
+        canvas.paint(&closed, profile()),
+        Err(InkRasterError::UnsupportedStroke(_))
+    ));
+    canvas.paint(&valid, profile()).unwrap();
+    let mut reference = InkRasterCanvas::new(context, [255; 4]).unwrap();
+    reference.paint(&valid, profile()).unwrap();
+    assert_eq!(canvas.pixels(), reference.pixels());
+    let mut invalid = valid.clone();
+    invalid.points[3].x = 100_000.;
+    let before = canvas.pixels().to_vec();
+    assert!(matches!(
+        canvas.paint(&invalid, profile()),
+        Err(InkRasterError::WorkLimit)
+    ));
+    assert_eq!(canvas.pixels(), before);
+    let mut heavy = InkRasterCanvas::new(
+        InkRasterContext {
+            width: 1024,
+            height: 1024,
+            ..context
+        },
+        [255; 4],
+    )
+    .unwrap();
+    let mut succeeded = 0;
+    loop {
+        let before = heavy.pixels().to_vec();
+        match heavy.paint(&valid, profile()) {
+            Ok(()) => {
+                succeeded += 1;
+                assert!(succeeded < 40);
+            }
+            Err(InkRasterError::WorkLimit) => {
+                assert_eq!(heavy.pixels(), before);
+                break;
+            }
+            Err(error) => panic!("unexpected paint error: {error}"),
+        }
+    }
+    assert!(succeeded > 0);
+}
