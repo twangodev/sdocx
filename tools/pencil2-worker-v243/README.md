@@ -1,0 +1,7 @@
+# Native canvas product into an explicit Pencil2 draw
+
+Run `python3 tools/pencil2-worker-v243/probe.py` to compare a fresh run with the retained receipt. `--write-receipt` regenerates it. The parent worker, draw and list adapters are hash checked and their dependencies apply.
+
+After the synthetic native EventLoop consumes the transplanted request and emits 84 AddPoint calls, this probe explicitly constructs synthetic canvas and screen bitmap wiring. A host virtual adapter returns the Matrix3 observed at the worker's canvas setter; the native `SPPenCanvas::GetCanvasMatrix`, screen projection getter and product helper compute the Matrix4 passed directly to the explicit RTV4 Draw. The fabricated screen rectangle is `(3, 5, 195, 197)` and orientation is zero. Init and Update are also explicitly invoked. This is a host handoff, not evidence that the worker calls the canvas getter or renderer itself.
+
+The native getter returns the matrix retained in the receipt. Draw returns with zero recorded GL error, but the transparent 192×192 framebuffer remains entirely unchanged. Thus this attempt does not demonstrate successful paint or establish that this matrix is appropriate for this renderer. Its cause is unresolved; the bridge and framebuffer, canvas object and bitmap are synthetic, and host EGL/GLES/Mesa and transitive libraries are unpinned. It does not establish normal scheduling, saved-page or device behavior.
