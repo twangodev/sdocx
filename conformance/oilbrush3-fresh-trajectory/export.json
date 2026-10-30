@@ -1,0 +1,92 @@
+{
+  "schema": "sdocx.oilbrush3.source-public-canvas-export.v1",
+  "scope": "Fresh synthetic curved stroke, host Mesa, white RGB, 1920x1080 at 1x. PDF rasterized at 96 dpi.",
+  "native_capture_provenance": "conformance/oilbrush3-fresh-trajectory/receipt.json",
+  "svg_vs_native": {
+    "differing_pixels": 0,
+    "rgb_absolute_error_sum": [
+      0,
+      0,
+      0
+    ],
+    "rgb_maximum_error": [
+      0,
+      0,
+      0
+    ]
+  },
+  "mupdf_version": "1.28.2",
+  "pdfium_version": "150.0.7869.0",
+  "pdfs": {
+    "source.pdf": {
+      "sha256": "bb83229e43f60c336f89defb3a3401a5947862dbaed82ed8af028c14e75f3a0f",
+      "mupdf": {
+        "differing_pixels": 0,
+        "rgb_absolute_error_sum": [
+          0,
+          0,
+          0
+        ],
+        "rgb_maximum_error": [
+          0,
+          0,
+          0
+        ]
+      },
+      "pdfium": {
+        "differing_pixels": 0,
+        "rgb_absolute_error_sum": [
+          0,
+          0,
+          0
+        ],
+        "rgb_maximum_error": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "source-svg.pdf": {
+      "sha256": "8e1c6bbb8132949a90b550e4b0935f3d2c0dac0cca23151a6ca8961c7c66db31",
+      "mupdf": {
+        "differing_pixels": 0,
+        "rgb_absolute_error_sum": [
+          0,
+          0,
+          0
+        ],
+        "rgb_maximum_error": [
+          0,
+          0,
+          0
+        ]
+      },
+      "pdfium": {
+        "differing_pixels": 0,
+        "rgb_absolute_error_sum": [
+          0,
+          0,
+          0
+        ],
+        "rgb_maximum_error": [
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  },
+  "limitations": "Explicit cold host model; one synthetic export control, host arithmetic and explicit initialization and textures. No saved-note, device, lifecycle, scaling or general parity claim.",
+  "inputs_sha256": {
+    "tools/oilbrush3-fresh-trajectory/compare.py": "0c7c4fafb0bfd4feafab362784ddc39965812bf0d11c8b5507edccd9d50ed800",
+    "conformance/oilbrush3-native.json": "9fa36392d2a50820ad77395f6998fdf821361e72b27d22e53af8b1b7b226b6a5",
+    "conformance/oilbrush3-fresh-trajectory/receipt.json": "6903aa4a6eb352bb762ab231cf044cbb8f0367ae6f216bc956d174320c47a789",
+    "crates/sdocx/src/ink/oilbrush3/paint_conformance.rs": "150d70a5cdbac4e28a6394273e08daf8c4677c5b990a71447d6f97d571e563b2",
+    "crates/sdocx/src/ink/oilbrush3/paint.rs": "4424ae06a8dde1bec70b9e33a4d35e29ce7feb33f789487d3b74c279200cfbb3",
+    "crates/sdocx/src/ink/oilbrush3/p3-vbo-6x4-f32le.bin": "818bdaddffdbdd6e1cad09a1dac74a1da79ee482bf8b86ee601ccd93c0af3f39",
+    "crates/sdocx/src/ink/oilbrush3.rs": "16a9981f68c5c2970fc8f373664cd7c50c6519d5b66e6cb9e054eab398a4942b",
+    "crates/sdocx/src/ink.rs": "2edbdbb65e0f7fd7f0b16b8d6cc8e2dd12465961a7855c6cfd6dc2732d5e00cf",
+    "crates/sdocx/src/ink_raster.rs": "5b57ff4e6d5eb773fac596a6ce568870fa3929e63949f36a085d1792451c1478"
+  }
+}

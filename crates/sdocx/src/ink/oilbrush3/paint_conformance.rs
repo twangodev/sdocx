@@ -2437,3 +2437,44 @@ fn oilbrush3_public_canvas_rejections_preserve_pixels_and_budget() {
     canvas.paint_oilbrush3_cold_host(&stroke, &mask, &depth).unwrap();
     assert!(canvas.pixels().iter().any(|pixel| *pixel != [0; 4]));
 }
+
+#[cfg(all(feature = "render", feature = "pdf"))]
+#[test]
+fn oilbrush3_fresh_trajectory_public_export() {
+    use crate::{InkRasterCanvas, InkRasterContext, InkRasterOrigin, PdfOptions, Point};
+    let fixture: serde_json::Value = serde_json::from_str(super::tests::FIXTURE).unwrap();
+    let mut stroke = super::tests::public_stroke_from_fixture(&fixture);
+    stroke.points = [(600., 420.), (608., 429.), (619., 423.), (631., 436.)]
+        .into_iter().map(|(x, y)| Point { x, y }).collect();
+    let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
+    let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
+    let mut canvas = InkRasterCanvas::new(InkRasterContext {
+        width: 1920, height: 1080, pixels_per_unit: 1, origin: InkRasterOrigin::TopLeft,
+    }, [0; 4]).unwrap();
+    canvas.paint_oilbrush3_cold_host(&stroke, &mask, &depth).unwrap();
+    let native = decode_zlib(include_bytes!("../../../../../conformance/oilbrush3-fresh-trajectory/frame.rgba.zlib"), V17_PIXELS * 4, "90f7dd672ca5b9c48840e74299cbf159ea05279f68c57aa69586a690535ea94d");
+    let expected: Vec<u8> = native.chunks_exact(V17_PAGE_WIDTH * 4).rev().flatten().copied().collect();
+    let actual = canvas.pixels().as_flattened();
+    let differing = actual.chunks_exact(4).zip(expected.chunks_exact(4)).filter(|(a,b)| a != b).count();
+    assert_eq!(differing, 0, "native frame differs in {differing} pixels");
+    let white: Vec<[u8; 4]> = canvas.pixels().iter().map(|p| {
+        let channel = |c: usize| (u16::from(p[c]) + u16::from(255 - p[3])).min(255) as u8;
+        [channel(0), channel(1), channel(2), 255]
+    }).collect();
+    let canvas = InkRasterCanvas::from_pixels(InkRasterContext {
+        width: 1920, height: 1080, pixels_per_unit: 1, origin: InkRasterOrigin::TopLeft,
+    }, white).unwrap();
+    let svg = canvas.rendered_page(0).unwrap();
+    let tree = resvg::usvg::Tree::from_str(&svg.svg, &Default::default()).unwrap();
+    let mut pix = resvg::tiny_skia::Pixmap::new(1920, 1080).unwrap();
+    resvg::render(&tree, resvg::tiny_skia::Transform::identity(), &mut pix.as_mut());
+    assert_eq!(pix.data(), canvas.pixels().as_flattened());
+    if let Some(dir) = std::env::var_os("SDOCX_OILBRUSH3_FRESH_EXPORT_DIR") {
+        let dir = std::path::Path::new(&dir);
+        std::fs::write(dir.join("source-svg.rgba"), pix.data()).unwrap();
+        std::fs::write(dir.join("source.pdf"), canvas.to_pdf(&PdfOptions::default()).unwrap()).unwrap();
+        std::fs::write(dir.join("source-svg.pdf"), crate::render_svg_pages_pdf(&[svg], &PdfOptions::default()).unwrap()).unwrap();
+        let white_rgb: Vec<u8> = expected.chunks_exact(4).flat_map(|p| (0..3).map(move |c| (u16::from(p[c]) + u16::from(255-p[3])).min(255) as u8)).collect();
+        std::fs::write(dir.join("native.rgb"), white_rgb).unwrap();
+    }
+}

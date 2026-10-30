@@ -1,0 +1,47 @@
+{
+  "scope": "Synthetic cold native Drawing on host Mesa; GL lower-left RGBA8. No device or saved-note parity.",
+  "points": [
+    [
+      600.0,
+      420.0
+    ],
+    [
+      608.0,
+      429.0
+    ],
+    [
+      619.0,
+      423.0
+    ],
+    [
+      631.0,
+      436.0
+    ]
+  ],
+  "timestamps": [
+    0,
+    8,
+    19,
+    37
+  ],
+  "source_runner_sha256": "4d64a429802111757167a2878c941ff51c69f16320c5da9dc138a267276198cf",
+  "preflight_sha256": "2c9304fd6e7990cc5e8657e5698817b6405b2d428ac82aeb00c5e8b2320f179c",
+  "derived_runner_sha256": "71dbd414d9ec6363e0f508c9b5bc22a9bb8af08143d3cc698754f5c03dc71b33",
+  "native_hashes": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "OilBrush3": "b6402638f43bebdb8aa95ed33617820ef923a19dbac8475ef980204cdfc419d4",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libc++": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "p4_draws": 17,
+  "frame_sha256": "90f7dd672ca5b9c48840e74299cbf159ea05279f68c57aa69586a690535ea94d",
+  "queue_end_gl_error": 0
+}
