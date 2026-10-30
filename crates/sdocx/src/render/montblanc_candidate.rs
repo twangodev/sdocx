@@ -1,6 +1,13 @@
 // Analytic shader approximation for the three observed draw programs.
-pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize, scale: f64) -> Vec<([[f64; 2]; 3], f64)> {
+pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize, scale: f64) -> Vec<(Vec<[f64; 2]>, f64)> {
     let mut result = Vec::new();
+    let planes: [(f64, f64); 32] = std::array::from_fn(|side| {
+        let angle = std::f64::consts::TAU * (side as f64 + 0.5) / 32.0;
+        angle.sin_cos()
+    });
+    let limit = 0.5 * (std::f64::consts::PI / 32.0).cos();
+    let mut poly = Vec::with_capacity(35);
+    let mut next = Vec::with_capacity(35);
     for (program, buffer) in [3, 4, 5].into_iter().zip(buffers) {
         for t in buffer.as_chunks::<3>().0 {
             let triangle = [
@@ -36,57 +43,96 @@ pub fn pieces(buffers: &[Vec<[f32; 5]>; 3], n: usize, scale: f64) -> Vec<([[f64;
                     let c = vertex(i, j + 1);
                     for patch in [
                         Some([a, b, c]),
-                        (i + j <= n - 2).then(|| [b, vertex(i + 1, j + 1), c]),
+                        (i + j + 2 <= n).then(|| [b, vertex(i + 1, j + 1), c]),
                     ]
                     .into_iter()
                     .flatten()
                     {
-                        let centre = std::array::from_fn::<_, 5, _>(|k| {
-                            (patch[0][k] + patch[1][k] + patch[2][k]) / 3.0
-                        });
-                        let u = centre[2];
-                        let v = centre[3];
-                        let d = (u - 0.5).hypot(v - 0.5);
-                        let fw = if d == 0.0 {
-                            0.0
-                        } else {
-                            (((u - 0.5) * derivative[0][0] + (v - 0.5) * derivative[1][0]) / d)
-                                .abs()
-                                + (((u - 0.5) * derivative[0][1] + (v - 0.5) * derivative[1][1])
-                                    / d)
-                                    .abs()
-                        };
-                        let smooth = |x: f64| {
-                            let z = if fw == 0.0 {
-                                if x < 0.5 { 0.0 } else { 1.0 }
-                            } else {
-                                ((x - (0.5 - fw)) / fw).clamp(0.0, 1.0)
-                            };
-                            z * z * (3.0 - 2.0 * z)
-                        };
-                        let alpha = match program {
-                            3 => {
-                                centre[4]
-                                    * (1.0 - (0.93 / 0.4) * (0.4 - (0.5 - (0.5 - v).abs())))
-                                        .clamp(0.0, 1.0)
-                                    * (if d < 0.5 {
-                                        1.0
-                                    } else if d > 0.5 {
-                                        -1.0
-                                    } else {
-                                        0.0
-                                    })
-                                    * (1.0 - smooth((0.5 - u).abs()))
+                        poly.clear();
+                        poly.extend_from_slice(&patch);
+                        for &(sn, cs) in &planes {
+                            let distance =
+                                |v: &[f64; 5]| limit - ((v[2] - 0.5) * cs + (v[3] - 0.5) * sn);
+                            next.clear();
+                            if !poly.is_empty() {
+                                for i in 0..poly.len() {
+                                    let a = poly[i];
+                                    let b = poly[(i + 1) % poly.len()];
+                                    let da = distance(&a);
+                                    let db = distance(&b);
+                                    if da >= 0.0 {
+                                        next.push(a);
+                                    }
+                                    if (da >= 0.0) != (db >= 0.0) {
+                                        let t = da / (da - db);
+                                        next.push(std::array::from_fn(|k| {
+                                            a[k] + t * (b[k] - a[k])
+                                        }));
+                                    }
+                                }
                             }
-                            4 => centre[4] * v * (1.0 - smooth(d)),
-                            _ => centre[4] * (2.0 * (1.0 - v)).clamp(0.0, 1.0) * (1.0 - smooth(d)),
+                            std::mem::swap(&mut poly, &mut next);
+                            if poly.is_empty() {
+                                break;
+                            }
                         }
-                        .clamp(0.0, 1.0);
-                        if alpha > 0.0 {
-                            result.push((
-                                patch.map(|v| [v[0], -v[1]]),
-                                (alpha * 10000.0).round() / 10000.0,
-                            ));
+                        if poly.len() >= 3 {
+                            let centre = std::array::from_fn::<_, 5, _>(|k| {
+                                if poly.len() == 3 {
+                                    (poly[0][k] + poly[1][k] + poly[2][k]) / 3.0
+                                } else {
+                                    poly.iter().map(|v| v[k]).sum::<f64>() / poly.len() as f64
+                                }
+                            });
+                            let u = centre[2];
+                            let v = centre[3];
+                            let d = (u - 0.5).hypot(v - 0.5);
+                            let fw = if d == 0.0 {
+                                0.0
+                            } else {
+                                (((u - 0.5) * derivative[0][0] + (v - 0.5) * derivative[1][0]) / d)
+                                    .abs()
+                                    + (((u - 0.5) * derivative[0][1]
+                                        + (v - 0.5) * derivative[1][1])
+                                        / d)
+                                        .abs()
+                            };
+                            let smooth = |x: f64| {
+                                let z = if fw == 0.0 {
+                                    if x < 0.5 { 0.0 } else { 1.0 }
+                                } else {
+                                    ((x - (0.5 - fw)) / fw).clamp(0.0, 1.0)
+                                };
+                                z * z * (3.0 - 2.0 * z)
+                            };
+                            let alpha = match program {
+                                3 => {
+                                    centre[4]
+                                        * (1.0 - (0.93 / 0.4) * (0.4 - (0.5 - (0.5 - v).abs())))
+                                            .clamp(0.0, 1.0)
+                                        * (if d < 0.5 {
+                                            1.0
+                                        } else if d > 0.5 {
+                                            -1.0
+                                        } else {
+                                            0.0
+                                        })
+                                        * (1.0 - smooth((0.5 - u).abs()))
+                                }
+                                4 => centre[4] * v * (1.0 - smooth(d)),
+                                _ => {
+                                    centre[4]
+                                        * (2.0 * (1.0 - v)).clamp(0.0, 1.0)
+                                        * (1.0 - smooth(d))
+                                }
+                            }
+                            .clamp(0.0, 1.0);
+                            if alpha > 0.0 {
+                                result.push((
+                                    poly.iter().map(|v| [v[0], -v[1]]).collect(),
+                                    (alpha * 10000.0).round() / 10000.0,
+                                ));
+                            }
                         }
                     }
                 }
@@ -124,18 +170,11 @@ pub(super) fn render(
     }
     let mut group = Group::new().fill(Paint::from_hex(color));
     for (p, alpha) in patches {
-        let [a, b, c] = p;
-        group = group.add(
-            Path::new()
-                .data(
-                    Data::new()
-                        .move_to((a[0], a[1]))
-                        .line_to((b[0], b[1]))
-                        .line_to((c[0], c[1]))
-                        .close(),
-                )
-                .fill_opacity(alpha),
-        );
+        let mut data = Data::new().move_to((p[0][0], p[0][1]));
+        for point in &p[1..] {
+            data = data.line_to((point[0], point[1]));
+        }
+        group = group.add(Path::new().data(data.close()).fill_opacity(alpha));
     }
     scene.push(group);
     remaining.set(remaining.get() - count);
@@ -182,16 +221,13 @@ fn inherited_fill_matches_separate_overlapping_patches_under_transform() {
     ));
     let mut separate = Scene::new(Svg::new().width(32).height(32));
     for (points, alpha) in pieces(&buffers, 8, 1.0) {
-        let [a, b, c] = points;
+        let mut data = Data::new().move_to((points[0][0], points[0][1]));
+        for point in &points[1..] {
+            data = data.line_to((point[0], point[1]));
+        }
         separate.push(
             Path::new()
-                .data(
-                    Data::new()
-                        .move_to((a[0], a[1]))
-                        .line_to((b[0], b[1]))
-                        .line_to((c[0], c[1]))
-                        .close(),
-                )
+                .data(data.close())
                 .fill(Paint::from_hex("#336699"))
                 .fill_opacity(alpha),
         );
@@ -259,7 +295,8 @@ fn captured_controls_shared_scene_exports() {
             vertex[1] -= 128.0;
         }
         let triangles = pieces(&buffers, 8, 1.0);
-        assert_eq!(triangles.len(), if case == 3 { 3700 } else { 2500 });
+        assert!(!triangles.is_empty());
+        let piece_count = triangles.len();
         assert!(
             triangles
                 .iter()
@@ -274,12 +311,11 @@ fn captured_controls_shared_scene_exports() {
                 .fill(Paint::from_hex("#fcfcfc")),
         );
         for (points, alpha) in triangles {
-            let [a, b, c] = points;
-            let data = Data::new()
-                .move_to((a[0], a[1]))
-                .line_to((b[0], b[1]))
-                .line_to((c[0], c[1]))
-                .close();
+            let mut data = Data::new().move_to((points[0][0], points[0][1]));
+            for point in &points[1..] {
+                data = data.line_to((point[0], point[1]));
+            }
+            let data = data.close();
             scene.push(
                 Path::new()
                     .data(data)
@@ -310,10 +346,7 @@ fn captured_controls_shared_scene_exports() {
         let pdf =
             crate::pdf::render_native_scene_pdf_for_test(&retained, &crate::PdfOptions::default())
                 .unwrap();
-        assert_eq!(
-            svg.matches("<path").count(),
-            if case == 3 { 3700 } else { 2500 }
-        );
+        assert_eq!(svg.matches("<path").count(), piece_count);
         let document = lopdf::Document::load_mem(&pdf).unwrap();
         assert_eq!(document.get_pages().len(), 1);
         assert!(
@@ -333,5 +366,30 @@ fn captured_controls_shared_scene_exports() {
                 file.write_all(data).unwrap();
             }
         }
+    }
+}
+
+#[test]
+fn cutoff_clips_to_circle_and_keeps_inside_triangle() {
+    let inside = vec![
+        [0., 0., 0.4, 0.4, 0.8],
+        [8., 0., 0.6, 0.4, 0.8],
+        [0., 8., 0.4, 0.6, 0.8],
+    ];
+    let pieces = pieces(&[inside.clone(), vec![], vec![]], 1, 1.0);
+    assert_eq!(pieces.len(), 1);
+    assert_eq!(pieces[0].0, vec![[0., 0.], [8., 0.], [0., -8.]]);
+    let crossing = vec![
+        [0., 0., 0.5, 0.5, 0.8],
+        [8., 0., 1.2, 0.5, 0.8],
+        [0., 8., 0.5, 1.2, 0.8],
+    ];
+    let clipped = super::montblanc_candidate::pieces(&[crossing, vec![], vec![]], 1, 1.0);
+    assert_eq!(clipped.len(), 1);
+    assert!(clipped[0].0.len() > 3 && clipped[0].0.len() <= 35);
+    for p in &clipped[0].0 {
+        let u = 0.5 + p[0] * 0.7 / 8.0;
+        let v = 0.5 - p[1] * 0.7 / 8.0;
+        assert!((u - 0.5).hypot(v - 0.5) <= 0.50000001);
     }
 }
