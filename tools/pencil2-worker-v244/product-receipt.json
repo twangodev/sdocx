@@ -1,0 +1,74 @@
+{
+  "script_sha256": "e8ee0389991f28982c16b9c31c249b25e696a8728528db62ab6b084cdcd68e85",
+  "scope": "Synthetic native EventLoop consumes one transplanted queue request, then an explicit host Mesa bridge initializes, updates and draws the selected renderer. The native canvas getter computes Matrix4 from a host-adapted observed Matrix3 and fabricated screen bitmap before the explicit draw; this does not establish automatic paint, normal scheduling, saved-page or device behavior.",
+  "list": "Native ordered list dispatch, supplied Matrix3 and 84 AddPoint calls asserted by adapter",
+  "selected_rt": "0x1003b190",
+  "update_count": 84,
+  "matrix3": [
+    1,
+    0,
+    0,
+    0,
+    -1,
+    0,
+    6,
+    183,
+    1
+  ],
+  "explicit_draw_matrix4": [
+    0.010416666977107525,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.010416666977107525,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -3.0518509447574615e-05,
+    0.0,
+    -0.9375,
+    -0.90625,
+    0.0,
+    1.0
+  ],
+  "readback_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+  "nonzero_bytes": 0,
+  "prior_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+  "gl_error": 0,
+  "uniforms": [
+    [
+      "glUniformMatrix4fv",
+      0,
+      1,
+      0,
+      [
+        0.0001085069525288418,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0001085069525288418,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        9.313794180343393e-10,
+        0.0,
+        -1.009765625,
+        -1.0094400644302368,
+        0.0,
+        1.0
+      ]
+    ]
+  ],
+  "row_origin": "bottom",
+  "runtime_limitations": "Host EGL, GLES, Mesa drivers and transitive shared libraries are unpinned.",
+  "parent_sha256": {
+    "tools/pencil2-worker-v241/probe.py": "eea7a5e0c43b2e0e72c5c01679112dee5f6608e95bf9aba2ece8b1d628862222",
+    "tools/pencil2-async-route/draw-attempt.py": "17f74e27d9dc0e0dc4173f08901444bd0627eae7a1b6e023232ff78cb9f72982",
+    "tools/pencil2-page-v219/no-replay.py": "3533e38ae7cf051d28dd07666b1b2c4319c35a24eb25e74cd909ac2f1af7c07d"
+  },
+  "worker": "Submission, queue entry sequence, worker cleanup and empty sentinel asserted by the worker adapter; bitmap, context, locks and destructor remain synthetic."
+}
