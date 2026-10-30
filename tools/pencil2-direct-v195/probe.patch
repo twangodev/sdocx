@@ -1,0 +1,29 @@
+--- crates/sdocx/src/lib.rs
++++ crates/sdocx/src/lib.rs
+@@ -284,3 +284,15 @@
+     InkRasterDepthContext, InkRasterError, InkRasterInverseScale, InkRasterOrigin,
+     InkRasterProfile, Pencil2V14HostGrainState, pencil2_v14_host_grain_offset,
+ };
++
++#[doc(hidden)]
++pub fn pencil_atlas_probe(scale: f32) -> Vec<Vec<[u8; 4]>> {
++    use ink::pencil2::{AlphaState, SavedInput, sample};
++    let input = SavedInput { advanced_version:14, tool_type:2, source:0, stroke_type:0, curve_enabled:true, color_argb:0xff000000, size:f32::from_bits(0x3e6978d5), effective_size:0.4, points: vec![ink::path::P{x:0.,y:0.},ink::path::P{x:10.,y:0.},ink::path::P{x:20.,y:0.},ink::path::P{x:30.,y:10.}], pressure:vec![0.25,0.5,0.75,1.],tilt:vec![0.,0.25,0.5,0.75],orientation:vec![0.,0.25,0.5,0.75],timestamps:vec![10,20,30,40]};
++    let records = sample(&input, AlphaState {alpha_byte:255,square_pressure_flag:0,base:0.4,size_level:1}).unwrap();
++    use sha2::{Digest, Sha256};
++    let bytes: Vec<u8> = records.iter().flat_map(|r| r.lanes.iter().flat_map(|v| v.to_le_bytes())).collect();
++    assert_eq!(format!("{:x}", Sha256::digest(&bytes)), "770651fc1b27bfa8a73731f1a3e24cf1a37847e920581aa36855c5107835c2fe");
++    let ctx = ink::pencil2::device_raster::Context { scale, ..Default::default() };
++    records.iter().map(|r| ink::pencil2::device_raster::prepare(&[r.lanes],ctx).ok().unwrap().render(None).unwrap()).collect()
++}
+--- crates/sdocx/src/ink.rs
++++ crates/sdocx/src/ink.rs
+@@ -57,7 +57,7 @@
+ mod oblique;
+ mod oblique_v1;
+ pub(crate) mod old_pencil;
+-mod path;
++pub(crate) mod path;
+ mod pencil;
+ pub(crate) mod pencil_source;
+ #[cfg(test)]
