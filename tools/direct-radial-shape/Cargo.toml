@@ -1,0 +1,8 @@
+[package]
+name = "sdocx-direct-radial-shape-control"
+version = "0.1.0"
+edition = "2021"
+[dependencies]
+sdocx = { path = "../../crates/sdocx", features = ["pdf", "serde"] }
+serde_json = "1"
+[workspace]
