@@ -1,0 +1,16 @@
+{
+  "scratch/apk-analysis-native/arm64-v8a/libSPenMarker3.so": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+  "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+  "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+  "scratch/apk-analysis-native/arm64-v8a/libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+  "scratch/apk-analysis-runtime/python/unicorn/lib/libunicorn.so.2": "ddb196ec82b52e502c18e4a34478bf7b9f61c83c2ebaa95c74d8ded45a95da9c",
+  "tmp/conformance-cleanup/native-capture-a241793/conformance/marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+  "tmp/conformance-cleanup/native-capture-a241793/conformance/airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+  "tmp/conformance-cleanup/native-capture-a241793/conformance/inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+  "tmp/conformance-cleanup/native-capture-a241793/conformance/fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+  "tmp/conformance-cleanup/native-capture-a241793/conformance/oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
+  "tools/marker3-zero/capture.py": "6d657e2cf389e21a6f23552ba79ea204f8c06295c05b6d3721e66d4e8efddafe",
+  "tools/marker3-zero/caller-template.py": "a9e43fc015417a9870e17921696faf79450171c903fe440d78257db7bffd502d",
+  "tools/marker3-zero/join-template.py": "63f93f07f76f55c76ff91f65d86d06fa8e693d3fe694f9fe8d2fb90114ead70a",
+  "tools/marker3-zero/rt-capture.py": "0045050f2addb2e6d2882380bac7f320a6a4624986b3c3b13513483ee1952a6d"
+}
