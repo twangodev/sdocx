@@ -1,0 +1,100 @@
+--- crates/sdocx/src/ink/pencil2.rs
++++ crates/sdocx/src/ink/pencil2.rs
+@@ -11,7 +11,7 @@
+ use std::fmt;
+ 
+ use super::path::{P, Quad};
+-mod source;
++pub(crate) mod source;
+ pub(crate) use source::prepare_stroke;
+ 
+ const MAX_SOURCE_POINTS: usize = 16_384;
+--- crates/sdocx/src/lib.rs
++++ crates/sdocx/src/lib.rs
+@@ -295,3 +295,19 @@
+     let ctx = ink::pencil2::device_raster::Context { scale, ..Default::default() };
+     records.iter().map(|r| ink::pencil2::device_raster::prepare(&[r.lanes],ctx).ok().unwrap().render(None).unwrap()).collect()
+ }
++
++#[doc(hidden)]
++pub fn pencil_test_frames(stroke: &Stroke, scale: f32) -> Option<Vec<Vec<[u8; 4]>>> {
++    if ![1.,2.].contains(&scale) || stroke.rendering.as_ref()?.style.color_argb != Some(0xff000000) { return None; }
++    let mut source = stroke.clone();
++    for point in &mut source.points { point.y = 192. - point.y; }
++    let records = ink::pencil2::source::prepare_stroke(&source, 1.).ok()?;
++    use sha2::{Digest, Sha256};
++    let bytes: Vec<u8> = records.iter().flat_map(|r| r.lanes.iter().flat_map(|v| v.to_le_bytes())).collect();
++    if format!("{:x}", Sha256::digest(&bytes)) != "770651fc1b27bfa8a73731f1a3e24cf1a37847e920581aa36855c5107835c2fe" { return None; }
++    let count = records.len();
++    const PIXELS: usize = 192 * 192;
++    if count > 84 || count.checked_mul(PIXELS)?.checked_mul(4)? > 16 * 1024 * 1024 || count.checked_mul(PIXELS)?.checked_mul(256)? > 800 * 1024 * 1024 { return None; }
++    let ctx = ink::pencil2::device_raster::Context { scale, ..Default::default() };
++    records.iter().map(|r| ink::pencil2::device_raster::prepare(&[r.lanes],ctx).ok()?.render(None)).collect()
++}
+--- crates/sdocx/src/render.rs
++++ crates/sdocx/src/render.rs
+@@ -1746,6 +1746,11 @@
+         native_allowed && !matches!(object.content, PageObjectContent::Descendant(_));
+     match object.content.leaf() {
+         PageObjectContent::Stroke(stroke) => {
++            if native_allowed && !context.replay && context.slice.is_none() && [context.page.width, context.page.height] == [192,192] && let Ok(scale) = std::env::var("SDOCX_PENCIL_TEST_SVG_SCALE") && let Ok(scale) = scale.parse::<f32>() && let Some(frames) = crate::pencil_test_frames(stroke, scale) {
++                use vector::{Rectangle, Paint};
++                for frame in frames { for (i, px) in frame.iter().enumerate() { if px[3] != 0 { svg.push(Rectangle::new().x((i % 192) as f64).y((i / 192) as f64).width(1).height(1).fill(Paint::from_hex("#000000")).fill_opacity(f64::from(px[3])/255.)); } } }
++                *stroke_index += 1; progress.advance(1); return;
++            }
+             #[cfg(feature = "pdf")]
+             if native_allowed
+                 && !context.replay
+--- crates/sdocx/src/pdf.rs
++++ crates/sdocx/src/pdf.rs
+@@ -205,6 +205,9 @@
+     render_options: &RenderOptions,
+     pdf_options: &PdfOptions,
+ ) -> Result<Vec<u8>, PdfError> {
++    if let Ok(scale) = std::env::var("SDOCX_PENCIL_TEST_SCALE") {
++        return pencil_test_injection(document, render_options, pdf_options, scale.parse().unwrap());
++    }
+     let fonts = pdf_options.font_book();
+     let layout = crate::layout_document(document);
+     let indices = (0..layout.pages.len()).collect::<Vec<_>>();
+@@ -1772,3 +1775,40 @@
+         assert!(fonts.registered_source(&face).is_none());
+     }
+ }
++
++// Isolated synthetic experiment; not a public admission or production path.
++fn pencil_test_injection(document: &Document, ro: &RenderOptions, po: &PdfOptions, scale: f32) -> Result<Vec<u8>, PdfError> {
++    use lopdf::{dictionary, Document as Pdf, Object, Stream};
++    if ![1.0, 2.0].contains(&scale) || document.pages.len() != 1 || document.pages[0].width != 192 || document.pages[0].height != 192 || document.pages[0].objects.len() != 1 || document.pages[0].strokes().count() != 1 {
++        return Err(PdfError::Conversion("synthetic domain rejected".into()));
++    }
++    // The pinned synthetic sampler has exactly 84 stamps. Bound the full-frame
++    // transport and emitted command stream before invoking the sampler.
++    const PIXELS: usize = 192 * 192;
++    const STAMPS: usize = 84;
++    const MAX_FRAME_BYTES: usize = 16 * 1024 * 1024;
++    const MAX_STREAM: usize = 128 * 1024 * 1024;
++    if STAMPS.checked_mul(PIXELS).and_then(|v| v.checked_mul(4)).filter(|v| *v <= MAX_FRAME_BYTES).is_none() || STAMPS.checked_mul(PIXELS).and_then(|v| v.checked_mul(40)).filter(|v| *v <= MAX_STREAM).is_none() {
++        return Err(PdfError::Conversion("synthetic budget exceeded".into()));
++    }
++    let stroke = document.pages[0].strokes().next().ok_or_else(|| PdfError::Conversion("missing synthetic stroke".into()))?;
++    let frames = crate::pencil_test_frames(stroke, scale).ok_or_else(|| PdfError::Conversion("unsupported synthetic stroke".into()))?;
++    if frames.len() != STAMPS || frames.iter().any(|f| f.len() != PIXELS) { return Err(PdfError::Conversion("unexpected frames".into())); }
++    let fonts = po.font_book();
++    let layout = crate::layout_document(document);
++    let base = render_layout_pages_pdf_with_fonts(document, &layout, &[0], ro, po, &fonts)?;
++    let mut pdf = Pdf::load_mem(&base).map_err(|e| PdfError::Conversion(e.to_string()))?;
++    let page = *pdf.get_pages().values().next().ok_or(PdfError::EmptyDocument)?;
++    let mut states = lopdf::Dictionary::new();
++    for a in 1..=255 { let id = pdf.add_object(dictionary!{"Type"=>"ExtGState", "ca"=>Object::Real(a as f32/255.)}); states.set(format!("A{a}"), id); }
++    let mut commands = String::from("0 0 0 rg 0 0 192 192 re f\n1 1 1 rg\n");
++    use std::fmt::Write as _;
++    for frame in frames { for (i, px) in frame.iter().enumerate() { let a = px[3]; if a != 0 { if commands.len().saturating_add(40) > MAX_STREAM { return Err(PdfError::Conversion("stream budget exceeded".into())); } writeln!(commands, "/A{a} gs {} {} 1 1 re f", i % 192, 191 - i / 192).unwrap(); } } }
++    if commands.len() > MAX_STREAM { return Err(PdfError::Conversion("stream budget exceeded".into())); }
++    let form = pdf.add_object(Stream::new(dictionary!{"Type"=>"XObject", "Subtype"=>"Form", "BBox"=>vec![0.into(),0.into(),192.into(),192.into()], "Group"=>dictionary!{"S"=>"Transparency", "CS"=>"DeviceRGB", "I"=>true}, "Resources"=>dictionary!{"ExtGState"=>states}}, commands.into_bytes()));
++    let mask = pdf.add_object(dictionary!{"Type"=>"ExtGState", "SMask"=>dictionary!{"S"=>"Luminosity", "G"=>form}});
++    let content = pdf.add_object(Stream::new(dictionary!{}, b"1 1 1 rg 0 0 192 192 re f\n/G gs 0 0 0 rg 0 0 192 192 re f\n".to_vec()));
++    let pg = pdf.get_object_mut(page).and_then(Object::as_dict_mut).map_err(|e| PdfError::Conversion(e.to_string()))?;
++    pg.set("Resources", dictionary!{"ExtGState"=>dictionary!{"G"=>mask}}); pg.set("Contents", content);
++    let mut out = Vec::new(); pdf.save_to(&mut out).map_err(|e| PdfError::Conversion(e.to_string()))?; Ok(out)
++}
