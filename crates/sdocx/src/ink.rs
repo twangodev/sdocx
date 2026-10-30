@@ -369,6 +369,36 @@ pub(crate) fn prepare_stroke_for_context_with_fountain_v16_output_scale<'a>(
     paint
 }
 
+pub(crate) fn apply_fountain_v14_output_scale(
+    paint: &mut PreparedStroke<'_>,
+    stroke: &Stroke,
+    output_scale: f32,
+) -> bool {
+    let Some(dots) = fountain::prepare_v14_with_output_scale(stroke, output_scale) else {
+        return false;
+    };
+    let mut bounds: Option<BoundingBox> = None;
+    for (point, radius) in dots.points.iter().zip(&dots.radii) {
+        let b = bounds.get_or_insert(BoundingBox {
+            x_min: point.x - radius,
+            y_min: point.y - radius,
+            x_max: point.x + radius,
+            y_max: point.y + radius,
+        });
+        b.x_min = b.x_min.min(point.x - radius);
+        b.y_min = b.y_min.min(point.y - radius);
+        b.x_max = b.x_max.max(point.x + radius);
+        b.y_max = b.y_max.max(point.y + radius);
+    }
+    paint.points = Cow::Owned(dots.points);
+    paint.dot_radii = Some(dots.radii);
+    paint.dot_directions = dots.directions;
+    paint.sample_ends = Some(dots.sample_ends);
+    paint.bounds = bounds;
+    paint.fountain_output_scale = Some(output_scale);
+    true
+}
+
 /// Prepare the native GLV16 Fountain geometry when Drawing has forwarded a
 /// rainbow flag that GLV16 ignores. This narrow page-render path does not
 /// enable per-stamp rainbow colors and leaves the context-free API unchanged.

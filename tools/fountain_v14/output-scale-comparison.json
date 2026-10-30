@@ -1,0 +1,45 @@
+{
+  "scope": "One original saved Fountain V14 source, direct host paint over white at 1x and 2x. No device or general saved-page parity.",
+  "baseline_commit": "28f20dcf",
+  "native_fixture": "conformance/fountain-v14-drawing-paint-native.json",
+  "native_sha256": "d431105e1cb233fa6630f76c1a0dd4ca6d893aa2289917658250400867b7b817",
+  "source_fixture_sha256": "dbfcc8f88f26ab5f656e1d1ba468c483d26f284329861134dd48d213aca18b62",
+  "readers": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "pdfium": "150.0.7869.0"
+  },
+  "measurement": "Absolute RGBA8 channel error; opaque white, top-origin 64x64 crop at source_origin multiplied by scale; direct PDF at scale*96 DPI, no image objects.",
+  "results": {
+    "baseline-1-svg": 3465,
+    "baseline-1-mupdf": 8226,
+    "baseline-1-pdfium": 10497,
+    "baseline-2-svg": 17403,
+    "baseline-2-mupdf": 24543,
+    "baseline-2-pdfium": 26739,
+    "candidate-1-svg": 3465,
+    "candidate-1-mupdf": 8226,
+    "candidate-1-pdfium": 10497,
+    "candidate-2-svg": 10617,
+    "candidate-2-mupdf": 16173,
+    "candidate-2-pdfium": 21558
+  },
+  "artifacts_sha256": {
+    "baseline/1.pdf": "5f12b7644abdd26a81f0bb85dbd215231f27d9c7154b870fbad8e826316c92fb",
+    "baseline/1.svg": "e62352ddcea21834bdc3d9b969d28de64b38c237fc711d064af51aba914c894b",
+    "baseline/2.pdf": "dca9fa59b2093ae0e40517937a345321cf93732b8e1cde9a05acb258072230cc",
+    "baseline/2.svg": "69a8f70ba257d213e8f30a0634955c86c546b06a48c7d51a5a11900dcc9ee32a",
+    "candidate/1.pdf": "5f12b7644abdd26a81f0bb85dbd215231f27d9c7154b870fbad8e826316c92fb",
+    "candidate/1.svg": "e62352ddcea21834bdc3d9b969d28de64b38c237fc711d064af51aba914c894b",
+    "candidate/2.pdf": "cc0f4e41ae7d840ff0aa323c2c8ea7c2b87d394e1c7d523bff0bd6d121231839",
+    "candidate/2.svg": "91a4751c2c9963add000b8d0b62383a23a111785b8cd369cec8653466c01c811"
+  },
+  "comparator_sha256": "b00f95ad1393eff81df6c9fe8f9addf7aeba68ed742ec941f5205843d9a4d50e",
+  "candidate_source_sha256": {
+    "crates/sdocx/src/ink.rs": "20dfd37f4b50941a3aff3766ecffc6e94530ecc8f33d94a4f0c7ee22e849341d",
+    "crates/sdocx/src/render.rs": "fa7846573913cd8ce2ac600a3017e792194023a554c89b31b816e008bbf99ee8",
+    "crates/sdocx/tests/fountain_v14_raster.rs": "61a9cca471a7c3d70b3dacc1884ba32e409988924f96f85689f020c8bf1f71c9"
+  },
+  "probe_sha256": "458defbd0c16e8f22faf9958de4a7bc0a6a7fd1c475c03aa868cfce9f3372b6c"
+}

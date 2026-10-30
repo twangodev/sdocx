@@ -69,3 +69,7 @@ required-features = ["serde"]
 [[example]]
 name = "crayon2_host_export"
 required-features = ["pdf"]
+
+[[example]]
+name = "fountain_v14_scale_probe"
+required-features = ["pdf", "serde"]

@@ -305,7 +305,7 @@ impl PartialEq for FountainV16OutputScaleProfile {
 }
 impl Eq for FountainV16OutputScaleProfile {}
 
-/// Explicit uniform output scale for V14 Fountain edge coverage.
+/// Explicit uniform output scale for V14 Fountain source sampling and edge coverage.
 ///
 /// The caller must apply this same scale, plus translation, from page units to
 /// output pixels. The renderer does not infer scale from the page or viewport.
@@ -464,7 +464,7 @@ pub struct RenderOptions {
     /// `None` preserves the canonical unit-scale path.
     #[cfg_attr(feature = "serde", serde(default))]
     pub fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
-    /// Optional scale-aware edge coverage for the saved Fountain V14 path.
+    /// Optional scale-aware source sampling and edge coverage for saved Fountain V14.
     /// Invalid or absent profiles preserve the existing V14 vector output.
     #[cfg_attr(feature = "serde", serde(default))]
     pub fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
@@ -5142,7 +5142,11 @@ fn render_stroke(
         && let Some(profile) = fountain_v14_output_scale_profile
         && valid_fountain_v14_output_scale(profile.pixels_per_page_unit)
     {
-        paint.fountain_output_scale = Some(profile.pixels_per_page_unit);
+        crate::ink::apply_fountain_v14_output_scale(
+            &mut paint,
+            stroke,
+            profile.pixels_per_page_unit,
+        );
     }
     if !native_allowed && paint.coverage_mesh.is_none() {
         let native_fountain_default_color = paint.profile == Some("FountainPen")

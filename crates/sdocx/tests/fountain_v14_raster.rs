@@ -126,6 +126,67 @@ fn persisted_native_drawing_direct_paint_matches_public_canvas() {
 }
 
 #[test]
+fn public_vector_scale_option_serializes_the_native_resampled_centers() {
+    let receipt = fixture();
+    let stroke: Stroke = serde_json::from_value(receipt["source_stroke"].clone()).unwrap();
+    let document = sdocx::Document {
+        pages: vec![sdocx::Page {
+            uuid: "fountain-native-source".into(),
+            width: 1024,
+            height: 1536,
+            content_bbox: stroke.bbox,
+            background_color: None,
+            template: None,
+            background: Default::default(),
+            objects: vec![stroke.into()],
+        }],
+        metadata: Default::default(),
+    };
+    let drawing: Value = serde_json::from_str(include_str!(
+        "../../../conformance/fountain-v14-drawing-scale-native.json"
+    ))
+    .unwrap();
+    for scale in [1, 2] {
+        let mut options = sdocx::RenderOptions::default();
+        options.fountain_v14_output_scale_profile = Some(sdocx::FountainV14OutputScaleProfile {
+            pixels_per_page_unit: scale as f32,
+        });
+        let page = sdocx::render_document_svg(&document, &options).remove(0);
+        let xml = roxmltree::Document::parse(&page.svg).unwrap();
+        let centers: Vec<_> = xml
+            .descendants()
+            .filter_map(|node| node.attribute("transform"))
+            .filter_map(|text| {
+                text.strip_prefix("matrix(")
+                    .and_then(|v| v.strip_suffix(')'))
+            })
+            .filter_map(|text| {
+                let values: Vec<f64> = text.split(',').map(|v| v.parse().unwrap()).collect();
+                let [_, _, _, _, x, y] = values.as_slice() else {
+                    return None;
+                };
+                ((*x > 900.) && (*y > 1400.)).then_some([*x, *y])
+            })
+            .collect();
+        let native = drawing["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["id"] == format!("top_{scale}_crop"))
+            .unwrap();
+        let expected: Vec<[f64; 2]> = native["addpoint_arguments"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| {
+                std::array::from_fn(|i| format!("{:.4}", row[i].as_f64().unwrap()).parse().unwrap())
+            })
+            .collect();
+        assert_eq!(centers, expected, "scale {scale}");
+    }
+}
+
+#[test]
 fn unchanged_saved_stroke_matches_native_masks_rgb_and_public_exports() {
     let receipt = fixture();
     check_native_cases(&receipt, 36, 12);
