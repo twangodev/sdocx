@@ -1,0 +1,55 @@
+{
+  "script_sha256": "81ab349daae27cadbec92c01abacfaf9409cf8205a9e490c05daee1e3f5e0b35",
+  "queue_probe_sha256": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+  "scope": "Direct native ARM64 projection getter calls in the synthetic list runtime using fabricated bitmap fields; not an observed list-to-canvas handoff or real page.",
+  "rectangle": [
+    3,
+    5,
+    195,
+    197
+  ],
+  "orientations": [
+    0,
+    1
+  ],
+  "matrix4": [
+    [
+      0.010416666977107525,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -0.010416666977107525,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -3.0518509447574615e-05,
+      0.0,
+      -1.0,
+      1.0,
+      -0.0,
+      1.0
+    ],
+    [
+      0.010416666977107525,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.010416666977107525,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -3.0518509447574615e-05,
+      0.0,
+      -1.0,
+      -1.0,
+      -0.0,
+      1.0
+    ]
+  ],
+  "list_return": 1,
+  "list_addpoint_calls": 84
+}
