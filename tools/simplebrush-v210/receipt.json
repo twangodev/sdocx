@@ -1,0 +1,102 @@
+{
+  "cases": {
+    "baseline": {
+      "native_json_sha256": "8dfa65af8992f8fa5e125336e5f056c1a91d00abc8a7dfdd7fafb6f61e07eafe",
+      "native_frame_sha256": "2977f24825896fddfc3c5db3cfeda4d037cf93a40967ba30ff54f9019e512262",
+      "native_gl_verdict": {
+        "adapter_hook_after_draw": [],
+        "draw_forwarded_once": true,
+        "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+        "immediately_after_real_draw": 0,
+        "immediately_after_rgba_readback": 0,
+        "immediately_before_real_draw": 0,
+        "paint_clean": true,
+        "pending_error_before_draw_hook": [],
+        "pixel_readback_available": true,
+        "preclear_available": true,
+        "status": "all_observed_draw_readback_task_errors_zero",
+        "task7_after_run": 0
+      },
+      "exports_sha256": {
+        "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef",
+        "generic.svg": "b5baee014d082825b1125ee77ace2773cb2c59a82813765ce228da9c0dec986b",
+        "two.svg": "49dae9287d8ba24194098aa0b2ebf3e6cdc6a91aa30c66ada31fc514b90a1a1e",
+        "one.pdf": "bc2f43e9083f43129fe59091c024fce2950441efa4cf784e0027888ca8caced9",
+        "one.svg": "b5baee014d082825b1125ee77ace2773cb2c59a82813765ce228da9c0dec986b",
+        "generic.pdf": "bc2f43e9083f43129fe59091c024fce2950441efa4cf784e0027888ca8caced9",
+        "two.pdf": "1475b0eeb5328405a05cdd7465800a4a81ae893ae81715d74c1175e54cbbc1fb"
+      },
+      "metrics": {
+        "svg": [
+          313617,
+          4681
+        ],
+        "mupdf": [
+          343932,
+          29994
+        ],
+        "pdfium": [
+          345344,
+          50361
+        ]
+      }
+    },
+    "visible_alternate": {
+      "native_json_sha256": "2ab496c11f34c04d7cb8c4cb977d230ea3d46c746c7b897713261e3494dd7aea",
+      "native_frame_sha256": "9ce274c973e14f82656ab861f1ec7cc55458efb3f890a8aa1755b366ffdd646a",
+      "native_gl_verdict": {
+        "adapter_hook_after_draw": [],
+        "draw_forwarded_once": true,
+        "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+        "immediately_after_real_draw": 0,
+        "immediately_after_rgba_readback": 0,
+        "immediately_before_real_draw": 0,
+        "paint_clean": true,
+        "pending_error_before_draw_hook": [],
+        "pixel_readback_available": true,
+        "preclear_available": true,
+        "status": "all_observed_draw_readback_task_errors_zero",
+        "task7_after_run": 0
+      },
+      "exports_sha256": {
+        "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef",
+        "generic.svg": "bd5afb2d180b748d43ebe9c5ff20fd761efa8f86c1e4e34ac09582e5f4dda881",
+        "two.svg": "1e7e5aaf798ed9050b67a7f31355657bf67c2b5e5b253d636ff332cce2fd1313",
+        "one.pdf": "e3b6280ac069d6af00efc1d0deaf98145d5c15788a7a9341f0c1992a14930b9c",
+        "one.svg": "bd5afb2d180b748d43ebe9c5ff20fd761efa8f86c1e4e34ac09582e5f4dda881",
+        "generic.pdf": "e3b6280ac069d6af00efc1d0deaf98145d5c15788a7a9341f0c1992a14930b9c",
+        "two.pdf": "d1a7600b69065280f896578f432c502e54b4f7b73066267a4073b196e8eb43b5"
+      },
+      "metrics": {
+        "svg": [
+          488920,
+          10409
+        ],
+        "mupdf": [
+          534557,
+          47519
+        ],
+        "pdfium": [
+          536390,
+          66661
+        ]
+      }
+    }
+  },
+  "limitations": "Clean archived revision with candidate and fixture patches. Native execution relies on incompletely pinned local host inputs; not device or saved-page parity.",
+  "clean_source_revision": "899675cab3f9ba847cfc6b9646c6ca318292f080",
+  "evidence_source_sha256": {
+    "capture.py": "115470e6a140ff729cbe137e0bee637a51854dafb247faacc5e85eebda1755c2",
+    "candidate.patch": "2a6e12834057d9a46a7cfc3ebf75ebbf990194fcb047d00ca29a292c9da5daf5",
+    "fixture.patch": "c56213802186e0c393b697936342046bee9bad3abe666182d76eed42c7d9f295",
+    "verify.py": "27e2047cd7a74f31cee65011f95ce3a66da1fa6a256c8e79cf4ae84669e209c9"
+  },
+  "clean_source_sha256": {
+    "crates/sdocx/src/ink/simplebrush.rs": "728d37b3b485a1e3bbc00537f0456a4fb1a4b42847f9f27b174d7843fa7478fd",
+    "crates/sdocx/src/render.rs": "81342976fc17e2009e7ca46ab0cc0fa93903a8d180aad94d917d3e61e1466020",
+    "crates/sdocx/src/render/simplebrush_tests.rs": "0c7b10ec0fbf38ce8e8989e4d09052369f88e05d1f38ae6327c7cea949369119",
+    "tools/simplebrush-size3-32/compare.py": "62901f9bc4e0e2eedd70b0db04e32665bc34527c3f3ed11e0455d548ff47156c",
+    "tools/simplebrush-v208/pdfium.py": "2196517b61e5e53eb6289fb88b3413c59cab6a7d4aa933c4962c6570186cef7e",
+    "tools/simplebrush-v209/pdfium.py": "e5905292d22c734ec86a081da29ce73538e610a76215376ec47597a1d9c08b6e"
+  }
+}
