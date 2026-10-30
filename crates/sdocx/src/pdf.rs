@@ -323,6 +323,9 @@ pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
     } else {
         None
     };
+    let mut svg_safe_options = render_options.clone();
+    svg_safe_options.old_pencil_svg_profile = false;
+    let render_options = &svg_safe_options;
     let (paper_document, paper_layout, paper_profile) = normalized
         .as_ref()
         .map(|normalized| {

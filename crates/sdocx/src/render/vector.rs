@@ -532,6 +532,10 @@ impl Svg {
     }
 }
 impl Group {
+    pub fn id(mut self, id: &str) -> Self {
+        self.0.attr("id", id);
+        self
+    }
     pub fn linear_rgb(mut self) -> Self {
         self.0.attr("color-interpolation", "linearRGB");
         self

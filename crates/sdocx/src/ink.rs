@@ -57,8 +57,7 @@ mod legacy_marker_paint;
 mod legacy_marker_segment_count;
 mod oblique;
 mod oblique_v1;
-#[cfg(test)]
-mod old_pencil;
+pub(crate) mod old_pencil;
 mod path;
 mod pencil;
 pub(crate) mod pencil_source;

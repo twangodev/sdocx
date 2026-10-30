@@ -40,6 +40,7 @@ mod simplebrush;
 #[cfg(test)]
 mod simplebrush_tests;
 pub use geometry::{GeometryDiagnostic, GeometryDiagnosticKind};
+mod old_pencil;
 mod pencil3;
 pub use pencil3::Pencil3PaperSampler;
 mod paint_diagnostic;
@@ -356,11 +357,21 @@ pub enum Marker3OutputScale {
     Eight,
 }
 
-/// Options controlling Svg rendering.
+/// Options controlling SVG rendering.
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct RenderOptions {
+    /// Caller asserts Pencil identity, normal stylus context, and 1920 by 1080 unit-scale output. Experimental SVG only.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub old_pencil_svg_profile: bool,
+    /// Opt into experimental scalable legacy Pencil PDF Forms, asserting the
+    /// same host source and 1920×1080 canvas context as the SVG profile.
+    /// Synthetic capture comparisons remain approximate and reader-dependent.
+    #[cfg(feature = "pdf")]
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub old_pencil_pdf_profile: bool,
     /// Opt into saved InkPen V4 reconstruction with explicit display dimensions.
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen_profile: Option<InkPenRenderProfile>,
@@ -967,6 +978,9 @@ impl DocumentTextCache {
             options.marker2_output_scale,
             options.magicpen_output_scale,
             options.magicpen_host_minimum_dot_grid,
+            options.old_pencil_svg_profile,
+            #[cfg(feature = "pdf")]
+            options.old_pencil_pdf_profile,
             options.pencil3_profile,
             options.airbrush_profile,
             options.simplebrush_profile,
@@ -1486,6 +1500,8 @@ fn render_page_contents_svg(
     marker2_output_scale: Option<u32>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
+    old_pencil_svg_profile: bool,
+    #[cfg(feature = "pdf")] old_pencil_pdf_profile: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
@@ -1571,6 +1587,9 @@ fn render_page_contents_svg(
         marker2_remaining_vertices: Cell::new(65_536),
         magicpen_output_scale,
         magicpen_host_minimum_dot_grid,
+        old_pencil_svg_profile,
+        #[cfg(feature = "pdf")]
+        old_pencil_pdf_profile,
         pencil3_profile,
         airbrush_profile,
         simplebrush_profile,
@@ -1587,6 +1606,10 @@ fn render_page_contents_svg(
         legacy_marker_budget: std::cell::RefCell::new(
             legacy_marker_vector::SourcePageBudget::default(),
         ),
+        #[cfg(feature = "pdf")]
+        old_pencil_pdf_remaining_forms: Cell::new(2),
+        old_pencil_remaining_stamps: Cell::new(512),
+        old_pencil_remaining_points: Cell::new(8192),
         simplebrush_remaining_stamps: Cell::new(32_768),
         simplebrush_long_remaining_stamps: Cell::new(4_096),
         montblanc_remaining_patches: Cell::new(32_768),
@@ -1639,6 +1662,9 @@ struct CompositionContext<'a> {
     marker2_remaining_vertices: Cell<usize>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
+    old_pencil_svg_profile: bool,
+    #[cfg(feature = "pdf")]
+    old_pencil_pdf_profile: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
@@ -1653,7 +1679,11 @@ struct CompositionContext<'a> {
     #[cfg(feature = "pdf")]
     legacy_marker_budget: std::cell::RefCell<legacy_marker_vector::SourcePageBudget>,
     // Shared across all passes in this composition; each scene gets its own budget.
+    #[cfg(feature = "pdf")]
+    old_pencil_pdf_remaining_forms: Cell<usize>,
     marker4_v7_remaining_stamps: Cell<usize>,
+    old_pencil_remaining_stamps: Cell<usize>,
+    old_pencil_remaining_points: Cell<usize>,
     simplebrush_remaining_stamps: Cell<usize>,
     simplebrush_long_remaining_stamps: Cell<usize>,
     montblanc_remaining_patches: Cell<usize>,
@@ -1714,6 +1744,28 @@ fn render_object(
             if native_allowed
                 && !context.replay
                 && context.slice.is_none()
+                && context.old_pencil_pdf_profile
+                && context.old_pencil_pdf_remaining_forms.get() > 0
+                && [context.page.width, context.page.height] == [1920, 1080]
+                && old_pencil::render_pdf(
+                    svg,
+                    stroke,
+                    context.theme,
+                    &context.old_pencil_remaining_stamps,
+                    &context.old_pencil_remaining_points,
+                )
+            {
+                context
+                    .old_pencil_pdf_remaining_forms
+                    .set(context.old_pencil_pdf_remaining_forms.get() - 1);
+                *stroke_index += 1;
+                progress.advance(1);
+                return;
+            }
+            #[cfg(feature = "pdf")]
+            if native_allowed
+                && !context.replay
+                && context.slice.is_none()
                 && let Some(profile) = context.legacy_marker_vector_profile
                 && legacy_marker_vector::render(
                     svg,
@@ -1753,6 +1805,7 @@ fn render_object(
                 &context.marker2_remaining_vertices,
                 context.magicpen_output_scale,
                 context.magicpen_host_minimum_dot_grid,
+                context.old_pencil_svg_profile,
                 context.pencil3_profile,
                 context.airbrush_profile,
                 context.simplebrush_profile,
@@ -1762,6 +1815,8 @@ fn render_object(
                 context.legacy_marker_centerline_profile,
                 context.marker4_v7_finger_output_scale,
                 &context.marker4_v7_remaining_stamps,
+                &context.old_pencil_remaining_stamps,
+                &context.old_pencil_remaining_points,
                 if context.simplebrush_two_pixels_per_page_unit
                     && context.simplebrush_profile.is_none()
                     && stroke.points.len() > 128
@@ -4475,6 +4530,7 @@ fn render_stroke(
     marker2_remaining_vertices: &Cell<usize>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
+    old_pencil_svg_profile: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
@@ -4484,6 +4540,8 @@ fn render_stroke(
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
     marker4_v7_finger_output_scale: Option<u32>,
     marker4_v7_remaining_stamps: &Cell<usize>,
+    old_pencil_remaining_stamps: &Cell<usize>,
+    old_pencil_remaining_points: &Cell<usize>,
     simplebrush_remaining_stamps: &Cell<usize>,
     montblanc_remaining_patches: &Cell<usize>,
     slice: Option<PageSlice>,
@@ -4570,6 +4628,21 @@ fn render_stroke(
             chinesebrush::prepare(stroke, profile, chinesebrush_fwidth_output_profile)
     {
         chinesebrush::render(svg, &ink, replay_index);
+        return;
+    }
+    if native_allowed
+        && old_pencil_svg_profile
+        && replay_index.is_none()
+        && slice.is_none()
+        && viewport == [1920, 1080]
+        && old_pencil::render(
+            svg,
+            stroke,
+            theme,
+            old_pencil_remaining_stamps,
+            old_pencil_remaining_points,
+        )
+    {
         return;
     }
     if native_allowed

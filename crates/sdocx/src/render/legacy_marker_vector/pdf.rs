@@ -266,3 +266,131 @@ impl Prepared {
         (self.writer.doc.clone(), self.root)
     }
 }
+
+pub(crate) fn prepare_pencil(
+    records: &[[f32; 4]],
+    argb: u32,
+    atlas: &[u8; 144 * 144 * 4],
+) -> Option<(Prepared, crate::BoundingBox)> {
+    use std::fmt::Write as _;
+    if records.is_empty() || records.len() > 128 {
+        return None;
+    }
+    let xmin = records
+        .iter()
+        .map(|r| r[0] - r[2])
+        .fold(f32::INFINITY, f32::min);
+    let ymin = records
+        .iter()
+        .map(|r| r[1] - r[2])
+        .fold(f32::INFINITY, f32::min);
+    let xmax = records
+        .iter()
+        .map(|r| r[0] + r[2])
+        .fold(f32::NEG_INFINITY, f32::max);
+    let ymax = records
+        .iter()
+        .map(|r| r[1] + r[2])
+        .fold(f32::NEG_INFINITY, f32::max);
+    let width = xmax - xmin;
+    let height = ymax - ymin;
+    if ![xmin, ymin, xmax, ymax, width, height]
+        .iter()
+        .all(|v| v.is_finite())
+        || xmin < 0.0
+        || ymin < 0.0
+        || xmax > 1920.0
+        || ymax > 1080.0
+        || width <= 0.
+        || height <= 0.
+    {
+        return None;
+    }
+    let mut w = Writer {
+        doc: Document::with_version("1.7"),
+        objects: 0,
+        bytes: 0,
+        commands: 0,
+        width: 1.,
+        height: 1.,
+    };
+    // Saved opacity applies once per stamp, after the grayscale texture mask.
+    let alpha = (argb >> 24) as f32 / 255.;
+    let mut tile_masks = lopdf::Dictionary::new();
+    let color = [
+        ((argb >> 16) & 255) as f64 / 255.,
+        ((argb >> 8) & 255) as f64 / 255.,
+        (argb & 255) as f64 / 255.,
+    ];
+    for tile in 0..7usize {
+        let mut groups = std::collections::BTreeMap::<u8, String>::new();
+        for y in 0..48usize {
+            let mut x = 0;
+            while x < 48 {
+                let a = atlas[(((tile / 3) * 48 + y) * 144 + (tile % 3) * 48 + x) * 4 + 3];
+                let start = x;
+                x += 1;
+                while x < 48
+                    && atlas[(((tile / 3) * 48 + y) * 144 + (tile % 3) * 48 + x) * 4 + 3] == a
+                {
+                    x += 1
+                }
+                if a != 0 {
+                    writeln!(
+                        groups.entry(a).or_default(),
+                        "{start} {y} {} 1 re",
+                        x - start
+                    )
+                    .ok()?;
+                }
+            }
+        }
+        let mut content = "0 g 0 0 48 48 re f\n".to_owned();
+        for (a, path) in groups {
+            writeln!(content, "{:.8} g\n{path}f", f64::from(a) / 255.0).ok()?;
+        }
+        w.bytes = w.bytes.checked_add(content.len())?;
+        if w.bytes > MAX_STAGE {
+            return None;
+        }
+        let mask=w.add(Stream::new(dictionary!{"Type"=>"XObject","Subtype"=>"Form","FormType"=>1,"BBox"=>vec![0.into(),0.into(),48.into(),48.into()],"Group"=>dictionary!{"S"=>"Transparency","CS"=>"DeviceGray","I"=>true},"Resources"=>dictionary!{}},content.into_bytes()))?;
+        let state=w.add(dictionary!{"Type"=>"ExtGState","ca"=>alpha,"CA"=>alpha,"SMask"=>dictionary!{"S"=>"Luminosity","G"=>Object::Reference(mask),"BC"=>vec![0.into()]}})?;
+        tile_masks.set(format!("T{tile}"), Object::Reference(state));
+    }
+    let mut root = format!(
+        "q 1 0 0 -1 0 1 cm {} 0 0 {} {} {} cm\n{} {} {} rg\n",
+        1.0 / width,
+        1.0 / height,
+        -xmin / width,
+        -ymin / height,
+        color[0],
+        color[1],
+        color[2]
+    );
+    for &[x, y, r, tile] in records {
+        let scale = 2.0 * r / 48.0;
+        writeln!(
+            root,
+            "q {scale:.10} 0 0 {scale:.10} {:.10} {:.10} cm /T{} gs 0 0 48 48 re f Q",
+            x - r,
+            y - r,
+            tile as usize
+        )
+        .ok()?;
+    }
+    root.push_str("Q\n");
+    w.bytes = w.bytes.checked_add(root.len())?;
+    if w.bytes > MAX_STAGE {
+        return None;
+    }
+    let root=w.add(Stream::new(dictionary!{"Type"=>"XObject","Subtype"=>"Form","FormType"=>1,"BBox"=>vec![0.into(),0.into(),1.into(),1.into()],"Resources"=>dictionary!{"ExtGState"=>tile_masks}},root.into_bytes()))?;
+    Some((
+        Prepared { writer: w, root },
+        crate::BoundingBox {
+            x_min: xmin as f64,
+            y_min: ymin as f64,
+            x_max: xmax as f64,
+            y_max: ymax as f64,
+        },
+    ))
+}
