@@ -1,0 +1,183 @@
+{
+  "scope": "Synthetic host Mesa Drawing, not device or saved-page parity; PDFium unshifted grid. Other admitted inputs extrapolate.",
+  "tool": 0,
+  "size": 3,
+  "matrix": [
+    2,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0.25,
+    0.5,
+    1
+  ],
+  "capture_script_sha256": "44b3a0d82b69970fd2fada8511ea07d663bba46b71e529c83f5b4bc5b77ec581",
+  "library_sha256": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+  "capture_source_sha256": "86afe686345ccc650c01ad2f51d5a79728f2a0d7aec39462605c7d302205fdea",
+  "paint_script_sha256": "62109356fa2120aa7d1318a6f23667558e3d4a183fc0f40d36ff3a42de94c936",
+  "readers": {
+    "resvg": "0.45.1",
+    "mupdf": "1.28.2",
+    "pdfium": "156.0.8076.0"
+  },
+  "cases": [
+    {
+      "count": 4,
+      "points_native": [
+        [
+          32,
+          32
+        ],
+        [
+          38,
+          35
+        ],
+        [
+          44,
+          38
+        ],
+        [
+          50,
+          32
+        ]
+      ],
+      "pressures": [
+        0.5,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "native_json_sha256": "a87ed8cb50b0d6b1d99e9455bb2fddb5bb1b0a3bca82facd6c7c3dfd9af89e70",
+      "frame_sha256": "c5f7de4ace8de1389c68e22fff7ad97fc04470431ca4abf16891db04d9cd557a",
+      "gl_error_verdict": {
+        "adapter_hook_after_draw": [],
+        "draw_forwarded_once": true,
+        "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+        "immediately_after_real_draw": 0,
+        "immediately_after_rgba_readback": 0,
+        "immediately_before_real_draw": 0,
+        "paint_clean": true,
+        "pending_error_before_draw_hook": [],
+        "pixel_readback_available": true,
+        "preclear_available": true,
+        "status": "all_observed_draw_readback_task_errors_zero",
+        "task7_after_run": 0
+      },
+      "exports_sha256": {
+        "generic.svg": "cfe0db17439aa58228c108ac68345fa64f9bec144a9f202eddc31d928c878ced",
+        "two.svg": "d3c38c406021093f9c3f22ab527574f8e527f527e27320660298ac7261fde22a",
+        "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef",
+        "generic.pdf": "a52d00e6296d542214fb9f94bc765dd7a427979af6223395096fd2b9a0c5a1d3",
+        "two.pdf": "75a86ecaccdc37e7c1a834b97b1f84a86636717ea9dfcfa4009ae56d9f02f755"
+      },
+      "error_generic_then_profile": {
+        "resvg_alpha": [
+          69454,
+          2647
+        ],
+        "mupdf_matched_paper_rgb": [
+          76642,
+          11112
+        ],
+        "pdfium_unshifted_rgb": [
+          76299,
+          21412
+        ]
+      }
+    },
+    {
+      "count": 7,
+      "points_native": [
+        [
+          32,
+          32
+        ],
+        [
+          38,
+          35
+        ],
+        [
+          44,
+          38
+        ],
+        [
+          50,
+          32
+        ],
+        [
+          56,
+          35
+        ],
+        [
+          62,
+          38
+        ],
+        [
+          68,
+          32
+        ]
+      ],
+      "pressures": [
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "native_json_sha256": "28f4653b73a828d0892c8e0975e1b5379d00ef5be0070b1456ec0181843c8999",
+      "frame_sha256": "43eb5a843b1e8381dc5ab871c3d3c4f065cb5ef20eeaadf5b774329a3f708bb7",
+      "gl_error_verdict": {
+        "adapter_hook_after_draw": [],
+        "draw_forwarded_once": true,
+        "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+        "immediately_after_real_draw": 0,
+        "immediately_after_rgba_readback": 0,
+        "immediately_before_real_draw": 0,
+        "paint_clean": true,
+        "pending_error_before_draw_hook": [],
+        "pixel_readback_available": true,
+        "preclear_available": true,
+        "status": "all_observed_draw_readback_task_errors_zero",
+        "task7_after_run": 0
+      },
+      "exports_sha256": {
+        "generic.svg": "efb1b439ef9388e62877bece35ca20cf8dae4980bf95dba24f1776e72b9eb80e",
+        "two.svg": "a18adc2e0868b42d2130a41fd96f9f8eaf951293c26cb633ab670cee38c6692b",
+        "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef",
+        "generic.pdf": "98d83fb65fca6ec602a7aea72ab3b85ef72ed3ab394b2861278a7bf28f3e767f",
+        "two.pdf": "ced3ca0bbbd60309f8d248919e929327d34ea3bf5bb45ccb0b9ec99e3c700017"
+      },
+      "error_generic_then_profile": {
+        "resvg_alpha": [
+          124786,
+          4601
+        ],
+        "mupdf_matched_paper_rgb": [
+          137749,
+          19802
+        ],
+        "pdfium_unshifted_rgb": [
+          137041,
+          39051
+        ]
+      }
+    }
+  ],
+  "comparators_sha256": {
+    "tools/simplebrush-v62/compare.py": "1e4edf5e0bef029a8c4b2d56aafaee82e5c9ee7341ec348bd792b2ee39ba6f48",
+    "tools/simplebrush-v208/pdfium.py": "2196517b61e5e53eb6289fb88b3413c59cab6a7d4aa933c4962c6570186cef7e"
+  },
+  "clean_source_replay": {
+    "base_commit": "86df8b5277e4cf9a3a5dbe1642cfeb9fb776dbec",
+    "changes": "Two admission lower bounds change from 16 to 4; native and admission regression tests are included. Full SimpleBrush tests and retained-native source export comparisons replayed from a clean candidate.",
+    "source_sha256": {
+      "crates/sdocx/src/ink/simplebrush.rs": "728d37b3b485a1e3bbc00537f0456a4fb1a4b42847f9f27b174d7843fa7478fd",
+      "crates/sdocx/src/render.rs": "81342976fc17e2009e7ca46ab0cc0fa93903a8d180aad94d917d3e61e1466020",
+      "crates/sdocx/src/render/simplebrush_tests.rs": "0c7b10ec0fbf38ce8e8989e4d09052369f88e05d1f38ae6327c7cea949369119"
+    }
+  }
+}

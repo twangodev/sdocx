@@ -4730,7 +4730,7 @@ fn render_stroke(
                                     && (8.0..=12.0).contains(&size)
                             }
                             2 => (8.0..=20.0).contains(&size),
-                            0 if (16..=64).contains(&stroke.points.len()) && size == 3.0 => true,
+                            0 if (4..=64).contains(&stroke.points.len()) && size == 3.0 => true,
                             0 => (8.0..=20.0).contains(&size),
                             3 => (8.0..=20.0).contains(&size),
                             _ => false,

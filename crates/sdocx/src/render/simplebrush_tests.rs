@@ -1606,7 +1606,7 @@ fn two_pixel_point_and_size_boundaries() {
                 let admitted = count <= 256
                     && (count == 3
                         || (8.0..=20.0).contains(&size)
-                        || (tool == 0 && size == 3.0 && (16..=64).contains(&count)));
+                        || (tool == 0 && size == 3.0 && (4..=64).contains(&count)));
                 let actual = &render_document_svg(&doc, &two)[0].svg;
                 let fallback = &render_document_svg(&doc, &RenderOptions::default())[0].svg;
                 assert_eq!(
@@ -2048,14 +2048,16 @@ fn tool_zero_three_point_two_pixel_bounds_and_fallback() {
         rendering.style.pen_size = Some(3.0);
         let doc = document(source);
         assert_eq!(
-            render_document_svg(&doc, &two)[0].svg,
-            render_document_svg(&doc, &RenderOptions::default())[0].svg
+            render_document_svg(&doc, &two)[0].svg
+                != render_document_svg(&doc, &RenderOptions::default())[0].svg,
+            count == 4
         );
         #[cfg(feature = "pdf")]
         assert_eq!(
-            crate::render_document_pdf(&doc, &two, &Default::default()).unwrap(),
-            crate::render_document_pdf(&doc, &RenderOptions::default(), &Default::default())
-                .unwrap()
+            crate::render_document_pdf(&doc, &two, &Default::default()).unwrap()
+                != crate::render_document_pdf(&doc, &RenderOptions::default(), &Default::default())
+                    .unwrap(),
+            count == 4
         );
     }
 }
@@ -2594,4 +2596,77 @@ fn tool0_size3_endpoint_native_geometry() {
             .collect();
         assert_eq!(hex, receipt["geometry"]["vector_bytes"].as_str().unwrap());
     }
+}
+
+#[test]
+fn tool0_size3_short_native_geometry() {
+    for (count, json) in [
+        (
+            4,
+            include_str!("../../../../tools/simplebrush-v208/native-4.json"),
+        ),
+        (
+            7,
+            include_str!("../../../../tools/simplebrush-v208/native-7.json"),
+        ),
+    ] {
+        let native: serde_json::Value = serde_json::from_str(json).unwrap();
+        let points: Vec<[f32; 2]> = (0..count)
+            .map(|i| [32.0 + i as f32 * 6.0, 32.0 + (i % 3) as f32 * 3.0])
+            .collect();
+        let samples = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+            points: &points,
+            pressures: &vec![0.5; count],
+            size: 3.0,
+            tool_type: 0,
+            curve_enabled: true,
+            max_samples: 32_768,
+        })
+        .unwrap();
+        let hex: String = samples
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .map(|v| format!("{v:02x}"))
+            .collect();
+        assert_eq!(
+            hex,
+            native["drawing_vector"]["vector_bytes"].as_str().unwrap()
+        );
+    }
+}
+
+#[test]
+fn tool0_size3_short_profile_guards() {
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let one = options();
+    let fallback = RenderOptions::default();
+    let render = |s: Stroke, o: &RenderOptions| render_document_svg(&document(s), o).remove(0).svg;
+    let make = |count: usize| {
+        let mut s = stroke();
+        s.points = (0..count)
+            .map(|i| Point {
+                x: 32.0 + 6.0 * i as f64,
+                y: 224.0 - 3.0 * (i % 3) as f64,
+            })
+            .collect();
+        s.pressures = vec![0.5; count];
+        s.pen_width = 3.0;
+        let r = s.rendering.as_mut().unwrap();
+        r.style.pen_size = Some(3.0);
+        r.tool_type_raw = 0;
+        s
+    };
+    let short = make(4);
+    assert_eq!(render(short.clone(), &one), render(short, &fallback));
+    for count in [2, 65] {
+        let s = make(count);
+        assert_eq!(render(s.clone(), &two), render(s, &fallback));
+    }
+    let mut stalled = make(7);
+    stalled.points[6] = stalled.points[5];
+    assert_eq!(render(stalled.clone(), &two), render(stalled, &fallback));
 }
