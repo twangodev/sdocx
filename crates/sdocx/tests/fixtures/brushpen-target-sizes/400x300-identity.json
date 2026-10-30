@@ -1,0 +1,104 @@
+{
+  "matrix": "1,0,0,0,1,0,0,0,1",
+  "frame_sha256": "e121cf0d30c57f8244da599b59cd80b2a059ac6b5a88a5f5b6fa78e210554bab",
+  "uniforms": [
+    {
+      "count": 1,
+      "location": 0,
+      "transpose": 0,
+      "values": [
+        0.004999999888241291,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.006666666828095913,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "count": 1,
+      "phase": "native PenGLRenderMsg task2",
+      "raw_f32_le": "dddcdc3e8584843ed2d1513f8180003f",
+      "uniform4fv_location": 4,
+      "values": [
+        0.4313725531101227,
+        0.25882354378700256,
+        0.8196078538894653,
+        0.501960813999176
+      ]
+    },
+    {
+      "count": 1,
+      "uniform2fv_location": 5,
+      "values": [
+        321.0,
+        228.0
+      ]
+    },
+    {
+      "count": 1,
+      "uniform2fv_location": 6,
+      "values": [
+        125.0,
+        29.999998092651367
+      ]
+    },
+    {
+      "uniform1f_location": 1,
+      "value": 3.0
+    },
+    {
+      "uniform1i_location": 2,
+      "value": 0
+    },
+    {
+      "uniform1i_location": 3,
+      "value": 1
+    }
+  ],
+  "target_debug": {
+    "native_canvas_target_after_task2": {
+      "attachment_object": 4,
+      "attachment_type": 5890,
+      "channel_nonzero": [
+        536,
+        536,
+        539,
+        539
+      ],
+      "height": 300,
+      "internal_format": 32856,
+      "rgb_nonzero_alpha_zero_pixels": 0,
+      "sha256": "e121cf0d30c57f8244da599b59cd80b2a059ac6b5a88a5f5b6fa78e210554bab",
+      "width": 400
+    }
+  },
+  "fbo_status": [
+    {
+      "bound_draw_framebuffer": 2,
+      "is_framebuffer_complete": true,
+      "phase": "native PenGLRenderMsg task2",
+      "status_enum": 36053,
+      "status_hex": "0x8cd5",
+      "target_enum": 36160
+    }
+  ],
+  "dimensions": [
+    400,
+    300
+  ],
+  "gl_error_after_readback": 0,
+  "feedback_alias_with_pattern_or_grain": false,
+  "repeat_full_rgba_and_uniforms_equal": true,
+  "note": "Synthetic Unicorn and host Mesa run; initial snapshot uses control-sized readback and does not establish full-target before-clear contents. No device or arbitrary page-size parity claim."
+}

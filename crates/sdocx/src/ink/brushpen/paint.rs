@@ -1496,6 +1496,191 @@ mod tests {
                 prior.iter().flatten().copied().collect::<Vec<_>>()
             );
         }
+        for (case_index, (receipt, compressed)) in [
+            (
+                include_str!("../../../tests/fixtures/brushpen-target-sizes/256x192-identity.json"),
+                &include_bytes!(
+                    "../../../tests/fixtures/brushpen-target-sizes/256x192-identity.rgba.zlib"
+                )[..],
+            ),
+            (
+                include_str!("../../../tests/fixtures/brushpen-target-sizes/256x192-half.json"),
+                &include_bytes!(
+                    "../../../tests/fixtures/brushpen-target-sizes/256x192-half.rgba.zlib"
+                )[..],
+            ),
+            (
+                include_str!("../../../tests/fixtures/brushpen-target-sizes/400x300-identity.json"),
+                &include_bytes!(
+                    "../../../tests/fixtures/brushpen-target-sizes/400x300-identity.rgba.zlib"
+                )[..],
+            ),
+            (
+                include_str!("../../../tests/fixtures/brushpen-target-sizes/400x300-half.json"),
+                &include_bytes!(
+                    "../../../tests/fixtures/brushpen-target-sizes/400x300-half.rgba.zlib"
+                )[..],
+            ),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let receipt: Value = serde_json::from_str(receipt).unwrap();
+            let imports = receipt["uniforms"].as_array().unwrap();
+            let read = |key: &str, location: u64| -> Vec<f32> {
+                imports.iter().find(|row| row[key] == location).unwrap()["values"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_f64().unwrap() as f32)
+                    .collect()
+            };
+            let period = read("uniform2fv_location", 5);
+            let offset = read("uniform2fv_location", 6);
+            let (expected_width, expected_height, expected_matrix, is_half) = [
+                (256, 192, "1,0,0,0,1,0,0,0,1", false),
+                (256, 192, "0.5,0,0,0,0.5,0,25,20,1", true),
+                (400, 300, "1,0,0,0,1,0,0,0,1", false),
+                (400, 300, "0.5,0,0,0,0.5,0,25,20,1", true),
+            ][case_index];
+            assert_eq!(receipt["matrix"], expected_matrix);
+            let expected_period = if is_half {
+                [160.5, 114.0]
+            } else {
+                [321.0, 228.0]
+            };
+            let expected_offset = if is_half { [87.5, 35.0] } else { [125.0, 30.0] };
+            for (actual, expected) in period
+                .iter()
+                .zip(expected_period)
+                .chain(offset.iter().zip(expected_offset))
+            {
+                assert!((*actual - expected).abs() < 0.0001);
+            }
+            let width = receipt["dimensions"][0].as_u64().unwrap() as usize;
+            let height = receipt["dimensions"][1].as_u64().unwrap() as usize;
+            assert_eq!((width, height), (expected_width, expected_height));
+            let projection = read("location", 0);
+            let scale = if is_half { 0.5 } else { 1.0 };
+            let (tx, ty) = if is_half { (25.0, 20.0) } else { (0.0, 0.0) };
+            let expected_projection = [
+                2.0 * scale / width as f32,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                2.0 * scale / height as f32,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                -1.0 / 32767.0,
+                0.0,
+                -1.0 + 2.0 * tx / width as f32,
+                -1.0 + 2.0 * ty / height as f32,
+                0.0,
+                1.0,
+            ];
+            assert_eq!(projection.len(), expected_projection.len());
+            for (actual, expected) in projection.iter().zip(expected_projection) {
+                assert!((*actual - expected).abs() < 0.000001);
+            }
+
+            let mut reference = Vec::new();
+            ZlibDecoder::new(compressed)
+                .read_to_end(&mut reference)
+                .unwrap();
+            assert_eq!(reference.len(), width * height * 4);
+            assert_eq!(sha256(&reference), receipt["frame_sha256"]);
+            assert_eq!(
+                receipt["target_debug"]["native_canvas_target_after_task2"]["sha256"],
+                receipt["frame_sha256"]
+            );
+            assert_eq!(receipt["gl_error_after_readback"], 0);
+            assert_eq!(receipt["feedback_alias_with_pattern_or_grain"], false);
+            assert_eq!(receipt["repeat_full_rgba_and_uniforms_equal"], true);
+            let mut actual = vec![0; reference.len()];
+            paint(
+                &records,
+                Rgba8 {
+                    width: 144,
+                    height: 144,
+                    bytes: &atlas_rgba,
+                },
+                Rgba8 {
+                    width: 321,
+                    height: 228,
+                    bytes: &grain_rgba,
+                },
+                Context {
+                    width,
+                    height,
+                    projection: read("location", 0).try_into().unwrap(),
+                    rgb: color[..3].try_into().unwrap(),
+                    grain_period: read("uniform2fv_location", 5).try_into().unwrap(),
+                    grain_offset: read("uniform2fv_location", 6).try_into().unwrap(),
+                    num_tiles: 3.0,
+                },
+                &mut actual,
+            )
+            .unwrap();
+            let l1: u64 = actual
+                .iter()
+                .zip(&reference)
+                .map(|(a, b)| u64::from(a.abs_diff(*b)))
+                .sum();
+            assert!(l1 <= 4, "{width}x{height}: {l1}");
+
+            #[cfg(feature = "render")]
+            {
+                let mut canvas = crate::InkRasterCanvas::new(
+                    crate::InkRasterContext {
+                        width: width as u32,
+                        height: height as u32,
+                        pixels_per_unit: 1,
+                        origin: crate::InkRasterOrigin::TopLeft,
+                    },
+                    [0; 4],
+                )
+                .unwrap();
+                canvas
+                    .paint_brushpen_glv10_host(
+                        &stroke,
+                        crate::BrushPenPaintContext {
+                            screen_width: 1920,
+                            screen_height: 1080,
+                            projection: read("location", 0).try_into().unwrap(),
+                            rgb: color[..3].try_into().unwrap(),
+                            grain_period: period.try_into().unwrap(),
+                            grain_offset: offset.try_into().unwrap(),
+                            num_tiles: 3.0,
+                            atlas: crate::BrushPenTexture {
+                                width: 144,
+                                height: 144,
+                                rgba: &atlas_rgba,
+                            },
+                            grain: crate::BrushPenTexture {
+                                width: 321,
+                                height: 228,
+                                rgba: &grain_rgba,
+                            },
+                        },
+                    )
+                    .unwrap();
+                let public: Vec<u8> = canvas
+                    .pixels()
+                    .chunks_exact(width)
+                    .rev()
+                    .flatten()
+                    .flatten()
+                    .copied()
+                    .collect();
+                assert_eq!(
+                    public, actual,
+                    "public canvas {width}x{height} half={is_half}"
+                );
+            }
+        }
         let transform_receipt: Value = serde_json::from_str(include_str!(
             "../../../../../conformance/brushpen-second-native/comparison.json"
         ))
