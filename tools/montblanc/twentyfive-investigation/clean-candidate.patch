@@ -1,0 +1,176 @@
+--- a/crates/sdocx/src/ink/montblanc.rs
++++ b/crates/sdocx/src/ink/montblanc.rs
+@@ -1010,7 +1010,7 @@
+         || !matches!(rendering.style.color_type_raw, None | Some(0))
+         || !(0.1..=2.0).contains(&size)
+         || stroke.pen_width.to_bits() != size.to_bits()
+-        || !(3..=24).contains(&stroke.points.len())
++        || !(3..=25).contains(&stroke.points.len())
+         || stroke.pressures.len() != stroke.points.len()
+         || !(stroke.timestamps.is_empty() || stroke.timestamps.len() == stroke.points.len())
+         || !stroke.tilts.is_empty()
+@@ -1056,7 +1056,7 @@
+         9 => many_point::many_point(input),
+         10..=11 if size >= 0.5 => many_point::many_point(input),
+         12..=20 if size >= 0.5 => many_point::many_point(input),
+-        21..=24 if size >= 0.5 => many_point::many_point(input),
++        21..=25 if size >= 0.5 => many_point::many_point(input),
+         _ => return None,
+     }
+     .ok()?;
+--- a/crates/sdocx/src/ink/montblanc_many.rs
++++ b/crates/sdocx/src/ink/montblanc_many.rs
+@@ -27,7 +27,7 @@
+ 
+ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
+     let n = input.points.len();
+-    if !(6..=24).contains(&n) {
++    if !(6..=25).contains(&n) {
+         return Err(Error::PointCount);
+     }
+     if input.pressure.len() != n {
+@@ -532,3 +532,52 @@
+         }
+     }
+ }
++
++#[test]
++fn twentyfive_native_stream() {
++    let cases: serde_json::Value =
++        serde_json::from_str(include_str!("montblanc_25_stream.json")).unwrap();
++    for case in cases.as_object().unwrap().values() {
++        let number = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
++        let points: Vec<[f32; 2]> = case["input"]["points"]
++            .as_array()
++            .unwrap()
++            .iter()
++            .map(|p| [number(&p[0]), number(&p[1])])
++            .collect();
++        let pressure: Vec<f32> = case["input"]["pressure"]
++            .as_array()
++            .unwrap()
++            .iter()
++            .map(number)
++            .collect();
++        let actual = many_point(Input {
++            points: &points,
++            pressure: &pressure,
++            pen_size: number(&case["input"]["pen_size"]),
++        })
++        .unwrap();
++        let expected = case["result"]["stream"].as_array().unwrap();
++        assert_eq!(actual.len(), expected.len());
++        for (i, (actual, expected)) in actual.iter().zip(expected).enumerate() {
++            let symbol = expected[0].as_str().unwrap();
++            let call = if symbol.contains("::AddStartPoint(") {
++                RtCall::Start
++            } else if symbol.contains("::AddEndPoint(") {
++                RtCall::End
++            } else if symbol.contains("::AddPoint(") {
++                RtCall::Point
++            } else {
++                panic!("unexpected symbol {symbol}")
++            };
++            assert_eq!(actual.call, call, "record {i}");
++            for (lane, word) in expected[1].as_array().unwrap().iter().enumerate() {
++                let s = word.as_str().unwrap();
++                let bits = u32::from_le_bytes(std::array::from_fn(|j| {
++                    u8::from_str_radix(&s[j * 2..j * 2 + 2], 16).unwrap()
++                }));
++                assert_eq!(actual.lanes[lane].to_bits(), bits, "record {i} lane {lane}");
++            }
++        }
++    }
++}
+--- a/tools/montblanc/many-point-public/src/main.rs
++++ b/tools/montblanc/many-point-public/src/main.rs
+@@ -8,88 +8,7 @@
+     let origin = if double { 64. } else { 128. };
+     let doc = sdocx::parse("crates/sdocx/tests/assets/legacy-marker/synthetic-serialized.sdocx")?;
+     for (name, coords, pressure, size) in [
+-        (
+-            "six",
+-            vec![
+-                [1., 2.],
+-                [7., 9.],
+-                [13., 3.],
+-                [20., 10.],
+-                [27., 4.],
+-                [34., 11.],
+-            ],
+-            vec![0.25, 0.4, 0.8, 0.35, 0.95, 0.6],
+-            1.5,
+-        ),
+-        (
+-            "seven",
+-            vec![
+-                [2., 2.],
+-                [8., 6.],
+-                [13., 0.],
+-                [20., 3.],
+-                [26., -4.],
+-                [32., 1.],
+-                [38., -6.],
+-            ],
+-            vec![0.9, 0.2, 0.5, 0.95, 0.3, 0.7, 0.45],
+-            2.,
+-        ),
+-        (
+-            "reverse",
+-            vec![
+-                [0., 0.],
+-                [8., 0.],
+-                [16., 2.],
+-                [9., 8.],
+-                [2., 7.],
+-                [-5., 10.],
+-                [-12., 6.],
+-            ],
+-            vec![0.1, 0.8, 0.2, 0.9, 0.3, 0.6, 0.4],
+-            2.,
+-        ),
+-        (
+-            "skip",
+-            vec![
+-                [0., 0.],
+-                [8., 1.],
+-                [9., 2.],
+-                [16., 3.],
+-                [23., 0.],
+-                [24., 1.],
+-                [31., 4.],
+-            ],
+-            vec![0.9, 0.2, 1., 0.4, 0., 0.8, 0.5],
+-            0.5,
+-        ),
+-        (
+-            "six_narrow",
+-            vec![
+-                [0., 0.],
+-                [7., 3.],
+-                [14., -2.],
+-                [21., 4.],
+-                [28., -1.],
+-                [35., 3.],
+-            ],
+-            vec![0., 1., 0.1, 0.9, 0.2, 1.],
+-            0.5,
+-        ),
+-        (
+-            "seven_loop",
+-            vec![
+-                [0., 0.],
+-                [8., 0.],
+-                [12., 7.],
+-                [5., 10.],
+-                [-2., 8.],
+-                [-5., 1.],
+-                [1., -5.],
+-            ],
+-            vec![1., 0., 1., 0., 1., 0., 1.],
+-            2.,
+-        ),
++("twentyfive-1.0",vec![[0.00000000,0.00000000],[4.00000000,2.00000000],[8.00000000,4.00000000],[12.00000000,6.00000000],[16.00000000,8.00000000],[20.00000000,6.00000000],[24.00000000,4.00000000],[28.00000000,2.00000000],[32.00000000,0.00000000],[36.00000000,-2.00000000],[40.00000000,-4.00000000],[44.00000000,-6.00000000],[48.00000000,-8.00000000],[52.00000000,-6.00000000],[56.00000000,-4.00000000],[60.00000000,-2.00000000],[64.00000000,0.00000000],[68.00000000,2.00000000],[72.00000000,4.00000000],[76.00000000,6.00000000],[80.00000000,8.00000000],[84.00000000,6.00000000],[88.00000000,4.00000000],[92.00000000,2.00000000],[96.00000000,0.00000000]],vec![0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000,0.50000000],1.0),
+     ] {
+         let mut stroke = doc
+             .pages
