@@ -1,0 +1,174 @@
+{
+  "schema": "sdocx-inkpen-v1-fixed-width-color-export-comparison-v1",
+  "scope": "Synthetic host Mesa and public SVG/direct PDF over #fcfcfc; reader-relative composites use each PDF reader rendered background and do not correct stroke color conversion; device and saved-note parity unverified",
+  "comparator_sha256": "d5ecf0a8b16c9e09fd3d2305997595c6ff6dc0121d432ec59ec2d83eae894fb0",
+  "fixture_sha256": "875cbe83ef3ce253e6d3da3583e330acad48697382fed2a43cf4f9e3186a827a",
+  "background_patch": {
+    "x": 112,
+    "y": 48,
+    "width": 16,
+    "height": 16
+  },
+  "readers": {
+    "resvg": "0.45.1",
+    "pillow": "12.1.1",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "pdfium": "150.0.7869.0"
+  },
+  "cases": [
+    {
+      "color": 4281558681,
+      "width": 6,
+      "native_sha256": "8cd01d8c1409bfafc28a69ae3b440f733d7a18ba4e3ae67c73682ef5fae8375d",
+      "candidate": {
+        "svg_sha256": "b93088a4e7c6e1b7b4ddafcc3c9d391379b3516ad1e886e1b5451cb79552b4af",
+        "pdf_sha256": "9109da61819810e046c06d2917b5267a16e7fad9c0e35e251af9e78a1ac3f4ae",
+        "svg_rgb_error": 3428,
+        "mupdf_rgb_error": 19035,
+        "pdfium_rgb_error": 5335,
+        "mupdf_reader_relative": {
+          "background_rgb": [
+            251,
+            252,
+            251
+          ],
+          "rgb_error": 3091
+        },
+        "pdfium_reader_relative": {
+          "background_rgb": [
+            252,
+            252,
+            252
+          ],
+          "rgb_error": 5335
+        }
+      },
+      "generic": {
+        "svg_sha256": "23e7689146c01cf3fe32c9e1d24babaa4a2a05348e885b02627d998cb79dd0a4",
+        "pdf_sha256": "e2aabf43e768eaf22ce1799bbaf4ca5deb1fa5d03e44c5f4bb2925dc4c3dd807",
+        "svg_rgb_error": 68653,
+        "mupdf_rgb_error": 84018,
+        "pdfium_rgb_error": 67929,
+        "mupdf_reader_relative": {
+          "background_rgb": [
+            251,
+            252,
+            251
+          ],
+          "rgb_error": 68066
+        },
+        "pdfium_reader_relative": {
+          "background_rgb": [
+            252,
+            252,
+            252
+          ],
+          "rgb_error": 67929
+        }
+      }
+    },
+    {
+      "color": 2161133345,
+      "width": 12,
+      "native_sha256": "f40f702c5861d0e747dee42ec521c7ff14e390e658e12c056c833bcddbf300d2",
+      "candidate": {
+        "svg_sha256": "6616998c8f565e213ae7a749297056e65c835ea8dc054ed73077eb515b57c64f",
+        "pdf_sha256": "2e0f054a7d2a4927cea30eb80493496cf5823b97d8cfc7eb831fc13251d8c8ea",
+        "svg_rgb_error": 1231,
+        "mupdf_rgb_error": 18610,
+        "pdfium_rgb_error": 3360,
+        "mupdf_reader_relative": {
+          "background_rgb": [
+            251,
+            252,
+            251
+          ],
+          "rgb_error": 2382
+        },
+        "pdfium_reader_relative": {
+          "background_rgb": [
+            252,
+            252,
+            252
+          ],
+          "rgb_error": 3360
+        }
+      },
+      "generic": {
+        "svg_sha256": "23e7689146c01cf3fe32c9e1d24babaa4a2a05348e885b02627d998cb79dd0a4",
+        "pdf_sha256": "e2aabf43e768eaf22ce1799bbaf4ca5deb1fa5d03e44c5f4bb2925dc4c3dd807",
+        "svg_rgb_error": 83828,
+        "mupdf_rgb_error": 98349,
+        "pdfium_rgb_error": 83142,
+        "mupdf_reader_relative": {
+          "background_rgb": [
+            251,
+            252,
+            251
+          ],
+          "rgb_error": 83031
+        },
+        "pdfium_reader_relative": {
+          "background_rgb": [
+            252,
+            252,
+            252
+          ],
+          "rgb_error": 83142
+        }
+      }
+    },
+    {
+      "color": 547369184,
+      "width": 3,
+      "native_sha256": "39c34f1af08c82663eb226e41c0311ec363b656bcedeff2852395ed55565640c",
+      "candidate": {
+        "svg_sha256": "6f912281894653da94cfcd51f920d61ad3ebe14b016862c5194a1c694b38ab05",
+        "pdf_sha256": "4fc6c4abf58fe336bef986803bbc59fc6eddc95952bcb27460e2c62c4f46dfb1",
+        "svg_rgb_error": 322,
+        "mupdf_rgb_error": 16551,
+        "pdfium_rgb_error": 348,
+        "mupdf_reader_relative": {
+          "background_rgb": [
+            251,
+            252,
+            251
+          ],
+          "rgb_error": 343
+        },
+        "pdfium_reader_relative": {
+          "background_rgb": [
+            252,
+            252,
+            252
+          ],
+          "rgb_error": 348
+        }
+      },
+      "generic": {
+        "svg_sha256": "23e7689146c01cf3fe32c9e1d24babaa4a2a05348e885b02627d998cb79dd0a4",
+        "pdf_sha256": "e2aabf43e768eaf22ce1799bbaf4ca5deb1fa5d03e44c5f4bb2925dc4c3dd807",
+        "svg_rgb_error": 48712,
+        "mupdf_rgb_error": 63847,
+        "pdfium_rgb_error": 48326,
+        "mupdf_reader_relative": {
+          "background_rgb": [
+            251,
+            252,
+            251
+          ],
+          "rgb_error": 47685
+        },
+        "pdfium_reader_relative": {
+          "background_rgb": [
+            252,
+            252,
+            252
+          ],
+          "rgb_error": 48326
+        }
+      }
+    }
+  ]
+}

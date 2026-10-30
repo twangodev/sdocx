@@ -3374,6 +3374,11 @@ mod tests {
         include!("inkpen/fixed_width_export_tests.rs");
     }
 
+    #[cfg(feature = "pdf")]
+    mod fixed_width_color_export_tests {
+        include!("inkpen/fixed_width_color_export_tests.rs");
+    }
+
     #[test]
     fn v1_fixed_width_matches_native_streams_and_rejects_invalid_widths() {
         let mut fixture: Value = serde_json::from_str(include_str!(
