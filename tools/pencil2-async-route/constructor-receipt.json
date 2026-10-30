@@ -1,0 +1,69 @@
+{
+  "scope": "Native ARM64 DrawingData constructor in Unicorn, synthetic ObjectList and optional Matrix3, with host RefBitmap callback intervention. No async scheduling, ownership, page input, Matrix4 or paint evidence.",
+  "script": "tools/pencil2-async-route/constructor-probe.py",
+  "script_sha256": "0fe83a5ab55cb29fd18e934e57a1d3fb01857e60f7617629d8b96d4abcd77153",
+  "queue_probe_sha256": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+  "drawing_dso_sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+  "matrix_f32": [
+    1,
+    0,
+    0,
+    0,
+    -1,
+    0,
+    6,
+    183,
+    1
+  ],
+  "cases": [
+    {
+      "present": 0,
+      "bitmap_nonnull": false,
+      "stored_hex": "000000000000000000000000000000000000000000000000000000000000000000000000",
+      "flag": 0,
+      "reference_calls": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ]
+    },
+    {
+      "present": 1,
+      "bitmap_nonnull": false,
+      "stored_hex": "0000803f000000000000000000000000000080bf000000000000c040000037430000803f",
+      "flag": 1,
+      "reference_calls": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ]
+    },
+    {
+      "present": 0,
+      "bitmap_nonnull": true,
+      "stored_hex": "000000000000000000000000000000000000000000000000000000000000000000000000",
+      "flag": 0,
+      "reference_calls": [
+        "nonnull",
+        "null",
+        "null",
+        "null"
+      ]
+    },
+    {
+      "present": 1,
+      "bitmap_nonnull": true,
+      "stored_hex": "0000803f000000000000000000000000000080bf000000000000c040000037430000803f",
+      "flag": 1,
+      "reference_calls": [
+        "nonnull",
+        "null",
+        "null",
+        "null"
+      ]
+    }
+  ],
+  "provenance": "Existing pinned adapter and dependencies described in tools/pencil2-page-v219/README.md; callback replaces SPGraphicsFactory::RefBitmap for all four calls. Stored absent payload is allocator state and has no asserted meaning."
+}
