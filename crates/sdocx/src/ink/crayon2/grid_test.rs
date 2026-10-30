@@ -36,6 +36,16 @@ fn texture_index(value: f32) -> Result<usize, &'static str> {
     Ok((value as i64).rem_euclid(150) as usize)
 }
 
+fn repeat_texture_index(value: f32) -> Result<usize, &'static str> {
+    // Keep the existing range bound before reducing the normalized coordinate.
+    texture_index(value * 150.)?;
+    let wrapped = value.rem_euclid(1.);
+    if wrapped == 1. {
+        return Ok(149);
+    }
+    texture_index(wrapped * 150.)
+}
+
 fn value(p: [f32; 3], x: u32, y: u32) -> f32 {
     p[2].mul_add(y as f32, p[1].mul_add(x as f32, p[0]))
 }
@@ -148,8 +158,8 @@ pub(super) fn fragments(records: &[Record], g: &Grid<'_>) -> Result<String, &'st
                 {
                     return Err("invalid interpolated sample");
                 }
-                let tx = texture_index(ux * g.background_scale[0] * 150.)?;
-                let ty = texture_index(uy * g.background_scale[1] * 150.)?;
+                let tx = repeat_texture_index(ux * g.background_scale[0])?;
+                let ty = repeat_texture_index(uy * g.background_scale[1])?;
                 let ix = ((pu * 10.).floor() as i32).clamp(0, 9) as usize;
                 let iy = ((pv * 30.).floor() as i32).clamp(0, 29) as usize;
                 let alpha = (g.rgba[3]
@@ -239,4 +249,17 @@ fn pathological_inputs_are_bounded() {
     g.background_scale = [1.; 2];
     g.clip_scale = [f32::MIN_POSITIVE; 2];
     assert_eq!(fragments(&[large], &g), Err("invalid projected record"));
+}
+
+#[test]
+fn normalized_repeat_precedes_texel_scaling() {
+    assert_eq!(repeat_texture_index(f32::from_bits(0x3f8369d0)), Ok(3));
+    assert_eq!(repeat_texture_index(f32::from_bits(0x3f4962fc)), Ok(117));
+    assert_eq!(repeat_texture_index(-0.25), Ok(112));
+    assert_eq!(repeat_texture_index(-f32::MIN_POSITIVE), Ok(149));
+    assert_eq!(repeat_texture_index(0.), Ok(0));
+    assert_eq!(repeat_texture_index(2.25), Ok(37));
+    for value in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, f32::MAX, -f32::MAX] {
+        assert_eq!(repeat_texture_index(value), Err("invalid texture coordinate"));
+    }
 }

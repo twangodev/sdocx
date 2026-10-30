@@ -17,6 +17,7 @@ parser.add_argument('svg', type=Path)
 parser.add_argument('png', type=Path)
 parser.add_argument('pdf', type=Path)
 parser.add_argument('--output', type=Path)
+parser.add_argument('--grid', action='store_true', help='compare the matched fixed-grid experiment')
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[2]
 fixture = root / 'crates/sdocx/tests/assets/crayon2-v2-native/matched-opaque.json.gz'
@@ -36,7 +37,8 @@ metrics = {}
 for name, frame in [('resvg', svg), ('mupdf', mupdf), ('pdfium', pdfium)]:
     diff = [abs(a-b) for a, b in zip(frame, native, strict=True)]
     metrics[name] = [sum(any(diff[i:i+3]) for i in range(0, len(diff), 3)), max(diff), sum(diff)]
-expected = {'resvg': [174, 34, 732], 'mupdf': [363, 82, 22346], 'pdfium': [314, 75, 15348]}
+expected = ({'resvg': [182, 2, 270], 'mupdf': [239, 5, 730], 'pdfium': [240, 5, 753]} if args.grid else
+            {'resvg': [174, 34, 732], 'mupdf': [363, 82, 22346], 'pdfium': [314, 75, 15348]})
 if metrics != expected:
     raise SystemExit(f'unexpected reader comparison: {metrics}')
 paths = {'svg': args.svg, 'png': args.png, 'pdf': args.pdf, 'native_fixture': fixture,

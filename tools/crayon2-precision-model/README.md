@@ -210,7 +210,7 @@ binary32 rounding selects (4,117). Its record 462 alpha is 217, and the
 binary64 grid now reproduces native RGB (167,84,64) at this pixel. The
 [receipt](worst-pixel-receipt.json) retains the pixel observations and frame
 hashes; the shader was recompiled and the coordinate high bytes are inferred.
-The test-only Rust grid retains the lower-total-error binary32 candidate. This does not establish the
+At that point the test-only Rust grid retained the lower-total-error binary32 candidate. The subsequent normalized-repeat experiment below replaces it. This does not establish the
 native implementation's internal precision or a general rule: the aggregate
 independent-control error increases to the Python receipt above, and other
 interpolation or sampling differences remain unresolved. The public standalone
@@ -236,3 +236,36 @@ The verifier checks pinned scripts, source vector and texture hashes, the
 selected native upload records, per-mode diagnostic shader hashes, draw calls,
 complete framebuffer hashes, pixel values and texture candidates. Capture
 outputs are large, reproducible intermediates.
+
+## Normalized repeat candidate
+
+A further test-only candidate wraps the scaled normalized background coordinate
+into `[0, 1)` in f32 before multiplying by 150 in f32. This models repeat in
+normalized texture space; it is a candidate, not a measurement of the native
+texture unit's internal arithmetic. It selects texel (3,117) at the retained
+worst-pixel intervention. The original range check remains in place before
+wrapping. For a tiny negative coordinate, f32 `rem_euclid` can round to
+exactly 1; the candidate explicitly selects the last texel in that case,
+following mathematical repeat rather than wrapping that rounded value to zero.
+This boundary is a model choice, not independently captured host behavior.
+The point atlas sampling is unchanged.
+
+The [compact receipt](normalized-repeat-receipt.json) retains input and output
+hashes and both comparisons. Two complete source-derived stroke controls improve against their respective
+native frames. For independent 192×192, the prior Rust grid and this candidate
+respectively yield resvg 287/128/1239 and 282/2/406, MuPDF 410/128/1869 and
+410/6/1044, PDFium 412/128/1861 and 411/6/1038. For matched 256×256, the
+prior grid and candidate yield resvg 195/35/625 and 182/2/270, MuPDF
+244/35/1017 and 239/5/730, PDFium 244/35/1038 and 240/5/753. Values are
+differing pixels / maximum channel error / total RGB absolute error. The
+readers and scope are as above; neither comparison establishes arbitrary
+output scaling, device, or saved-page fidelity.
+
+The matched control is generated with the same inputs and limits as the
+independent control above, replacing the test with `write_matched_rust_grid`.
+Export the resulting SVG using `crayon2_host_export`, then run
+`PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-varied-path/compare_host.py <svg> <png> <pdf> --grid`.
+The independent control uses `compare_output_grid.py` as above. Both source
+writers verify the input texture hashes and do not read native framebuffers.
+`cargo test -p sdocx --features render --lib ink::crayon2::grid_test` checks
+repeat boundary examples and input bounds.

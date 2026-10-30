@@ -1,0 +1,129 @@
+{
+  "scope": "Two source-derived fixed-output-grid host controls; no device, saved page, rescaling, or direct document PDF parity",
+  "metric_order": [
+    "differing_pixels",
+    "maximum_channel_error",
+    "absolute_rgb_error"
+  ],
+  "independent": {
+    "candidate": {
+      "resvg": [
+        282,
+        2,
+        406
+      ],
+      "mupdf": [
+        410,
+        6,
+        1044
+      ],
+      "pdfium": [
+        411,
+        6,
+        1038
+      ]
+    },
+    "baseline": {
+      "resvg": [
+        287,
+        128,
+        1239
+      ],
+      "mupdf": [
+        410,
+        128,
+        1869
+      ],
+      "pdfium": [
+        412,
+        128,
+        1861
+      ]
+    },
+    "output_sha256": {
+      "svg": "4e3443bae17ce2e492e75642818d687a43a986bc4ec3cdccb505ae05f0ff17ee",
+      "png": "86c42b59ff3644371c4c210d6f76b538856fe8ff39b90cd3fe05f01b3454f7b9",
+      "pdf": "eed566ce16068e6cccf093f003a6dc8bd2f4cac11cf5133e09468edacabd6edf"
+    },
+    "baseline_output_sha256": {
+      "svg": "1b836dc6262a1bc44f308c59fcb7e6801d4fa8f1a623349464ac26e3561eef02",
+      "png": "f74b9f1ea3c90826607458713f3fd1d4809afe4abdaeea428cfaee6559fa5e9e",
+      "pdf": "edc9d5cbf31042d12db131b318d040436df94a87c60df29877a78b2b45510f2b"
+    }
+  },
+  "matched": {
+    "candidate": {
+      "resvg": [
+        182,
+        2,
+        270
+      ],
+      "mupdf": [
+        239,
+        5,
+        730
+      ],
+      "pdfium": [
+        240,
+        5,
+        753
+      ]
+    },
+    "baseline": {
+      "resvg": [
+        195,
+        35,
+        625
+      ],
+      "mupdf": [
+        244,
+        35,
+        1017
+      ],
+      "pdfium": [
+        244,
+        35,
+        1038
+      ]
+    },
+    "output_sha256": {
+      "svg": "d8fa35ec1dbe7c2147c068fd9065308ffb24a247ef18354d1dcaaf17676b711b",
+      "png": "d99a047ecd5526880026b76e5db23caea9f4882d7b21f79932c97a542aa5bbd6",
+      "pdf": "69b9efcdc659071f3a736dbe077409a261639beacfbdead2005fa23436a99f49"
+    },
+    "baseline_output_sha256": {
+      "svg": "603d78d21c2cae143b0bc150663ac2d79c13868c5714b4d686e30186f8453812",
+      "png": "8a8eee6987877ec5f9cf0e5aead392476825535a3d94758559c7eef28d067692",
+      "pdf": "aad4719c655922564dbd9a877abbd233b53fc98e7225c030a43e274165add9f9"
+    }
+  },
+  "versions": {
+    "resvg": "0.47.0 (Cargo.lock)",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "pdfium": "150.0.7869.0"
+  },
+  "input_and_script_sha256": {
+    "crates/sdocx/src/ink/crayon2/grid_test.rs": "bc3e81b5cc617665be85cf4165ec9d856e50ecab9a4b577e96fdeef36c080615",
+    "crates/sdocx/src/ink/crayon2.rs": "01bdd5a1a04c587cdbd4606b8b373c812da175255b2b3574fed3ec6c569af269",
+    "tools/crayon2-precision-model/compare_output_grid.py": "b91520ca5d13b179f86d16d4236436f0245c5406191bbef67249a2c73da92034",
+    "tools/crayon2-varied-path/compare_host.py": "d8f9ae04081ae6ba47b63bd09f2f679612a3e47e515b0e5722da5dfdbff2e9cd",
+    "tools/crayon2-independent-control/native-frame.z": "da2b32e482b5a15035691b2e4c1c8805c0e0794ae2900b2465377b9e0eced283",
+    "crates/sdocx/tests/assets/crayon2-v2-native/matched-opaque.json.gz": "907d4f8f09c5d959bb8c05f3a2f774d6b710e100d2ee0a66d95cb8ea01e5dc32"
+  },
+  "note": "Both source-driven controls and all paired SVG/PDF comparisons were regenerated from scratch in an isolated HEAD archive plus only this candidate. Baseline uses HEAD grid_test.rs plus the same matched source writer. Native frames are retained comparison inputs, not newly captured.",
+  "validation": {
+    "base_commit": "1782c472",
+    "candidate_grid_tests": 3,
+    "baseline_grid_tests": 2,
+    "scope": "test-only fixed-grid candidate; no production renderer dispatch",
+    "commands": [
+      "cargo test -p sdocx --features render --lib ink::crayon2::grid_test",
+      "SDOCX_CRAYON2_GRID_SVG=<svg> cargo test -p sdocx --features render --lib write_{independent,matched}_rust_grid -- --ignored",
+      "cargo run -p sdocx --features pdf --example crayon2_host_export -- <svg> <png> <pdf>",
+      "PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-precision-model/compare_output_grid.py <svg> <png> <pdf>",
+      "PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-varied-path/compare_host.py <svg> <png> <pdf> --grid"
+    ],
+    "baseline_comparator": "For matched baseline only, expected metrics set to baseline values; measurement arithmetic unchanged."
+  }
+}
