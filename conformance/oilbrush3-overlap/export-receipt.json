@@ -1,0 +1,31 @@
+{
+  "scope": "Synthetic host-Mesa full opaque caller page, clear=0, native RGB vs public exports at 1x; not device, saved-note, or general lifecycle parity.",
+  "capture": "conformance/oilbrush3-overlap/receipt.json",
+  "mupdf_version": "1.28.2",
+  "pdfium_version": "150.0.7869.0",
+  "pdfs": {
+    "source.pdf": {
+      "sha256": "d3380664cf16302316a8b1c3111205caea04d25ba1bb53937672848f04e55581",
+      "mupdf": {
+        "differing_channels": 0,
+        "maximum_error": 0
+      },
+      "pdfium": {
+        "differing_channels": 0,
+        "maximum_error": 0
+      }
+    },
+    "source-svg.pdf": {
+      "sha256": "e6f984e4b983e3345e44da9dab9c48d9fcb982594f9ed2ae6e1d8316aa096338",
+      "mupdf": {
+        "differing_channels": 0,
+        "maximum_error": 0
+      },
+      "pdfium": {
+        "differing_channels": 0,
+        "maximum_error": 0
+      }
+    }
+  },
+  "native_rgb_sha256": "87b43274d5a2676af46963d9ceb5dcc3e5740f7c85eba47369135d8a10d82ca3"
+}

@@ -267,6 +267,45 @@ impl InkRasterCanvas {
         Ok(())
     }
 
+    /// Paint the captured cold OilBrush3 control over its uniform opaque host page.
+    /// The page, source textures, stroke profile, and host dimensions are bounded
+    /// by the native control. Other admitted trajectories use the same model,
+    /// but have not been compared with native on this page. Rejection leaves
+    /// pixels and budgets unchanged.
+    pub fn paint_oilbrush3_opaque_host(
+        &mut self,
+        stroke: &Stroke,
+        mask: &[u8],
+        depth: &[u8],
+    ) -> Result<(), InkRasterError> {
+        if self.context
+            != (InkRasterContext {
+                width: 1920,
+                height: 1080,
+                pixels_per_unit: 1,
+                origin: InkRasterOrigin::TopLeft,
+            })
+            || self.pixels.iter().any(|p| *p != [41, 83, 127, 255])
+        {
+            return Err(InkRasterError::InvalidContext);
+        }
+        let work = 1920 * 1080 + 128 * 1024;
+        if self.remaining_submissions == 0 || self.remaining_work < work {
+            return Err(InkRasterError::WorkLimit);
+        }
+        let pixels = crate::ink::oilbrush3::paint::paint_source_with_initial(
+            stroke,
+            mask,
+            depth,
+            [41, 83, 127, 255],
+        )
+        .map_err(InkRasterError::UnsupportedStroke)?;
+        self.pixels = pixels;
+        self.remaining_work -= work;
+        self.remaining_submissions -= 1;
+        Ok(())
+    }
+
     /// Paint atomically: failed source validation or exhausted work preserves pixels.
     pub fn paint(
         &mut self,
@@ -989,5 +1028,102 @@ mod fountain_snapshot_budget_tests {
         assert_eq!(canvas.pixels, before);
         assert_eq!(canvas.remaining_work, 0);
         assert_eq!(canvas.remaining_submissions, submissions);
+    }
+}
+
+#[cfg(all(test, feature = "serde"))]
+mod oilbrush3_opaque_rejection_tests {
+    use super::*;
+    use std::io::Read;
+
+    #[test]
+    fn opaque_rejections_preserve_pixels_and_budgets() {
+        let stroke = Stroke {
+            bbox: Default::default(),
+            points: Vec::new(),
+            pressures: Vec::new(),
+            tilts: Vec::new(),
+            orientations: Vec::new(),
+            timestamps: Vec::new(),
+            color: None,
+            pen_width: 8.,
+            rendering: None,
+        };
+        let decode = |bytes: &[u8]| {
+            let mut out = Vec::new();
+            flate2::read::ZlibDecoder::new(bytes)
+                .read_to_end(&mut out)
+                .unwrap();
+            out
+        };
+        let mask = decode(include_bytes!(
+            "../../../conformance/oilbrush3-v23-native-paint/oilbrush3-mask-r8.zlib"
+        ));
+        let depth = decode(include_bytes!(
+            "../../../conformance/oilbrush3-v23-native-paint/oilbrush3-depth-r8.zlib"
+        ));
+        let context = InkRasterContext {
+            width: 1920,
+            height: 1080,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        };
+        let mut canvas = InkRasterCanvas::new(context, [41, 83, 127, 255]).unwrap();
+        let before = canvas.pixels.clone();
+        let work = canvas.remaining_work;
+        let submissions = canvas.remaining_submissions;
+        let mut bad_mask = mask.clone();
+        bad_mask[0] ^= 1;
+        assert!(matches!(
+            canvas.paint_oilbrush3_opaque_host(&stroke, &bad_mask, &depth),
+            Err(InkRasterError::UnsupportedStroke(_))
+        ));
+        assert!(matches!(
+            canvas.paint_oilbrush3_opaque_host(&stroke, &mask, &depth),
+            Err(InkRasterError::UnsupportedStroke(_))
+        ));
+        assert_eq!(canvas.pixels, before);
+        assert_eq!(
+            (canvas.remaining_work, canvas.remaining_submissions),
+            (work, submissions)
+        );
+        canvas.context.origin = InkRasterOrigin::BottomLeft;
+        assert!(matches!(
+            canvas.paint_oilbrush3_opaque_host(&stroke, &mask, &depth),
+            Err(InkRasterError::InvalidContext)
+        ));
+        canvas.context = context;
+        canvas.pixels[0] = [0; 4];
+        assert!(matches!(
+            canvas.paint_oilbrush3_opaque_host(&stroke, &mask, &depth),
+            Err(InkRasterError::InvalidContext)
+        ));
+        canvas.pixels[0] = [41, 83, 127, 255];
+        assert_eq!(canvas.pixels, before);
+        assert_eq!(
+            (canvas.remaining_work, canvas.remaining_submissions),
+            (work, submissions)
+        );
+        canvas.remaining_work = 0;
+        assert!(matches!(
+            canvas.paint_oilbrush3_opaque_host(&stroke, &mask, &depth),
+            Err(InkRasterError::WorkLimit)
+        ));
+        assert_eq!(canvas.pixels, before);
+        assert_eq!(
+            (canvas.remaining_work, canvas.remaining_submissions),
+            (0, submissions)
+        );
+        canvas.remaining_work = work;
+        canvas.remaining_submissions = 0;
+        assert!(matches!(
+            canvas.paint_oilbrush3_opaque_host(&stroke, &mask, &depth),
+            Err(InkRasterError::WorkLimit)
+        ));
+        assert_eq!(canvas.pixels, before);
+        assert_eq!(
+            (canvas.remaining_work, canvas.remaining_submissions),
+            (work, 0)
+        );
     }
 }

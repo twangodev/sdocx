@@ -543,6 +543,15 @@ pub(crate) fn paint_source(
     mask: &[u8],
     depth: &[u8],
 ) -> Result<Vec<[u8; 4]>, &'static str> {
+    paint_source_with_initial(stroke, mask, depth, [0; 4])
+}
+
+pub(crate) fn paint_source_with_initial(
+    stroke: &crate::Stroke,
+    mask: &[u8],
+    depth: &[u8],
+    initial: [u8; 4],
+) -> Result<Vec<[u8; 4]>, &'static str> {
     use sha2::{Digest, Sha256};
     if mask.len() != MASK_W * MASK_H
         || depth.len() != DEPTH_W * DEPTH_H
@@ -572,7 +581,7 @@ pub(crate) fn paint_source(
         width: 1920,
         height: 1080,
     };
-    let mut pixels = vec![Rgba::default(); page.width * page.height];
+    let mut pixels = vec![Rgba(initial); page.width * page.height];
     let mut brush = vec![Rgba([68, 170, 238, 255]); FEEDBACK * FEEDBACK];
     for stamp in 0..records.len() {
         let record = &bytes[stamp * ADDPOINT_STRIDE..(stamp + 1) * ADDPOINT_STRIDE];
