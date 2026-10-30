@@ -60,7 +60,10 @@ mode = cli.add_mutually_exclusive_group()
 mode.add_argument('--write-fixture', action='store_true', help='explicitly write the captured native/paint fixture')
 mode.add_argument('--check-fixture', action='store_true', help='replay and compare the frozen fixture')
 cli.add_argument('--_capture-background', choices=('transparent','opaque'), help=argparse.SUPPRESS)
+cli.add_argument('--translated-source', action='store_true', help='use the public probe source points and identity view translation (single-background capture only)')
 CLI_ARGS = cli.parse_args()
+if CLI_ARGS.translated_source and CLI_ARGS._capture_background is None:
+    cli.error('--translated-source requires --_capture-background')
 EXPECTED_FIXTURE_SHA256='874f659069c8ab206c049f4e7c7161524146f55a93c44fd4ac378bba6e5c9bc2'
 if CLI_ARGS._capture_background is None and not CLI_ARGS.write_fixture:
     check_hash(FIXTURE,EXPECTED_FIXTURE_SHA256)
@@ -461,6 +464,11 @@ sys.argv = [str(BASE)]
 try:
     source = source.replace("p.put(pts,'6f',0,0,10,0,20,2)", "p.put(pts,'6f',0,0,8,6,18,-4)")
     source = source.replace("'41200000','00000000','41a00000','40000000'", "'41000000','40c00000','41900000','c0800000'")
+    if CLI_ARGS.translated_source:
+        assert source.count("p.put(pts,'6f',0,0,8,6,18,-4)") == 1
+        assert source.count("'00000000','00000000','41000000','40c00000','41900000','c0800000'") == 1
+        source = source.replace("p.put(pts,'6f',0,0,8,6,18,-4)", "p.put(pts,'6f',64,64,72,70,82,60)")
+        source = source.replace("'00000000','00000000','41000000','40c00000','41900000','c0800000'", "'42800000','42800000','42900000','428c0000','42a40000','42700000'")
     source = source.replace("_path=ROOT/'conformance'/_name", "_path=ROOT/'tmp/conformance-cleanup/native-capture-a241793/conformance'/_name")
     exec(compile(source, str(BASE), "exec"), paint_namespace)
 finally:
@@ -491,7 +499,7 @@ assert record['native_model_metadata']['color_argb']==f'0x{int(os.environ.get("C
 assert len(vector_data)%24==0 and len(vector_data)>0
 native_color=bytes(p.u.mem_read(rt+44,16))
 assert native_color.hex()==record['native_rt_before_init']['native_rt_color_bytes']
-control_argb=int(os.environ.get('CRAYON2_ARGB','0x80336699'),0); translation=(64.0,64.0)
+control_argb=int(os.environ.get('CRAYON2_ARGB','0x80336699'),0); translation=(0.0,0.0) if CLI_ARGS.translated_source else (64.0,64.0)
 # Install the pinned host Mesa GLES adapters used by the joined native paint witness.
 background_kind=CLI_ARGS._capture_background
 background_rgba=(0,0,0,0) if background_kind=='transparent' else (64,128,192,255)
@@ -711,4 +719,6 @@ report={'schema':'crayon2-selected-drawing-rtv1-host-mesa-color-translation-cont
  'boundaries':['Crayon2 five-setting caller run; last explicit-empty case selected','native queue SendDataToGPU task already run by caller harness; render and delete queue tasks deferred','host queue managed-object facade','host-native RGBA8 output allocation seed; native factories wrap target','Mesa GLES host and shader bindings','selected transparent/opaque background is a host initial target control']}
 paint_report=report
 source_capture={'schema':'crayon2-saved-caller-native-v1','provenance':{'base_caller_path':'conformance/fountain_saved_caller_native.py','base_caller_sha256':BASE_SHA256,'adapter_patch_labels':['Crayon2 DSO mapping and factory','ObjectStroke Crayon2 name and ARGB','advanced setting null/empty/V1/V2 controls','RTV1 AddPoint entry and native vector return capture','native SendDataToGPU queue dispatch','host IContext and CanvasProbe callbacks'],'mapped_dso_sha256':{rel:expected for rel,expected in DSO_HASHES.items()},'helper_sha256':HELPER_HASHES},'profile':[1920,1080],'source_input':{'pen_name':'com.samsung.android.sdk.pen.pen.preload.Crayon2','points':[[0,0],[8,6],[18,-4]],'pressure':[0.3,0.6,1.0],'timestamps':[100,110,120],'tilt':[0,0,0],'orientation':[0,0,0],'tool_type':2,'stroke_type':0,'curve_enabled':True,'visible':True,'color_argb':'0x80336699'},'cases':records}
+if CLI_ARGS.translated_source:
+ source_capture['source_input']['points']=[[64,64],[72,70],[82,60]]
 print(json.dumps({'source_capture':source_capture,'paint':paint_report},sort_keys=True))

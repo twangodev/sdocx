@@ -579,6 +579,49 @@ mod tests {
     }
 
     #[test]
+    fn translated_source_paint_capture_matches_source_derived_records() {
+        use std::io::Read;
+        let compressed =
+            include_bytes!("../../tests/assets/crayon2-v2-native/matched-opaque.json.gz");
+        let mut json = Vec::new();
+        flate2::read::GzDecoder::new(&compressed[..])
+            .read_to_end(&mut json)
+            .unwrap();
+        let capture: Value = serde_json::from_slice(&json).unwrap();
+        let case = &capture["source_capture"]["cases"][4];
+        let metadata = &case["native_model_metadata"];
+        assert_eq!(metadata["tool_type"], 2);
+        assert_eq!(metadata["stroke_type"], 0);
+        assert_eq!(metadata["curve_enabled"], true);
+        assert_eq!(metadata["color_argb"], "0x80336699");
+        assert_eq!(case["advanced_setting"], "2;");
+        assert_eq!(case["source_model_get_pen_size_f32_bits"], "00002041");
+        let (points, pressure) = parse_source_channels(&case["source_arrays"]);
+        assert_eq!(
+            points.iter().map(|p| (p.x, p.y)).collect::<Vec<_>>(),
+            [(64.0, 64.0), (72.0, 70.0), (82.0, 60.0)]
+        );
+        assert_eq!(pressure, [0.3, 0.6, 1.0]);
+        let input = SourceInput {
+            advanced_version: 2,
+            tool_type: 2,
+            stroke_type: 0,
+            curve_enabled: true,
+            points: &points,
+            pressure: &pressure,
+            size: 10.0,
+        };
+        let output = sample(&input, &parse_profile(&fixture())).unwrap();
+        let native = hex_bytes(capture["paint"]["native_vector_hex"].as_str().unwrap());
+        assert_eq!(
+            sha(&native),
+            capture["paint"]["native_vector_sha256"].as_str().unwrap()
+        );
+        assert_eq!(output.records.len(), native.len() / 24);
+        assert_eq!(output_bytes(&output), native);
+    }
+
+    #[test]
     fn native_negative_and_phase_controls_match_source_derived_stream_hashes() {
         let f = fixture();
         let profile = parse_profile(&f);
