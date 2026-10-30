@@ -6,7 +6,14 @@ use super::{
 };
 use crate::{Point, Stroke};
 
+#[cfg(feature = "render")]
+pub(crate) mod raster;
+
 pub(super) fn prepare(s: &Stroke, size: f32, tolerance: f32) -> Dots {
+    prepare_with_repeat(s, size, tolerance, 0.82)
+}
+
+pub(super) fn prepare_with_repeat(s: &Stroke, size: f32, tolerance: f32, repeat: f32) -> Dots {
     let rendering = s.rendering.as_ref().unwrap();
     let stylus = rendering.tool_type_raw == 2;
     let pressure_at = |i| {
@@ -38,7 +45,6 @@ pub(super) fn prepare(s: &Stroke, size: f32, tolerance: f32) -> Dots {
         #[cfg(test)]
         rainbow_path_offsets: Vec::new(),
     };
-    const REPEAT: f32 = 0.82;
     for i in 1..s.points.len() {
         let p = P::from(s.points[i]);
         let delta = p.sub(previous);
@@ -79,14 +85,14 @@ pub(super) fn prepare(s: &Stroke, size: f32, tolerance: f32) -> Dots {
                 let next_mid = previous.mid(p);
                 let q = Quad::new(midpoint, previous, next_mid);
                 if q.length > 0. && q.length >= residual {
-                    let count = ((q.length - residual) / REPEAT) as usize + 1;
+                    let count = ((q.length - residual) / repeat) as usize + 1;
                     let increment = (target - width) / count as f32;
                     let mut d = residual;
                     let mut w = width;
                     while d <= q.length {
                         w += increment;
                         emit(&mut dots, q.at(d), w * 0.5, Some(q.normalized_tangent(d)));
-                        d += REPEAT;
+                        d += repeat;
                     }
                     residual = d - q.length;
                     previous = p;
@@ -113,7 +119,7 @@ pub(super) fn prepare(s: &Stroke, size: f32, tolerance: f32) -> Dots {
                 width * 0.5,
                 Some(q.normalized_tangent(d)),
             );
-            d += REPEAT;
+            d += repeat;
         }
         emit(&mut dots, p, width * 0.5, None);
     }

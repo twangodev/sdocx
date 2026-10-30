@@ -38,6 +38,22 @@ impl InkRasterContext {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum InkRasterProfile {
+    /// Captured native Drawing RTV4 paint with enhanced AA disabled.
+    /// Each stamp blends directly; the native shader uses RGB and ignores
+    /// the supplied color's alpha. Context and color remain explicit inputs.
+    FountainPenV14DirectHost {
+        source_origin: [i32; 2],
+        paint_argb: u32,
+    },
+    /// Fresh enhanced-AA/redraw RTV4 paint from normal saved Fountain V14.
+    /// Integer page-coordinate origin for a cropped output and explicit native
+    /// RT paint ARGB; this color is a caller assertion, independent of geometry.
+    /// Native normalized XY clipping supports quads crossing the output frame.
+    FountainPenV14Host {
+        source_origin: [i32; 2],
+        paint_argb: u32,
+    },
+
     /// GLV1/null or GLV2/empty settings, glibc-FMA sampling and captured Mesa
     /// RTV1 paint. Fresh private mask per submission, native redraw enabled.
     /// Source-screen dimensions are independent of the output frame.
@@ -152,10 +168,36 @@ impl InkRasterCanvas {
         if self.remaining_submissions == 0 {
             return Err(InkRasterError::WorkLimit);
         }
+        let fountain = match profile {
+            InkRasterProfile::FountainPenV14Host {
+                source_origin,
+                paint_argb,
+            } => Some((source_origin, paint_argb, false)),
+            InkRasterProfile::FountainPenV14DirectHost {
+                source_origin,
+                paint_argb,
+            } => Some((source_origin, paint_argb, true)),
+            _ => None,
+        };
+        if let Some((source_origin, paint_argb, direct)) = fountain {
+            let plan = crate::ink::fountain_v14::raster::prepare(
+                stroke,
+                self.context,
+                source_origin,
+                paint_argb,
+                direct,
+                self.remaining_work,
+            )?;
+            let pixels = plan.render(&self.pixels)?;
+            self.remaining_work -= plan.work();
+            self.remaining_submissions -= 1;
+            self.pixels = pixels;
+            return Ok(());
+        }
         let InkRasterProfile::WaterColorHostRtv1 {
             screen_width,
             screen_height,
-        } = profile;
+        } = profile else { unreachable!("Fountain profile returned above") };
         let (rows, argb) = watercolor::prepare_stroke(stroke, [screen_width, screen_height])?;
         let mut matrix = [0.; 16];
         let scale = self.context.pixels_per_unit as f32;

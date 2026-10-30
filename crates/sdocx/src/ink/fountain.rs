@@ -129,6 +129,7 @@ impl History {
     }
 }
 
+#[cfg_attr(test, derive(Clone))]
 pub(super) struct Dots {
     pub points: Vec<Point>,
     pub radii: Vec<f64>,
@@ -397,7 +398,14 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
 }
 
 pub(super) fn prepare_with_output_scale(s: &Stroke, output_scale: f32) -> Option<Dots> {
-    prepare_with_rainbow_mode(s, None, false, Some(output_scale))
+    prepare_with_rainbow_mode(s, None, false, Some(output_scale), None)
+}
+
+pub(super) fn prepare_v14_with_output_scale(s: &Stroke, output_scale: f32) -> Option<Dots> {
+    if s.rendering.as_ref()?.advanced_settings.as_deref() != Some("14;") {
+        return None;
+    }
+    prepare_with_rainbow_mode(s, None, false, None, Some(output_scale))
 }
 
 pub(super) fn prepare_v16_rainbow_ignored(s: &Stroke) -> Option<Dots> {
@@ -417,7 +425,7 @@ pub(super) fn prepare_v16_rainbow_ignored_with_output_scale(
     {
         return None;
     }
-    prepare_with_rainbow_mode(s, None, true, output_scale)
+    prepare_with_rainbow_mode(s, None, true, output_scale, None)
 }
 
 pub(crate) fn prepare_v17_rainbow(s: &Stroke, profile: V17Rainbow<'_>) -> Option<Dots> {
@@ -425,7 +433,7 @@ pub(crate) fn prepare_v17_rainbow(s: &Stroke, profile: V17Rainbow<'_>) -> Option
 }
 
 fn prepare_with_rainbow(s: &Stroke, profile: Option<V17Rainbow<'_>>) -> Option<Dots> {
-    prepare_with_rainbow_mode(s, profile, false, None)
+    prepare_with_rainbow_mode(s, profile, false, None, None)
 }
 
 fn prepare_with_rainbow_mode(
@@ -433,6 +441,7 @@ fn prepare_with_rainbow_mode(
     profile: Option<V17Rainbow<'_>>,
     ignore_glv16_rainbow_flag: bool,
     v16_output_scale: Option<f32>,
+    v14_output_scale: Option<f32>,
 ) -> Option<Dots> {
     let r = s.rendering.as_ref()?;
     let v14 = r.advanced_settings.as_deref() == Some("14;");
@@ -531,6 +540,18 @@ fn prepare_with_rainbow_mode(
         return None;
     }
     if v14 {
+        if let Some(scale) = v14_output_scale {
+            let repeat = REPEAT * inverse_scale(scale)?;
+            if !repeat.is_finite()
+                || repeat <= 0.
+                || s.points.len() > 8192
+                || distance / f64::from(repeat) > 8190.
+            {
+                return None;
+            }
+            let dots = super::fountain_v14::prepare_with_repeat(s, size, tolerance, repeat);
+            return (dots.points.len() <= 8192).then_some(dots);
+        }
         return Some(super::fountain_v14::prepare(s, size, tolerance));
     }
     let repeat = match v16_output_scale {
