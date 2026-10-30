@@ -1,0 +1,35 @@
+{
+  "scope": "Isolated native Crayon2 stamp 100 host GLES upload and draw",
+  "stamp": 100,
+  "target_size": [
+    192,
+    192
+  ],
+  "native_vector_sha256": "2e04036136b9e85c47367c2601f962a76ef683b8df569bd8e5b85ca2ce3c648a",
+  "draw_values": [
+    5,
+    0,
+    4,
+    1
+  ],
+  "quad_sha256": "a39b6ddc1dbf16f1c1efb544817dc4ca4de6b575365af723878516f6afb558e4",
+  "quad_hex": "000080bf000080bf000000000000803f000080bf0000803f00000000000000000000803f000080bf0000803f0000803f0000803f0000803f0000803f00000000",
+  "quad_f32": [
+    -1.0,
+    -1.0,
+    0.0,
+    1.0,
+    -1.0,
+    1.0,
+    0.0,
+    0.0,
+    1.0,
+    -1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.0
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "scope": "Host shader intervention and conditional arithmetic candidate; not proof of active setup instructions, device parity, or an SVG/PDF paint correction.",
+  "source": {
+    "version": "25.0.7-2+deb13u1",
+    "url": "https://sources.debian.org/data/main/m/mesa/25.0.7-2%2Bdeb13u1/src/gallium/drivers/llvmpipe/lp_state_setup.c",
+    "sha256": "766bd73962b6fbd3d588ac56d597619f445c79326266f3cf4b99c739558d3e20",
+    "calc_coef4_lines": [
+      374,
+      413
+    ],
+    "init_args_lines": [
+      544,
+      610
+    ]
+  },
+  "sha256": {
+    "tools/crayon2-independent-control/native-vector.z": "683ac5d9055c60c8c7cacb5cc532140a997dbd29371aedaca5fcae844d9de13a",
+    "tools/crayon2-precision-model/capture.py": "252bfcff42aad93500b56ffcd07e6ca759343c81db35b1292349c118c808c66d",
+    "tools/crayon2-precision-model/collect_holdout.py": "1baa84e08b9e6868c4489229a453681dbb9e91e51eb540180c907b393e929b10",
+    "tools/crayon2-precision-model/verify_quad.py": "35231079c6b6cd4465b1002dc38c7adea22b4bfd534d31554d0f9e2070bd7cad",
+    "tools/crayon2-precision-model/triangle_plane.py": "e02eb88f7f2e432e716d0ab2ce7bca178dd6b73327c9bdaee63260f8b900afa6",
+    "tools/crayon2-precision-model/interpolation_orders.py": "624f7e49b02922ac15e4b1672a654b8dcb3e49842fa282c89fac9cc0a9ffd05d",
+    "tools/crayon2-precision-model/receipt.json": "6d8caf00f8917db009c9bde5d1ef3c9ce46c72af1dfa26cef93fa74b81b9ab48",
+    "tools/crayon2-precision-model/triangle-plane-holdout.json": "65945715a113b62cbef6054490e6f2b2242490122ca43fdaa24f5db5dbea90da",
+    "tools/crayon2-precision-model/quad-receipt.json": "307ea743ca22534eced8541ddae90a663e10c436ea0fa098bd12ad0083db7c73"
+  },
+  "fresh_validation": {
+    "holdout_stamps": [
+      20,
+      200,
+      350
+    ],
+    "modes": [
+      "xuv",
+      "yuv"
+    ],
+    "holdout_frames_verified": 6,
+    "holdout_axis_observations": 24,
+    "quad_stamp": 100,
+    "quad_upload_bytes": 64,
+    "candidate_order": [
+      0,
+      1,
+      2
+    ],
+    "evaluation": "float64 multiply-add rounded to float32; not universally exact float32 FMA",
+    "original_axis_matches": 36,
+    "original_axis_count": 36,
+    "holdout_axis_matches": 24,
+    "holdout_axis_count": 24,
+    "vertex_order_unique": false
+  }
+}
