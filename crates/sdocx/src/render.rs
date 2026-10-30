@@ -1531,6 +1531,7 @@ fn render_page_contents_svg(
             legacy_marker_vector::SourcePageBudget::default(),
         ),
         simplebrush_remaining_stamps: Cell::new(32_768),
+        simplebrush_long_remaining_stamps: Cell::new(4_096),
         montblanc_remaining_patches: Cell::new(32_768),
         slice,
     };
@@ -1591,6 +1592,7 @@ struct CompositionContext<'a> {
     legacy_marker_budget: std::cell::RefCell<legacy_marker_vector::SourcePageBudget>,
     // Shared across all passes in this composition; each scene gets its own budget.
     simplebrush_remaining_stamps: Cell<usize>,
+    simplebrush_long_remaining_stamps: Cell<usize>,
     montblanc_remaining_patches: Cell<usize>,
     slice: Option<PageSlice>,
 }
@@ -1691,7 +1693,14 @@ fn render_object(
                 context.montblanc_profile,
                 context.montblanc_two_pixels_per_page_unit,
                 context.legacy_marker_centerline_profile,
-                &context.simplebrush_remaining_stamps,
+                if context.simplebrush_two_pixels_per_page_unit
+                    && context.simplebrush_profile.is_none()
+                    && stroke.points.len() > 128
+                {
+                    &context.simplebrush_long_remaining_stamps
+                } else {
+                    &context.simplebrush_remaining_stamps
+                },
                 &context.montblanc_remaining_patches,
                 context.slice,
             );
@@ -4549,20 +4558,20 @@ fn render_stroke(
             && !simplebrush_two_pixels_per_page_unit)
             || (simplebrush_profile.is_none()
                 && simplebrush_two_pixels_per_page_unit
-                && (2..=32).contains(&stroke.points.len())
+                && (2..=256).contains(&stroke.points.len())
                 && stroke.rendering.as_ref().is_some_and(|rendering| {
                     matches!(
                         rendering.advanced_settings.as_deref(),
                         None | Some("") | Some("1;")
                     ) && rendering.style.pen_size.is_some_and(|size| {
                         match rendering.tool_type_raw {
-                            2 if stroke.points.len() == 3 => (3.0..=32.0).contains(&size),
+                            0 | 2 | 3 if stroke.points.len() == 3 => (3.0..=32.0).contains(&size),
                             1 => {
                                 (3..=32).contains(&stroke.points.len())
                                     && (8.0..=12.0).contains(&size)
                             }
                             2 => (8.0..=20.0).contains(&size),
-                            0 => stroke.points.len() <= 16 && (8.0..=20.0).contains(&size),
+                            0 => (8.0..=20.0).contains(&size),
                             3 => (8.0..=20.0).contains(&size),
                             _ => false,
                         }

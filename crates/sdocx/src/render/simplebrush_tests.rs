@@ -464,6 +464,30 @@ fn stamp_budget_is_cumulative_and_rejection_is_atomic() {
     assert_eq!(render_one(&source, &fresh_page_budget, true, false), native);
     assert_eq!(fresh_page_budget.get(), small_count);
 
+    for point_count in [129, 256] {
+        let mut long = stroke();
+        long.points = (0..point_count)
+            .map(|i| Point {
+                x: 10.0 + 2.0 * i as f64,
+                y: 20.0 + 2.0 * (i % 5) as f64,
+            })
+            .collect();
+        long.pressures = vec![0.5; point_count];
+        long.pen_width = 12.0;
+        long.rendering.as_mut().unwrap().style.pen_size = Some(12.0);
+        let n = crate::ink::simplebrush::prepare_stroke_for_scale(&long, true, 32_768, true)
+            .unwrap()
+            .samples
+            .len();
+        let budget = Cell::new(n - 1);
+        let rejected = render_one(&long, &budget, false, true);
+        assert_eq!(budget.get(), n - 1);
+        assert_eq!(rejected, render_one(&long, &Cell::new(0), false, false));
+        let budget = Cell::new(n);
+        assert_ne!(render_one(&long, &budget, false, true), rejected);
+        assert_eq!(budget.get(), 0);
+    }
+
     source.points.truncate(32);
     source.pressures.truncate(32);
     source.pen_width = 12.0;
@@ -939,8 +963,10 @@ fn two_pixel_profile_is_explicit_and_conflicts_fall_back() {
     };
     assert_eq!(render_document_svg(&doc, &conflict)[0].svg, baseline);
     for (tool, size, setting) in [
-        (0, 7.0, None),
-        (3, 21.0, None),
+        (0, 2.99, None),
+        (0, 32.01, None),
+        (3, 2.99, None),
+        (3, 32.01, None),
         (2, 2.99, None),
         (2, 32.01, None),
     ] {
@@ -970,13 +996,13 @@ fn two_pixel_profile_is_explicit_and_conflicts_fall_back() {
         }
     }
     let mut unsupported = stroke();
-    unsupported.points = (0..33)
+    unsupported.points = (0..257)
         .map(|i| Point {
             x: i as f64 * 2.0,
             y: 20.0,
         })
         .collect();
-    unsupported.pressures = vec![0.5; 33];
+    unsupported.pressures = vec![0.5; 257];
     let unsupported = document(unsupported);
     assert_eq!(
         render_document_svg(&unsupported, &two)[0].svg,
@@ -990,8 +1016,9 @@ fn two_pixel_tool_two_size_boundaries_reach_svg_and_pdf() {
         simplebrush_two_pixels_per_page_unit: true,
         ..Default::default()
     };
-    for size in [3.0, 4.0, 32.0] {
+    for (tool, size) in [(2, 3.0), (2, 4.0), (2, 32.0), (3, 3.0), (3, 32.0)] {
         let mut source = stroke();
+        source.rendering.as_mut().unwrap().tool_type_raw = tool;
         source.pen_width = size;
         source.rendering.as_mut().unwrap().style.pen_size = Some(size);
         let doc = document(source);
@@ -1006,6 +1033,54 @@ fn two_pixel_tool_two_size_boundaries_reach_svg_and_pdf() {
                 .unwrap()
         );
     }
+}
+
+#[test]
+fn two_pixel_tool_three_three_point_gate_falls_back_outside_bounds() {
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    for count in [2, 4] {
+        for size in [3.0, 32.0] {
+            let mut source = stroke();
+            source.points.truncate(count);
+            source.pressures.truncate(count);
+            if count == 4 {
+                source.points.push(Point { x: 40.0, y: 20.0 });
+                source.pressures.push(0.5);
+            }
+            source.pen_width = size;
+            let rendering = source.rendering.as_mut().unwrap();
+            rendering.tool_type_raw = 3;
+            rendering.style.pen_size = Some(size);
+            let doc = document(source);
+            assert_eq!(
+                render_document_svg(&doc, &two)[0].svg,
+                render_document_svg(&doc, &RenderOptions::default())[0].svg
+            );
+        }
+    }
+    let mut source = stroke();
+    source.pen_width = 3.0;
+    let rendering = source.rendering.as_mut().unwrap();
+    rendering.tool_type_raw = 3;
+    rendering.style.pen_size = Some(3.0);
+    let conflict = RenderOptions {
+        simplebrush_profile: Some(SimpleBrushRenderProfile::HostV25),
+        ..two.clone()
+    };
+    let eligible = document(source.clone());
+    assert_eq!(
+        render_document_svg(&eligible, &conflict)[0].svg,
+        render_document_svg(&eligible, &RenderOptions::default())[0].svg
+    );
+    source.rendering.as_mut().unwrap().properties.rainbow_effect = true;
+    let doc = document(source);
+    assert_eq!(
+        render_document_svg(&doc, &two)[0].svg,
+        render_document_svg(&doc, &RenderOptions::default())[0].svg
+    );
 }
 
 #[test]
@@ -1060,36 +1135,42 @@ fn two_pixel_profile_deserializes_old_options_and_roundtrips() {
 
 #[test]
 fn two_pixel_profile_falls_back_for_replay_and_slices() {
-    let doc = document(stroke());
-    let layout = layout_document(&doc);
-    let two = RenderOptions {
-        simplebrush_two_pixels_per_page_unit: true,
-        ..Default::default()
-    };
-    let baseline = RenderOptions::default();
-    let replay = |options: &RenderOptions| {
-        render_layout_page_replay_svg(&doc, &layout, 0, options)
-            .unwrap()
-            .svg
-    };
-    assert_eq!(replay(&two), replay(&baseline));
-    #[cfg(feature = "pdf")]
-    {
-        let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 50, true).unwrap();
-        let scene = |options: &RenderOptions| {
-            super::DocumentTextCache::default()
-                .render_layout_page_scene_requests(
-                    &doc,
-                    &[request],
-                    options,
-                    &super::fonts::FontBook::default(),
-                    &mut |_| {},
-                )
-                .remove(0)
-                .page
+    for tool in [0, 2, 3] {
+        let mut source = stroke();
+        source.pen_width = 3.0;
+        source.rendering.as_mut().unwrap().style.pen_size = Some(3.0);
+        source.rendering.as_mut().unwrap().tool_type_raw = tool;
+        let doc = document(source);
+        let layout = layout_document(&doc);
+        let two = RenderOptions {
+            simplebrush_two_pixels_per_page_unit: true,
+            ..Default::default()
+        };
+        let baseline = RenderOptions::default();
+        let replay = |options: &RenderOptions| {
+            render_layout_page_replay_svg(&doc, &layout, 0, options)
+                .unwrap()
                 .svg
         };
-        assert_eq!(scene(&two), scene(&baseline));
+        assert_eq!(replay(&two), replay(&baseline));
+        #[cfg(feature = "pdf")]
+        {
+            let request = super::PageSceneRequest::sliced(&layout.pages[0], 0, 50, true).unwrap();
+            let scene = |options: &RenderOptions| {
+                super::DocumentTextCache::default()
+                    .render_layout_page_scene_requests(
+                        &doc,
+                        &[request],
+                        options,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg
+            };
+            assert_eq!(scene(&two), scene(&baseline));
+        }
     }
 }
 
@@ -1112,10 +1193,110 @@ fn two_pixel_profile_reaches_direct_pdf() {
     assert_eq!(render(&conflict), render(&RenderOptions::default()));
 }
 
+#[test]
+fn tool0_long_two_pixel_profile_boundaries() {
+    let mut source = stroke();
+    source.pen_width = 8.0;
+    let rendering = source.rendering.as_mut().unwrap();
+    rendering.style.pen_size = Some(8.0);
+    rendering.tool_type_raw = 0;
+    source.points = (0..64)
+        .map(|i| Point {
+            x: 25.0 + i as f64 * 0.75,
+            y: 216.0 - [0, 2, 5, 7, 8, 7, 5, 2][i % 8] as f64,
+        })
+        .collect();
+    source.pressures = (0..64).map(|i| [0.25, 0.5, 0.75, 1.0][i % 4]).collect();
+    assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok());
+    let long =
+        crate::ink::simplebrush::prepare_stroke_for_scale(&source, true, 32_768, true).unwrap();
+    assert!(
+        crate::ink::simplebrush::prepare_stroke_for_scale(
+            &source,
+            true,
+            long.samples.len() - 1,
+            true
+        )
+        .is_err()
+    );
+    let mut paired = source.clone();
+    paired.rendering.as_mut().unwrap().tool_type_raw = 2;
+    assert_eq!(
+        long.samples,
+        crate::ink::simplebrush::prepare_stroke_for_scale(&paired, true, 32_768, true)
+            .unwrap()
+            .samples
+    );
+    let doc = document(source.clone());
+    let paired_doc = document(paired);
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let generic = RenderOptions::default();
+    assert_eq!(
+        render_document_svg(&doc, &two)[0].svg,
+        render_document_svg(&paired_doc, &two)[0].svg
+    );
+    assert_ne!(
+        render_document_svg(&doc, &two)[0].svg,
+        render_document_svg(&doc, &generic)[0].svg
+    );
+    assert_ne!(
+        render_document_svg(&doc, &options())[0].svg,
+        render_document_svg(&doc, &generic)[0].svg
+    );
+    #[cfg(feature = "pdf")]
+    assert_eq!(
+        crate::render_document_pdf(&doc, &two, &Default::default()).unwrap(),
+        crate::render_document_pdf(&paired_doc, &two, &Default::default()).unwrap()
+    );
+    let mut short_terminal = source.clone();
+    let previous = short_terminal.points[62];
+    short_terminal.points[63] = Point {
+        x: previous.x + 0.5,
+        y: previous.y + 0.5,
+    };
+    assert!(
+        crate::ink::simplebrush::prepare_stroke_for_scale(&short_terminal, true, 32_768, true)
+            .is_err()
+    );
+    let short_doc = document(short_terminal);
+    assert_eq!(
+        render_document_svg(&short_doc, &two)[0].svg,
+        render_document_svg(&short_doc, &generic)[0].svg
+    );
+    #[cfg(feature = "pdf")]
+    assert_eq!(
+        crate::render_document_pdf(&short_doc, &two, &Default::default()).unwrap(),
+        crate::render_document_pdf(&short_doc, &generic, &Default::default()).unwrap()
+    );
+    for i in 64..257 {
+        source.points.push(Point {
+            x: 25.0 + i as f64 * 0.75,
+            y: 216.0 - [0, 2, 5, 7, 8, 7, 5, 2][i % 8] as f64,
+        });
+        source.pressures.push(0.25);
+    }
+    let boundary = document(source);
+    assert_eq!(
+        render_document_svg(&boundary, &two)[0].svg,
+        render_document_svg(&boundary, &generic)[0].svg
+    );
+    #[cfg(feature = "pdf")]
+    assert_eq!(
+        crate::render_document_pdf(&boundary, &two, &Default::default()).unwrap(),
+        crate::render_document_pdf(&boundary, &generic, &Default::default()).unwrap()
+    );
+}
+
 #[cfg(feature = "pdf")]
 #[test]
 fn two_pixel_native_export_fixture() {
     let mut source = stroke();
+    if std::env::var_os("SDOCX_ALT_PRESSURE").is_some() {
+        source.pressures = vec![0.75, 0.25, 1.0];
+    }
     source.points = vec![
         Point { x: 32.0, y: 224.0 },
         Point { x: 42.0, y: 224.0 },
@@ -1133,9 +1314,14 @@ fn two_pixel_native_export_fixture() {
         let heights = [0, 2, 5, 7, 8, 7, 5, 2];
         source.points = (0..count)
             .map(|i| {
-                if count >= 16 {
+                if count > 128 {
                     Point {
-                        x: 25.0 + i as f64 * 2.0,
+                        x: 25.0 + (i % 64) as f64,
+                        y: 221.0 - (i / 64) as f64 * 18.0 - heights[i % 8] as f64,
+                    }
+                } else if count >= 16 {
+                    Point {
+                        x: 25.0 + i as f64 * if count >= 33 { 0.75 } else { 2.0 },
                         y: 216.0 - heights[i % 8] as f64,
                     }
                 } else {
@@ -1163,13 +1349,25 @@ fn two_pixel_native_export_fixture() {
         }
         Ok("alternate") => {
             let heights = [0, -3, -5, -4, 0, 5, 7, 3];
-            source.points = (0..32)
+            let count: usize = std::env::var("SDOCX_POINTS_COUNT")
+                .unwrap_or_else(|_| "32".into())
+                .parse()
+                .unwrap();
+            source.points = (0..count)
                 .map(|i| Point {
-                    x: 27.0 + 2.0 * i as f64,
-                    y: 208.0 - heights[i % 8] as f64,
+                    x: if count > 128 {
+                        27.0 + (i % 64) as f64
+                    } else {
+                        27.0 + 2.0 * i as f64
+                    },
+                    y: if count > 128 {
+                        221.0 - (i / 64) as f64 * 18.0
+                    } else {
+                        208.0
+                    } - heights[i % 8] as f64,
                 })
                 .collect();
-            source.pressures = (0..32)
+            source.pressures = (0..count)
                 .map(|i| f64::from([1.0_f32, 0.3, 0.6, 0.8, 0.4][i % 5]))
                 .collect();
         }
@@ -1224,7 +1422,15 @@ fn two_pixel_native_export_fixture() {
             native["drawing_vector"]["vector_bytes"].as_str().unwrap()
         );
     }
+    let mut second = source.clone();
     let mut doc = document(source);
+    if std::env::var_os("SDOCX_SIMPLEBRUSH_OVERLAP").is_some() {
+        for point in &mut second.points {
+            point.x += 1.25;
+            point.y += 1.5;
+        }
+        doc.pages[0].objects.push(second.into());
+    }
     doc.pages[0].width = 256;
     doc.pages[0].height = 256;
     if let Some(directory) = std::env::var_os("SDOCX_SIMPLEBRUSH_TWO_EXPORT") {
@@ -1251,6 +1457,49 @@ fn two_pixel_native_export_fixture() {
             std::fs::write(directory.join(format!("{name}.svg")), svg).unwrap();
             std::fs::write(directory.join(format!("{name}.pdf")), pdf).unwrap();
         }
+    }
+}
+
+#[test]
+fn tool3_two_pixel_interior_sizes_match_native_geometry() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-tool3-2x-interior.json"
+    ))
+    .unwrap();
+    for case in receipt["cases"].as_array().unwrap() {
+        let points: Vec<[f32; 2]> = case["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| [p[0].as_f64().unwrap() as f32, p[1].as_f64().unwrap() as f32])
+            .collect();
+        let pressures: Vec<f32> = case["pressure"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| p.as_f64().unwrap() as f32)
+            .collect();
+        let samples = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+            points: &points,
+            pressures: &pressures,
+            size: case["size"].as_f64().unwrap() as f32,
+            tool_type: 3,
+            curve_enabled: true,
+            max_samples: 32_768,
+        })
+        .unwrap();
+        let hex: String = samples
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .map(|v| format!("{v:02x}"))
+            .collect();
+        assert_eq!(
+            hex,
+            case["geometry_hex"].as_str().unwrap(),
+            "{}",
+            case["case"]
+        );
     }
 }
 
@@ -1315,7 +1564,7 @@ fn two_pixel_point_counts_match_native_geometry_and_dispatch() {
         let doc = document(source);
         let actual = &render_document_svg(&doc, &two)[0].svg;
         let fallback = &render_document_svg(&doc, &RenderOptions::default())[0].svg;
-        if count <= 32 {
+        if count <= 128 {
             assert_ne!(actual, fallback);
         } else {
             assert_eq!(actual, fallback);
@@ -1329,7 +1578,7 @@ fn two_pixel_point_and_size_boundaries() {
         simplebrush_two_pixels_per_page_unit: true,
         ..Default::default()
     };
-    for count in [2, 3, 4, 16, 17, 32, 33] {
+    for count in [2, 3, 4, 16, 17, 32, 33, 64, 65, 128, 129, 224, 256, 257] {
         for tool in [0, 2, 3] {
             for size in [3.0, 7.0, 8.0, 20.0, 21.0, 32.0] {
                 let mut source = stroke();
@@ -1345,9 +1594,7 @@ fn two_pixel_point_and_size_boundaries() {
                 rendering.tool_type_raw = tool;
                 rendering.style.pen_size = Some(size);
                 let doc = document(source);
-                let admitted = count <= 32
-                    && (tool != 0 || count <= 16)
-                    && ((tool == 2 && count == 3) || (8.0..=20.0).contains(&size));
+                let admitted = count <= 256 && (count == 3 || (8.0..=20.0).contains(&size));
                 let actual = &render_document_svg(&doc, &two)[0].svg;
                 let fallback = &render_document_svg(&doc, &RenderOptions::default())[0].svg;
                 assert_eq!(
@@ -1454,6 +1701,608 @@ fn two_pixel_setting_aliases_match_null_svg_and_pdf() {
                 );
             }
         }
+    }
+}
+
+#[test]
+fn long_two_pixel_controls_match_native_geometry_and_boundary() {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-long-controls.json"
+    ))
+    .unwrap();
+    let expanded: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-expanded-long-native.json"
+    ))
+    .unwrap();
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    for case in receipt["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .chain(expanded["cases"].as_array().unwrap())
+    {
+        let count = case["count"].as_u64().unwrap() as usize;
+        let size = case["size"].as_f64().unwrap() as f32;
+        let heights = [0, 2, 5, 7, 8, 7, 5, 2];
+        let mut points: Vec<[f32; 2]> = (0..count)
+            .map(|i| [25.0 + i as f32 * 0.75, 40.0 + heights[i % 8] as f32])
+            .collect();
+        let mut pressures: Vec<f32> = (0..count).map(|i| [0.25, 0.5, 0.75, 1.0][i % 4]).collect();
+        if case["reverse"].as_bool().unwrap() {
+            points.reverse();
+            pressures.reverse();
+        }
+        for tool in [0, 2, 3] {
+            let samples = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+                points: &points,
+                pressures: &pressures,
+                size,
+                tool_type: tool,
+                curve_enabled: true,
+                max_samples: 32_768,
+            })
+            .unwrap();
+            let hex: String = samples
+                .iter()
+                .flatten()
+                .flat_map(|v| v.to_le_bytes())
+                .map(|v| format!("{v:02x}"))
+                .collect();
+            assert_eq!(hex, case["geometry_hex"].as_str().unwrap());
+            let mut source = stroke();
+            source.points = points
+                .iter()
+                .map(|p| Point {
+                    x: f64::from(p[0]),
+                    y: 256.0 - f64::from(p[1]),
+                })
+                .collect();
+            source.pressures = pressures.iter().map(|p| f64::from(*p)).collect();
+            source.pen_width = size;
+            source.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            source.rendering.as_mut().unwrap().tool_type_raw = tool as u16;
+            let doc = document(source);
+            assert_ne!(
+                render_document_svg(&doc, &two)[0].svg,
+                render_document_svg(&doc, &RenderOptions::default())[0].svg
+            );
+        }
+    }
+    for tool in [0, 2, 3] {
+        let mut source = stroke();
+        source.points = (0..257)
+            .map(|i| Point {
+                x: 25.0 + i as f64 * 0.75,
+                y: 216.0,
+            })
+            .collect();
+        source.pressures = vec![0.5; 257];
+        source.pen_width = 20.0;
+        source.rendering.as_mut().unwrap().style.pen_size = Some(20.0);
+        source.rendering.as_mut().unwrap().tool_type_raw = tool;
+        let doc = document(source);
+        assert_eq!(
+            render_document_svg(&doc, &two)[0].svg,
+            render_document_svg(&doc, &RenderOptions::default())[0].svg
+        );
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            crate::render_document_pdf(&doc, &two, &Default::default()).unwrap(),
+            crate::render_document_pdf(&doc, &RenderOptions::default(), &Default::default())
+                .unwrap()
+        );
+    }
+}
+
+#[test]
+fn long_two_pixel_svg_improves_against_native_frames() {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+
+    let controls: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-long-controls.json"
+    ))
+    .unwrap();
+    let tool3: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-tool3-long-identity.json"
+    ))
+    .unwrap();
+    let tool0: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-tool0-long-identity.json"
+    ))
+    .unwrap();
+    let expanded: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-expanded-long-native.json"
+    ))
+    .unwrap();
+    assert_eq!(controls["cases"].as_array().unwrap().len(), 3);
+    assert_eq!(tool3["cases"].as_array().unwrap().len(), 3);
+    assert_eq!(tool0["cases"].as_array().unwrap().len(), 3);
+
+    for (count, size, reverse, max_error, compressed) in [
+        (
+            33,
+            8.0_f32,
+            false,
+            5140,
+            include_bytes!("../../../../conformance/simplebrush-long-33.rgba.zlib").as_slice(),
+        ),
+        (
+            64,
+            20.0,
+            false,
+            8282,
+            include_bytes!("../../../../conformance/simplebrush-long-64b.rgba.zlib").as_slice(),
+        ),
+        (
+            64,
+            20.0,
+            true,
+            8500,
+            include_bytes!("../../../../conformance/simplebrush-long-64r.rgba.zlib").as_slice(),
+        ),
+        (
+            65,
+            8.0,
+            false,
+            7700,
+            include_bytes!("../../../../conformance/simplebrush-expanded-65.rgba.zlib").as_slice(),
+        ),
+        (
+            128,
+            20.0,
+            true,
+            12210,
+            include_bytes!("../../../../conformance/simplebrush-expanded-128.rgba.zlib").as_slice(),
+        ),
+    ] {
+        let mut native = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed)
+            .read_to_end(&mut native)
+            .unwrap();
+        assert_eq!(native.len(), 256 * 256 * 4);
+        let find_case = |receipt: &serde_json::Value| {
+            let matches: Vec<_> = receipt["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|case| {
+                    case["count"].as_u64() == Some(count as u64)
+                        && case["size"].as_f64() == Some(f64::from(size))
+                        && case["reverse"].as_bool() == Some(reverse)
+                })
+                .collect();
+            assert_eq!(matches.len(), 1);
+            matches[0].clone()
+        };
+        let reference = if count > 64 {
+            find_case(&expanded)
+        } else {
+            find_case(&controls)
+        };
+        let identity = if count > 64 {
+            reference["tools"]["3"].clone()
+        } else {
+            find_case(&tool3)
+        };
+        let zero_identity = if count > 64 {
+            reference["tools"]["0"].clone()
+        } else {
+            find_case(&tool0)
+        };
+        if count > 64 {
+            assert_eq!(
+                reference["tools"]["2"]["frame_sha256"],
+                reference["frame_sha256"]
+            );
+            assert_eq!(
+                reference["tools"]["2"]["geometry_sha256"],
+                reference["geometry_sha256"]
+            );
+            for tool in ["0", "2", "3"] {
+                assert_eq!(reference["tools"][tool]["paint_clean"], true);
+            }
+        }
+        assert_eq!(identity["geometry_sha256"], reference["geometry_sha256"]);
+        assert_eq!(identity["frame_sha256"], reference["frame_sha256"]);
+        assert_eq!(
+            zero_identity["geometry_sha256"],
+            reference["geometry_sha256"]
+        );
+        assert_eq!(zero_identity["frame_sha256"], reference["frame_sha256"]);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&native)),
+            identity["frame_sha256"].as_str().unwrap()
+        );
+        let heights = [0, 2, 5, 7, 8, 7, 5, 2];
+        let mut input = stroke();
+        input.points = (0..count)
+            .map(|i| Point {
+                x: 25.0 + i as f64 * 0.75,
+                y: 216.0 - heights[i % 8] as f64,
+            })
+            .collect();
+        input.pressures = (0..count).map(|i| [0.25, 0.5, 0.75, 1.0][i % 4]).collect();
+        if reverse {
+            input.points.reverse();
+            input.pressures.reverse();
+        }
+        input.pen_width = size;
+        input.rendering.as_mut().unwrap().style.pen_size = Some(size);
+        input.color = Some(Color {
+            r: 0x44,
+            g: 0xaa,
+            b: 0xee,
+        });
+        for tool in [0, 2, 3] {
+            input.rendering.as_mut().unwrap().tool_type_raw = tool;
+            let mut doc = document(input.clone());
+            doc.pages[0].width = 256;
+            doc.pages[0].height = 256;
+            let error = |options: &RenderOptions| {
+                let svg = render_document_svg(&doc, options).remove(0).svg;
+                let body = &svg[svg.find('>').unwrap() + 1..svg.rfind("</svg>").unwrap()];
+                let mut body = body.to_string();
+                let start = body
+                    .find("<rect fill=\"#fcfcfc\"")
+                    .expect("expected page background");
+                let end = start
+                    + body[start..]
+                        .find("/>")
+                        .expect("expected self-closing page background")
+                    + 2;
+                body.replace_range(start..end, "");
+                let svg = format!(
+                    "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"256\" height=\"256\"><g transform=\"matrix(2 0 0 -2 .25 512.5)\">{body}</g></svg>"
+                );
+                let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+                let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut pixmap.as_mut(),
+                );
+                native
+                    .iter()
+                    .skip(3)
+                    .step_by(4)
+                    .zip(pixmap.data().iter().skip(3).step_by(4))
+                    .map(|(expected, actual)| u64::from(expected.abs_diff(*actual)))
+                    .sum::<u64>()
+            };
+            let two = error(&RenderOptions {
+                simplebrush_two_pixels_per_page_unit: true,
+                ..Default::default()
+            });
+            let one = error(&options());
+            let generic = error(&RenderOptions::default());
+            eprintln!("{count} reverse={reverse}: two={two}, one={one}, generic={generic}");
+            assert!(two <= max_error && two < one && one < generic);
+        }
+    }
+}
+
+#[test]
+fn tool_zero_three_point_two_pixel_bounds_and_fallback() {
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    for (size, admitted) in [
+        (2.99, false),
+        (3.0, true),
+        (5.5, true),
+        (32.0, true),
+        (32.01, false),
+    ] {
+        let mut source = stroke();
+        source.pen_width = size;
+        let rendering = source.rendering.as_mut().unwrap();
+        rendering.tool_type_raw = 0;
+        rendering.style.pen_size = Some(size);
+        let doc = document(source);
+        let generic = RenderOptions::default();
+        assert_eq!(
+            render_document_svg(&doc, &two)[0].svg != render_document_svg(&doc, &generic)[0].svg,
+            admitted
+        );
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            crate::render_document_pdf(&doc, &two, &Default::default()).unwrap()
+                != crate::render_document_pdf(&doc, &generic, &Default::default()).unwrap(),
+            admitted
+        );
+        if size == 3.0 {
+            assert_eq!(
+                render_document_svg(&doc, &options())[0].svg,
+                render_document_svg(&doc, &generic)[0].svg
+            );
+        }
+    }
+    for count in [2, 4] {
+        let mut source = stroke();
+        source.points.truncate(count);
+        source.pressures.truncate(count);
+        if count == 4 {
+            source.points.push(Point { x: 40.0, y: 20.0 });
+            source.pressures.push(0.5);
+        }
+        source.pen_width = 3.0;
+        let rendering = source.rendering.as_mut().unwrap();
+        rendering.tool_type_raw = 0;
+        rendering.style.pen_size = Some(3.0);
+        let doc = document(source);
+        assert_eq!(
+            render_document_svg(&doc, &two)[0].svg,
+            render_document_svg(&doc, &RenderOptions::default())[0].svg
+        );
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            crate::render_document_pdf(&doc, &two, &Default::default()).unwrap(),
+            crate::render_document_pdf(&doc, &RenderOptions::default(), &Default::default())
+                .unwrap()
+        );
+    }
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn exploratory_long_budget_preserves_short_export() {
+    let mut long = stroke();
+    long.points = (0..256)
+        .map(|i| Point {
+            x: 5.0 + (i % 64) as f64,
+            y: 70.0 - (i / 64) as f64 * 18.0 - [0, 2, 5, 7, 8, 7, 5, 2][i % 8] as f64,
+        })
+        .collect();
+    long.pressures = vec![0.5; 256];
+    let count = crate::ink::simplebrush::prepare_stroke_for_scale(&long, true, 32768, true)
+        .unwrap()
+        .samples
+        .len();
+    assert!(count > 0 && count <= 4096, "{count}");
+    let short = stroke();
+    let options = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let short_svg = render_document_svg(&document(short.clone()), &options)[0]
+        .svg
+        .clone();
+    let mut doc = document(long.clone());
+    let copies = 4096 / count + 2;
+    doc.pages[0].objects = (0..copies).map(|_| long.clone().into()).collect();
+    doc.pages[0].objects.push(short.clone().into());
+    let svg = render_document_svg(&doc, &options)[0].svg.clone();
+    let circles = |xml: &str| -> Vec<(String, String, String)> {
+        roxmltree::Document::parse(xml)
+            .unwrap()
+            .descendants()
+            .filter(|n| n.has_tag_name("circle"))
+            .map(|n| {
+                (
+                    n.attribute("cx").unwrap().into(),
+                    n.attribute("cy").unwrap().into(),
+                    n.attribute("r").unwrap().into(),
+                )
+            })
+            .collect()
+    };
+    let expected = circles(&short_svg);
+    let observed = circles(&svg);
+    assert_eq!(&observed[observed.len() - expected.len()..], expected);
+    assert_eq!(observed.len(), (4096 / count) * count + expected.len());
+    let pdf = crate::render_document_pdf(&doc, &options, &Default::default()).unwrap();
+    let generic_pdf =
+        crate::render_document_pdf(&doc, &RenderOptions::default(), &Default::default()).unwrap();
+    assert_ne!(pdf, generic_pdf);
+    let mut twice = doc.clone();
+    twice.pages.push(doc.pages[0].clone());
+    let both = render_document_svg(&twice, &options);
+    assert_eq!(both[0].svg, both[1].svg);
+    let twice_pdf = crate::render_document_pdf(&twice, &options, &Default::default()).unwrap();
+    eprintln!(
+        "samples={count} copies={copies} circles={} pdf={} two_page_pdf={}",
+        observed.len(),
+        pdf.len(),
+        twice_pdf.len()
+    );
+}
+
+#[test]
+fn exploratory_long_and_short_budgets_are_independent_and_fallback_is_ordered() {
+    let mut long = stroke();
+    long.points = (0..256)
+        .map(|i| Point {
+            x: 5.0 + (i % 64) as f64,
+            y: 70.0 - (i / 64) as f64 * 18.0 - [0, 2, 5, 7, 8, 7, 5, 2][i % 8] as f64,
+        })
+        .collect();
+    long.pressures = vec![0.5; 256];
+    let count = crate::ink::simplebrush::prepare_stroke_for_scale(&long, true, 32768, true)
+        .unwrap()
+        .samples
+        .len();
+    let mut rejected = long.clone();
+    rejected.color = Some(Color {
+        r: 0xde,
+        g: 0xad,
+        b: 0xbe,
+    });
+    rejected.rendering.as_mut().unwrap().style.color_argb = Some(0xffde_adbe);
+    let mut short = stroke();
+    short.color = Some(Color { r: 0, g: 255, b: 0 });
+    short.rendering.as_mut().unwrap().style.color_argb = Some(0xff00_ff00);
+    let short_count = crate::ink::simplebrush::prepare_stroke_for_scale(&short, true, 32768, true)
+        .unwrap()
+        .samples
+        .len();
+    let options = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let mut doc = document(long.clone());
+    doc.pages[0].objects.clear();
+    for _ in 0..4096 / count {
+        doc.pages[0].objects.push(short.clone().into());
+        doc.pages[0].objects.push(long.clone().into());
+    }
+    doc.pages[0].objects.push(rejected.clone().into());
+    doc.pages[0].objects.push(short.clone().into());
+    let svg = render_document_svg(&doc, &options)[0].svg.clone();
+    let expected = render_document_svg(&document(rejected), &RenderOptions::default())[0]
+        .svg
+        .clone();
+    let lines = |xml: &str| -> Vec<String> {
+        let tree = roxmltree::Document::parse(xml).unwrap();
+        tree.descendants()
+            .filter(|n| n.has_tag_name("line") && n.attribute("stroke") == Some("#deadbe"))
+            .map(|n| xml[n.range()].to_owned())
+            .collect()
+    };
+    let fallback = lines(&expected);
+    assert!(!fallback.is_empty());
+    assert_eq!(lines(&svg), fallback);
+    let first = svg.find(&fallback[0]).unwrap();
+    let last = svg.rfind(fallback.last().unwrap()).unwrap();
+    assert!(svg[..first].contains("radialGradient"));
+    assert!(svg[last..].contains("#00ff00"));
+    assert_eq!(
+        svg.matches("<circle").count(),
+        (4096 / count) * (count + short_count) + short_count
+    );
+}
+
+#[test]
+fn long_two_pixel_route_preserves_guards_and_one_pixel_limits() {
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    for count in [129, 256] {
+        for tool in [0, 2, 3] {
+            let mut source = stroke();
+            source.points = (0..count)
+                .map(|i| Point {
+                    x: 10.0 + 2.0 * i as f64,
+                    y: 20.0 + 2.0 * (i % 5) as f64,
+                })
+                .collect();
+            source.pressures = vec![0.5; count];
+            source.pen_width = 12.0;
+            source.rendering.as_mut().unwrap().style.pen_size = Some(12.0);
+            source.rendering.as_mut().unwrap().tool_type_raw = tool;
+            assert!(
+                crate::ink::simplebrush::prepare_stroke_for_scale(&source, true, 32_768, true)
+                    .is_ok()
+            );
+            assert_eq!(
+                crate::ink::simplebrush::prepare_stroke_for_scale(&source, true, 32_768, false)
+                    .is_ok(),
+                count <= 224 && tool != 0
+            );
+            let doc = document(source.clone());
+            let layout = layout_document(&doc);
+            assert_eq!(
+                render_layout_page_replay_svg(&doc, &layout, 0, &two)
+                    .unwrap()
+                    .svg,
+                render_layout_page_replay_svg(&doc, &layout, 0, &RenderOptions::default())
+                    .unwrap()
+                    .svg
+            );
+            #[cfg(feature = "pdf")]
+            {
+                let request =
+                    super::PageSceneRequest::sliced(&layout.pages[0], 0, 50, true).unwrap();
+                let scene = |o: &RenderOptions| {
+                    super::DocumentTextCache::default()
+                        .render_layout_page_scene_requests(
+                            &doc,
+                            &[request],
+                            o,
+                            &super::fonts::FontBook::default(),
+                            &mut |_| {},
+                        )
+                        .remove(0)
+                        .page
+                        .svg
+                };
+                assert_eq!(scene(&two), scene(&RenderOptions::default()));
+            }
+            source.pressures.pop();
+            let invalid = document(source);
+            assert_eq!(
+                render_document_svg(&invalid, &two)[0].svg,
+                render_document_svg(&invalid, &RenderOptions::default())[0].svg
+            );
+        }
+    }
+}
+
+#[test]
+fn long_candidate_preserves_public_one_pixel_boundaries_and_mixed_order() {
+    let two = RenderOptions {
+        simplebrush_two_pixels_per_page_unit: true,
+        ..Default::default()
+    };
+    let generic = RenderOptions::default();
+    for (tool, boundary) in [(0, 128), (2, 224), (3, 224)] {
+        for count in [boundary, boundary + 1] {
+            let mut s = stroke();
+            s.points = (0..count)
+                .map(|i| Point {
+                    x: 10.0 + i as f64 * 2.0,
+                    y: 20.0 + (i % 5) as f64,
+                })
+                .collect();
+            s.pressures = vec![0.5; count];
+            s.rendering.as_mut().unwrap().tool_type_raw = tool;
+            let doc = document(s);
+            let actual = &render_document_svg(&doc, &options())[0].svg;
+            let fallback = &render_document_svg(&doc, &generic)[0].svg;
+            assert_eq!(
+                actual != fallback,
+                count == boundary,
+                "tool={tool} count={count}"
+            );
+        }
+    }
+    let mut admitted = stroke();
+    admitted.points = (0..129)
+        .map(|i| Point {
+            x: 10.0 + i as f64 * 2.0,
+            y: 20.0 + (i % 5) as f64,
+        })
+        .collect();
+    admitted.pressures = vec![0.5; 129];
+    let mut fallback = stroke();
+    fallback.color = Some(Color {
+        r: 0xde,
+        g: 0xad,
+        b: 0xbe,
+    });
+    fallback.rendering.as_mut().unwrap().advanced_settings = Some("unsupported".into());
+    for reverse in [false, true] {
+        let mut doc = document(if reverse {
+            fallback.clone()
+        } else {
+            admitted.clone()
+        });
+        doc.pages[0].objects.push(if reverse {
+            admitted.clone().into()
+        } else {
+            fallback.clone().into()
+        });
+        let svg = &render_document_svg(&doc, &two)[0].svg;
+        let native_pos = svg.find("radialGradient").unwrap();
+        let fallback_pos = svg.find("#deadbe").unwrap();
+        assert_eq!(fallback_pos < native_pos, reverse);
+        assert!(svg.contains("<line stroke=\"#deadbe\""));
+        assert_ne!(svg, &render_document_svg(&doc, &generic)[0].svg);
     }
 }
 

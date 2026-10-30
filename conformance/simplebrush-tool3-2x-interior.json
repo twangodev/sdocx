@@ -1,0 +1,147 @@
+{
+  "scope": "Synthetic tool-3 Drawing SimpleBrush, fractional 2x transform, Unicorn and host Mesa; not device or saved-note parity.",
+  "cases": [
+    {
+      "case": "a",
+      "size": 5.5,
+      "points": [
+        [
+          32,
+          32
+        ],
+        [
+          42,
+          32
+        ],
+        [
+          52,
+          37
+        ]
+      ],
+      "pressure": [
+        0.5,
+        0.25,
+        0.75
+      ],
+      "geometry_sha256": "98cd902caa1799b46175cfee856bc180eb8c06ec4b4978374b90fb4ac1df8a19",
+      "geometry_hex": "0000004200000042cdcc41402b2c064200000042cdcc41403b190c4200000042cdcc41400000144200000042cdcc41400000144200000042d0cc41409add1a426b4b00426cc3414034bb2142ad2d014208ba4140309028428ea40242a4b04140ca0a2f420c92044240a7414064853542dc050742dc9d414000003c4200000a427894414000003c4200000a427d9441406c66354236b30642e4d84240c39f3b42e2cf09424b1d44404f66424228330d42b26145408a994842c64c104219a64640feff4f420000144280ea4740",
+      "frame_sha256": "dfa7c81fc7ee5d1794bd3fadb41e7eacce4554665dcdbc4833e69371081318fc",
+      "alpha_bounds": [
+        58,
+        58,
+        110,
+        81
+      ],
+      "nonzero_alpha": 625,
+      "crop": {
+        "file": "simplebrush-tool3-interior-a.rgba",
+        "sha256": "ff07fc9dfeb9775312a15fbb1fa7ccb1d8ccb48dfd88fe3852fe749b047b909b"
+      },
+      "svg_alpha_l1_generic_one_two": [
+        113956,
+        9145,
+        2662
+      ],
+      "matched_paper_pdf_rgb_l1_generic_one_two": [
+        124914,
+        15061,
+        12341
+      ]
+    },
+    {
+      "case": "b",
+      "size": 13.25,
+      "points": [
+        [
+          80,
+          70
+        ],
+        [
+          65,
+          78
+        ],
+        [
+          48,
+          67
+        ]
+      ],
+      "pressure": [
+        0.5,
+        0.25,
+        0.75
+      ],
+      "geometry_sha256": "873c39752bc4d27e85e26240b096a052d6f67f21986ea2b79580a9c978e3ba61",
+      "geometry_hex": "0000a04200008c429a59bc40e05e9b4211788e429a59bc4014ed9642e4d690429a59bc4000009142000094429a59bc400000914200009442a259bc406cbe8b4288339642524ebc4070468642504597420243bc402ca880426f289742b237bc40b3607642aff19542622cbc40c7126c4212dd93421221bc400200624200009142c215bc400000624200009142ca15bc40cdf16b42a43794426a5bbd40605666423e6792420aa1be402ca05b420ef08e42aae6bf4079d55342b66a8c424a2cc14017a04a4208708942ea71c24004004042020086428ab7c340",
+      "frame_sha256": "5d1738bd133378f482b4a8618e45824a8e31d62bf98b4eeac5cf03fcd315cb43",
+      "alpha_bounds": [
+        84,
+        122,
+        172,
+        164
+      ],
+      "nonzero_alpha": 2126,
+      "crop": {
+        "file": "simplebrush-tool3-interior-b.rgba",
+        "sha256": "4d741750e7909240c9b3509fe9d03c943cbe38b9a7025fec2edecd94b5f8271a"
+      },
+      "svg_alpha_l1_generic_one_two": [
+        390923,
+        16731,
+        5736
+      ],
+      "matched_paper_pdf_rgb_l1_generic_one_two": [
+        425880,
+        26553,
+        22746
+      ]
+    },
+    {
+      "case": "c",
+      "size": 27.5,
+      "points": [
+        [
+          32,
+          32
+        ],
+        [
+          42,
+          32
+        ],
+        [
+          52,
+          37
+        ]
+      ],
+      "pressure": [
+        0.75,
+        0.25,
+        1
+      ],
+      "geometry_sha256": "a7bdd5a33b8229e19c1824b997532280897dfe5b18dfbec906abc268c1344be8",
+      "geometry_hex": "000000420000004200604c412b2c06420000004200604c413b190c420000004200604c41000014420000004200604c41000014420000004200604c4134bb2142ad2d0142cd3c4c41ca0a2f420c9204429a194c4100003c4200000a4267f64b4100003c4200000a4266f64b41d67239426bb9084229ec4f4140554442a02a0e42ece15341feff4f4200001442afd75741",
+      "frame_sha256": "a36eea80dc7b0e29825da2e5960172803382394d44d2e0b82530dfa946529481",
+      "alpha_bounds": [
+        39,
+        39,
+        131,
+        101
+      ],
+      "nonzero_alpha": 4328,
+      "crop": {
+        "file": "simplebrush-tool3-interior-c.rgba",
+        "sha256": "e813895be81817621c4831b42f61405dddd36d47c95f690c87020bc8bb68c82f"
+      },
+      "svg_alpha_l1_generic_one_two": [
+        865764,
+        20548,
+        6410
+      ],
+      "matched_paper_pdf_rgb_l1_generic_one_two": [
+        944226,
+        29898,
+        25921
+      ]
+    }
+  ],
+  "validation": "Native capture pins source, paint runner, and SimpleBrush DSO; other dynamically loaded inputs are not all pinned. Public comparisons use resvg 0.45.1 and MuPDF 1.28.2 against matched blank paper."
+}

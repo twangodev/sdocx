@@ -1,0 +1,26 @@
+{
+  "scope": "Synthetic native Drawing host Mesa; ARGB 0x8044aaee; fractional 2x matrix; tool 0; hashes match corresponding tool 2 long controls.",
+  "cases": [
+    {
+      "count": 33,
+      "size": 8,
+      "reverse": false,
+      "geometry_sha256": "977984e97c57e14aefe607cde0a95989901b48cb42fef0b98fee994affba8840",
+      "frame_sha256": "3cf65a592ac0a27ea4182d76d2d414d7d9b3d4bc2c753d84cb0714598bc6b8ec"
+    },
+    {
+      "count": 64,
+      "size": 20,
+      "reverse": false,
+      "geometry_sha256": "5d06917e98e8c5a192c5bb4b17e44d33f7360284865ba0ea13f9347302c6775f",
+      "frame_sha256": "c8ede9765a326a13d46fb62f7afbfa0bff46f464e7cf375d454004a32215a530"
+    },
+    {
+      "count": 64,
+      "size": 20,
+      "reverse": true,
+      "geometry_sha256": "93402c89e054db0bc99f185aba6f2f7c461390793bbaedd122eb936a7ef2bf56",
+      "frame_sha256": "9f8d05852dcb3073425338dc305fe3c33d45db35a965c0936f8ac26877d96526"
+    }
+  ]
+}

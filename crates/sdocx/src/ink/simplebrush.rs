@@ -407,7 +407,10 @@ pub(crate) fn prepare_stroke_for_scale(
     if !(3.0..=32.0).contains(&size) || stroke.pen_width.to_bits() != size.to_bits() {
         return Err("unsupported SimpleBrush size");
     }
-    if !(2..=224).contains(&stroke.points.len()) || stroke.pressures.len() != stroke.points.len() {
+    let max_points = if two_pixels_per_page_unit { 256 } else { 224 };
+    if !(2..=max_points).contains(&stroke.points.len())
+        || stroke.pressures.len() != stroke.points.len()
+    {
         return Err("unsupported SimpleBrush sample shape");
     }
     let count = stroke.points.len();
@@ -435,8 +438,9 @@ pub(crate) fn prepare_stroke_for_scale(
         .map(|&p| exact_float(p))
         .collect::<Result<Vec<_>, _>>()?;
     if rendering.tool_type_raw == 0
-        && (!(4.0..=32.0).contains(&size)
-            || !(2..=16).contains(&points.len())
+        && (!((4.0..=32.0).contains(&size)
+            || (two_pixels_per_page_unit && points.len() == 3 && (3.0..=32.0).contains(&size)))
+            || !(2..=if two_pixels_per_page_unit { 256 } else { 128 }).contains(&points.len())
             || (points.len() > 2
                 && points.windows(2).last().is_some_and(|pair| {
                     (pair[1][0] - pair[0][0]).abs() < 1.5 && (pair[1][1] - pair[0][1]).abs() < 1.5
@@ -879,7 +883,7 @@ mod tests {
         assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
         stroke.points.push(crate::Point { x: 128., y: 0. });
         stroke.pressures.push(0.5);
-        assert!(super::prepare_stroke(&stroke, true, 1000).is_err());
+        assert!(super::prepare_stroke(&stroke, true, 1000).is_ok());
         stroke.points.truncate(3);
         stroke.pressures.truncate(3);
         stroke.points[1].x = 0.5;
