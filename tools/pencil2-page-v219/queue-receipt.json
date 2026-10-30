@@ -1,0 +1,58 @@
+{
+  "scope": "Synthetic one-object native ObjectList with explicitly intervened host context query; no native GPU output, saved page, or device claim.",
+  "probe_sha256": "06ec95ca6ce843a8432539487981019845b33f4e33afdef3ea2c4699adba732e",
+  "base_probe_sha256": "996ef6db3a376619e9e5d1d05b7d5e1a940726f3feb2ef6895275a705576ee3e",
+  "intervention": "Route STUB_GET_CONTEXT to synthetic task queue only at three Drawing return PCs 0x307f120, 0x307f154, 0x307f658; the previous stub returns sentinel 0xdead0000. This is a synthetic host intervention, not a proven real context contract.",
+  "observations": {
+    "list_return": 1,
+    "list_count": 1,
+    "calls": [
+      "ObjectList::GetData",
+      "ObjectDrawing::drawObject",
+      "ObjectDrawing::drawObjectStroke",
+      "Pencil2StrokeDrawableGLV14::RedrawPen"
+    ],
+    "rtv4_addpoint_entries": 84,
+    "input_matrix3": [
+      1,
+      0,
+      0,
+      0,
+      -1,
+      0,
+      6,
+      183,
+      1
+    ],
+    "set_matrix_arguments": [
+      [
+        1,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        6,
+        183,
+        1
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        6,
+        183,
+        1
+      ]
+    ]
+  },
+  "limitations": [
+    "One synthetic stroke from native Model setters",
+    "Synthetic bitmap, canvas, context, task queue, renderer holder, loader and allocator",
+    "Caller-supplied matrix; no document page loading",
+    "No GPU draw or pixels; list completion is not evidence of rendering"
+  ]
+}

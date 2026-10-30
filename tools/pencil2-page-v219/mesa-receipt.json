@@ -1,0 +1,48 @@
+{
+  "probe_sha256": "94dc56d3434699cb4b747d6f9d21af35c91fd2cda98e2d909f12b4039b407c31",
+  "runtime_limitations": "Host EGL, GLES, Mesa drivers and transitive shared libraries are unpinned; the result describes this host runtime only.",
+  "scope": "Synthetic one-object list dispatch followed by explicit saved redraw replay and explicit RTV4 draw to host Mesa. No automatic list paint, real page matrix, saved-note or device claim.",
+  "list": "Native list dispatch and both supplied Matrix3 arguments asserted; 84 AddPoint calls",
+  "selected_rt": "0x10038b30",
+  "rt_identity": "same selected RTV4 address in route and explicit draw",
+  "matrix3": [
+    1,
+    0,
+    0,
+    0,
+    -1,
+    0,
+    6,
+    183,
+    1
+  ],
+  "explicit_draw_matrix4": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    32,
+    32,
+    0,
+    1
+  ],
+  "readback_sha256": "c791bb3e46c3b3f813925bf6e2c7c2d16611188774c5c9d1ede054d5844d1e42",
+  "nonzero_bytes": 317,
+  "prior_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+  "gl_error": 0,
+  "row_origin": "bottom",
+  "input_sha256": {
+    "tools/pencil2-page-v219/queue-probe.py": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+    "tools/pencil2-public-replay/drawing_native_target_translated_probe.py": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861",
+    "tools/pencil2-page-v219/native/tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+  }
+}

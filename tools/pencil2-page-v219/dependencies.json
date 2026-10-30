@@ -1,0 +1,134 @@
+{
+  "pencil3_selector_probe_native.py": {
+    "path": "/home/jding/RustroverProjects/sdocx/tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/pencil3_selector_probe_native.py",
+    "sha256_or_tree": "0212de3d9c6b3b5832587601c32cea087f6fbf537fe34b101985970a3107b907"
+  },
+  "oblique_canvas_native.py": {
+    "path": "/home/jding/RustroverProjects/sdocx/tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/oblique_canvas_native.py",
+    "sha256_or_tree": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+  },
+  "fountain_native.py": {
+    "path": "/home/jding/RustroverProjects/sdocx/tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/fountain_native.py",
+    "sha256_or_tree": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30"
+  },
+  "elf_plt.py": {
+    "path": "/home/jding/RustroverProjects/sdocx/tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/elf_plt.py",
+    "sha256_or_tree": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b"
+  },
+  "pencil_native.py": {
+    "path": "/home/jding/RustroverProjects/sdocx/tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/pencil_native.py",
+    "sha256_or_tree": "b4d88fb86da22c732e63466e6f1fc7c829aca9d0b2623abbcb3d0fc6f981795c"
+  },
+  "legacy-pencils-source.json": {
+    "path": "/home/jding/RustroverProjects/sdocx/tmp/vector-parity-plan/pen-family-audit/legacy-pencils-source.json",
+    "sha256_or_tree": "58dafbda19adcc5d4a22670a6c7e25a545f924ecb533bb61bc13b8a4a6c2f779"
+  },
+  "pencil2-v14-native-capture-plan.md": {
+    "path": "/home/jding/RustroverProjects/sdocx/tmp/vector-parity-plan/pen-family-audit/pencil2-v14-native-capture-plan.md",
+    "sha256_or_tree": "0e3b9e2f70f7f6a234587250354ae98b4a0cde4e405c3f50be68f290f5c357bf"
+  },
+  "libSPenModel.so": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenModel.so",
+    "sha256_or_tree": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a"
+  },
+  "libSPenPenCommon.so": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so",
+    "sha256_or_tree": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+  },
+  "libSPenBase.so": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenBase.so",
+    "sha256_or_tree": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
+  },
+  "libSPenPencil2.so": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenPencil2.so",
+    "sha256_or_tree": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f"
+  },
+  "libSPenFountainPen.so": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so",
+    "sha256_or_tree": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec"
+  },
+  "libSPenDrawing.so": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so",
+    "sha256_or_tree": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd"
+  },
+  "libSPenGraphics.so": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenGraphics.so",
+    "sha256_or_tree": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621"
+  },
+  "libSPenComposer.so": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so",
+    "sha256_or_tree": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f"
+  },
+  "libc++_shared.so": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libc++_shared.so",
+    "sha256_or_tree": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "Unicorn __init__.py": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn/__init__.py",
+    "sha256_or_tree": "9ad32123bca674cf205c308fd4d0d2a4db877c9dc2afac4feab7c84c8cf7043b"
+  },
+  "Unicorn arm64_const.py": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn/arm64_const.py",
+    "sha256_or_tree": "92f91a2b0a36cd34deee16db4f8da4ac0c9ae35c3ea1089296e5ef9d170a5be9"
+  },
+  "Unicorn package source aggregate": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn",
+    "sha256_or_tree": "TREE:c80b0d970ae57c0ba08ec143ff3264362511bd4e111690f9c81c54edfacd924c"
+  },
+  "libunicorn.so.2": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/python/unicorn/lib/libunicorn.so.2",
+    "sha256_or_tree": "ddb196ec82b52e502c18e4a34478bf7b9f61c83c2ebaa95c74d8ded45a95da9c"
+  },
+  "aarch64-linux-gnu-objdump": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump",
+    "sha256_or_tree": "b9ae08c9c02c91ced02b80a140c937ba119fe073872fff701f67477bf597a5eb"
+  },
+  "aarch64-linux-gnu-nm": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-nm",
+    "sha256_or_tree": "507950b76ed983334636dee2c9eba697d159e47918fdd0068a21c1b87f8f7116"
+  },
+  "aarch64-linux-gnu-c++filt": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-c++filt",
+    "sha256_or_tree": "6cd6e4dc10f82a713b312f523ec4e68b9ef5648ae670975f56da201243cd8656"
+  },
+  "libbfd-2.44-arm64.so": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu/libbfd-2.44-arm64.so",
+    "sha256_or_tree": "10d63b821532b8cd6237b7d0b61ebe58ac3f58021a31329841492831f7567b74"
+  },
+  "libopcodes-2.44-arm64.so": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu/libopcodes-2.44-arm64.so",
+    "sha256_or_tree": "13f97afd100836b1bac1502d5b8fe2e00f2e6f5843a81d711d628271c36531a7"
+  },
+  "libctf-arm64.so.0": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu/libctf-arm64.so.0",
+    "sha256_or_tree": "e7ad4465110859c3817f911f50f600b46fb7a6e797f096ca18d9b2a266341ca6"
+  },
+  "libctf-nobfd-arm64.so.0": {
+    "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu/libctf-nobfd-arm64.so.0",
+    "sha256_or_tree": "f9235ceea727318bbb72471480071287e838516a018dc2e1ba60f87937d453c9"
+  },
+  "host nm": {
+    "path": "/usr/bin/nm",
+    "sha256_or_tree": "ddb55c0685721bf494aa2d090056b8b32a40614ad4464b305896f527d882c3c1"
+  },
+  "host c++filt": {
+    "path": "/usr/bin/c++filt",
+    "sha256_or_tree": "7d54ea6797a5e8c69255f711b79577efd9934c3502c6edee4bc25b7dc7d97bd2"
+  },
+  "python3 interpreter": {
+    "path": "/usr/bin/python3",
+    "sha256_or_tree": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9"
+  },
+  "host libm.so.6": {
+    "path": "/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "sha256_or_tree": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3"
+  },
+  "V10 candidate source": {
+    "path": "/home/jding/RustroverProjects/sdocx/tmp/vector-parity-plan/pen-family-audit/pencil2-v14-geometry-v10/capture_candidate.py",
+    "sha256_or_tree": "40c99bcca08c606634430649f6a6492d76824afe1623155834a7090df67d6796"
+  },
+  "V10 baseline capture": {
+    "path": "/home/jding/RustroverProjects/sdocx/tmp/vector-parity-plan/pen-family-audit/pencil2-v14-geometry-v10/captures/channel_baseline/capture.json",
+    "sha256_or_tree": "469b54b231de1b6a8672c36130fda2e2617da53cfe90b0e188442610e2cd5eea"
+  }
+}

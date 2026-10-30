@@ -1,0 +1,35 @@
+{
+  "scope": "Synthetic one-object native Model ObjectList and Pencil2 V14 Drawing route using existing emulated host adapters; no complete list return, pixels, saved page or device claim.",
+  "probe_sha256": "10b3efef17e8e48ef6742a296f89321576342c87c21ac43b55a6b882d29785b5",
+  "drawing_dso_sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+  "pencil2_dso_sha256": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f",
+  "input_matrix3": [
+    1,
+    0,
+    0,
+    0,
+    -1,
+    0,
+    6,
+    183,
+    1
+  ],
+  "observations": {
+    "list_count": 1,
+    "calls": [
+      "ObjectList::GetData",
+      "ObjectDrawing::drawObject",
+      "ObjectDrawing::drawObjectStroke",
+      "Pencil2StrokeDrawableGLV14::RedrawPen"
+    ],
+    "canvas_set_matrix_entries": 2,
+    "rtv4_addpoint_entries": 84,
+    "failure": "Unicorn UcError at libSPenDrawing base + 0x7c554; instruction loads vtable from x0 during ClearAllMsgQueue path. The list call did not return."
+  },
+  "limitations": [
+    "Synthetic ObjectStroke via Model setters",
+    "Synthetic bitmap, canvas, context, task queue, renderer holder, loader and allocator",
+    "Input matrix is caller supplied, not observed from a document page",
+    "No native GPU draw or output pixels"
+  ]
+}

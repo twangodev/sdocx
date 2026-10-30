@@ -1,0 +1,18 @@
+{
+  "scope": "Fresh local rerun; synthetic adapter and explicit host Mesa draw only",
+  "scripts_sha256": {
+    "prepare.py": "719a9e0f69922fef643621759a376537c375d62b3e56798d69f5a2f200160bac",
+    "probe.py": "521476d116d38eebc7c5e1c43904988294ce056701d83ea1bb37586e0bc28603",
+    "queue-probe.py": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+    "mesa-merge.py": "94dc56d3434699cb4b747d6f9d21af35c91fd2cda98e2d909f12b4039b407c31"
+  },
+  "checks": [
+    "33 adapter dependency pins passed in both native probes and Mesa capture",
+    "Original expected queue-sentinel failure reproduced",
+    "Intervened queue returned 1; ordered native route, two supplied Matrix3 values, 84 AddPoint calls asserted",
+    "Mesa framebuffer matched previous receipt; 317 nonzero bytes, GL error 0",
+    "All capture entrypoints reject optimized Python",
+    "Preparation rejects conflicting baseline without overwriting it"
+  ],
+  "mesa_readback_sha256": "c791bb3e46c3b3f813925bf6e2c7c2d16611188774c5c9d1ede054d5844d1e42"
+}
