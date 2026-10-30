@@ -1,0 +1,55 @@
+{
+  "scope": "Synthetic 128-point folded reversed tool-0 size-3 varied-pressure Drawing control, 2x fractional host Mesa. Not device or saved-note parity.",
+  "source_revision": "a015777700c9bc3cda6b22cdcb1eedb9c4effe74",
+  "native_json_sha256": "3965d99c719b7cfc8e17e566f457acff20b413ad1ff1f1bca6220475bff8044e",
+  "native_frame_sha256": "f387f585e72646538642538e8c4722c1aec5845196b153bc209563360931b580",
+  "geometry_sha256": "58acbea0936c5ad189e329eef7594844045730362c1adf8d85e9bfedd6fbc70b",
+  "edge_alpha_pixels": 0,
+  "gl_verdict": {
+    "adapter_hook_after_draw": [],
+    "draw_forwarded_once": true,
+    "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+    "immediately_after_real_draw": 0,
+    "immediately_after_rgba_readback": 0,
+    "immediately_before_real_draw": 0,
+    "paint_clean": true,
+    "pending_error_before_draw_hook": [],
+    "pixel_readback_available": true,
+    "preclear_available": true,
+    "status": "all_observed_draw_readback_task_errors_zero",
+    "task7_after_run": 0
+  },
+  "geometry_comparison": {
+    "lanes": 1425,
+    "different_lanes": 1,
+    "lane_index": 711,
+    "rust": 56.49998474121094,
+    "native": 56.499977111816406,
+    "absolute_difference": 7.62939453125e-06
+  },
+  "resvg_alpha_error": {
+    "generic": 845859,
+    "two_pixel": 15019
+  },
+  "resvg_alpha_support_intersection_union": {
+    "two_pixel": [
+      5058,
+      5058
+    ]
+  },
+  "mupdf_paper_matched_rgb_error": {
+    "generic": 931255,
+    "two_pixel": 93649
+  },
+  "pdfium_rgb_error": {
+    "generic": 934842,
+    "two_pixel": 147605
+  },
+  "capture_sha256": "5a9f3b49fd9d172ec855de39af1b43cfc89d021dc31cb8a9c5797bed422e405d",
+  "native_dependency_inventory_sha256": "e034694d9f8f623ed6e322c1eaf8271265a5c93042f1209b401f9a3709c124b4",
+  "comparison_script_sha256": {
+    "tools/simplebrush-long-expanded/compare.py": "b0f0116f7c6d6d1e887e9558d172fce9d9d97f45ab6f053564d4302cdd527036",
+    "tools/simplebrush-v209/pdfium.py": "e5905292d22c734ec86a081da29ce73538e610a76215376ec47597a1d9c08b6e",
+    "tools/simplebrush-v208/pdfium.py": "2196517b61e5e53eb6289fb88b3413c59cab6a7d4aa933c4962c6570186cef7e"
+  }
+}
