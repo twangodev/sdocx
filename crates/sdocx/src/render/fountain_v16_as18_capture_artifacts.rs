@@ -361,7 +361,8 @@ fn quad_geometry_svg(svg: &str, expected_circles: usize) -> String {
 fn circle_geometry_svg(svg: &str, expected_rectangles: usize) -> String {
     // Reconstruct the prior SVG circle serialization from the production
     // native-quad SVG. Only the exact local [-1,1]^2 rectangles are changed;
-    // gradient attributes, stamp transforms, and order remain untouched.
+    // gradient attributes, stamp transforms, and order remain untouched. The
+    // quad-only crispEdges hint is omitted to match retained PDF circles.
     let mut output = String::with_capacity(svg.len());
     let mut cursor = 0;
     let mut converted = 0;
@@ -397,7 +398,7 @@ fn circle_geometry_svg(svg: &str, expected_rectangles: usize) -> String {
         assert!(attributes.iter().any(|(name, _)| name == "fill"));
         output.push_str("<circle");
         for (name, value) in attributes {
-            if geometry
+            if (name == "shape-rendering" && value == "crispEdges") || geometry
                 .iter()
                 .any(|(geometry_name, _)| name == *geometry_name)
             {
@@ -2251,7 +2252,8 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
 
         // Independently convert the retained circle baseline back to the
         // static RTV5 quad, then compare its raster with the actual renderer.
-        let independent_quad_svg = quad_geometry_svg(&legacy_circle_svg, plan.stamps.len());
+        let independent_quad_svg = quad_geometry_svg(&legacy_circle_svg, plan.stamps.len())
+            .replace("<rect ", "<rect shape-rendering=\"crispEdges\" ");
         let independent_quad_raster = raster_svg(&independent_quad_svg);
         assert_eq!(production_raster, independent_quad_raster);
         write_new(
