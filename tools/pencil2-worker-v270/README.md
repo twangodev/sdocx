@@ -1,0 +1,10 @@
+# RT canvas control
+
+Run `python3 tools/pencil2-worker-v270/probe.py` after the v219 preparation. This pins the v254 probe, checks that its two generated fixed paths are each replaced with paths in its owned temporary directory, and changes its `CreatePenCanvas(queue, bitmap, 1)` call to `CreatePenCanvas(queue, bitmap, 0)`. The inherited assertions observe native Run, Update, and Draw on the selected drawable and factory bitmap, the same model matrix, 72 changed readback bytes and SHA-256 `bf8ab3ad30331118e6f325e4cee8c2d0bca878cceab13fd096e573443640a051`. The inherited factory creates an R8 target; readback alpha is not painted alpha. As in v254, this manually replaces the deferred message canvas and explicitly initializes the drawable. Its framebuffer-binding limitation and synthetic queue, host callbacks and unpinned Mesa limitations remain applicable. It is not a saved-page or device comparison.
+
+Static inspection of the v267-pinned `libSPenPenCommon.so` shows `PenGLDataManager::CreatePenCanvas` forwards caller-supplied layout arguments to `SPGraphicsFactory::CreateBitmap` at `0x49314`, then calls `SPGraphicsFactory::CreatePenCanvas(queue, bitmap, 0)` at `0x49344`. It releases the local bitmap reference at `0x493fc` after storing the returned canvas. The factory disassembly in v253 indicates that argument zero selects `SPPenCanvasRT`; this control does not independently assert the returned canvas vtable, so that type identification is conditional on the factory binding. The prior v254 control used argument one. This control does not call the manager method, prove ownership, or show that a real page chooses it. The drawable initialization and actual queue lifecycle remain unresolved.
+
+```sh
+export LD_LIBRARY_PATH=scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu
+scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump -d -C --start-address=0x49260 --stop-address=0x49440 scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so
+```
