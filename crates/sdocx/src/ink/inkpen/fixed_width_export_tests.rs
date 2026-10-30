@@ -5,10 +5,14 @@ fn v1_fixed_width_same_input_export_comparison() {
     let Some(directory) = std::env::var_os("SDOCX_V1_SAME_INPUT_EXPORT_DIR") else {
         return;
     };
-    let fixture: Value = serde_json::from_str(include_str!(
-        "../../../tests/fixtures/inkpen-v1-high-scale-color-native.json"
-    ))
-    .unwrap();
+    let fixture_data = std::env::var_os("SDOCX_V1_SAME_INPUT_FIXTURE")
+        .map(std::fs::read_to_string)
+        .transpose()
+        .unwrap()
+        .unwrap_or_else(|| {
+            include_str!("../../../tests/fixtures/inkpen-v1-high-scale-color-native.json").to_owned()
+        });
+    let fixture: Value = serde_json::from_str(&fixture_data).unwrap();
     for (i, case) in fixture["cases"].as_array().unwrap().iter().enumerate() {
         let mut stroke = native_caller_stroke(&case["input"]);
         stroke.color = None;
