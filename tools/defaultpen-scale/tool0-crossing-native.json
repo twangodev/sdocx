@@ -1,0 +1,387 @@
+{
+  "schema": "defaultpen-tool0-crossing-native-control-v1",
+  "scope": "Synthetic native Model/Drawing with explicit host vector bridge and Mesa RGBA8; not serialized-note or device parity.",
+  "cases": {
+    "tool0-1x": {
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ],
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "paint_argb": "ff336699",
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00002841",
+            "00000441"
+          ],
+          [
+            "00002942",
+            "0000bc41"
+          ],
+          [
+            "00002841",
+            "0000bc41"
+          ],
+          [
+            "00002942",
+            "00000441"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 0
+      },
+      "native_libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "framebuffer": {
+        "height": 64,
+        "kind": "host RGBA8 texture-backed FBO",
+        "read_format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "status": "0x8cd5",
+        "viewport": [
+          0,
+          0,
+          128,
+          64
+        ],
+        "width": 128
+      },
+      "native_stream_sha256": "d0e5b57f7493ac95ceddfc3a00fd42daadc48ad5392ce665f424e620bc95b1b3",
+      "native_drawing_phase_stream_sha256": "d0e5b57f7493ac95ceddfc3a00fd42daadc48ad5392ce665f424e620bc95b1b3",
+      "instance_count": 33,
+      "rgba_sha256": "9cb10a4c9b5db5088916bb30fca8e2a3249c938c657b1edbd5ed0f8a5c2038d7",
+      "rgba_zlib_base64": "eNrt2XtIU1EcB/D2nptza5tTNze32ebm5tyjtJdZtnyglo3S1KWmm5KhVIpRURb0WhT2cq6g+iOKXhD1hxEURH8ERdEfUf1RGJQFPaCiB5W9dtRrMwgiKt36fuCy3d27c+D3u/f8zrl3zBgAAAAAAIDheFKVHVH4P8VZcltN89fdUmfXHBAk6LP/Vb9MriA2JtE4i0ZnsJCFkaOeXn3Q7unqsy3a9cZRv/errXbXa6HKUvS3+mPxRHKJfnJNWqWvl/RH+kYWRo4wyVKsyqrw2xbtHsz/nneGkpVXyHVBjv25+50vSbAXrU3OW3yK9GX3+vtIf9aaHS+RhZFHxn7l5LKd+uKWi+lV25+R3JBNV9DULdLYXL/bLp3J4Q+0ue0p1abN0/nB6Fp9PS49r40nTXIg+qNHjNKUr8tv6qZyZa/zfzDMXXk1KbtqP1+mnfjLDdFodFVWZcDoWnODaovaEhxF7QK5IQfRHt3jgTqn7nDqvPabQ/dt7e63ZD9KLDf/7H8MNjdG62w4YQzWkB/zHp+ev4Iv02QiumG0NpQorT/m0Vy+6b4mx3NkeN6jhBJdplvr9B4zla6/E3q+YqLLx5epMxDNcEWjCeT6GRa375Hd2/WJyqu+cPkFTXCMiE2d3khyTuYNwfXDm7TKLQ9JzZfoJ1Wz+WMTEb/IwGBxBTLzzKWh93Yw58+t1R0vqH3DnLbLigklGxGtyMWOFqvI/R16HZC5ga6w+RxZ5yFCkYvU8YHnNoH+OkDW8ba6zvd2T+dH0/x1t1XBNSRXFG9ApCKP0bXqmnnBpp7v9X/Zeakxq16Wmr14XH7jmaH5YdmGuzyp0oaIRQ5pypS6oWcCnq4+hzfwmc7iRFPHmdxoaWg9IOewBRI1Ihf+yDsiKq/Wmo4XP3suTOYFSdPc+6hz4yzOFkQv/MVb81ZQOU3OXXI6SpxoGVgV0hmh5zE5fDFPpskMrhN7yXsErbP+OIsnTEAEwxsnJjY5rWLLg8H3Na/6130Ltz1Jmd16STur4aSuoPnswNxgwz17sC5Q14pyUmkHncnmIYLhTzOj9pC5fGNPf+3vr+/+PvKd/OaoD3xJc299PJj3L1T+WXyRApGLHGR8J+8CFRlzN6umVnSST/n4onbyzFc1pXyPdqb3qCLT5Ys1TmvgiuJSEDEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgffAOSH2La",
+      "gl_error": 0,
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "native_route": {
+        "SendDataToGPU_observed_in_Drawing_route": false,
+        "drawing_phase_vector_object_pointer": "0x10034550",
+        "host_assigned_pointer": "0x10034550",
+        "rt_plus80_before_bridge": "0x0",
+        "rt_plus88_before_bridge": "0x0",
+        "rt_update_input_slot_offset": 88,
+        "same_rt_pointer": "0x10034060",
+        "same_vector_object_identity": true,
+        "selected_class": "SPen::DefaultPenStrokeDrawableGL",
+        "stream_length": 396,
+        "stream_sha256": "d0e5b57f7493ac95ceddfc3a00fd42daadc48ad5392ce665f424e620bc95b1b3",
+        "transport_scope": "Drawing route records native AddPoint vector; wrapper clears RT+80. Host explicitly assigns that same vector object to RT+88 before native Update. This is a bounded same-object join, not evidence that Drawing invoked SendDataToGPU or queued a GPU update.",
+        "wrapper_clears_rt_plus80_after_return": true
+      },
+      "native_stream_hex": "000028410000044100000040b847464152a81241000000407a2463416cdc20410000004047967e414c9c2e4100000040914e8c41f3e73b41000000407f289b415b714b41000000407837a9412a965a41000000407930b641f408694100000040d51ec441a33679410000004037c4d1419afd8441000000404ad4dd41fef78c4100000040e966eb41db0e974100000040cc9ff641d080a141000000409753fd413bc9ae41000000409843f3414271b84100000040e20fe4419a4cbb41000000400000d3410000bc41000000402a7bc041c477bb4100000040f53ab24120e9b941000000404aa7a24195c8b44100000040b30aa041ba4fa841000000403c1baa4142049d41000000407058b7415900934100000040c640c441afac8a410000004025b3d2417a29824100000040b5eedf410aa2754100000040882eee411f74664100000040e754fc415cd8574100000040e5e40442fb434a4100000040afd80b4282783c41000000405dfa1242f5802e4100000040733e1a425b682041000000407a992142b539124100000040"
+    },
+    "tool0-2x": {
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ],
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "paint_argb": "ff336699",
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00002841",
+            "00000441"
+          ],
+          [
+            "00002942",
+            "0000bc41"
+          ],
+          [
+            "00002841",
+            "0000bc41"
+          ],
+          [
+            "00002942",
+            "00000441"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 0
+      },
+      "native_libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "framebuffer": {
+        "height": 128,
+        "kind": "host RGBA8 texture-backed FBO",
+        "read_format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "status": "0x8cd5",
+        "viewport": [
+          0,
+          0,
+          256,
+          128
+        ],
+        "width": 256
+      },
+      "native_stream_sha256": "d0e5b57f7493ac95ceddfc3a00fd42daadc48ad5392ce665f424e620bc95b1b3",
+      "native_drawing_phase_stream_sha256": "d0e5b57f7493ac95ceddfc3a00fd42daadc48ad5392ce665f424e620bc95b1b3",
+      "instance_count": 33,
+      "rgba_sha256": "84b046136979017f2ea0b91569e9645cc745c43e3410d4a04f4e29434dd676ad",
+      "rgba_zlib_base64": "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",
+      "gl_error": 0,
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "native_route": {
+        "SendDataToGPU_observed_in_Drawing_route": false,
+        "drawing_phase_vector_object_pointer": "0x10034550",
+        "host_assigned_pointer": "0x10034550",
+        "rt_plus80_before_bridge": "0x0",
+        "rt_plus88_before_bridge": "0x0",
+        "rt_update_input_slot_offset": 88,
+        "same_rt_pointer": "0x10034060",
+        "same_vector_object_identity": true,
+        "selected_class": "SPen::DefaultPenStrokeDrawableGL",
+        "stream_length": 396,
+        "stream_sha256": "d0e5b57f7493ac95ceddfc3a00fd42daadc48ad5392ce665f424e620bc95b1b3",
+        "transport_scope": "Drawing route records native AddPoint vector; wrapper clears RT+80. Host explicitly assigns that same vector object to RT+88 before native Update. This is a bounded same-object join, not evidence that Drawing invoked SendDataToGPU or queued a GPU update.",
+        "wrapper_clears_rt_plus80_after_return": true
+      },
+      "native_stream_hex": "000028410000044100000040b847464152a81241000000407a2463416cdc20410000004047967e414c9c2e4100000040914e8c41f3e73b41000000407f289b415b714b41000000407837a9412a965a41000000407930b641f408694100000040d51ec441a33679410000004037c4d1419afd8441000000404ad4dd41fef78c4100000040e966eb41db0e974100000040cc9ff641d080a141000000409753fd413bc9ae41000000409843f3414271b84100000040e20fe4419a4cbb41000000400000d3410000bc41000000402a7bc041c477bb4100000040f53ab24120e9b941000000404aa7a24195c8b44100000040b30aa041ba4fa841000000403c1baa4142049d41000000407058b7415900934100000040c640c441afac8a410000004025b3d2417a29824100000040b5eedf410aa2754100000040882eee411f74664100000040e754fc415cd8574100000040e5e40442fb434a4100000040afd80b4282783c41000000405dfa1242f5802e4100000040733e1a425b682041000000407a992142b539124100000040"
+    },
+    "tool0-4x": {
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ],
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "paint_argb": "ff336699",
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00002841",
+            "00000441"
+          ],
+          [
+            "00002942",
+            "0000bc41"
+          ],
+          [
+            "00002841",
+            "0000bc41"
+          ],
+          [
+            "00002942",
+            "00000441"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 0
+      },
+      "native_libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "framebuffer": {
+        "height": 256,
+        "kind": "host RGBA8 texture-backed FBO",
+        "read_format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "status": "0x8cd5",
+        "viewport": [
+          0,
+          0,
+          512,
+          256
+        ],
+        "width": 512
+      },
+      "native_stream_sha256": "d0e5b57f7493ac95ceddfc3a00fd42daadc48ad5392ce665f424e620bc95b1b3",
+      "native_drawing_phase_stream_sha256": "d0e5b57f7493ac95ceddfc3a00fd42daadc48ad5392ce665f424e620bc95b1b3",
+      "instance_count": 33,
+      "rgba_sha256": "fad31a80a9e035869884659b432f1e73e1315817f591ef75dce74eb37f1f3804",
+      "rgba_zlib_base64": "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",
+      "gl_error": 0,
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "native_route": {
+        "SendDataToGPU_observed_in_Drawing_route": false,
+        "drawing_phase_vector_object_pointer": "0x10034550",
+        "host_assigned_pointer": "0x10034550",
+        "rt_plus80_before_bridge": "0x0",
+        "rt_plus88_before_bridge": "0x0",
+        "rt_update_input_slot_offset": 88,
+        "same_rt_pointer": "0x10034060",
+        "same_vector_object_identity": true,
+        "selected_class": "SPen::DefaultPenStrokeDrawableGL",
+        "stream_length": 396,
+        "stream_sha256": "d0e5b57f7493ac95ceddfc3a00fd42daadc48ad5392ce665f424e620bc95b1b3",
+        "transport_scope": "Drawing route records native AddPoint vector; wrapper clears RT+80. Host explicitly assigns that same vector object to RT+88 before native Update. This is a bounded same-object join, not evidence that Drawing invoked SendDataToGPU or queued a GPU update.",
+        "wrapper_clears_rt_plus80_after_return": true
+      },
+      "native_stream_hex": "000028410000044100000040b847464152a81241000000407a2463416cdc20410000004047967e414c9c2e4100000040914e8c41f3e73b41000000407f289b415b714b41000000407837a9412a965a41000000407930b641f408694100000040d51ec441a33679410000004037c4d1419afd8441000000404ad4dd41fef78c4100000040e966eb41db0e974100000040cc9ff641d080a141000000409753fd413bc9ae41000000409843f3414271b84100000040e20fe4419a4cbb41000000400000d3410000bc41000000402a7bc041c477bb4100000040f53ab24120e9b941000000404aa7a24195c8b44100000040b30aa041ba4fa841000000403c1baa4142049d41000000407058b7415900934100000040c640c441afac8a410000004025b3d2417a29824100000040b5eedf410aa2754100000040882eee411f74664100000040e754fc415cd8574100000040e5e40442fb434a4100000040afd80b4282783c41000000405dfa1242f5802e4100000040733e1a425b682041000000407a992142b539124100000040"
+    }
+  }
+}
