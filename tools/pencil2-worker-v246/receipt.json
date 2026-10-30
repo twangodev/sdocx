@@ -1,0 +1,15 @@
+{
+  "adapted_probe_source_sha256": "0234e8f2bec3061bb81ca51d0e840e3ea312aefd0d2408b42a965d49fe50b6e9",
+  "boundary": {
+    "graphics_field": 0,
+    "graphics_register": 0,
+    "lr": "0x10467f8",
+    "message_receiver": "0x10038210",
+    "pc": "0x5099648",
+    "update_receiver": "0x10038210"
+  },
+  "candidate_sha256": "996ef6db3a376619e9e5d1d05b7d5e1a940726f3feb2ef6895275a705576ee3e",
+  "parent_sha256": "7866a4c0bd27c1471409bdf02e271b49c9650a830d5e9539d67f9ced9e15c359",
+  "scope": "synthetic synchronous dispatcher with bitmap slot 168 return-self intervention; stopped before null read; no paint or normal scheduling claim",
+  "verified": "Run receiver equals Update(false) receiver; Update entry LR=0x10467f8; graphics field and register zero at PC=0x5099648"
+}
