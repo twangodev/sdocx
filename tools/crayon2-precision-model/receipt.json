@@ -1,0 +1,773 @@
+{
+  "scope": "Recompiled fragment shader with opaque RGB encoding; high float byte inferred from expected source coordinate. Host Mesa only.",
+  "inputs_sha256": {
+    "tools/crayon2-precision-model/capture.py": "252bfcff42aad93500b56ffcd07e6ca759343c81db35b1292349c118c808c66d",
+    "tools/crayon2-precision-model/verify.py": "d7fba4cebd45f3b6006c138265666754a20e279817d0e1578bd81f1dd1fdbbca",
+    "tools/crayon2-independent-control/capture-stamp.py": "0ec5ea84d232fdf159f1a5c35ffd9c879f8c10f3726a34911091c5b5f55722ec",
+    "tools/crayon2-independent-control/capture.py": "7c4ef0580aaa165fe4ca427a664883b00cb4bd312ccc32e39ac8e8542e5768a6",
+    "tools/crayon2-independent-control/native-vector.z": "683ac5d9055c60c8c7cacb5cc532140a997dbd29371aedaca5fcae844d9de13a",
+    "source_svg": "bf20e396c38802985a235d254a1764ce61ae26e1a99eb6c2c701558433904c86"
+  },
+  "stamps": {
+    "1": {
+      "frame_sha256": {
+        "xuv": "8a5a8e7dfd943dd7daa0034975518055c6f58b28d2301a415029e042577e6780",
+        "xsample": "05b766214322ded70567b2a24389ccfbcd1bd5621ed3f49e11985d75f1fb6269",
+        "yuv": "a4eda58173d0973b56d90de1987f3697a2b267352ab4424afd77dfd594d9f5d9",
+        "ysample": "b1b2a03fc315df9d93b50a4a05617dbbc2a96b80b4529f9337409e2381b17ec1"
+      },
+      "observations": [
+        {
+          "xy": [
+            36,
+            143
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              204,
+              0,
+              1,
+              255
+            ],
+            "xsample": [
+              46,
+              20,
+              123,
+              255
+            ],
+            "yuv": [
+              249,
+              85,
+              86,
+              255
+            ],
+            "ysample": [
+              84,
+              195,
+              179,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    "100": {
+      "frame_sha256": {
+        "xuv": "93ea58da2633d999adb7588984f3d62f1b359770b79bb80cf58de9fb5547f52b",
+        "xsample": "25860471be7bdd4dbe9cebba9875bfb38d5798886d3d81b21241f5e1dbeabd89",
+        "yuv": "e02f79fa776e8d561bddaead4697a917f6324120034af65ca22ab5ead1a449b8",
+        "ysample": "707b9b82c49b008a531424573a801686020d49ab12ab57dc14eee0823685bcbd"
+      },
+      "observations": [
+        {
+          "xy": [
+            41,
+            156
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              217,
+              85,
+              85,
+              255
+            ],
+            "xsample": [
+              57,
+              117,
+              48,
+              255
+            ],
+            "yuv": [
+              214,
+              170,
+              170,
+              255
+            ],
+            "ysample": [
+              55,
+              46,
+              165,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.5
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            42,
+            156
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              220,
+              0,
+              0,
+              255
+            ],
+            "xsample": [
+              59,
+              187,
+              187,
+              255
+            ],
+            "yuv": [
+              214,
+              170,
+              170,
+              255
+            ],
+            "ysample": [
+              55,
+              46,
+              165,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.5
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            43,
+            156
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              222,
+              170,
+              171,
+              255
+            ],
+            "xsample": [
+              62,
+              2,
+              70,
+              255
+            ],
+            "yuv": [
+              214,
+              170,
+              170,
+              255
+            ],
+            "ysample": [
+              55,
+              46,
+              165,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.5
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            41,
+            155
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              217,
+              85,
+              85,
+              255
+            ],
+            "xsample": [
+              57,
+              117,
+              48,
+              255
+            ],
+            "yuv": [
+              217,
+              85,
+              85,
+              255
+            ],
+            "ysample": [
+              57,
+              117,
+              48,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            42,
+            155
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              220,
+              0,
+              0,
+              255
+            ],
+            "xsample": [
+              59,
+              187,
+              187,
+              255
+            ],
+            "yuv": [
+              217,
+              85,
+              85,
+              255
+            ],
+            "ysample": [
+              57,
+              117,
+              48,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            43,
+            155
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              222,
+              170,
+              171,
+              255
+            ],
+            "xsample": [
+              62,
+              2,
+              70,
+              255
+            ],
+            "yuv": [
+              217,
+              85,
+              85,
+              255
+            ],
+            "ysample": [
+              57,
+              117,
+              48,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            41,
+            154
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              217,
+              85,
+              85,
+              255
+            ],
+            "xsample": [
+              57,
+              117,
+              48,
+              255
+            ],
+            "yuv": [
+              220,
+              0,
+              0,
+              255
+            ],
+            "ysample": [
+              59,
+              187,
+              187,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            42,
+            154
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              220,
+              0,
+              0,
+              255
+            ],
+            "xsample": [
+              59,
+              187,
+              187,
+              255
+            ],
+            "yuv": [
+              220,
+              0,
+              0,
+              255
+            ],
+            "ysample": [
+              59,
+              187,
+              187,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            43,
+            154
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              222,
+              170,
+              171,
+              255
+            ],
+            "xsample": [
+              62,
+              2,
+              70,
+              255
+            ],
+            "yuv": [
+              220,
+              0,
+              0,
+              255
+            ],
+            "ysample": [
+              59,
+              187,
+              187,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    "250": {
+      "frame_sha256": {
+        "xuv": "cf95bb1b7a2b9c53d88a22f00d81ed00229a4516852b2f6a57e6c07c2df100de",
+        "xsample": "6c8b2776ddf34f3d2726c97f3ca34fc2d4ec4878ade54f7f941186d0a921cb8f",
+        "yuv": "45ec40a274197b7ab8aa82370f599305f009694ab239b04dd574098368108d9d",
+        "ysample": "c3b887fd7ccac0a4347e2d0a13990ce52c3018bd88e40ee984e74fde5989650b"
+      },
+      "observations": [
+        {
+          "xy": [
+            54,
+            155
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              252,
+              0,
+              0,
+              255
+            ],
+            "xsample": [
+              87,
+              10,
+              61,
+              255
+            ],
+            "yuv": [
+              217,
+              85,
+              85,
+              255
+            ],
+            "ysample": [
+              57,
+              117,
+              48,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            55,
+            155
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              254,
+              170,
+              171,
+              255
+            ],
+            "xsample": [
+              89,
+              80,
+              200,
+              255
+            ],
+            "yuv": [
+              217,
+              85,
+              85,
+              255
+            ],
+            "ysample": [
+              57,
+              117,
+              48,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            -0.5,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            54,
+            154
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              252,
+              0,
+              0,
+              255
+            ],
+            "xsample": [
+              87,
+              10,
+              61,
+              255
+            ],
+            "yuv": [
+              220,
+              0,
+              0,
+              255
+            ],
+            "ysample": [
+              59,
+              187,
+              187,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            55,
+            154
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              254,
+              170,
+              171,
+              255
+            ],
+            "xsample": [
+              89,
+              80,
+              200,
+              255
+            ],
+            "yuv": [
+              220,
+              0,
+              0,
+              255
+            ],
+            "ysample": [
+              59,
+              187,
+              187,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            -0.5,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    "478": {
+      "frame_sha256": {
+        "xuv": "86a82ded6f0310adecfc9bb7bab77734b9b3670c23cdeb439e2392b8b1933011",
+        "xsample": "eb21ed87b96a64acfee3f16084f402b72b9f69b4be9770e6f0ce959bb49ee57c",
+        "yuv": "9c4754158e227943412e265aa20ce510dc3906aa45ab1264bc009c25d974b687",
+        "ysample": "7ca6fe598171645a3f66f3a91b25cc50246f8b14bc017fda8a4d5569065451d6"
+      },
+      "observations": [
+        {
+          "xy": [
+            73,
+            147
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              23,
+              85,
+              86,
+              255
+            ],
+            "xsample": [
+              129,
+              35,
+              70,
+              255
+            ],
+            "yuv": [
+              238,
+              170,
+              170,
+              255
+            ],
+            "ysample": [
+              75,
+              169,
+              134,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            74,
+            147
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              24,
+              170,
+              171,
+              255
+            ],
+            "xsample": [
+              130,
+              70,
+              139,
+              255
+            ],
+            "yuv": [
+              238,
+              170,
+              170,
+              255
+            ],
+            "ysample": [
+              75,
+              169,
+              134,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            73,
+            146
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              23,
+              85,
+              86,
+              255
+            ],
+            "xsample": [
+              129,
+              35,
+              70,
+              255
+            ],
+            "yuv": [
+              241,
+              85,
+              85,
+              255
+            ],
+            "ysample": [
+              77,
+              240,
+              17,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "xy": [
+            74,
+            146
+          ],
+          "encoded_rgba": {
+            "xuv": [
+              24,
+              170,
+              171,
+              255
+            ],
+            "xsample": [
+              130,
+              70,
+              139,
+              255
+            ],
+            "yuv": [
+              241,
+              85,
+              85,
+              255
+            ],
+            "ysample": [
+              77,
+              240,
+              17,
+              255
+            ]
+          },
+          "uv_model_error_times_2_24": [
+            0.0,
+            0.0
+          ],
+          "scale_error_times_2_24": [
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    }
+  }
+}
