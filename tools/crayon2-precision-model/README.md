@@ -150,3 +150,35 @@ cargo test -p sdocx --features render --lib write_independent_source_records -- 
 cargo run -p sdocx --features pdf --example crayon2_host_export -- "$work_dir/grid.svg" "$work_dir/grid.png" "$work_dir/grid.pdf"
 PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-precision-model/compare_output_grid.py "$work_dir/grid.svg" "$work_dir/grid.png" "$work_dir/grid.pdf"
 ```
+
+## Rust fixed-grid control
+
+The test-only `ink::crayon2::grid_test` samples Rust-produced stroke records
+with an explicit axis-aligned clip transform, viewport, RGBA and texture
+planes. It emits transparent ordered rectangles, leaving the prior to its
+caller. Its checked work limit is capped at one million samples. This remains
+an output-grid experiment, not a document renderer profile: rotation,
+perspective, arbitrary saved metadata and scalable replay are not established.
+It is compiled only for tests and does not enable public renderer dispatch.
+The generator reads source stroke inputs and the two hash-checked texture
+planes, never the captured native vector or framebuffer; only the comparison
+script reads the native framebuffer.
+
+The ignored `write_independent_rust_grid` test produces the independent 192 ×
+192 source control with the same hash-checked local texture inputs above.
+The [receipt](rust-output-grid-receipt.json) compares resvg, MuPDF and PDFium
+against the native frame: respectively 287 / 128 / 1239, 410 / 128 / 1869,
+and 412 / 128 / 1861 differing pixels / maximum channel error / total RGB
+error. These differ from the Python experiment; this control has not established
+why, and does not prove numerical equivalence to that implementation. The PDF
+is the SVG-page export, not the direct document PDF.
+The checked readers are resvg 0.47, PyMuPDF 1.28.2 and pypdfium2 5.9.0
+(PDFium 150.0.7869.0); the export example and dependency lockfile are tracked.
+
+```sh
+export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
+export SDOCX_CRAYON2_GRID_SVG=/tmp/crayon-grid-rust.svg
+cargo test -p sdocx --features render --lib write_independent_rust_grid -- --ignored
+cargo run -p sdocx --features pdf --example crayon2_host_export -- /tmp/crayon-grid-rust.svg /tmp/crayon-grid-rust.png /tmp/crayon-grid-rust.pdf
+PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-precision-model/compare_output_grid.py /tmp/crayon-grid-rust.svg /tmp/crayon-grid-rust.png /tmp/crayon-grid-rust.pdf
+```

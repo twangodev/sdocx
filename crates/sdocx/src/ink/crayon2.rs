@@ -8,6 +8,9 @@
 #[cfg(feature = "render")]
 mod material;
 
+#[cfg(test)]
+mod grid_test;
+
 use super::path::{P, Quad};
 use std::fmt;
 
@@ -872,6 +875,23 @@ mod tests {
         .read_to_end(&mut native)
         .unwrap();
         assert_eq!(output_bytes(&output), native);
+    }
+
+    #[test]
+    #[ignore = "requires local native texture inputs and writes test-only grid SVG"]
+    fn write_independent_rust_grid() {
+        let points = [P { x: 40.0, y: 45.0 }, P { x: 53.0, y: 28.0 }, P { x: 75.0, y: 49.0 }];
+        let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
+        let output = sample_stroke(&stroke, &parse_profile(&fixture())).unwrap();
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
+        let point = std::fs::read(dir.join("g_Crayon2PointPtn.source.bin")).unwrap();
+        let background = std::fs::read(dir.join("g_Crayon2BgPtn.source.bin")).unwrap();
+        assert_eq!(sha(&point), "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405");
+        assert_eq!(sha(&background), "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3");
+        let grid = grid_test::Grid { width: 192, height: 192, clip_scale: [0.010416666977107525; 2], clip_translation: [-1.; 2], background_scale: [1.7066665887832642; 2], rgba: [184. / 255., 76. / 255., 41. / 255., 170. / 255.], point: &point, background: &background, max_samples: 1_000_000 };
+        let fragments = grid_test::fragments(&output.records, &grid).unwrap();
+        let svg = format!("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"192\" height=\"192\" viewBox=\"0 0 192 192\" shape-rendering=\"crispEdges\"><rect width=\"192\" height=\"192\" fill=\"#4080c0\"/>\n{fragments}</svg>");
+        std::fs::write(std::env::var_os("SDOCX_CRAYON2_GRID_SVG").expect("output SVG"), svg).unwrap();
     }
 
     #[test]

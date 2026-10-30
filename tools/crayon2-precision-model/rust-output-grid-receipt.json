@@ -1,0 +1,30 @@
+{
+  "scope": "fixed 192x192 host output grid; public SVG-page PDF; no device, saved page, rescaling or direct document PDF claim",
+  "metric_order": [
+    "differing_pixels",
+    "maximum_channel_error",
+    "absolute_rgb_error"
+  ],
+  "readers_vs_native": {
+    "resvg": [
+      287,
+      128,
+      1239
+    ],
+    "mupdf": [
+      410,
+      128,
+      1869
+    ],
+    "pdfium": [
+      412,
+      128,
+      1861
+    ]
+  },
+  "sha256": {
+    "svg": "1b836dc6262a1bc44f308c59fcb7e6801d4fa8f1a623349464ac26e3561eef02",
+    "png": "f74b9f1ea3c90826607458713f3fd1d4809afe4abdaeea428cfaee6559fa5e9e",
+    "pdf": "edc9d5cbf31042d12db131b318d040436df94a87c60df29877a78b2b45510f2b"
+  }
+}
