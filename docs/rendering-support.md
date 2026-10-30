@@ -999,3 +999,5 @@ The [painting source contract](reverse-engineering/painting-source-findings.md)
 identifies a separate archive with ordinary stroke packets, replay channels and
 bitmap state. The shared native reducer uses different coordinate widths from
 WDoc; neither a thumbnail nor decoding WDoc frames preserves that source.
+
+`RenderOptions::inkpen2_half_grid_viewport` separately opts into an experimental fixed 0.5× output grid for opaque V1 ink on the tablet host profile. The caller asserts the final raster dimensions and zero-translation phase; the grid does not scale with a different consumer viewport. Admission and bounded-work fallback are per stroke in paint order, so a page may mix grid and ordinary rendering. [Native and public export controls](../tools/inkpen2-v1-tablet-half/README.md#explicit-public-half-grid-viewport) are synthetic host evidence, not device or saved-note parity.

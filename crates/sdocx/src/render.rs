@@ -33,9 +33,10 @@ mod gradient;
 mod image_crop;
 #[cfg(feature = "pdf")]
 mod ink_canvas;
+mod inkpen2_half_grid;
+mod inkpen2_vector;
 #[cfg(feature = "pdf")]
 pub(crate) use ink_canvas::raster_scene as raster_canvas_scene;
-mod inkpen2_vector;
 #[cfg(all(test, feature = "pdf"))]
 mod legacy_marker_alpha_tests;
 mod marker2_scale;
@@ -153,6 +154,17 @@ impl InkPen2V1OutputScale {
             Self::Double => 2.0,
         }
     }
+}
+
+/// Caller assertion that the whole page is rasterized at 0.5 pixels per page
+/// unit, with zero translation and a top-left output origin. The grid dimensions
+/// must be exactly half the page dimensions. This host approximation is not
+/// scalable and is supported only for unsliced, untransformed strokes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct InkPen2HalfGridViewport {
+    pub width: u32,
+    pub height: u32,
 }
 
 /// Explicit opt-in to bounded saved AirBrush texture routes.
@@ -393,6 +405,12 @@ pub struct RenderOptions {
     /// Opt into the bounded V1 approximation at a known output scale.
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
+    /// Opt into the experimental V1 host pixel grid at the asserted viewport.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub inkpen2_half_grid_viewport: Option<InkPen2HalfGridViewport>,
+    #[cfg(test)]
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub(crate) inkpen2_half_grid_test_budget: Option<[usize; 3]>,
     /// Opt into bounded, approximate ChineseBrush V1–V3 vector paint.
     #[cfg_attr(feature = "serde", serde(default))]
     pub chinesebrush_profile: Option<ChineseBrushRenderProfile>,
@@ -971,6 +989,9 @@ impl DocumentTextCache {
             options.inkpen_v1_output_scale,
             options.inkpen2_profile,
             options.inkpen2_v1_output_scale,
+            options.inkpen2_half_grid_viewport,
+            #[cfg(test)]
+            options.inkpen2_half_grid_test_budget,
             options.chinesebrush_profile,
             options.chinesebrush_fwidth_output_profile,
             options.fountain_v17_rainbow_profile.as_ref(),
@@ -1493,6 +1514,8 @@ fn render_page_contents_svg(
     inkpen_v1_output_scale: Option<u32>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
+    inkpen2_half_grid_viewport: Option<InkPen2HalfGridViewport>,
+    #[cfg(test)] inkpen2_half_grid_test_budget: Option<[usize; 3]>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     fountain_v17_rainbow_profile: Option<&FountainV17RainbowRenderProfile>,
@@ -1579,6 +1602,17 @@ fn render_page_contents_svg(
         inkpen_v1_output_scale,
         inkpen2_profile,
         inkpen2_v1_output_scale,
+        inkpen2_half_grid_viewport,
+        inkpen2_half_grid_budget: Cell::new({
+            #[cfg(test)]
+            {
+                inkpen2_half_grid_test_budget.unwrap_or([32_768, 1_000_000, 100_000])
+            }
+            #[cfg(not(test))]
+            {
+                [32_768, 1_000_000, 100_000]
+            }
+        }),
         chinesebrush_profile,
         chinesebrush_fwidth_output_profile,
         fountain_v17_rainbow_profile,
@@ -1654,6 +1688,8 @@ struct CompositionContext<'a> {
     inkpen_v1_output_scale: Option<u32>,
     inkpen2_profile: Option<InkPen2RenderProfile>,
     inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
+    inkpen2_half_grid_viewport: Option<InkPen2HalfGridViewport>,
+    inkpen2_half_grid_budget: Cell<[usize; 3]>,
     chinesebrush_profile: Option<ChineseBrushRenderProfile>,
     chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
     fountain_v17_rainbow_profile: Option<&'a FountainV17RainbowRenderProfile>,
@@ -1779,6 +1815,36 @@ fn render_object(
                     profile,
                     &mut context.legacy_marker_budget.borrow_mut(),
                 )
+            {
+                *stroke_index += 1;
+                progress.advance(1);
+                return;
+            }
+            if native_allowed
+                && !context.replay
+                && context.slice.is_none()
+                && let Some(view) = context.inkpen2_half_grid_viewport
+                && context.inkpen2_profile.is_some_and(|p| {
+                    matches!(
+                        (p.screen_width, p.screen_height),
+                        (1440, 2560) | (2560, 1440)
+                    )
+                })
+                && view.width.checked_mul(2) == Some(context.page.width)
+                && view.height.checked_mul(2) == Some(context.page.height)
+                && let Some(rendering) = stroke.rendering.as_ref()
+                && rendering
+                    .style
+                    .color_argb
+                    .is_some_and(|argb| argb >> 24 == 255)
+                && let Some(ink) = prepare_inkpen2_internal(
+                    stroke,
+                    context.inkpen2_profile,
+                    context.theme,
+                    Some(InkPen2V1OutputScale::Half),
+                    true,
+                )
+                && inkpen2_half_grid::render(svg, &ink, view, &context.inkpen2_half_grid_budget)
             {
                 *stroke_index += 1;
                 progress.advance(1);
@@ -5476,7 +5542,7 @@ fn prepare_inkpen2_v1(
     theme: RenderTheme,
     scale: InkPen2V1OutputScale,
 ) -> Option<crate::ink::PreparedInkPen2V9> {
-    prepare_inkpen2_internal(stroke, profile, theme, Some(scale))
+    prepare_inkpen2_internal(stroke, profile, theme, Some(scale), false)
 }
 
 /// Prepare V9 records for the explicitly configured fresh-draw host profile.
@@ -5485,7 +5551,7 @@ fn prepare_inkpen2_v9(
     profile: Option<InkPen2RenderProfile>,
     theme: RenderTheme,
 ) -> Option<crate::ink::PreparedInkPen2V9> {
-    prepare_inkpen2_internal(stroke, profile, theme, None)
+    prepare_inkpen2_internal(stroke, profile, theme, None, false)
 }
 
 fn prepare_inkpen2_internal(
@@ -5493,6 +5559,7 @@ fn prepare_inkpen2_internal(
     profile: Option<InkPen2RenderProfile>,
     theme: RenderTheme,
     v1_scale: Option<InkPen2V1OutputScale>,
+    half_grid: bool,
 ) -> Option<crate::ink::PreparedInkPen2V9> {
     let profile = profile?;
     if profile.screen_width == 0
@@ -5530,7 +5597,7 @@ fn prepare_inkpen2_internal(
             && matches!(
                 v1_scale,
                 Some(InkPen2V1OutputScale::One | InkPen2V1OutputScale::Double)
-            ))
+            ) || half_grid && matches!((profile.screen_width, profile.screen_height), (1440, 2560) | (2560, 1440)) && v1_scale == Some(InkPen2V1OutputScale::Half))
             || profile.enhanced_antialias
             || !matches!(
                 rendering.pen_name.as_deref(),
@@ -21716,6 +21783,267 @@ mod tests {
             assert!(a * 4 < g, "{name}: public={a}, generic={g}");
         }
     }
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_half_grid_mixed_order_exports() {
+        let mut strokes = Vec::new();
+        for (dx, dy) in [(0., 0.), (4., 2.)] {
+            let mut stroke = inkpen2_color_stroke(0xffff0000, None);
+            stroke.rendering.as_mut().unwrap().advanced_settings = None;
+            stroke.rendering.as_mut().unwrap().tool_type_raw = 3;
+            stroke.pen_width = 4.;
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(4.);
+            stroke.points = [(0., 0.), (8., 0.), (8., 8.), (0., 8.)]
+                .into_iter()
+                .map(|(x, y)| Point {
+                    x: x + 32. + dx,
+                    y: y + 32. + dy,
+                })
+                .collect();
+            stroke.pressures = vec![0.2, 0.4, 0.6, 0.8];
+            stroke.timestamps = vec![0, 10, 20, 30];
+            stroke.tilts = vec![0.; 4];
+            stroke.orientations = vec![0.; 4];
+            stroke.bbox = BoundingBox {
+                x_min: -100.,
+                y_min: -100.,
+                x_max: 200.,
+                y_max: 200.,
+            };
+            strokes.push(stroke);
+        }
+        let mut line = super::gradient::tests::hf02_line_with_gradient();
+        line.begin = [8., 32.];
+        line.end = [120., 32.];
+        line.style.paint = crate::ShapePaint::Solid(0xff000000);
+        line.style.paint_source = None;
+        line.style.width = 12.;
+        let mut page = page_with_uncolored_stroke();
+        page.width = 128;
+        page.height = 96;
+        page.objects = vec![
+            strokes[0].clone().into(),
+            crate::PageElement::Line(line).into(),
+            strokes[1].clone().into(),
+        ];
+        let doc = document(page);
+        let ordinary = RenderOptions {
+            inkpen2_profile: Some(InkPen2RenderProfile {
+                screen_width: 1440,
+                screen_height: 2560,
+                enhanced_antialias: false,
+            }),
+            inkpen2_v1_output_scale: Some(super::InkPen2V1OutputScale::One),
+            ..Default::default()
+        };
+        let mut candidate = ordinary.clone();
+        candidate.inkpen2_half_grid_viewport = Some(super::InkPen2HalfGridViewport {
+            width: 64,
+            height: 48,
+        });
+        let svg = render_document_svg(&doc, &candidate).remove(0).svg;
+        assert_ne!(svg, render_document_svg(&doc, &ordinary)[0].svg);
+        let pdf = crate::render_document_pdf(&doc, &candidate, &Default::default()).unwrap();
+        assert_ne!(
+            pdf,
+            crate::render_document_pdf(&doc, &ordinary, &Default::default()).unwrap()
+        );
+        if let Some(dir) = std::env::var_os("SDOCX_INKPEN2_HALF_EXPORT") {
+            let dir = std::path::Path::new(&dir);
+            std::fs::write(dir.join("candidate.svg"), svg).unwrap();
+            std::fs::write(dir.join("candidate.pdf"), pdf).unwrap();
+            std::fs::write(
+                dir.join("ordinary.svg"),
+                &render_document_svg(&doc, &ordinary)[0].svg,
+            )
+            .unwrap();
+            std::fs::write(
+                dir.join("ordinary.pdf"),
+                crate::render_document_pdf(&doc, &ordinary, &Default::default()).unwrap(),
+            )
+            .unwrap();
+        }
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn inkpen2_half_grid_traversal_budget_fallback() {
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../tools/inkpen2-v1-tablet-half/receipt.json"
+        ))
+        .unwrap();
+        let make = |name: &str, color| {
+            let input = &receipt["cases"][name]["input"];
+            let mut stroke = inkpen2_color_stroke(color, None);
+            stroke.rendering.as_mut().unwrap().advanced_settings = None;
+            stroke.rendering.as_mut().unwrap().tool_type_raw = 3;
+            stroke.pen_width = input["size"].as_f64().unwrap() as f32;
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(stroke.pen_width);
+            stroke.points = input["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| Point {
+                    x: p[0].as_f64().unwrap() + 32.,
+                    y: p[1].as_f64().unwrap() + 32.,
+                })
+                .collect();
+            stroke.pressures = input["pressure"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| p.as_f64().unwrap())
+                .collect();
+            stroke.timestamps = vec![0, 10, 20, 30];
+            stroke.tilts = vec![0.; 4];
+            stroke.orientations = vec![0.; 4];
+            stroke
+        };
+        let first = make("short", 0xffff0000);
+        let middle = make("turn", 0xff0000ff);
+        let last = make("short", 0xff00ff00);
+        let profile = InkPen2RenderProfile {
+            screen_width: 1440,
+            screen_height: 2560,
+            enhanced_antialias: false,
+        };
+        let theme = RenderTheme::for_canvas(false);
+        let count = super::prepare_inkpen2_internal(
+            &first,
+            Some(profile),
+            theme,
+            Some(super::InkPen2V1OutputScale::Half),
+            true,
+        )
+        .unwrap()
+        .records
+        .len();
+        assert!(
+            super::prepare_inkpen2_internal(
+                &middle,
+                Some(profile),
+                theme,
+                Some(super::InkPen2V1OutputScale::Half),
+                true
+            )
+            .unwrap()
+            .records
+            .len()
+                > count
+        );
+        let mut page = page_with_uncolored_stroke();
+        page.width = 128;
+        page.height = 96;
+        page.objects = vec![first.into(), middle.into(), last.into()];
+        let doc = document(page);
+        let opts = RenderOptions {
+            inkpen2_profile: Some(profile),
+            inkpen2_half_grid_viewport: Some(super::InkPen2HalfGridViewport {
+                width: 64,
+                height: 48,
+            }),
+            inkpen2_half_grid_test_budget: Some([count * 2, 1_000_000, 100_000]),
+            ..Default::default()
+        };
+        let svg = &render_document_svg(&doc, &opts)[0].svg;
+        let red = svg
+            .find("<rect fill=\"#ff0000\"")
+            .unwrap_or_else(|| panic!("red absent: {svg}"));
+        let blue = svg
+            .find("<line ")
+            .unwrap_or_else(|| panic!("fallback absent: {svg}"));
+        let green = svg
+            .find("<rect fill=\"#00ff00\"")
+            .unwrap_or_else(|| panic!("green absent: {svg}"));
+        assert!(red < blue && blue < green);
+        assert!(!svg.contains("<rect fill=\"#0000ff\""));
+    }
+
+    #[cfg(all(feature = "pdf", feature = "serde"))]
+    #[test]
+    fn inkpen2_half_grid_public_admission_and_fallback() {
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../tools/inkpen2-v1-tablet-half/receipt.json"
+        ))
+        .unwrap();
+        let input = &receipt["cases"]["turn"]["input"];
+        let mut stroke = inkpen2_color_stroke(0xff33_6699, None);
+        stroke.rendering.as_mut().unwrap().advanced_settings = None;
+        stroke.rendering.as_mut().unwrap().tool_type_raw = 3;
+        stroke.pen_width = input["size"].as_f64().unwrap() as f32;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(stroke.pen_width);
+        stroke.points = input["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| Point {
+                x: p[0].as_f64().unwrap() + 32.,
+                y: p[1].as_f64().unwrap() + 32.,
+            })
+            .collect();
+        stroke.pressures = input["pressure"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_f64().unwrap())
+            .collect();
+        stroke.timestamps = vec![0, 10, 20, 30];
+        stroke.tilts = vec![0.; 4];
+        stroke.orientations = vec![0.; 4];
+        let mut page = page_with_uncolored_stroke();
+        page.width = 128;
+        page.height = 96;
+        page.objects = vec![stroke.into()];
+        let doc = document(page);
+        let base = RenderOptions {
+            inkpen2_profile: Some(InkPen2RenderProfile {
+                screen_width: 1440,
+                screen_height: 2560,
+                enhanced_antialias: false,
+            }),
+            ..Default::default()
+        };
+        let mut candidate = base.clone();
+        candidate.inkpen2_half_grid_viewport = Some(super::InkPen2HalfGridViewport {
+            width: 64,
+            height: 48,
+        });
+        let svg = render_document_svg(&doc, &candidate);
+        assert_ne!(svg[0].svg, render_document_svg(&doc, &base)[0].svg);
+        let pdf = crate::render_document_pdf(&doc, &candidate, &Default::default()).unwrap();
+        assert_ne!(
+            pdf,
+            crate::render_document_pdf(&doc, &base, &Default::default()).unwrap()
+        );
+        candidate.inkpen2_half_grid_viewport.as_mut().unwrap().width = 63;
+        assert_eq!(
+            render_document_svg(&doc, &candidate)[0].svg,
+            render_document_svg(&doc, &base)[0].svg
+        );
+        assert_eq!(
+            crate::render_document_pdf(&doc, &candidate, &Default::default()).unwrap(),
+            crate::render_document_pdf(&doc, &base, &Default::default()).unwrap()
+        );
+        if let Some(dir) = std::env::var_os("SDOCX_INKPEN2_HALF_EXPORT") {
+            std::fs::write(
+                std::path::Path::new(&dir).join("candidate.svg"),
+                &svg[0].svg,
+            )
+            .unwrap();
+            std::fs::write(std::path::Path::new(&dir).join("candidate.pdf"), &pdf).unwrap();
+            std::fs::write(
+                std::path::Path::new(&dir).join("ordinary.svg"),
+                &render_document_svg(&doc, &base)[0].svg,
+            )
+            .unwrap();
+            std::fs::write(
+                std::path::Path::new(&dir).join("ordinary.pdf"),
+                crate::render_document_pdf(&doc, &base, &Default::default()).unwrap(),
+            )
+            .unwrap();
+        }
+    }
+
     #[cfg(feature = "pdf")]
     #[test]
     fn inkpen2_v1_tool3_native_alias_exports() {

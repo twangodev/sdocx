@@ -113,7 +113,7 @@ pub use render::{
     ChineseBrushRenderProfile, DefaultPenOutputScale, DocumentTextCache,
     FountainV14OutputScaleProfile, FountainV16OutputScaleProfile, FountainV17OutputScaleProfile,
     FountainV17RainbowRenderProfile, GeometryDiagnostic, GeometryDiagnosticKind,
-    InkPen2RenderProfile, InkPen2V1OutputScale, InkPenRenderProfile, LegacyMarkerCenterlineProfile,
+    InkPen2HalfGridViewport, InkPen2RenderProfile, InkPen2V1OutputScale, InkPenRenderProfile, LegacyMarkerCenterlineProfile,
     Marker3OutputScale, MontblancRenderProfile, ObjectDiagnostic, ObjectDiagnosticKind,
     PaintDiagnostic, PaintDiagnosticKind, PaintRole, Pencil3PaperSampler, Pencil3RenderProfile,
     PointMarkerTarget, RenderColorMode, RenderOptions, RenderTheme, RenderedPage,

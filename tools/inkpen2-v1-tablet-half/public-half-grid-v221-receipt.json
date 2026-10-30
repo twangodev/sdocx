@@ -1,0 +1,106 @@
+{
+  "ordinary": {
+    "svg_sha256": "7af992419fc7be78955193199e5e02472d2ff3f0685214af3094f0e102374c14",
+    "pdf_sha256": "bf7bd248602c539d0563a852522fd669aa8a56ceb28af1b2912c9d6047fcb955",
+    "metrics": {
+      "direct": {
+        "resvg": {
+          "whole": 31409,
+          "ink_only": 370,
+          "ink_pixels": 2,
+          "overlap": 447,
+          "overlap_pixels": 16
+        },
+        "mupdf": {
+          "whole": 37865,
+          "ink_only": 304,
+          "ink_pixels": 2,
+          "overlap": 1202,
+          "overlap_pixels": 16
+        },
+        "pdfium": {
+          "whole": 32929,
+          "ink_only": 290,
+          "ink_pixels": 2,
+          "overlap": 1080,
+          "overlap_pixels": 16
+        }
+      },
+      "flipped": {
+        "resvg": {
+          "whole": 518515,
+          "ink_only": 358,
+          "ink_pixels": 2,
+          "overlap": 8227,
+          "overlap_pixels": 16
+        },
+        "mupdf": {
+          "whole": 521915,
+          "ink_only": 358,
+          "ink_pixels": 2,
+          "overlap": 8213,
+          "overlap_pixels": 16
+        },
+        "pdfium": {
+          "whole": 518061,
+          "ink_only": 358,
+          "ink_pixels": 2,
+          "overlap": 8227,
+          "overlap_pixels": 16
+        }
+      }
+    }
+  },
+  "candidate": {
+    "svg_sha256": "32b2c69d833ba9f32be1a7edb16ed47fb4d03e07674a743821785a52c59ff4b0",
+    "pdf_sha256": "a3c4f37ccee2d9cb243d1be61d476a94452840b18f67cac4c0fc3a391430dd4d",
+    "metrics": {
+      "direct": {
+        "resvg": {
+          "whole": 30010,
+          "ink_only": 0,
+          "ink_pixels": 2,
+          "overlap": 137,
+          "overlap_pixels": 16
+        },
+        "mupdf": {
+          "whole": 35024,
+          "ink_only": 6,
+          "ink_pixels": 2,
+          "overlap": 132,
+          "overlap_pixels": 16
+        },
+        "pdfium": {
+          "whole": 30004,
+          "ink_only": 3,
+          "ink_pixels": 2,
+          "overlap": 129,
+          "overlap_pixels": 16
+        }
+      },
+      "flipped": {
+        "resvg": {
+          "whole": 517234,
+          "ink_only": 358,
+          "ink_pixels": 2,
+          "overlap": 8227,
+          "overlap_pixels": 16
+        },
+        "mupdf": {
+          "whole": 520882,
+          "ink_only": 358,
+          "ink_pixels": 2,
+          "overlap": 8213,
+          "overlap_pixels": 16
+        },
+        "pdfium": {
+          "whole": 517244,
+          "ink_only": 358,
+          "ink_pixels": 2,
+          "overlap": 8227,
+          "overlap_pixels": 16
+        }
+      }
+    }
+  }
+}

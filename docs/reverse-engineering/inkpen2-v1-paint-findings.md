@@ -87,3 +87,5 @@ profile. Recapture the native inputs with
 `python3 tools/inkpen-capture/inkpen2_v1_pressure_paint_capture.py` using the local
 prerequisites above. The public comparisons used a temporary test harness
 adapted from `inkpen2_v1_distinct_native_shapes_public_svg`.
+
+The [experimental half-grid viewport](../../tools/inkpen2-v1-tablet-half/README.md) opt-in covers an asserted fixed 0.5× raster grid on the tablet host profile, with per-stroke fallback and page work limits. Retained native frames and public SVG/direct-PDF comparisons cover synthetic host controls; device and saved-note parity remain unverified.

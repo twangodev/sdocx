@@ -1,0 +1,72 @@
+{
+  "command": "PYTHONPATH=scratch/straightinkpen2-alias:scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin EGL_PLATFORM=surfaceless timeout 90s python3 tools/inkpen2-v1-tablet-half/mixed_scene_order_capture.py --print-capture --width 1440 --height 2560 --matrix-scale 0.5 --matrix-translate-x 16 --matrix-translate-y 16 --output-width 64 --output-height 48 --input-json tools/inkpen2-v1-tablet-half/mixed-scene-native-line-input.json --color-argb 0xffff0000",
+  "sha256": {
+    "mixed-scene-native-line-input.json": "667ce1567150447bca4e5358f18a2f3f6fd8a8335d3d88b7f7da6c39a02d4069",
+    "mixed_scene_order_capture.py": "d530b5a0387f4a583f5e45b2651f7959f2885ccf08fb4224825a1d35fdd92491",
+    "mixed-scene-order-export.patch": "79564a39dafa8af46f47fba324173c81bb5ed566676cda7f47e9f3b740047916",
+    "mixed_scene_order_compare.py": "5cd7c3234c09fa31264c4e1ea37eecf5bba33de11519c4bc5954bf6601f9353e",
+    "mixed-scene-order-before.rgba.zlib": "cc9dd0afa2c9706268b16cba2765eb7aa2ffdf7bde9d1b35a1f3f55fd366a44f",
+    "mixed-scene-order-line.rgba.zlib": "8ee5aea580dfc9f6455cf7633bbca5d24ee5d78d7efdc0fceee580cb5c316a5f",
+    "mixed-scene-order-final.rgba.zlib": "3998baccf0c1f1f2c25064709a7e45d1a7767f0ee6e42c3096ff4e0f75cf5ea7"
+  },
+  "native_observations": [
+    {
+      "initial_zero": true,
+      "initial_sha256": "f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a",
+      "target": [
+        64,
+        48
+      ],
+      "ink_color_argb": "0xffff0000",
+      "bitmap": "0x1014c660"
+    },
+    {
+      "native_gl_draw": "glDrawArraysInstanced",
+      "framebuffer": 2,
+      "attachment": 2
+    },
+    {
+      "native_gl_draw": "glDrawArrays",
+      "framebuffer": 2,
+      "attachment": 2
+    },
+    {
+      "native_gl_draw": "glDrawArraysInstanced",
+      "framebuffer": 2,
+      "attachment": 2
+    },
+    {
+      "snapshot": "before_line",
+      "framebuffer": 2,
+      "attachment": 2,
+      "sha256": "ef2d94b172caedab5d4047969a2e74fc71c95a8351e718c1c62cf6d22020576a",
+      "nonzero_pixels": 27,
+      "gl_error": 0
+    },
+    {
+      "snapshot": "after_line",
+      "framebuffer": 2,
+      "attachment": 2,
+      "sha256": "5dcb9735e677eafac26f0c4a03c1fab2e2d0f29b602ea98fe2f2da7ccac5bf8a",
+      "nonzero_pixels": 453,
+      "gl_error": 0
+    },
+    {
+      "snapshot": "after_second_stroke",
+      "framebuffer": 2,
+      "attachment": 2,
+      "sha256": "77fb3c431261e44d9608c744fe2a09caf0267bb80dda26bd40725d721b7d2234",
+      "nonzero_pixels": 461,
+      "gl_error": 0
+    }
+  ],
+  "line_changed_pixels": 448,
+  "second_changed_pixels": 27,
+  "overlap_pixels": 16,
+  "output_dimensions": [
+    64,
+    48
+  ],
+  "resvg": "0.45.1",
+  "limitations": "Host synthetic, test-only source grid injection bypasses admission. No device parity."
+}
