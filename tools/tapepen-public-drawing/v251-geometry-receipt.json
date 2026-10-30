@@ -1,0 +1,122 @@
+{
+  "capture_command": "UV_CACHE_DIR=/tmp/sdocx-uv-cache uv run --offline --with unicorn==2.1.4 python tools/tapepen-public-drawing/v251-geometry-capture.py --run --shape --trace-size --sweep-size 24",
+  "wrapper_sha256": "4047b08430452c5a8e6ff2434ac7f90613790ed49c4bbae38b3412ea43b600f5",
+  "native_log_sha256": "be3c93f76f094db86439eb664922a5bcdd6b91c9c2652ab12cd1f1cbd89176a1",
+  "input": {
+    "advanced_setting": "",
+    "color_argb": "0x8044aaee",
+    "color_type": 2,
+    "curve_enabled": true,
+    "kind": "synthetic native Model ObjectStroke Construct input; cold Drawing PenManager selects the pen by the name passed to native Construct; no serialized SDocx parser input",
+    "native_ObjectStroke_address": "0x1003b070",
+    "orientation_f32_bits": [
+      "00000000",
+      "0000803e",
+      "0000003f",
+      "0000403f"
+    ],
+    "pattern_index": 1,
+    "pattern_scale_f32_bits": "0000803f",
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.TapePen",
+    "pen_size_f32_bits": "0000c041",
+    "points_f32_bits": [
+      [
+        "00005041",
+        "0000a841"
+      ],
+      [
+        "00009041",
+        "00002041"
+      ],
+      [
+        "0000f841",
+        "0000f041"
+      ],
+      [
+        "00002c42",
+        "00008041"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "cdcccc3d",
+      "3333b33e",
+      "3333333f",
+      "0000803f"
+    ],
+    "reveal_mode": 0,
+    "stroke_type": 0,
+    "tape_pattern_asset": {
+      "byte_count": 13182,
+      "path": "scratch/apk-output/samsung-notes-4.4.45.37/res/raw/tape_pattern_01.svg",
+      "sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b",
+      "store_call": {
+        "api": "SetTapePenPatternSvgUtf8Bytes(int,char const*,unsigned long)",
+        "index": 1,
+        "return_abi": "void; return register is not interpreted",
+        "source_bytes": 13182,
+        "source_sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b"
+      }
+    },
+    "tilt_f32_bits": [
+      "00000000",
+      "cdcc4c3e",
+      "cdcccc3e",
+      "9a99193f"
+    ],
+    "timestamps_i32": [
+      0,
+      8,
+      19,
+      37
+    ],
+    "tool_type": 2
+  },
+  "profile": {
+    "bitmap_target_dimensions": [
+      256,
+      256
+    ],
+    "canvas_model_matrix_f32_bits": [
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f",
+      "00000000",
+      "00000000",
+      "00000000",
+      "0000803f"
+    ],
+    "height": 256,
+    "profile_source": "native View SPen::Context constructed with explicit host IDisplay profile; native constructor supplies native vtable, queue getter, Color, theme, document width/density, and system-dark defaults",
+    "screen_resolution": [
+      256,
+      256
+    ],
+    "width": 256
+  },
+  "native_hashes": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "TapePen": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+    "View": "c4a17e4232c2074d3833604974d75ac961fab4d9651949bb2552704c86621dc8",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libc++": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "uniform_f32_le_hex": {
+    "uVertexHalfExtent": "0ad743400ad74341",
+    "uEllipseRadii": "0000404000004041",
+    "uPosOffset": "0000000000000000",
+    "uShadowMaskOffsetUV": "803d0a3b8099193b",
+    "patternSize": "0000804200008042",
+    "grainOffset": "000050410000a841"
+  },
+  "native_mask_alpha_sha256": "34ed9ac57032aef67c656df019db08dca800826de81e47f5dda4f3da52abbe52"
+}

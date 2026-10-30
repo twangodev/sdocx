@@ -1207,3 +1207,21 @@ fn v250_size24_source_mask_matches_native() {
         .read_to_end(&mut native).unwrap();
     assert_eq!(actual, native);
 }
+
+#[test]
+fn v251_changed_geometry_source_mask_matches_native() {
+    use std::io::Read;
+    let points = tape_curve(
+        &[P { x: 13., y: 21. }, P { x: 18., y: 10. }, P { x: 31., y: 30. }, P { x: 43., y: 16. }],
+        0.5, 0.0, [68. / 255., 170. / 255., 238. / 255.],
+    );
+    let size = 24.;
+    let aa = tape_aa_width(tape_size_level(size, 256, 256));
+    let radii = [size / 8., size / 2.];
+    let extent = radii.map(|r| r * (1. + aa));
+    let actual = filled_mask(&points, radii, extent, aa);
+    let mut native = Vec::new();
+    flate2::read::ZlibDecoder::new(&include_bytes!("../../../../tools/tapepen-public-drawing/v251-geometry-mask.alpha.zlib")[..])
+        .read_to_end(&mut native).unwrap();
+    assert_eq!(actual, native);
+}
