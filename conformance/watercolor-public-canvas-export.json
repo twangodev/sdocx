@@ -2,7 +2,7 @@
   "schema": "sdocx-watercolor-public-canvas-export-v1",
   "capture": {
     "script": "tools/watercolor_host/export_compare.py",
-    "script_sha256": "2f1a160c0833430e3af8d2806d50c783db40868a4f791c6250da363a88b9095e",
+    "script_sha256": "8a3468ef5f8b7b844fda06ecb900050344d90aada0c03c66feacb8db522267fa",
     "native_receipt_sha256": "77545656689b530ba46275e6e157b85b64ba4ffbe62be0d5a6eb181e48875f3a",
     "mixed_native_receipt_sha256": "f204d25b881d51d09db6c093d12b036938d7990d3f651997a6099225f849c04e"
   },

@@ -63,19 +63,19 @@ for name, case in fixture["cases"].items():
         bottom[index * 4 : index * 4 + 4] = packed[offset + 4 : offset + 8]
     assert hashlib.sha256(bottom).hexdigest() == case["final_sha256"]
     expected = b"".join(bottom[y * w * 4 : (y + 1) * w * 4] for y in reversed(range(h)))
+    canvas = (DIRECTORY / (prefix + name + ".rgba")).read_bytes()
+    png = Image.open(DIRECTORY / (prefix + name + ".png")).convert("RGBA").tobytes()
+    assert png == canvas, f"PNG transport differs from canvas: {name}"
     readers = {
-        "canvas": metrics(
-            (DIRECTORY / (prefix + name + ".rgba")).read_bytes(), expected
-        ),
-        "png": metrics(
-            Image.open(DIRECTORY / (prefix + name + ".png")).convert("RGBA").tobytes(),
-            expected,
-        ),
+        "canvas": metrics(canvas, expected),
+        "png": metrics(png, expected),
     }
     for route, suffix in (
         [("svg_pdf", ".pdf"), ("direct_pdf", ".direct.pdf")]
     ):
         mupdf, pdfium = pdf_pixels(DIRECTORY / (prefix + name + suffix), [w, h])
+        assert mupdf == canvas, f"{route} MuPDF transport differs from canvas: {name}"
+        assert pdfium == canvas, f"{route} PDFium transport differs from canvas: {name}"
         readers[route + "_mupdf"] = metrics(mupdf, expected)
         readers[route + "_pdfium"] = metrics(pdfium, expected)
     results[name] = readers
