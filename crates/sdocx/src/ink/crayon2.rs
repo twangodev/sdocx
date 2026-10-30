@@ -856,6 +856,95 @@ mod tests {
     }
 
     #[test]
+    fn independent_source_matches_native_sampled_records() {
+        use std::io::Read;
+        let points = [
+            P { x: 40.0, y: 45.0 },
+            P { x: 53.0, y: 28.0 },
+            P { x: 75.0, y: 49.0 },
+        ];
+        let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
+        let output = sample_stroke(&stroke, &parse_profile(&fixture())).unwrap();
+        let mut native = Vec::new();
+        flate2::read::ZlibDecoder::new(
+            &include_bytes!("../../tests/assets/crayon2-v2-native/independent-vector.z")[..],
+        )
+        .read_to_end(&mut native)
+        .unwrap();
+        assert_eq!(output_bytes(&output), native);
+    }
+
+    #[cfg(feature = "render")]
+    #[test]
+    #[ignore = "requires local native texture inputs and writes candidate SVG"]
+    fn write_independent_stroke_material_svg() {
+        let points = [
+            P { x: 40.0, y: 45.0 },
+            P { x: 53.0, y: 28.0 },
+            P { x: 75.0, y: 49.0 },
+        ];
+        let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
+        let profile = parse_profile(&fixture());
+        let textures = std::env::var_os("SDOCX_CRAYON2_TEXTURE_DIR").expect("texture directory");
+        let textures = std::path::Path::new(&textures);
+        let point = std::fs::read(textures.join("g_Crayon2PointPtn.source.bin")).unwrap();
+        let background = std::fs::read(textures.join("g_Crayon2BgPtn.source.bin")).unwrap();
+        assert_eq!(
+            sha(&point),
+            "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405"
+        );
+        assert_eq!(
+            sha(&background),
+            "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3"
+        );
+        let projection = material::Projection {
+            width: 192,
+            height: 192,
+            matrix: [
+                0.010416667,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.010416667,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.000030518509447574615,
+                0.0,
+                -1.0,
+                -1.0,
+                0.0,
+                1.0,
+            ],
+            bg_scale: [1.7066667, 1.7066667],
+        };
+        let svg = render_crayon2_host_svg(
+            &stroke,
+            &Crayon2HostMaterial {
+                phase_x: profile.phase_x,
+                phase_y: profile.phase_y,
+                point_atlas: &point,
+                background_texture: &background,
+                width: projection.width,
+                height: projection.height,
+                matrix: projection.matrix,
+                bg_scale: projection.bg_scale,
+                rgba: [184.0 / 255.0, 76.0 / 255.0, 41.0 / 255.0, 170.0 / 255.0],
+                background: Some([64, 128, 192]),
+                k4: 0.0,
+            },
+        )
+        .unwrap();
+        std::fs::write(
+            std::env::var_os("SDOCX_CRAYON2_SVG").expect("output SVG"),
+            svg,
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn translated_source_paint_capture_matches_source_derived_records() {
         use std::io::Read;
         let compressed =
