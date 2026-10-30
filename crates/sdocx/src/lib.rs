@@ -53,6 +53,8 @@ mod shape_paint_source;
 mod storage;
 mod stroke_metadata;
 mod table;
+/// Restricted source-driven TapePen pattern rasterization.
+pub mod tapepen_pattern;
 mod text_index;
 mod types;
 
