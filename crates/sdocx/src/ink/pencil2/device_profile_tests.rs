@@ -1,84 +1,33 @@
-//! Bounded host-Mesa device-coordinate shader experiment, not production paint.
-const NATIVE_STREAMS: &[u8] = include_bytes!("../../../../../conformance/pencil2-v14-native.bin");
-const GRAIN: &[u8] =
-    include_bytes!("../../../../../conformance/pencil2-v14-device-profile/grain.r8");
-const POINT: &[u8] =
-    include_bytes!("../../../../../conformance/pencil2-v14-device-profile/point.r8");
+//! Test-only reconstruction checked against captured host-Mesa frames.
+use super::device_raster::{self, Context};
 
-fn sample(tex: &[u8], width: usize, height: usize, u: f32, v: f32, clamp: bool) -> u8 {
-    let axis = |q: f32, n: usize| {
-        let i = (q * n as f32).floor() as i32;
-        if clamp {
-            i.clamp(0, n as i32 - 1) as usize
-        } else {
-            i.rem_euclid(n as i32) as usize
-        }
-    };
-    tex[axis(v, height) * width + axis(u, width)]
+const NATIVE_STREAMS: &[u8] = include_bytes!("../../../../../conformance/pencil2-v14-native.bin");
+
+#[test]
+fn packaged_raster_textures_match_native_uploads() {
+    assert_eq!(
+        include_bytes!("assets/grain.r8").as_slice(),
+        include_bytes!("../../../../../conformance/pencil2-v14-device-profile/grain.r8").as_slice()
+    );
+    assert_eq!(
+        include_bytes!("assets/point.r8").as_slice(),
+        include_bytes!("../../../../../conformance/pencil2-v14-device-profile/point.r8").as_slice()
+    );
 }
 
 fn render(stream: &[u8], scale: f32, translation_x: f32) -> Vec<u8> {
-    let mut image = vec![0u8; 192 * 192];
-    for row in stream.as_chunks::<56>().0 {
-        let mut r = [0f32; 14];
-        for (i, value) in r.iter_mut().enumerate() {
-            *value = f32::from_le_bytes(row[i * 4..i * 4 + 4].try_into().unwrap());
-        }
-        let x0 = (r[0] - r[2]) * scale + translation_x;
-        let y0 = 192. - (r[1] + r[3]) * scale;
-        let width = 2. * r[2] * scale;
-        let height = 2. * r[3] * scale;
-        for y in 0..192 {
-            for x in 0..192 {
-                let fx = (x as f32 + 0.5 - x0) / width;
-                let fy = (y as f32 + 0.5 - y0) / height;
-                if !(0. ..1.).contains(&fx) || !(0. ..1.).contains(&fy) {
-                    continue;
-                }
-                if sample(POINT, 100, 300, fx, ((1. - fy) + r[6]) / 3., true) == 0 {
-                    continue;
-                }
-                let period = 75. * scale;
-                let grain = sample(
-                    GRAIN,
-                    150,
-                    150,
-                    (x as f32 + 0.5) / period,
-                    (191.5 - y as f32) / period,
-                    false,
-                ) as f32
-                    / 255.;
-                let dx = fx - 0.5;
-                let dy = 1. - fy - 0.5;
-                let dot = dx * r[7] + dy * r[8];
-                let p = (dx * dx + dy * dy - dot * dot).sqrt();
-                let factor = 1. / (9. * r[5] + 1.);
-                if p > factor {
-                    continue;
-                }
-                let mut alpha =
-                    (grain * r[4] * ((-(dot + 0.5) + 1.) * ((factor - p) / factor))).clamp(0., 1.);
-                let distance = (dx * dx + (fy - 0.5) * (fy - 0.5)).sqrt();
-                let mut smooth = r[10];
-                if distance > r[9] {
-                    smooth *= 1. - (distance - r[9]) / (0.5 - r[9]);
-                }
-                alpha *= smooth;
-                if !alpha.is_finite() {
-                    continue;
-                }
-                alpha = alpha.clamp(0., 1.);
-                // This host control is consistent with quantizing each source alpha
-                // before source-over, rather than only quantizing the final pixel.
-                alpha = (alpha * 255.).round() / 255.;
-                let i = y * 192 + x;
-                image[i] = ((alpha + (image[i] as f32 / 255.) * (1. - alpha)) * 255.)
-                    .round()
-                    .clamp(0., 255.) as u8;
-            }
-        }
-    }
-    image
+    device_raster::render(
+        &device_raster::records(stream),
+        Context {
+            scale,
+            translation: [translation_x, 0.],
+            ..Context::default()
+        },
+    )
+    .unwrap()
+    .into_iter()
+    .map(|rgba| rgba[3])
+    .collect()
 }
 
 #[test]
@@ -89,7 +38,7 @@ fn device_profile_matches_bounded_host_controls() {
             1.,
             0.,
             include_bytes!("../../../../../conformance/pencil2-v14-device-profile/baseline.alpha"),
-            &[(3, 191, 30, 33), (8, 191, 63, 67)],
+            &[],
         ),
         (
             1.,
@@ -97,13 +46,13 @@ fn device_profile_matches_bounded_host_controls() {
             include_bytes!(
                 "../../../../../conformance/pencil2-v14-device-profile/translate6.alpha"
             ),
-            &[(9, 191, 14, 15), (14, 191, 60, 65)],
+            &[],
         ),
         (
             2.,
             0.,
             include_bytes!("../../../../../conformance/pencil2-v14-device-profile/scale2.alpha"),
-            &[(43, 186, 133, 132), (1, 190, 1, 0)],
+            &[],
         ),
     ];
     assert_eq!(NATIVE_STREAMS[9408..14112].len(), 84 * 56);
@@ -139,9 +88,9 @@ fn source_alpha_rounding_hypothesis_matches_size2_color_controls() {
             include_bytes!(
                 "../../../../../conformance/pencil2-v14-device-profile/size2-black.alpha"
             ),
-            3,
-            3,
-            1,
+            0,
+            0,
+            0,
         ),
         (
             &color[..4704],
@@ -176,6 +125,41 @@ fn source_alpha_rounding_hypothesis_matches_size2_color_controls() {
                 .iter()
                 .enumerate()
                 .all(|(i, &a)| a == 0 || (i % 192 < 62 && i / 192 >= 170))
+        );
+    }
+}
+
+#[test]
+fn full_rgba_frames_match_native_transform_receipts() {
+    use sha2::{Digest, Sha256};
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../conformance/pencil2-v14-device-profile/receipt.json"
+    ))
+    .unwrap();
+    for case in receipt["cases"].as_array().unwrap() {
+        let rgba = device_raster::render(
+            &device_raster::records(&NATIVE_STREAMS[9408..14112]),
+            Context {
+                scale: case["scale"].as_f64().unwrap() as f32,
+                translation: [case["translation_x"].as_f64().unwrap() as f32, 0.],
+                ..Context::default()
+            },
+        )
+        .unwrap();
+        let bottom_origin: Vec<u8> = rgba
+            .as_chunks::<192>()
+            .0
+            .iter()
+            .rev()
+            .flatten()
+            .flatten()
+            .copied()
+            .collect();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bottom_origin)),
+            case["full_rgba_sha256"].as_str().unwrap(),
+            "{}",
+            case["name"]
         );
     }
 }

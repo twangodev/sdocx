@@ -1053,3 +1053,6 @@ mod offset_lifecycle_tests;
 
 #[cfg(all(test, feature = "serde"))]
 pub(crate) mod offset_candidate;
+
+#[cfg(test)]
+mod device_raster;

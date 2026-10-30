@@ -18,6 +18,11 @@ pub(crate) fn multiply(a: u8, b: u8) -> u8 {
     ((product + (product >> 8) + 128) >> 8) as u8
 }
 
+pub(crate) fn premultiply(source: [u8; 4]) -> [u8; 4] {
+    let [r, g, b, a] = source;
+    [multiply(r, a), multiply(g, a), multiply(b, a), a]
+}
+
 pub(crate) fn over(destination: [u8; 4], source: [u8; 4]) -> [u8; 4] {
     let inverse_alpha = 255 - source[3];
     std::array::from_fn(|channel| {

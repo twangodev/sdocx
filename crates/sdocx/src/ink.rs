@@ -12,6 +12,8 @@ mod colored_pencil;
 #[cfg(test)]
 mod crayon2;
 #[cfg(test)]
+mod host_raster;
+#[cfg(test)]
 mod host_rgba8;
 pub(crate) mod montblanc;
 #[cfg(all(test, feature = "serde"))]
