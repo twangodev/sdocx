@@ -1010,7 +1010,7 @@ pub(crate) fn prepare(stroke: &crate::Stroke) -> Option<([Vec<[f32; 5]>; 3], cra
         || !matches!(rendering.style.color_type_raw, None | Some(0))
         || !(0.1..=2.0).contains(&size)
         || stroke.pen_width.to_bits() != size.to_bits()
-        || !(3..=20).contains(&stroke.points.len())
+        || !(3..=24).contains(&stroke.points.len())
         || stroke.pressures.len() != stroke.points.len()
         || !(stroke.timestamps.is_empty() || stroke.timestamps.len() == stroke.points.len())
         || !stroke.tilts.is_empty()
@@ -1056,6 +1056,7 @@ pub(crate) fn prepare(stroke: &crate::Stroke) -> Option<([Vec<[f32; 5]>; 3], cra
         9 => many_point::many_point(input),
         10..=11 if size >= 0.5 => many_point::many_point(input),
         12..=20 if size >= 0.5 => many_point::many_point(input),
+        21..=24 if size == 1.5 => many_point::many_point(input),
         _ => return None,
     }
     .ok()?;

@@ -139,7 +139,10 @@ fn unsupported_inputs_keep_generic_output() {
     s.points.push(Point { x: 240., y: 130. });
     s.pressures.push(0.5);
     for i in 0..9 {
-        s.points.push(Point { x: 250. + i as f64 * 10., y: 130. });
+        s.points.push(Point {
+            x: 250. + i as f64 * 10.,
+            y: 130.,
+        });
         s.pressures.push(0.5);
     }
     cases.push(s);
@@ -521,7 +524,7 @@ fn longer_profiles_have_size_and_scale_boundaries() {
                 .clone();
             assert_eq!(
                 render_document_svg(&doc, &options())[0].svg != generic,
-                n <= 20 && (0.5..=2.0).contains(&size)
+                (n <= 20 && (0.5..=2.0).contains(&size)) || (n == 21 && size == 1.5)
             );
             let two = RenderOptions {
                 montblanc_two_pixels_per_page_unit: true,
@@ -621,5 +624,35 @@ fn six_and_seven_point_profiles_and_boundaries() {
         stroke.pressures = vec![0.5; n];
         stroke.points.fill(Point { x: 128., y: 128. });
         assert!(crate::ink::montblanc::prepare(&stroke).is_none());
+    }
+}
+
+#[test]
+fn longer_unit_profile_admission_boundaries() {
+    let points: Vec<[f32; 2]> = (0..25)
+        .map(|i| [i as f32 * 4.0, if i % 2 == 0 { -5.0 } else { 5.0 }])
+        .collect();
+    for count in [21, 24, 25] {
+        let mut stroke = source(&points[..count], &vec![0.5; count]);
+        stroke.pen_width = 1.5;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(1.5);
+        let doc = document(stroke.clone());
+        let fallback = render_document_svg(&doc, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let unit = render_document_svg(&doc, &options())[0].svg.clone();
+        assert_eq!(unit != fallback, count <= 24);
+        let double = RenderOptions {
+            montblanc_two_pixels_per_page_unit: true,
+            ..Default::default()
+        };
+        assert_eq!(render_document_svg(&doc, &double)[0].svg, fallback);
+        stroke.pen_width = 1.0;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(1.0);
+        let doc = document(stroke);
+        assert_eq!(
+            render_document_svg(&doc, &options())[0].svg,
+            render_document_svg(&doc, &RenderOptions::default())[0].svg
+        );
     }
 }
