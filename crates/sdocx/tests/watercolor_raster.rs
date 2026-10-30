@@ -274,3 +274,50 @@ fn invalid_source_context_and_exhausted_work_preserve_the_canvas() {
     }
     assert!(succeeded > 0);
 }
+
+#[test]
+fn translucent_source_profiles_match_native_canvas_and_svg() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../conformance/watercolor-translucent-source-native.json"
+    ))
+    .unwrap();
+    assert_eq!(
+        fixture["capture"]["public_source_fixture_sha256"].as_str().unwrap(),
+        format!("{:x}", Sha256::digest(include_bytes!(
+            "../../../conformance/watercolor-native.json"
+        )))
+    );
+    assert_eq!(fixture["cases"].as_object().unwrap().len(), 8);
+    for (name, case) in fixture["cases"].as_object().unwrap() {
+        let scale = case["scale"].as_u64().unwrap() as u32;
+        let context = InkRasterContext {
+            width: 384 * scale,
+            height: 320 * scale,
+            pixels_per_unit: scale,
+            origin: InkRasterOrigin::TopLeft,
+        };
+        let prior = std::array::from_fn(|c| case["background"][c].as_u64().unwrap() as u8);
+        let mut canvas = InkRasterCanvas::new(context, prior).unwrap();
+        canvas
+            .paint(
+                &stroke(
+                    case["version"].as_u64().unwrap() as u32,
+                    case["argb"].as_u64().unwrap() as u32,
+                ),
+                profile(),
+            )
+            .unwrap();
+        assert_eq!(
+            canvas.pixels(),
+            expected(case),
+            "{name}: native pixels differ"
+        );
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            svg_pixels(&canvas.rendered_page(0).unwrap()),
+            canvas.pixels(),
+            "{name}: SVG pixels differ"
+        );
+        artifacts(name, &canvas, case);
+    }
+}

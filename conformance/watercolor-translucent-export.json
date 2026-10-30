@@ -1,0 +1,269 @@
+{
+  "schema": "sdocx-watercolor-translucent-export-v1",
+  "native_receipt_sha256": "6b8390a1c6e602c5703a687ce8ee5ddb65259c246ad1647f876615c38d9ac21c",
+  "script_sha256": "30c33a74eb41e647bda4b28b64336132a3f24db8d17bb38b0949049891c53f12",
+  "readers": {
+    "mupdf": "1.28.2",
+    "pdfium": "156.0.8076.0"
+  },
+  "dpi": 72,
+  "scope": "Eight synthetic GLV1/GLV2 host-Mesa controls over transparent and translucent premultiplied clear colors at 1x and 2x. All comparisons are premultiplied RGBA; PNG and PDFium outputs are premultiplied after reading. Not saved-page or device fidelity.",
+  "results": {
+    "v1_scale1_8044aaee_00000000": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 509,
+        "maximum": 1,
+        "absolute_sum": 509
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 509,
+        "maximum": 1,
+        "absolute_sum": 509
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v1_scale1_8044aaee_40206080": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v1_scale2_8044aaee_00000000": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 2016,
+        "maximum": 1,
+        "absolute_sum": 2016
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 2016,
+        "maximum": 1,
+        "absolute_sum": 2016
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v1_scale2_8044aaee_40206080": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v2_scale1_8044aaee_00000000": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 532,
+        "maximum": 1,
+        "absolute_sum": 532
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 532,
+        "maximum": 1,
+        "absolute_sum": 532
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v2_scale1_8044aaee_40206080": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 10,
+        "maximum": 1,
+        "absolute_sum": 10
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 10,
+        "maximum": 1,
+        "absolute_sum": 10
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v2_scale2_8044aaee_00000000": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 2091,
+        "maximum": 1,
+        "absolute_sum": 2091
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 2091,
+        "maximum": 1,
+        "absolute_sum": 2091
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    },
+    "v2_scale2_8044aaee_40206080": {
+      "canvas": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "png": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "svg_pdf_mupdf": {
+        "different_channels": 66,
+        "maximum": 1,
+        "absolute_sum": 66
+      },
+      "svg_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_channels": 66,
+        "maximum": 1,
+        "absolute_sum": 66
+      },
+      "direct_pdf_pdfium": {
+        "different_channels": 0,
+        "maximum": 0,
+        "absolute_sum": 0
+      }
+    }
+  }
+}
