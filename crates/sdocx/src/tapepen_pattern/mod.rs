@@ -10,7 +10,7 @@ pub enum AssetError {
     UnsupportedDocument,
     #[error("invalid TapePen SVG value")]
     InvalidValue,
-    #[error("TapePen pattern size must be 64 or 128")]
+    #[error("TapePen pattern size must be 64, 128 or 256")]
     UnsupportedSize,
     #[error("TapePen pattern geometry exceeds supported bounds")]
     Geometry,
@@ -50,7 +50,7 @@ fn expect_line<'a>(
 }
 /// Returns straight RGBA8 pixels. This deliberately rejects unverified input forms.
 pub fn rasterize(source: &str, size: usize) -> Result<Vec<u8>, AssetError> {
-    if size != 64 && size != 128 {
+    if size != 64 && size != 128 && size != 256 {
         return Err(AssetError::UnsupportedSize);
     }
     if source.len() > 100_000 {

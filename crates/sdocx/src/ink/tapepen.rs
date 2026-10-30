@@ -1138,3 +1138,39 @@ fn v247_scaled_source_mask() {
     }
     std::fs::write(path, mask).unwrap();
 }
+
+#[test]
+fn v248_scaled_source_mask() {
+    let Ok(path) = std::env::var("SDOCX_TAPE_V248_MASK_OUT") else {
+        return;
+    };
+    let scale: usize = std::env::var("SDOCX_TAPE_V248_SCALE").unwrap().parse().unwrap();
+    assert!([1, 2].contains(&scale));
+    let s = scale as f32;
+    let width = 256 * scale;
+    let points = tape_curve(
+        &[P { x: 77., y: 59. }, P { x: 89., y: 52. }, P { x: 101., y: 65. }, P { x: 109., y: 57. }],
+        0.5, 0.0, [215. / 255., 68. / 255., 51. / 255.],
+    );
+    let aa = tape_aa_width(tape_size_level(12., width as i32, width as i32));
+    let (sin, cos) = f32::from_bits(0x3f06_0a92).sin_cos();
+    let (hx, hy) = ((if scale == 1 { 1.6800001_f32 } else { 1.7754546403884888_f32 }) * s, (if scale == 1 { 6.7200003_f32 } else { 7.101818561553955_f32 }) * s);
+    let (bx, by) = ((cos * hx).abs() + (sin * hy).abs(), (sin * hx).abs() + (cos * hy).abs());
+    let mut mask = vec![0u8; width * width];
+    for p in points {
+        let (px, py) = (f32::from_bits(p[0]) * s, f32::from_bits(p[1]) * s);
+        for y in (py - by).floor().max(0.) as usize..((py + by).ceil() as usize).min(width) {
+            for x in (px - bx).floor().max(0.) as usize..((px + bx).ceil() as usize).min(width) {
+                let (sx, sy) = (x as f32 + 0.5 - px, y as f32 + 0.5 - py);
+                let (dx, dy) = (cos * sx + sin * sy, -sin * sx + cos * sy);
+                if dx.abs() > hx || dy.abs() > hy { continue; }
+                let dist = (dx / (1.5 * s)).powi(2) + (dy / (6. * s)).powi(2);
+                let t = ((dist - (1. - aa)) / aa).clamp(0., 1.);
+                let value = ((1. - t * t * (3. - 2. * t)) * 255.).round() as u8;
+                let i = y * width + x;
+                mask[i] = mask[i].max(value);
+            }
+        }
+    }
+    std::fs::write(path, mask).unwrap();
+}

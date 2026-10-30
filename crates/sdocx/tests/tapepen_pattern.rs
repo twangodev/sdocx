@@ -15,7 +15,7 @@ fn synthetic_source() -> String {
 #[test]
 fn rasterizes_synthetic_source_and_rejects_invalid_geometry() {
     let svg = synthetic_source();
-    for size in [64, 128] {
+    for size in [64, 128, 256] {
         let pixels = rasterize(&svg, size).unwrap();
         assert_eq!(pixels.len(), size * size * 4);
         assert_eq!(&pixels[0..4], &[255, 255, 255, 255]);
@@ -29,7 +29,9 @@ fn rasterizes_synthetic_source_and_rejects_invalid_geometry() {
         svg.replace("stroke-width=\"2\"", "stroke-width=\"-1\""),
         svg.replace("M10 10V110", "M10 10V1e30"),
     ] {
-        assert!(rasterize(&broken, 64).is_err());
+        for size in [64, 256] {
+            assert!(rasterize(&broken, size).is_err());
+        }
     }
     let skipped = svg.replace("stroke-width=\"2\"", "stroke-width=\"0\"");
     assert!(
@@ -53,6 +55,7 @@ fn rasterizes_synthetic_source_and_rejects_invalid_geometry() {
 fn rejects_invalid_inputs_without_panicking() {
     assert_eq!(rasterize("", 64), Err(AssetError::UnsupportedDocument));
     assert_eq!(rasterize("", 63), Err(AssetError::UnsupportedSize));
+    assert_eq!(rasterize("", 257), Err(AssetError::UnsupportedSize));
     assert_eq!(
         rasterize(&"a".repeat(100_001), 64),
         Err(AssetError::UnsupportedDocument)
@@ -69,6 +72,8 @@ fn retained_native_controls() {
         format!("{:x}", Sha256::digest(source.as_bytes())),
         "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b"
     );
+    assert_eq!(format!("{:x}", Sha256::digest(rasterize(&source, 256).unwrap())),
+        "42abf1113cfd13c27f1e0ccb29affae62221c0888f5ffcdc2425e2169b71b13d");
     let cases = [
         (
             source.clone(),

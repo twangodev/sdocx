@@ -11,4 +11,7 @@ const cases = [
 ];
 for (const [svg, hashes] of cases) for (const [i,size] of [64,128].entries()) assert.equal(crypto.createHash('sha256').update(wasm.rasterize_tapepen_pattern(svg,size)).digest('hex'), hashes[i]);
 for (const [svg,size] of [['',64],[source,63],[source.replaceAll('#3F5480','#XXXXXX'),64],[source.replaceAll('stroke-width="1.7"','stroke-width="1e30"'),64]]) assert.throws(()=>wasm.rasterize_tapepen_pattern(svg,size),Error);
-console.log('6 retained native hashes and 4 rejected-input WASM controls passed');
+
+assert.equal(crypto.createHash("sha256").update(wasm.rasterize_tapepen_pattern(source,256)).digest("hex"), "42abf1113cfd13c27f1e0ccb29affae62221c0888f5ffcdc2425e2169b71b13d");
+assert.throws(()=>wasm.rasterize_tapepen_pattern(source,257),Error);
+console.log('7 retained native hashes and 5 rejected-input WASM controls passed');
