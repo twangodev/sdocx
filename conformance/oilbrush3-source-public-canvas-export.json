@@ -1,0 +1,87 @@
+{
+  "schema": "sdocx.oilbrush3.source-public-canvas-export.v1",
+  "scope": "Synthetic V17 source stroke, host-Mesa model, white RGB, 1920x1080 at 1x. PDF rasterized at 96 dpi.",
+  "native_capture_provenance": "conformance/oilbrush3-v17-native-paint/provenance.json",
+  "svg_vs_native": {
+    "differing_pixels": 0,
+    "rgb_absolute_error_sum": [
+      0,
+      0,
+      0
+    ],
+    "rgb_maximum_error": [
+      0,
+      0,
+      0
+    ]
+  },
+  "mupdf_version": "1.28.2",
+  "pdfium_version": "150.0.7869.0",
+  "pdfs": {
+    "source.pdf": {
+      "sha256": "a3b394a4f2fbd9d37581260a9aff87b57dc05af8c0bf6ed86e15ae36603953a6",
+      "mupdf": {
+        "differing_pixels": 0,
+        "rgb_absolute_error_sum": [
+          0,
+          0,
+          0
+        ],
+        "rgb_maximum_error": [
+          0,
+          0,
+          0
+        ]
+      },
+      "pdfium": {
+        "differing_pixels": 0,
+        "rgb_absolute_error_sum": [
+          0,
+          0,
+          0
+        ],
+        "rgb_maximum_error": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "source-svg.pdf": {
+      "sha256": "dd7dbb06cbdf7cf0703f6ae2f1df730208f3821936c3d81823edc1b3427749db",
+      "mupdf": {
+        "differing_pixels": 0,
+        "rgb_absolute_error_sum": [
+          0,
+          0,
+          0
+        ],
+        "rgb_maximum_error": [
+          0,
+          0,
+          0
+        ]
+      },
+      "pdfium": {
+        "differing_pixels": 0,
+        "rgb_absolute_error_sum": [
+          0,
+          0,
+          0
+        ],
+        "rgb_maximum_error": [
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  },
+  "limitations": "Experimental test-only model; one synthetic control, host arithmetic and explicit initialization and textures. No saved-note, device, lifecycle, scaling or general parity claim.",
+  "inputs_sha256": {
+    "tools/oilbrush3-public-fallback/compare_source_export.py": "1e7f189267d684107dd31ee2f585c6535efd3421dc4d967e286bf6af82576184",
+    "conformance/oilbrush3-native.json": "9fa36392d2a50820ad77395f6998fdf821361e72b27d22e53af8b1b7b226b6a5",
+    "conformance/oilbrush3-v17-native-paint/provenance.json": "9b95accdf496b02fb0e8bb00f1dcc8d789aff99ea1e551c3478cfa1027c97179",
+    "crates/sdocx/src/ink/oilbrush3/paint_conformance.rs": "cf0a1ae12a19c034d380b9500c83e0bf45d22cd4c76a6c19aabdb951ab9b9c5f"
+  }
+}

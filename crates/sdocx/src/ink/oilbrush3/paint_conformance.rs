@@ -2276,3 +2276,120 @@ fn independent_nonuniform_source_p4_prefixes_and_feedback() {
     let actual: Vec<u8> = canvas.iter().flat_map(|p| p.0).collect();
     assert_eq!(actual, expected, "P4 after patterned feedback");
 }
+
+#[cfg(all(test, feature = "pdf"))]
+#[test]
+fn oilbrush3_source_model_public_canvas_export() {
+    use crate::{InkRasterCanvas, InkRasterContext, InkRasterOrigin, PdfOptions};
+    let fixture: serde_json::Value = serde_json::from_str(super::tests::FIXTURE).unwrap();
+    let stroke = super::tests::public_stroke_from_fixture(&fixture);
+    let source_context = super::PublicStrokeContext {
+        selected_gl_version: 1,
+        source: 0,
+        screen_resolution: [1920, 1080],
+        model_matrix: [1., 0., 0., 0., 1., 0., 0., 0., 1.],
+    };
+    let records =
+        super::sample_public_stroke(&stroke, source_context, |y, x| Ok(y.atan2(x))).unwrap();
+    let bytes: Vec<u8> = records
+        .iter()
+        .flatten()
+        .flat_map(|x| x.to_le_bytes())
+        .collect();
+    assert_eq!(bytes, ADDPOINTS);
+    let page = PageSize {
+        width: V17_PAGE_WIDTH,
+        height: V17_PAGE_HEIGHT,
+    };
+    let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
+    let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
+    let mut pixels = vec![Rgba::default(); V17_PIXELS];
+    let mut brush = vec![Rgba([68, 170, 238, 255]); FEEDBACK * FEEDBACK];
+    for stamp in 0..records.len() {
+        let record = &bytes[stamp * ADDPOINT_STRIDE..(stamp + 1) * ADDPOINT_STRIDE];
+        let state = source_draw_state(page, source_context.screen_resolution, record);
+        if stamp % 4 == 3 {
+            brush = render_p3_for_page(
+                &pixels,
+                page,
+                P3State {
+                    projection: state.projection,
+                    model: state.model,
+                    depth_scale: state.depth_scale,
+                    ratio: feedback_ratio_for_rendering_level(0),
+                },
+                &mask,
+                &depth,
+                &brush,
+            );
+        }
+        render_p4_with_records(
+            &mut pixels,
+            page,
+            stamp,
+            state,
+            P4Textures {
+                brush: &brush,
+                mask: &mask,
+                depth: &depth,
+            },
+            &bytes,
+        );
+    }
+    let prefixes = decode_v17_native_prefix_bundle(V17_PREFIX_BUNDLE);
+    let native = decode_v17_expected(prefixes[14], V17_PREFIX_SHA256[14]);
+    assert_eq!(compare_frame(&pixels, &native).diff_pixels, 0);
+    let white: Vec<[u8; 4]> = (0..V17_PAGE_HEIGHT)
+        .rev()
+        .flat_map(|y| {
+            let pixels = &pixels;
+            (0..V17_PAGE_WIDTH).map(move |x| {
+                let p = pixels[y * V17_PAGE_WIDTH + x].0;
+                let channel = |c: usize| (u16::from(p[c]) + u16::from(255 - p[3])).min(255) as u8;
+                [channel(0), channel(1), channel(2), 255]
+            })
+        })
+        .collect();
+    let canvas = InkRasterCanvas::from_pixels(
+        InkRasterContext {
+            width: V17_PAGE_WIDTH as u32,
+            height: V17_PAGE_HEIGHT as u32,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        },
+        white,
+    )
+    .unwrap();
+    let svg = canvas.rendered_page(0).unwrap();
+    let tree = resvg::usvg::Tree::from_str(&svg.svg, &Default::default()).unwrap();
+    let mut pix =
+        resvg::tiny_skia::Pixmap::new(V17_PAGE_WIDTH as u32, V17_PAGE_HEIGHT as u32).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pix.as_mut(),
+    );
+    assert_eq!(pix.data(), canvas.pixels().as_flattened());
+    if let Some(dir) = std::env::var_os("SDOCX_OILBRUSH3_SOURCE_EXPORT_DIR") {
+        let dir = std::path::Path::new(&dir);
+        let options = PdfOptions::default();
+        std::fs::write(dir.join("source.svg"), &svg.svg).unwrap();
+        std::fs::write(dir.join("source-svg.rgba"), pix.data()).unwrap();
+        std::fs::write(dir.join("source.pdf"), canvas.to_pdf(&options).unwrap()).unwrap();
+        std::fs::write(
+            dir.join("source-svg.pdf"),
+            crate::render_svg_pages_pdf(&[svg], &options).unwrap(),
+        )
+        .unwrap();
+        let mut native_white = vec![255u8; V17_PIXELS * 3];
+        for (&index, rgba) in &native {
+            let x = index % V17_PAGE_WIDTH;
+            let y = V17_PAGE_HEIGHT - 1 - index / V17_PAGE_WIDTH;
+            for c in 0..3 {
+                native_white[(y * V17_PAGE_WIDTH + x) * 3 + c] =
+                    (u16::from(rgba.0[c]) + u16::from(255 - rgba.0[3])).min(255) as u8;
+            }
+        }
+        std::fs::write(dir.join("native.rgb"), native_white).unwrap();
+    }
+}
