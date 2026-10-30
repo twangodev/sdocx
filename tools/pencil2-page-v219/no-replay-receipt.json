@@ -1,0 +1,42 @@
+{
+  "script_sha256": "3533e38ae7cf051d28dd07666b1b2c4319c35a24eb25e74cd909ac2f1af7c07d",
+  "scope": "Synthetic one-object native list dispatch, followed by explicit native RTV4 Init, Update and Draw before any explicit saved-redraw replay. Host bitmap, canvas, context, queue, renderer holder, allocator and loader adapters remain; this is not automatic page paint, saved-note or device evidence.",
+  "list": "Native ordered list dispatch, supplied Matrix3 and 84 AddPoint calls asserted by adapter",
+  "selected_rt": "0x10038b30",
+  "update_count": 84,
+  "matrix3": [
+    1,
+    0,
+    0,
+    0,
+    -1,
+    0,
+    6,
+    183,
+    1
+  ],
+  "explicit_draw_matrix4": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    32,
+    32,
+    0,
+    1
+  ],
+  "readback_sha256": "c791bb3e46c3b3f813925bf6e2c7c2d16611188774c5c9d1ede054d5844d1e42",
+  "nonzero_bytes": 317,
+  "prior_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+  "gl_error": 0,
+  "row_origin": "bottom",
+  "runtime_limitations": "Host EGL, GLES, Mesa drivers and transitive shared libraries are unpinned."
+}
