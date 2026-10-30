@@ -195,7 +195,7 @@ fn profile_accepts_six_points_across_captured_sizes() {
         source.rendering.as_mut().unwrap().style.pen_size = Some(size);
         assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok());
     }
-    for i in 6..224 {
+    for i in 6..256 {
         source.points.push(Point {
             x: 60.0 + (i as f64) * 8.0,
             y: 42.0,
@@ -2211,7 +2211,7 @@ fn long_two_pixel_route_preserves_guards_and_one_pixel_limits() {
             assert_eq!(
                 crate::ink::simplebrush::prepare_stroke_for_scale(&source, true, 32_768, false)
                     .is_ok(),
-                count <= 224 && tool != 0
+                tool != 0
             );
             let doc = document(source.clone());
             let layout = layout_document(&doc);
@@ -2259,7 +2259,7 @@ fn long_candidate_preserves_public_one_pixel_boundaries_and_mixed_order() {
         ..Default::default()
     };
     let generic = RenderOptions::default();
-    for (tool, boundary) in [(0, 128), (2, 224), (3, 224)] {
+    for (tool, boundary) in [(0, 128), (2, 256), (3, 256)] {
         for count in [boundary, boundary + 1] {
             let mut s = stroke();
             s.points = (0..count)
@@ -2435,5 +2435,52 @@ fn tool1_two_pixel_public_dispatch_and_boundaries() {
             ..Default::default()
         };
         assert_eq!(svg(&one), svg(&fallback));
+    }
+}
+
+#[test]
+fn one_pixel_long_native_geometry_matches_captured_streams() {
+    for (count, size, reverse, expected) in [
+        (
+            225,
+            20.0,
+            false,
+            &include_bytes!("../ink/simplebrush_assets/225.bin")[..],
+        ),
+        (
+            256,
+            8.0,
+            true,
+            &include_bytes!("../ink/simplebrush_assets/256.bin")[..],
+        ),
+    ] {
+        let mut points: Vec<[f32; 2]> = (0..count)
+            .map(|i| {
+                [
+                    25.0 + (i % 64) as f32,
+                    35.0 + (i / 64) as f32 * 18.0 + [0, 2, 5, 7, 8, 7, 5, 2][i % 8] as f32,
+                ]
+            })
+            .collect();
+        let mut pressures: Vec<f32> = (0..count).map(|i| [0.25, 0.5, 0.75, 1.0][i % 4]).collect();
+        if reverse {
+            points.reverse();
+            pressures.reverse();
+        }
+        let actual = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+            points: &points,
+            pressures: &pressures,
+            size,
+            tool_type: 2,
+            curve_enabled: true,
+            max_samples: 32_768,
+        })
+        .unwrap();
+        let bytes: Vec<u8> = actual
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
+        assert_eq!(bytes, expected, "count={count}");
     }
 }

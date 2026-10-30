@@ -1,0 +1,122 @@
+{
+  "scope": "Synthetic ObjectStroke Drawing under ARM64 emulation and host Mesa; native target cleared by harness; current public SVG and direct document PDF, compared with generic and candidate explicit one-pixel profile. PDFium uses an unshifted grid against fractional native transform. Not native PDF, device, or saved-note parity. Scratch transitive dependencies not fully pinned.",
+  "environment": {
+    "python": "3.13.5",
+    "resvg": "0.45.1",
+    "mupdf": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "pdfium": "150.0.7869.0"
+  },
+  "source_sha256": {
+    "tools/simplebrush-one-long/capture.py": "a4e97cfbe6bc092254795cea4aa582584dafa6a6c467aadf227c6f3f3ba4165e",
+    "tools/simplebrush-one-long/compare.py": "bd7de051131232b3dfb54e50f86b27c6723d6522811af78f0b52f504ce5d35fa",
+    "tools/simplebrush-one-long/pdfium.py": "fe0c9e29be9b54164a1c9399a2d8d0681b45aae1fc439f8d16ad0b86bf3a0273",
+    "crates/sdocx/src/ink/simplebrush.rs": "0a6a07eb5b4aa40194fb81a4f194f50400cda301f4e1ebb5cb58bfb8c2e9118b",
+    "crates/sdocx/src/render/simplebrush_tests.rs": "180cc99cd7a22a71c0cf66795acd3847be3539a5b7813d5547b3f5b82ba0a2f6",
+    "crates/sdocx/src/render/simplebrush.rs": "1da781698586fa7399a80a78e08b9323415cf6ea24bae16fd3f09f1f0e0a1bb3",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenSimpleBrush.so": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-source-capture.py": "86afe686345ccc650c01ad2f51d5a79728f2a0d7aec39462605c7d302205fdea",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-paint-capture.py": "62109356fa2120aa7d1318a6f23667558e3d4a183fc0f40d36ff3a42de94c936",
+    "crates/sdocx/src/ink/simplebrush_assets/225.bin": "91b627020a7bf8de6b0d70179c9ba42a9edeb8ae118dbff6b55f506eb27deee1",
+    "crates/sdocx/src/ink/simplebrush_assets/256.bin": "3982e7ea072fec02f78999db3d4ef60388a4412006652f4493a767d446987848"
+  },
+  "cases": [
+    {
+      "count": 225,
+      "size": 20,
+      "variant": "normal",
+      "tool": 2,
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0.25,
+        0.5,
+        1
+      ],
+      "native_frame_sha256": "e4758d4aea009580dd99100566d2191a63ede6079e32204ab56b717a91ae91ef",
+      "native_vector_sha256": "91b627020a7bf8de6b0d70179c9ba42a9edeb8ae118dbff6b55f506eb27deee1",
+      "native_vector_count": 812,
+      "svg_alpha_error": [
+        432314,
+        3336
+      ],
+      "mupdf_matched_paper_rgb_error": [
+        486218,
+        33234
+      ],
+      "pdfium_unshifted_matched_paper_rgb_error": [
+        481471,
+        48806
+      ],
+      "exports": {
+        "generic.svg": "09675b44f813c65b64d96023358fc391570e2a7093a02adf541498ca1ff9d26b",
+        "two.svg": "a1cd47cbb398383773c2565804815f7c02acd8e554c48c6d12fc39805b4d83b7",
+        "one.svg": "bf12c78a794116446f0b863ecf9bb660291b049551887189f467adc8cc9d3c94",
+        "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef",
+        "one.pdf": "b6bc7b50aa28a1361c4372f3532b67d9944880de5e57dc654e4ea94fe5dc5b8a",
+        "generic.pdf": "82afd23e21990e9503da8b571bbeaedf658d373f7071a59f418977091dac9285",
+        "two.pdf": "2c3a8cf5652005e70ea8752cff5cef26acb54852d5bffb9b8f28f5c8638d68a0"
+      }
+    },
+    {
+      "count": 256,
+      "size": 8,
+      "variant": "reverse",
+      "tool": 2,
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0.25,
+        0.5,
+        1
+      ],
+      "native_frame_sha256": "ef92c827b17fbcd24ee2468053c1118868d2293484013d8fe64bad19d9dedb95",
+      "native_vector_sha256": "3982e7ea072fec02f78999db3d4ef60388a4412006652f4493a767d446987848",
+      "native_vector_count": 944,
+      "svg_alpha_error": [
+        564440,
+        7994
+      ],
+      "mupdf_matched_paper_rgb_error": [
+        621815,
+        63234
+      ],
+      "pdfium_unshifted_matched_paper_rgb_error": [
+        617605,
+        115914
+      ],
+      "exports": {
+        "generic.svg": "de9a8a17c241fe2c77437e91bc7773a724c8dac35ddca2cb028918320eea2557",
+        "two.svg": "1f8ef8cc4e5f81a52453e054e262234a51d0a3e7f468ea5ceff8f9788a31d4ff",
+        "one.svg": "9e7a0959435061dde71a5fba87760ccc3ab605c5d766f16051806eda11bedeb5",
+        "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef",
+        "one.pdf": "bfe6003355d3d14edbcf87adf9e6fb00a1008f96d3dde87ec52748547fbb494f",
+        "generic.pdf": "5d3ae2be84fbb5405dd1ad50eda37a3aaa0ddc1e7d382fe27f6fba992d1c741f",
+        "two.pdf": "36dba6be1c126237a6fdefffa2a59d5d8d7b6fe6e40153e1d0958b5dfc6f769c"
+      },
+      "tool3_pair": {
+        "native_geometry_sha256": "3982e7ea072fec02f78999db3d4ef60388a4412006652f4493a767d446987848",
+        "native_frame_sha256": "ef92c827b17fbcd24ee2468053c1118868d2293484013d8fe64bad19d9dedb95",
+        "public_export_sha256": {
+          "generic.svg": "de9a8a17c241fe2c77437e91bc7773a724c8dac35ddca2cb028918320eea2557",
+          "two.svg": "1f8ef8cc4e5f81a52453e054e262234a51d0a3e7f468ea5ceff8f9788a31d4ff",
+          "one.svg": "9e7a0959435061dde71a5fba87760ccc3ab605c5d766f16051806eda11bedeb5",
+          "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef",
+          "one.pdf": "bfe6003355d3d14edbcf87adf9e6fb00a1008f96d3dde87ec52748547fbb494f",
+          "generic.pdf": "5d3ae2be84fbb5405dd1ad50eda37a3aaa0ddc1e7d382fe27f6fba992d1c741f",
+          "two.pdf": "36dba6be1c126237a6fdefffa2a59d5d8d7b6fe6e40153e1d0958b5dfc6f769c"
+        },
+        "observation": "Matches paired tool-2 geometry, entire frame and public SVG/direct PDF exports; same input and host matrix."
+      }
+    }
+  ],
+  "source_hash_scope": "Recorded after capture and export; capture script was subsequently extended only to permit the tool-3 control. Hashes do not attest full historical build identity."
+}
