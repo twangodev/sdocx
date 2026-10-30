@@ -1675,6 +1675,10 @@ fn replace_markers_with_policy(
         }
     }
 
+    // Validate the complete marker set before compiling any field. Compilation
+    // can allocate many PDF resources, so a missing later marker must fail
+    // before earlier fields are lowered.
+    let mut targets = Vec::with_capacity(fields.len());
     for field in fields {
         let matches = marker_objects
             .get(&field.marker_id)
@@ -1687,6 +1691,9 @@ fn replace_markers_with_policy(
                 matches.len()
             ));
         }
+        targets.push(matches[0]);
+    }
+    for (field, target) in fields.iter().zip(targets) {
         let form = field_form_with_policy(
             &mut document,
             field,
@@ -1694,7 +1701,7 @@ fn replace_markers_with_policy(
             per_draw_rgba8,
             mask_override,
         )?;
-        document.objects.insert(matches[0], form);
+        document.objects.insert(target, form);
     }
     for object in document.objects.values_mut() {
         if let Object::Stream(stream) = object
@@ -2555,6 +2562,20 @@ mod tests {
         let missing = replace_markers(
             &marker_pdf(0, false),
             &[PdfInkField::mesh(1, &mesh, [0, 0, 0], bounds)],
+        )
+        .unwrap_err();
+        assert!(missing.contains("marker 1 matched 0 Image XObjects"));
+
+        // A later missing marker is detected before lowering an earlier field,
+        // even when that earlier field would itself fail compilation.
+        let mut invalid_mesh = mesh.clone();
+        invalid_mesh.triangles.clear();
+        let missing = replace_markers(
+            &marker_pdf(0, false),
+            &[
+                PdfInkField::mesh(0, &invalid_mesh, [0, 0, 0], bounds),
+                PdfInkField::mesh(1, &mesh, [0, 0, 0], bounds),
+            ],
         )
         .unwrap_err();
         assert!(missing.contains("marker 1 matched 0 Image XObjects"));
