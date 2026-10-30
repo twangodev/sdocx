@@ -1,0 +1,1611 @@
+{
+  "case": "baseline",
+  "draw_calls": [
+    {
+      "call": "glDrawArrays",
+      "state": {
+        "activeTexture": 33984,
+        "framebuffer": 1,
+        "program": 3,
+        "texture2d": 0,
+        "vao": 0
+      },
+      "values": [
+        4,
+        0,
+        510
+      ]
+    },
+    {
+      "call": "glDrawArrays",
+      "state": {
+        "activeTexture": 33984,
+        "framebuffer": 1,
+        "program": 4,
+        "texture2d": 0,
+        "vao": 0
+      },
+      "values": [
+        4,
+        0,
+        6
+      ]
+    },
+    {
+      "call": "glDrawArrays",
+      "state": {
+        "activeTexture": 33984,
+        "framebuffer": 1,
+        "program": 5,
+        "texture2d": 0,
+        "vao": 0
+      },
+      "values": [
+        4,
+        0,
+        6
+      ]
+    }
+  ],
+  "draw_provenance": [
+    {
+      "actual_program": 3,
+      "attributes": [
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": true,
+          "index": 0,
+          "latest_buffer_upload": {
+            "data_sha256": "013a533b4f80410caeaebbb9cb6f5dcf42cecbc55967034173b03176036fabdf",
+            "matches_native_add_vector": true,
+            "size": 10200,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 0,
+          "size": 4,
+          "stride": 20,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": true,
+          "index": 1,
+          "latest_buffer_upload": {
+            "data_sha256": "013a533b4f80410caeaebbb9cb6f5dcf42cecbc55967034173b03176036fabdf",
+            "matches_native_add_vector": true,
+            "size": 10200,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 16,
+          "size": 1,
+          "stride": 20,
+          "type": 5126
+        }
+      ],
+      "draw_index": 0,
+      "framebuffer": 1,
+      "mode_count": [
+        4,
+        0,
+        510
+      ],
+      "vao": 0
+    },
+    {
+      "actual_program": 4,
+      "attributes": [
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": true,
+          "index": 0,
+          "latest_buffer_upload": {
+            "data_sha256": "e5d2cff9004dc8793509dc2ae79970103fc915b360f60cff3d6893320913d2fa",
+            "matches_native_add_vector": true,
+            "size": 120,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 0,
+          "size": 4,
+          "stride": 20,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": true,
+          "index": 1,
+          "latest_buffer_upload": {
+            "data_sha256": "e5d2cff9004dc8793509dc2ae79970103fc915b360f60cff3d6893320913d2fa",
+            "matches_native_add_vector": true,
+            "size": 120,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 16,
+          "size": 1,
+          "stride": 20,
+          "type": 5126
+        }
+      ],
+      "draw_index": 1,
+      "framebuffer": 1,
+      "mode_count": [
+        4,
+        0,
+        6
+      ],
+      "vao": 0
+    },
+    {
+      "actual_program": 5,
+      "attributes": [
+        {
+          "buffer": 3,
+          "divisor": 0,
+          "enabled": true,
+          "index": 0,
+          "latest_buffer_upload": {
+            "data_sha256": "b5901a8b77bd302486e9a226d6123a4ef9b126f6c37f9b2595b3fabc5b54a172",
+            "matches_native_add_vector": true,
+            "size": 120,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 0,
+          "size": 4,
+          "stride": 20,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 0,
+          "enabled": true,
+          "index": 1,
+          "latest_buffer_upload": {
+            "data_sha256": "b5901a8b77bd302486e9a226d6123a4ef9b126f6c37f9b2595b3fabc5b54a172",
+            "matches_native_add_vector": true,
+            "size": 120,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 16,
+          "size": 1,
+          "stride": 20,
+          "type": 5126
+        }
+      ],
+      "draw_index": 2,
+      "framebuffer": 1,
+      "mode_count": [
+        4,
+        0,
+        6
+      ],
+      "vao": 0
+    }
+  ],
+  "execution_boundary": "Adapted variable-point synthetic Drawing/ObjectStroke/RTV1 Add* source producer executes. Init, SetBuffer, SendDataToGPU, Update and Draw are native method calls. SetBuffer/SendDataToGPU are explicit controlled API sequencing, not observed natural Drawing-worker calls. Style argb is host-controlled. Renderer/Graphics/GL lifecycle is native; EGL/GLES and queue/context support are host adapters. Pixels are host Mesa output, not device parity.",
+  "gl_error_checks": [
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetString"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenBuffers"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetString"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenBuffers"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetString"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenBuffers"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetIntegerv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glLinkProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramBinary"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetIntegerv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glLinkProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramBinary"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetIntegerv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glLinkProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramBinary"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenTextures"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenSamplers"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindTexture"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glTexImage2D"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindTexture"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glFenceSync"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glFlush"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenFramebuffers"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindTexture"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindFramebuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glFramebufferTexture2D"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCheckFramebufferStatus"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDisable"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDisable"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBlendEquationSeparate"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBlendFuncSeparate"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnable"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glColorMask"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindFramebuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCheckFramebufferStatus"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glViewport"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUseProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniformMatrix4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniform4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDrawArrays"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUseProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniformMatrix4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniform4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDrawArrays"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUseProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniformMatrix4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniform4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDrawArrays"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetIntegerv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glInvalidateFramebuffer"
+    }
+  ],
+  "gl_name_generation": {
+    "framebuffer_rows": [
+      {
+        "call": "glGenFramebuffers",
+        "count": 1,
+        "ids": [
+          1
+        ],
+        "output_ptr": 537849652
+      }
+    ],
+    "setup_evidence": {
+      "binds": [
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        }
+      ],
+      "color_attachments": [
+        {
+          "args": [
+            36160,
+            36064,
+            3553,
+            1,
+            0
+          ],
+          "call": "glFramebufferTexture2D",
+          "framebuffer": 1
+        }
+      ],
+      "complete_checks": [
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        }
+      ],
+      "rgba8_allocations": [
+        {
+          "boundTexture": 1,
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": false,
+          "height": 256,
+          "internalFormat": 32856,
+          "pixelBytes": 0,
+          "pixelsSha256": null,
+          "target": 3553,
+          "type": 5121,
+          "width": 256
+        }
+      ]
+    },
+    "texture_rows": [
+      {
+        "call": "glGenTextures",
+        "count": 1,
+        "ids": [
+          1
+        ],
+        "output_ptr": 537848740
+      }
+    ]
+  },
+  "host_gl_paths": {
+    "libEGL.so.1": "/usr/lib/x86_64-linux-gnu/libEGL.so.1.1.0",
+    "libGLESv2.so.2": "/usr/lib/x86_64-linux-gnu/libGLESv2.so.2.1.0"
+  },
+  "host_gl_sha256": {
+    "libEGL.so.1": "f4b60a4618fbf760f395f64dfd53320446ba1011151a80e411742b3232b194e6",
+    "libGLESv2.so.2": "a705c66de30ca4e883120c70acae0f1011d7c3f97605eef331e03493beae3812"
+  },
+  "host_gles": {
+    "egl_version": "1.5",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "shading_language": "OpenGL ES GLSL ES 3.20",
+    "vendor": "Mesa",
+    "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+  },
+  "input_pins": {
+    "base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "libcxx": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+    "marker3_adapter": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+    "montblanc": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350",
+    "pencommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "runner": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8"
+  },
+  "matrix_f32": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    128.0,
+    128.0,
+    0,
+    1
+  ],
+  "native_add_vectors": [
+    {
+      "byte_count": 10200,
+      "field": 200,
+      "float_count": 2550,
+      "object": "0x10013d60",
+      "sha256": "013a533b4f80410caeaebbb9cb6f5dcf42cecbc55967034173b03176036fabdf"
+    },
+    {
+      "byte_count": 120,
+      "field": 208,
+      "float_count": 30,
+      "object": "0x10013d80",
+      "sha256": "e5d2cff9004dc8793509dc2ae79970103fc915b360f60cff3d6893320913d2fa"
+    },
+    {
+      "byte_count": 120,
+      "field": 216,
+      "float_count": 30,
+      "object": "0x10013da0",
+      "sha256": "b5901a8b77bd302486e9a226d6123a4ef9b126f6c37f9b2595b3fabc5b54a172"
+    }
+  ],
+  "native_method_sequence": [
+    "Init",
+    "CreatePenCanvas",
+    "SPSubBitmapRT(stack bool=true,RGBA8,RGBA)",
+    "SPSubBitmapRT::CreateFrameBuffer()",
+    "PenDrawableRT::SetPenData",
+    "SetBuffer(Add vectors)",
+    "SendDataToGPU(same Add vectors)",
+    "Update(false)",
+    "Draw",
+    "RGBA8 readback"
+  ],
+  "native_resource_slots_after_init": {
+    "248": "0x1001c560",
+    "256": "0x1001cfb0",
+    "264": "0x1001d9f0",
+    "272": "0x1001e460",
+    "280": "0x100216b0",
+    "288": "0x10024780"
+  },
+  "native_resource_slots_before_init": {
+    "248": "0x0",
+    "256": "0x0",
+    "264": "0x0",
+    "272": "0x0",
+    "280": "0x0",
+    "288": "0x0"
+  },
+  "native_rt_receiver": "0x10013530",
+  "native_subbitmap_receiver": "0x1001c320",
+  "native_vector_draw_joins": [
+    "013a533b4f80410caeaebbb9cb6f5dcf42cecbc55967034173b03176036fabdf",
+    "b5901a8b77bd302486e9a226d6123a4ef9b126f6c37f9b2595b3fabc5b54a172",
+    "e5d2cff9004dc8793509dc2ae79970103fc915b360f60cff3d6893320913d2fa"
+  ],
+  "pixel_statistics": {
+    "byte_count": 262144,
+    "channel_max": [
+      51,
+      102,
+      153,
+      255
+    ],
+    "channel_min": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "dimensions": [
+      256,
+      256
+    ],
+    "nontransparent_pixels": 564,
+    "nontransparent_rgba_sha256": "1bf22e2816168473e54960e5699b7b52338a35e27bb2aaca4c60fa6a87ba7bf1",
+    "unique_rgba_count": 446
+  },
+  "post_readback": {
+    "gl_error_after": 0,
+    "gl_error_before": 0,
+    "rgba8_zlib_base64": "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",
+    "sha256": "fe569bc040c449ddbf9d4b8c6213e109e1673fa497a8958f5187d6865b26b8e7"
+  },
+  "pre_readback": {
+    "gl_error_after": 0,
+    "gl_error_before": 0,
+    "rgba8_zlib_base64": "eNrtwTEBAAAAwqD1T+1tB6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AADwAAQ==",
+    "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90"
+  },
+  "queue_events": [
+    {
+      "run": "0xb01fb50",
+      "task": "0x10013d00",
+      "task_prefix": "4062030b0000000000000000000000003035011000000000a4a40401000000000000000000000000010000000000000000000000000000000000000000000000",
+      "vtable": "0xb036240"
+    },
+    {
+      "run": "0xb01fb78",
+      "task": "0x10013d30",
+      "task_prefix": "7062030b000000000000000000000000303501100000000058a504010000000000000000000000009a991940000000ff00000000000000000000000000000000",
+      "vtable": "0xb036270"
+    }
+  ],
+  "runtime_interface_audit": {
+    "adapter_attributes": [
+      "callbacks",
+      "extra_bases",
+      "get_string",
+      "gl_calls",
+      "gl_get_integer",
+      "gl_state",
+      "gles",
+      "u"
+    ],
+    "p_attributes": [
+      "alloc",
+      "callbacks",
+      "get",
+      "put",
+      "queue_trace",
+      "syms",
+      "u",
+      "x"
+    ],
+    "runpy_keys": [
+      "R",
+      "RUNTIME_INPUTS",
+      "UC_HOOK_CODE",
+      "_adapter",
+      "_renderer_base",
+      "at",
+      "call",
+      "fn",
+      "ip",
+      "p",
+      "queue",
+      "qvt",
+      "records",
+      "rt"
+    ]
+  },
+  "schema": "montblanc-rtv1-controlled-native-mesa-paint.v2",
+  "shader_source_diagnostics": [
+    {
+      "shader": 1,
+      "sources": [
+        {
+          "sha256": "ebeb330c026a5171772b4c8930a3462614e84cc58f4689348bb56bc1c3848f95",
+          "text": "precision highp float;\nattribute vec4 position;\nattribute float transparency;\nuniform mat4 ProjectionMatrix;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvoid main(void)\n{\n    gl_Position = ProjectionMatrix * vec4(position.xy, 0.0, 1.0);\n    fragCoord = vec2(position.z, position.w);\n    inputAlpha = transparency;\n}\n",
+          "utf8_bytes": 322
+        }
+      ]
+    },
+    {
+      "shader": 2,
+      "sources": [
+        {
+          "sha256": "1a5388b49c1e5805cf7d13c47befb937afb495fddca07bbf1dafd121df6cc31e",
+          "text": "#extension GL_OES_standard_derivatives : enable\nprecision mediump float;\nuniform vec4 inputColor;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvec2 center = vec2(0.5, 0.5);\nconst float radius = 0.5;\nconst float gradLength = 0.4;\nconst float alphaRange = 0.93;\nvoid main(void)\n{\n    float distY = abs(center.y - fragCoord.y);\n    float gradAlpha = clamp(1.0 - alphaRange / gradLength * (gradLength - (radius - distY)), 0.0, 1.0);\n    float dist = distance(center, fragCoord);\n    float circleAlpha = (radius - dist) / abs(radius - dist);\n    float distX = abs(center.x - fragCoord.x);\n    float smoothAlpha = 1.0 - smoothstep(radius - fwidth(dist), radius, distX);\n    float alpha = inputAlpha * gradAlpha * circleAlpha * smoothAlpha;\n    gl_FragColor = vec4(inputColor.xyz, 1.0) * alpha;\n}\n",
+          "utf8_bytes": 795
+        }
+      ]
+    },
+    {
+      "shader": 1,
+      "sources": [
+        {
+          "sha256": "ebeb330c026a5171772b4c8930a3462614e84cc58f4689348bb56bc1c3848f95",
+          "text": "precision highp float;\nattribute vec4 position;\nattribute float transparency;\nuniform mat4 ProjectionMatrix;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvoid main(void)\n{\n    gl_Position = ProjectionMatrix * vec4(position.xy, 0.0, 1.0);\n    fragCoord = vec2(position.z, position.w);\n    inputAlpha = transparency;\n}\n",
+          "utf8_bytes": 322
+        }
+      ]
+    },
+    {
+      "shader": 2,
+      "sources": [
+        {
+          "sha256": "1104e3a64bdf0523a78e168ed060b2b2f437e2e718f3b2b29b5aac2605dcc7f5",
+          "text": "#extension GL_OES_standard_derivatives : enable\nprecision mediump float;\nuniform vec4 inputColor;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvec2 center = vec2(0.5, 0.5);\nconst float radius = 0.5;\nvoid main(void)\n{\n    float dist = distance(center, fragCoord);\n    float circleAlpha = 1.0 - smoothstep(radius - fwidth(dist), radius, dist);\n    float alpha = inputAlpha * fragCoord.y * circleAlpha;\n    gl_FragColor = vec4(inputColor.xyz, 1.0) * alpha;\n}\n",
+          "utf8_bytes": 461
+        }
+      ]
+    },
+    {
+      "shader": 1,
+      "sources": [
+        {
+          "sha256": "ebeb330c026a5171772b4c8930a3462614e84cc58f4689348bb56bc1c3848f95",
+          "text": "precision highp float;\nattribute vec4 position;\nattribute float transparency;\nuniform mat4 ProjectionMatrix;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvoid main(void)\n{\n    gl_Position = ProjectionMatrix * vec4(position.xy, 0.0, 1.0);\n    fragCoord = vec2(position.z, position.w);\n    inputAlpha = transparency;\n}\n",
+          "utf8_bytes": 322
+        }
+      ]
+    },
+    {
+      "shader": 2,
+      "sources": [
+        {
+          "sha256": "36bf559021bac6df64234d140254e759c68e5bd20ab090de9f0d387fdfbaaf64",
+          "text": "#extension GL_OES_standard_derivatives : enable\nprecision mediump float;\nuniform vec4 inputColor;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvec2 center = vec2(0.5, 0.5);\nconst float radius = 0.5;\nvoid main(void)\n{\n    float dist = distance(center, fragCoord);\n    float circleAlpha = 1.0 - smoothstep(radius - fwidth(dist), radius, dist);\n    float gradAlpha = clamp(2.0 * (1.0 - fragCoord.y), 0.0, 1.0);\n    float alpha = inputAlpha * gradAlpha * circleAlpha;\n    gl_FragColor = vec4(inputColor.xyz, 1.0) * alpha;\n}\n",
+          "utf8_bytes": 525
+        }
+      ]
+    }
+  ],
+  "style": {
+    "argb": "0xff336699",
+    "mode": "host-controlled native SetPenData input",
+    "observed_calls": [
+      {
+        "argb": "0xff336699",
+        "receiver": "0x10013530",
+        "size_s0_bits": "9a991940"
+      }
+    ],
+    "size": 2.4
+  },
+  "target": {
+    "completeness": 36053,
+    "constructor_stack_args_sp_plus_0_8_16": [
+      1,
+      6,
+      2
+    ],
+    "constructor_texture_object": "0x100278c0",
+    "create_framebuffer_api": "SPSubBitmapRT::CreateFrameBuffer() -> vtable CreateFrameBufferRT(false)",
+    "descriptor_render_target_bool": true,
+    "framebuffer": 1,
+    "framebuffer_object_after_create": "0x10027b10",
+    "framebuffer_object_after_ctor": "0x0",
+    "native_color_attach_success_byte": 1,
+    "native_offscreen_framebuffer_id": 1,
+    "read_attachment": 1,
+    "renderer_offscreen_target": "0x10027b40",
+    "size": [
+      256,
+      256
+    ],
+    "texture": 1,
+    "texture_memory_layout": 6,
+    "texture_target_layout": 2
+  },
+  "uniform_diagnostics": [
+    {
+      "call": "glUniformMatrix4fv",
+      "location": 0,
+      "program_at_call": 3,
+      "values": [
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "call": "glUniform4fv",
+      "location": 1,
+      "program_at_call": 3,
+      "values": [
+        0.20000000298023224,
+        0.4000000059604645,
+        0.6000000238418579,
+        1.0
+      ]
+    },
+    {
+      "call": "glUniformMatrix4fv",
+      "location": 0,
+      "program_at_call": 4,
+      "values": [
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "call": "glUniform4fv",
+      "location": 1,
+      "program_at_call": 4,
+      "values": [
+        0.20000000298023224,
+        0.4000000059604645,
+        0.6000000238418579,
+        1.0
+      ]
+    },
+    {
+      "call": "glUniformMatrix4fv",
+      "location": 0,
+      "program_at_call": 5,
+      "values": [
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "call": "glUniform4fv",
+      "location": 1,
+      "program_at_call": 5,
+      "values": [
+        0.20000000298023224,
+        0.4000000059604645,
+        0.6000000238418579,
+        1.0
+      ]
+    }
+  ],
+  "vbo_uploads": [
+    {
+      "boundBuffer": 1,
+      "call": "glBufferData",
+      "dataHex": null,
+      "dataSha256": null,
+      "size": 0,
+      "target": 34962,
+      "usage": 35048
+    },
+    {
+      "boundBuffer": 2,
+      "call": "glBufferData",
+      "dataHex": null,
+      "dataSha256": null,
+      "size": 0,
+      "target": 34962,
+      "usage": 35048
+    },
+    {
+      "boundBuffer": 3,
+      "call": "glBufferData",
+      "dataHex": null,
+      "dataSha256": null,
+      "size": 0,
+      "target": 34962,
+      "usage": 35048
+    },
+    {
+      "boundBuffer": 1,
+      "call": "glBufferData",
+      "dataHex": "e37e27c241f87bc1000000000000803fe3e2e23e36f531c27a9b91c10000803f0000803fe3e2e23e18922ec2bdca5dc10000000000000000e3e2e23e18922ec2bdca5dc10000000000000000e3e2e23e6b0839c2b88482c10000803f00000000e3e2e23e36f531c27a9b91c10000803f0000803fe3e2e23e1f3f23c2981985c1000000000000803fe5e4e43eebdd2dc21d879ac10000803f0000803fe5e4e43ea31e2bc292fb6ac10000000000000000e5e4e43ea31e2bc292fb6ac10000000000000000e5e4e43e6fbd35c24eeb8ac10000803f00000000e5e4e43eebdd2dc21d879ac10000803f0000803fe5e4e43e7ffa1ec2a59b8bc1000000000000803fe5e4e43e11ae29c20aefa2c10000803f0000803fe5e4e43eafb127c2403a77c10000000000000000e5e4e43eafb127c2403a77c10000000000000000e5e4e43e416532c285f092c10000803f00000000e5e4e43e11ae29c20aefa2c10000803f0000803fe5e4e43e3bb21ac2cb8091c1000000000000803fe7e6e63eb96425c2cfd0aac10000803f0000803fe7e6e63e2b4c24c2d74581c10000000000000000e7e6e63e2b4c24c2d74581c10000000000000000e7e6e63ea9fe2ec2db959ac10000803f00000000e7e6e63eb96425c2cfd0aac10000803f0000803fe7e6e63eb56716c2cfc796c1000000000000803fe9e8e83e150121c29629b2c10000803f0000803fe9e8e83ee3ee20c2c27a86c10000000000000000e9e8e83ee3ee20c2c27a86c10000000000000000e9e8e83e43882bc289dca1c10000803f00000000e9e8e83e150121c29629b2c10000803f0000803fe9e8e83e771c12c2d16f9bc1000000000000803febeaea3e86821cc22af6b8c10000803f0000803febeaea3e7a9a1dc2183f8bc10000000000000000ebeaea3e7a9a1dc2183f8bc10000000000000000ebeaea3e890028c271c5a8c10000803f00000000ebeaea3e86821cc22af6b8c10000803f0000803febeaea3e2bd20dc26d789fc1000000000000803febeaea3ea2e817c2f832bfc10000803f0000803febeaea3e564f1ac26a968fc10000000000000000ebeaea3e564f1ac26a968fc10000000000000000ebeaea3ecd6524c2f550afc10000803f00000000ebeaea3ea2e817c2f832bfc10000803f0000803febeaea3e504009c21a24a3c1000000000000803fedecec3e22d812c29931c5c10000803f0000803fedecec3eecca16c2c7e193c10000000000000000edecec3eecca16c2c7e193c10000000000000000edecec3ebe6220c246efb5c10000803f00000000edecec3e22d812c29931c5c10000803f0000803fedecec3eeb5f04c20357a6c1000000000000803fefeeee3e54400dc227d2cac10000803f0000803fefeeee3eba0413c2591698c10000000000000000efeeee3eba0413c2591698c10000000000000000efeeee3e23e51bc27d91bcc10000803f00000000efeeee3e54400dc227d2cac10000803f0000803fefeeee3eef0effc1a9bba8c1000000000000803fefeeee3ea58707c293a0cfc10000803f0000803fefeeee3eef460fc283c69bc10000000000000000efeeee3eef460fc283c69bc10000000000000000efeeee3e1d4717c26dabc2c10000803f00000000efeeee3ea58707c293a0cfc10000803f0000803fefeeee3e2d72f5c17a56aac1000000000000803ff1f0f03e2bb001c29c97d3c10000803f0000803ff1f0f03e798f0bc284f79ec10000000000000000f1f0f03e798f0bc284f79ec10000000000000000f1f0f03e8d8612c2a638c8c10000803f00000000f1f0f03e2bb001c29c97d3c10000803f0000803ff1f0f03ebfecebc1392dabc1000000000000803ff3f2f23e8b79f7c1dfb2d6c10000803f0000803ff3f2f23e75db07c2bfada1c10000000000000000f3f2f23e75db07c2bfada1c10000000000000000f3f2f23edaa10dc26533cdc10000803f00000000f3f2f23e8b79f7c1dfb2d6c10000803f0000803ff3f2f23e7780e2c1bc46abc1000000000000803ff5f4f43efa61ebc157efd8c10000803f0000803ff5f4f43e602704c23feca3c10000000000000000f5f4f43e602704c23feca3c10000000000000000f5f4f43e209808c2da94d1c10000803f00000000f5f4f43efa61ebc157efd8c10000803f0000803ff5f4f43e782dd9c180aaaac1000000000000803ff3f2f23e9b21dfc19d4bdac10000803f0000803ff3f2f23e336f00c263b4a5c10000000000000000f3f2f23e336f00c263b4a5c10000000000000000f3f2f23e446903c28055d5c10000803f00000000f3f2f23e9b21dfc19d4bdac10000803f0000803ff3f2f23ec376cec1c3c7a8c1000000000000803ff1f0f03e0751cec1b4c7d8c10000803f0000803ff1f0f03eb776f6c134e7a8c10000000000000000f1f0f03eb776f6c134e7a8c10000000000000000f1f0f03efb50f6c125e7d8c10000803f00000000f1f0f03e0751cec1b4c7d8c10000803f0000803ff1f0f03ec9a1c4c1d766a5c1000000000000803fefeeee3ec10cbec1c3f2d4c10000803f0000803fefeeee3e0d41ecc109e3aac10000000000000000efeeee3e0d41ecc109e3aac10000000000000000efeeee3e05ace5c1f56edac10000803f00000000efeeee3ec10cbec1c3f2d4c10000803f0000803fefeeee3e697ebbc16daca0c1000000000000803fedecec3e0871aec168ddcec10000803f0000803fedecec3e90fce1c1e88cabc10000000000000000edecec3e90fce1c1e88cabc10000000000000000edecec3e2fefd4c1e3bdd9c10000803f00000000edecec3e0871aec168ddcec10000803f0000803fedecec3e05e0b2c1a6b49ac1000000000000803febeaea3e22b29fc119b5c6c10000803f0000803febeaea3e108bd7c139b0aac10000000000000000ebeaea3e108bd7c139b0aac10000000000000000ebeaea3e2d5dc4c1acb0d6c10000803f00000000ebeaea3e22b29fc119b5c6c10000803f0000803febeaea3e4bd3aac107c493c1000000000000803fe9e8e83e645292c1460abdc10000803f0000803fe9e8e83e8038cdc1722fa8c10000000000000000e9e8e83e8038cdc1722fa8c10000000000000000e9e8e83e99b7b4c1b175d1c10000803f00000000e9e8e83e645292c1460abdc10000803f0000803fe9e8e83e9b4fa3c169148cc1000000000000803fe7e6e63e367386c1186fb2c10000803f0000803fe7e6e63ed845c3c16821a4c10000000000000000e7e6e63ed845c3c16821a4c10000000000000000e7e6e63e7369a6c1177ccac10000803f00000000e7e6e63e367386c1186fb2c10000803f0000803fe7e6e63eadd19bc1483b83c1000000000000803fe5e4e43e049a76c1cd89a6c10000803f0000803fe5e4e43ec63db9c181549ec10000000000000000e5e4e43ec63db9c181549ec10000000000000000e5e4e43e1bb998c106a3c1c10000803f00000000e5e4e43e049a76c1cd89a6c10000803f0000803fe5e4e43ebd2b95c107b474c1000000000000803fe3e2e23e9aed63c15ffa9ac10000803f0000803fe3e2e23e095cb0c1cbb097c10000000000000000e3e2e23e095cb0c1cbb097c10000000000000000e3e2e23e19278dc12751b8c10000803f00000000e3e2e23e9aed63c15ffa9ac10000803f0000803fe3e2e23eef9f8ec1553a61c1000000000000803fe1e0e03e9d7252c136b38ec10000803f0000803fe1e0e03e4eb2a7c106c88fc10000000000000000e1e0e03e4eb2a7c106c88fc10000000000000000e1e0e03ead4b82c111deadc10000803f00000000e1e0e03e9d7252c136b38ec10000803f0000803fe1e0e03ed51288c1f8a34bc1000000000000803fe1e0e03edeb741c1448081c10000803f0000803fe1e0e03e11249fc1bc7f86c10000000000000000e1e0e03e11249fc1bc7f86c10000000000000000e1e0e03e56da6fc1042ea2c10000803f00000000e1e0e03edeb741c1448081c10000803f0000803fe1e0e03e6b0182c107ed35c1000000000000803fe3e2e23e06eb32c1594e69c10000803f0000803fe3e2e23ef86997c1df8079c10000000000000000e3e2e23ef86997c1df8079c10000000000000000e3e2e23e20bc5dc1187196c10000803f00000000e3e2e23e06eb32c1594e69c10000803f0000803fe3e2e23e155979c1b31220c1000000000000803fe5e4e43e0db525c13b314fc10000803f0000803fe5e4e43e994e90c10fc665c10000000000000000e5e4e43e994e90c10fc665c10000000000000000e5e4e43e29f94cc14b728ac10000803f00000000e5e4e43e0db525c13b314fc10000803f0000803fe5e4e43e0a2270c141170ac1000000000000803fe7e6e63e56191ac105af34c10000803f0000803fe7e6e63e41d089c12dc951c10000000000000000e7e6e63e41d089c12dc951c10000000000000000e7e6e63ece973dc1f1607cc10000803f00000000e7e6e63e56191ac105af34c10000803f0000803fe7e6e63e7e5668c1c5f7e7c0000000000000803fe9e8e83e581a10c19fce19c10000803f0000803fe9e8e83eb8ed83c157833dc10000000000000000e9e8e83eb8ed83c157833dc10000000000000000e9e8e83e4a9f2fc1135663c10000803f00000000e9e8e83e581a10c19fce19c10000803f0000803fe9e8e83e91ee61c1e180bbc0000000000000803febeaea3e5ab907c18d2ffdc00000803f0000803febeaea3eae4c7dc1caec28c10000000000000000ebeaea3eae4c7dc1caec28c10000000000000000ebeaea3e771723c120c449c10000803f00000000ebeaea3e5ab907c18d2ffdc00000803f0000803febeaea3e1ce25cc1afc68ec0000000000000803febeaea3e46f600c1a325c6c00000803f0000803febeaea3e56f473c134fd13c10000000000000000ebeaea3e56f473c134fd13c10000000000000000ebeaea3e800818c1afac2fc10000803f00000000ebeaea3e46f600c1a325c6c00000803f0000803febeaea3e861959c195bb41c0000000000000803fedecec3e0a73f7c040758dc00000803f0000803fedecec3ef7ad6bc1ce7dfcc00000000000000000edecec3ef7ad6bc1ce7dfcc00000000000000000edecec3ef64d0ec1a28a14c10000803f00000000edecec3e0a73f7c040758dc00000803f0000803fedecec3e43a956c16f3dcabf000000000000803fefeeee3ebc4af0c02d6528c00000803f0000803fefeeee3e46ad64c1da15d0c00000000000000000efeeee3e46ad64c1da15d0c00000000000000000efeeee3e612906c114b9f1c00000803f00000000efeeee3ebc4af0c02d6528c00000803f0000803fefeeee3eac8b55c12d8df7bd000000000000803ff1f0f03e176eecc0620554bf0000803f0000803ff1f0f03e08fa5ec196c0a2c00000000000000000f1f0f03e08fa5ec196c0a2c00000000000000000f1f0f03ed04affc00d63b9c00000803f00000000f1f0f03e176eecc0620554bf0000803f0000803ff1f0f03ee5ba55c16410ad3f000000000000803ff3f2f23e0ad1ebc041937c3f0000803f0000803ff3f2f23e439a5ac1b6df68c00000000000000000f3f2f23e439a5ac1b6df68c00000000000000000f3f2f23ec78ff5c08c2180c00000803f00000000f3f2f23e0ad1ebc041937c3f0000803f0000803ff3f2f23e953257c166ce3540000000000000803ff5f4f43ebb65eec08df633400000803f0000803ff5f4f43ee29457c1a9300ac00000000000000000f5f4f43ee29457c1a9300ac00000000000000000f5f4f43e562aefc082080cc00000803f00000000f5f4f43ebb65eec08df633400000803f0000803ff5f4f43e08f059c12f1b8b40000000000000803ff3f2f23e621df4c0b7b194400000803f0000803ff3f2f23e4ff155c1b78d25bf0000000000000000f3f2f23e4ff155c1b78d25bf0000000000000000f3f2f23ef01fecc0eab2b1be0000803f00000000f3f2f23e621df4c0b7b194400000803f0000803ff3f2f23e7d775ec10ecbb840000000000000803ff1f0f03e5838fec0affbce400000803f0000803ff1f0f03e903855c13eec4e3f0000000000000000f1f0f03e903855c13eec4e3f0000000000000000f1f0f03e7ebaebc0a338c03f0000803f00000000f1f0f03e5838fec0affbce400000803f0000803ff1f0f03e468b64c12b04e440000000000000803fefeeee3ef42f06c1d0b103410000803f0000803fefeeee3e2cce55c199820d400000000000000000efeeee3e2cce55c199820d400000000000000000efeeee3eb3e5eec0824154400000803f00000000efeeee3ef42f06c1d0b103410000803f0000803fefeeee3e8f1b6cc1c4670641000000000000803fedecec3e78480fc15ee41e410000803f0000803fedecec3ebab357c1c63464400000000000000000edecec3ebab357c1c63464400000000000000000edecec3e46c1f5c09713a3400000803f00000000edecec3e78480fc15ee41e410000803f0000803fedecec3e611875c1dc9f1941000000000000803febeaea3e725f1ac1270439410000803f0000803febeaea3e78ef5ac17e0b9c400000000000000000ebeaea3e78ef5ac17e0b9c400000000000000000ebeaea3e893600c114d4da400000803f00000000ebeaea3e725f1ac1270439410000803f0000803febeaea3e34737fc187b82b41000000000000803febeaea3e986927c14f0052410000803f0000803febeaea3eb88c5fc15eb6c4400000000000000000ebeaea3eb88c5fc15eb6c4400000000000000000ebeaea3e1c8307c1f7a208410000803f00000000ebeaea3e986927c14f0052410000803f0000803febeaea3e3a9085c12cc43c41000000000000803fe9e8e83ee35636c124ca69410000803f0000803fe9e8e83e7b9b65c16338ec400000000000000000e9e8e83e7b9b65c16338ec400000000000000000e9e8e83ee9d110c12a2223410000803f00000000e9e8e83ee35636c124ca69410000803f0000803fe9e8e83ed00d8cc142db4c41000000000000803fe7e6e63e271747c1872d80410000803f0000803fe7e6e63e21316dc1885709410000000000000000e7e6e63e21316dc1885709410000000000000000e7e6e63ea82c1cc154d73c410000803f00000000e7e6e63e271747c1872d80410000803f0000803fe7e6e63e343093c1cf105c41000000000000803fe5e4e43ed79159c107d48a410000803f0000803fe5e4e43e5f6276c1560f1c410000000000000000e5e4e43e5f6276c1560f1c410000000000000000e5e4e43ece9329c195a655410000803f00000000e5e4e43ed79159c107d48a410000803f0000803fe5e4e43eedf89ac1727a6a41000000000000803fe3e2e23e1db16dc11ed894410000803f0000803fe3e2e23e84a280c17f442e410000000000000000e3e2e23e84a280c17f442e410000000000000000e3e2e23e4a0439c14a7a6d410000803f00000000e3e2e23e1db16dc11ed894410000803f0000803fe3e2e23ec36ba3c1232b7841000000000000803fe1e0e03e7bb081c1d03b9e410000803f0000803fe1e0e03e8ff686c1fff23f410000000000000000e1e0e03e8ff686c1fff23f410000000000000000e1e0e03e8d764ac1be1f82410000803f00000000e1e0e03e7bb081c1d03b9e410000803f0000803fe1e0e03e208eacc1fb988241000000000000803fe1e0e03e48488dc11103a7410000803f0000803fe1e0e03eb8358ec1e21251410000000000000000e1e0e03eb8358ec1e21251410000000000000000e1e0e03ebfdf5dc187f38c410000803f00000000e1e0e03e48488dc11103a7410000803f0000803fe1e0e03e6666b6c1cdcc8841000000000000803fa9a8283f9a9999c13333af410000803f0000803fa9a8283f666696c19a9961410000000000000000a9a8283f666696c19a9961410000000000000000a9a8283f333373c1333397410000803f00000000a9a8283f9a9999c13333af410000803f0000803fa9a8283f574bc1c14b818d41000000000000803fa9a8283fd1cfa8c1bbcab6410000803f0000803fa9a8283f79e39ec1b53472410000000000000000a9a8283f79e39ec1b53472410000000000000000a9a8283ff36786c1cb63a2410000803f00000000a9a8283fd1cfa8c1bbcab6410000803f0000803fa9a8283fd3bdcbc10b529041000000000000803fa9a8283fe530b8c19728bc410000803f0000803fa9a8283fb335a7c1450780410000000000000000a9a8283fb335a7c1450780410000000000000000a9a8283fc5a893c1d1ddab410000803f00000000a9a8283fe530b8c19728bc410000803f0000803fa9a8283fc6cfd6c1c0939141000000000000803fa9a8283f4e3fc9c1e69ebf410000803f0000803fa9a8283f2671b0c1064686410000000000000000a9a8283f2671b0c1064686410000000000000000a9a8283faee0a2c12c51b4410000803f00000000a9a8283f4e3fc9c1e69ebf410000803f0000803fa9a8283fbc89e1c1bf3d9141000000000000803fa9a8283f2038dac111aec0410000803f0000803fa9a8283f7801bac167248b410000000000000000a9a8283f7801bac167248b410000000000000000a9a8283fdcafb2c1b994ba410000803f00000000a9a8283f2038dac111aec0410000803f0000803fa9a8283f8166ecc18e8d8f41000000000000803fa9a8283ffd58ebc19a8abf410000803f0000803fa9a8283ff768c4c1f6ac8e410000000000000000a9a8283ff768c4c1f6ac8e410000000000000000a9a8283f735bc3c102aabe410000803f00000000a9a8283ffd58ebc19a8abf410000803f0000803fa9a8283fac3cf7c182c28c41000000000000803fa9a8283febddfbc13789bc410000803f0000803fa9a8283f6b6ccfc1379e90410000000000000000a9a8283f6b6ccfc1379e90410000000000000000a9a8283faa0dd4c1ec64c0410000803f00000000a9a8283febddfbc13789bc410000803f0000803fa9a8283fdd2001c286038941000000000000803fa9a8283fe0e205c2a30fb8410000803f0000803fa9a8283ff60cdbc18df190410000000000000000a9a8283ff60cdbc18df190410000000000000000a9a8283fff90e4c1aafdbf410000803f00000000a9a8283fe0e205c2a30fb8410000803f0000803fa9a8283f658f06c2959b8441000000000000803fa9a8283ff4410dc26bb3b2410000803f0000803fa9a8283f97b5e6c12fc58f410000000000000000a9a8283f97b5e6c12fc58f410000000000000000a9a8283fb71af4c105ddbd410000803f00000000a9a8283ff4410dc26bb3b2410000803f0000803fa9a8283f3f0b0cc2562b7f41000000000000803fa9a8283f224614c298acac410000803f0000803fa9a8283f6483f2c1244d8d410000000000000000a9a8283f6483f2c1244d8d410000000000000000a9a8283f957c01c21164ba410000803f00000000a9a8283f224614c298acac410000803f0000803fa9a8283f72b311c24ed97341000000000000803fa9a8283f1c231bc2060fa6410000803f0000803fa9a8283f949ffec1c4a689410000000000000000a9a8283f949ffec1c4a689410000000000000000a9a8283f74bf08c223c9b5410000803f00000000a9a8283f1c231bc2060fa6410000803f0000803fa9a8283fec8617c2b66b6741000000000000803fa9a8283fede121c226039f410000803f0000803fa9a8283f0d7c05c230f884410000000000000000a9a8283f0d7c05c230f884410000000000000000a9a8283f0ed70fc27b45b0410000803f00000000a9a8283fede121c226039f410000803f0000803fa9a8283f9d2b1dc210dd5a41000000000000803fa9a8283f882928c2021a98410000803f0000803fa9a8283f2a640bc2cc807f410000000000000000a9a8283f2a640bc2cc807f410000000000000000a9a8283f156216c2e06baa410000803f00000000a9a8283f882928c2021a98410000803f0000803fa9a8283f4eee22c226bd4d41000000000000803fa9a8283fd05b2ec2281491410000803f0000803fa9a8283ffa5711c2d4d473410000000000000000a9a8283ffa5711c2d4d473410000000000000000a9a8283f7cc51cc2ff1fa4410000803f00000000a9a8283fd05b2ec2281491410000803f0000803fa9a8283fd51288c1f8a34bc1000000000000803fe1e0e03edeb741c1448081c10000803f0000803fe1e0e03e11249fc1bc7f86c10000000000000000e1e0e03e11249fc1bc7f86c10000000000000000e1e0e03e56da6fc1042ea2c10000803f00000000e1e0e03edeb741c1448081c10000803f0000803fe1e0e03e6b0182c107ed35c1000000000000803fe3e2e23e06eb32c1594e69c10000803f0000803fe3e2e23ef86997c1df8079c10000000000000000e3e2e23ef86997c1df8079c10000000000000000e3e2e23e20bc5dc1187196c10000803f00000000e3e2e23e06eb32c1594e69c10000803f0000803fe3e2e23e155979c1b31220c1000000000000803fe5e4e43e0db525c13b314fc10000803f0000803fe5e4e43e994e90c10fc665c10000000000000000e5e4e43e994e90c10fc665c10000000000000000e5e4e43e29f94cc14b728ac10000803f00000000e5e4e43e0db525c13b314fc10000803f0000803fe5e4e43e0a2270c141170ac1000000000000803fe7e6e63e56191ac105af34c10000803f0000803fe7e6e63e41d089c12dc951c10000000000000000e7e6e63e41d089c12dc951c10000000000000000e7e6e63ece973dc1f1607cc10000803f00000000e7e6e63e56191ac105af34c10000803f0000803fe7e6e63e7e5668c1c5f7e7c0000000000000803fe9e8e83e581a10c19fce19c10000803f0000803fe9e8e83eb8ed83c157833dc10000000000000000e9e8e83eb8ed83c157833dc10000000000000000e9e8e83e4a9f2fc1135663c10000803f00000000e9e8e83e581a10c19fce19c10000803f0000803fe9e8e83e91ee61c1e180bbc0000000000000803febeaea3e5ab907c18d2ffdc00000803f0000803febeaea3eae4c7dc1caec28c10000000000000000ebeaea3eae4c7dc1caec28c10000000000000000ebeaea3e771723c120c449c10000803f00000000ebeaea3e5ab907c18d2ffdc00000803f0000803febeaea3e1ce25cc1afc68ec0000000000000803febeaea3e46f600c1a325c6c00000803f0000803febeaea3e56f473c134fd13c10000000000000000ebeaea3e56f473c134fd13c10000000000000000ebeaea3e800818c1afac2fc10000803f00000000ebeaea3e46f600c1a325c6c00000803f0000803febeaea3e861959c195bb41c0000000000000803fedecec3e0a73f7c040758dc00000803f0000803fedecec3ef7ad6bc1ce7dfcc00000000000000000edecec3ef7ad6bc1ce7dfcc00000000000000000edecec3ef64d0ec1a28a14c10000803f00000000edecec3e0a73f7c040758dc00000803f0000803fedecec3e43a956c16f3dcabf000000000000803fefeeee3ebc4af0c02d6528c00000803f0000803fefeeee3e46ad64c1da15d0c00000000000000000efeeee3e46ad64c1da15d0c00000000000000000efeeee3e612906c114b9f1c00000803f00000000efeeee3ebc4af0c02d6528c00000803f0000803fefeeee3eac8b55c12d8df7bd000000000000803ff1f0f03e176eecc0620554bf0000803f0000803ff1f0f03e08fa5ec196c0a2c00000000000000000f1f0f03e08fa5ec196c0a2c00000000000000000f1f0f03ed04affc00d63b9c00000803f00000000f1f0f03e176eecc0620554bf0000803f0000803ff1f0f03ee5ba55c16410ad3f000000000000803ff3f2f23e0ad1ebc041937c3f0000803f0000803ff3f2f23e439a5ac1b6df68c00000000000000000f3f2f23e439a5ac1b6df68c00000000000000000f3f2f23ec78ff5c08c2180c00000803f00000000f3f2f23e0ad1ebc041937c3f0000803f0000803ff3f2f23e953257c166ce3540000000000000803ff5f4f43ebb65eec08df633400000803f0000803ff5f4f43ee29457c1a9300ac00000000000000000f5f4f43ee29457c1a9300ac00000000000000000f5f4f43e562aefc082080cc00000803f00000000f5f4f43ebb65eec08df633400000803f0000803ff5f4f43e08f059c12f1b8b40000000000000803ff3f2f23e621df4c0b7b194400000803f0000803ff3f2f23e4ff155c1b78d25bf0000000000000000f3f2f23e4ff155c1b78d25bf0000000000000000f3f2f23ef01fecc0eab2b1be0000803f00000000f3f2f23e621df4c0b7b194400000803f0000803ff3f2f23e7d775ec10ecbb840000000000000803ff1f0f03e5838fec0affbce400000803f0000803ff1f0f03e903855c13eec4e3f0000000000000000f1f0f03e903855c13eec4e3f0000000000000000f1f0f03e7ebaebc0a338c03f0000803f00000000f1f0f03e5838fec0affbce400000803f0000803ff1f0f03e468b64c12b04e440000000000000803fefeeee3ef42f06c1d0b103410000803f0000803fefeeee3e2cce55c199820d400000000000000000efeeee3e2cce55c199820d400000000000000000efeeee3eb3e5eec0824154400000803f00000000efeeee3ef42f06c1d0b103410000803f0000803fefeeee3e8f1b6cc1c4670641000000000000803fedecec3e78480fc15ee41e410000803f0000803fedecec3ebab357c1c63464400000000000000000edecec3ebab357c1c63464400000000000000000edecec3e46c1f5c09713a3400000803f00000000edecec3e78480fc15ee41e410000803f0000803fedecec3e611875c1dc9f1941000000000000803febeaea3e725f1ac1270439410000803f0000803febeaea3e78ef5ac17e0b9c400000000000000000ebeaea3e78ef5ac17e0b9c400000000000000000ebeaea3e893600c114d4da400000803f00000000ebeaea3e725f1ac1270439410000803f0000803febeaea3e34737fc187b82b41000000000000803febeaea3e986927c14f0052410000803f0000803febeaea3eb88c5fc15eb6c4400000000000000000ebeaea3eb88c5fc15eb6c4400000000000000000ebeaea3e1c8307c1f7a208410000803f00000000ebeaea3e986927c14f0052410000803f0000803febeaea3e3a9085c12cc43c41000000000000803fe9e8e83ee35636c124ca69410000803f0000803fe9e8e83e7b9b65c16338ec400000000000000000e9e8e83e7b9b65c16338ec400000000000000000e9e8e83ee9d110c12a2223410000803f00000000e9e8e83ee35636c124ca69410000803f0000803fe9e8e83ed00d8cc142db4c41000000000000803fe7e6e63e271747c1872d80410000803f0000803fe7e6e63e21316dc1885709410000000000000000e7e6e63e21316dc1885709410000000000000000e7e6e63ea82c1cc154d73c410000803f00000000e7e6e63e271747c1872d80410000803f0000803fe7e6e63e343093c1cf105c41000000000000803fe5e4e43ed79159c107d48a410000803f0000803fe5e4e43e5f6276c1560f1c410000000000000000e5e4e43e5f6276c1560f1c410000000000000000e5e4e43ece9329c195a655410000803f00000000e5e4e43ed79159c107d48a410000803f0000803fe5e4e43eedf89ac1727a6a41000000000000803fe3e2e23e1db16dc11ed894410000803f0000803fe3e2e23e84a280c17f442e410000000000000000e3e2e23e84a280c17f442e410000000000000000e3e2e23e4a0439c14a7a6d410000803f00000000e3e2e23e1db16dc11ed894410000803f0000803fe3e2e23ec36ba3c1232b7841000000000000803fe1e0e03e7bb081c1d03b9e410000803f0000803fe1e0e03e8ff686c1fff23f410000000000000000e1e0e03e8ff686c1fff23f410000000000000000e1e0e03e8d764ac1be1f82410000803f00000000e1e0e03e7bb081c1d03b9e410000803f0000803fe1e0e03e208eacc1fb988241000000000000803fe1e0e03e48488dc11103a7410000803f0000803fe1e0e03eb8358ec1e21251410000000000000000e1e0e03eb8358ec1e21251410000000000000000e1e0e03ebfdf5dc187f38c410000803f00000000e1e0e03e48488dc11103a7410000803f0000803fe1e0e03e",
+      "dataSha256": "013a533b4f80410caeaebbb9cb6f5dcf42cecbc55967034173b03176036fabdf",
+      "size": 10200,
+      "target": 34962,
+      "usage": 35048
+    },
+    {
+      "boundBuffer": 2,
+      "call": "glBufferData",
+      "dataHex": "97672ac20b8f72c100000000000000000000803fc3a334c2d2308bc10000803f000000000000803f3d5c33c25c9e49c1000000000000803f0000803f3d5c33c25c9e49c1000000000000803f0000803f69983dc2f5706dc10000803f0000803f0000803fc3a334c2d2308bc10000803f000000000000803f",
+      "dataSha256": "e5d2cff9004dc8793509dc2ae79970103fc915b360f60cff3d6893320913d2fa",
+      "size": 120,
+      "target": 34962,
+      "usage": 35048
+    },
+    {
+      "boundBuffer": 3,
+      "call": "glBufferData",
+      "dataHex": "12912ac29d543c4100000000000000000000803fca3f36c23e1888410000803f000000000000803f1a9a15c27b0f6b41000000000000803f0000803f1a9a15c27b0f6b41000000000000803f0000803fd24821c2ae759f410000803f0000803f0000803fca3f36c23e1888410000803f000000000000803f",
+      "dataSha256": "b5901a8b77bd302486e9a226d6123a4ef9b126f6c37f9b2595b3fabc5b54a172",
+      "size": 120,
+      "target": 34962,
+      "usage": 35048
+    }
+  ]
+}
