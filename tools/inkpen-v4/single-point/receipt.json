@@ -1,0 +1,76 @@
+{
+  "advanced_setting": "",
+  "arrays": {
+    "orientations": {
+      "count": 1,
+      "data_hex": "00000000",
+      "element_size": 4
+    },
+    "points": {
+      "count": 1,
+      "data_hex": "0000004100000041",
+      "element_size": 8
+    },
+    "pressures": {
+      "count": 1,
+      "data_hex": "0000803e",
+      "element_size": 4
+    },
+    "tilts": {
+      "count": 1,
+      "data_hex": "00000000",
+      "element_size": 4
+    },
+    "timestamps": {
+      "count": 1,
+      "data_hex": "0a000000",
+      "element_size": 4
+    }
+  },
+  "baseline_helper_sha256": {
+    "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+    "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+    "inkpen_saved_caller_native.py": "c0b1657cdcf94bcf2c173ce68ed7817e55a4de246883b47265bb7b4d3f50dc04",
+    "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+  },
+  "drawing_return": 0,
+  "factory_count": 0,
+  "getters": [
+    {
+      "color_argb": 4278190080,
+      "curve_enabled": 1,
+      "fixed_width_bits": "00000000",
+      "fixed_width_enabled": 0,
+      "label": "before_drawObjectStroke",
+      "line_type": 0,
+      "point_count": 1,
+      "rainbow_distance": 0,
+      "rainbow_enabled": 0,
+      "rainbow_offset_bits": "00000000",
+      "shape": 0,
+      "size_bits": "00002041",
+      "stroke_type": 0,
+      "tool_type": 1
+    }
+  ],
+  "loader_count": 0,
+  "native_library_sha256": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "InkPen": "939a7c719838306d693f96701994486b03f5c7eea35f16f25c6a89d84daba401",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "positive_control": {
+    "callback_count": 26,
+    "drawable": "v4",
+    "drawing_return": 1,
+    "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6"
+  },
+  "queue_events": []
+}
