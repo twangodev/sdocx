@@ -1,0 +1,339 @@
+{
+  "scope": "Native shader linked with transform feedback varyings; six triangle-strip vertices replayed under rasterizer discard. No framebuffer evidence.",
+  "capture_sha256": "d9c60821ad96ff9b7b83ccf5bad76dd96185d78c3bbaf1b954543b4a204cca94",
+  "vector_sha256": "15509eda1113e0bfd007455ba4767b1cba2a22391487f94c75e4121d98ac5f8f",
+  "records": {
+    "translated": {
+      "hex": "05d6b8be681998be000000000000803f4c97063f72c6363f05d6b8beac5d88be000000000000803f4c97063f62b53a3f481aa9be681998be000000000000803f3a860a3f72c6363f481aa9be681998be000000000000803f3a860a3f72c6363f05d6b8beac5d88be000000000000803f4c97063f62b53a3f481aa9beac5d88be000000000000803f3a860a3f62b53a3f",
+      "sha256": "8269e9ef639f1022b7c73f81d2b40591fc31523d5374db9b8486409a387b4b82",
+      "shader_sha256": [
+        "cc671cd74f75ad998bb1fdc280d591b45562bb4b5340c4a5526fb0acdfbf8638",
+        "76c928a4560e504586065849cd8ced522f5ec13fddb8f4a0ec36e2f7d981d133",
+        "9e98cc3339052d45eea9d89341cecf5146ccc110c9326b093b51725d13363c8d",
+        "5e183f1c804117981433930b583a968a204a754b8b9c72f0c767e3ab68534895"
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.012500000186264515,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.012500000186264515,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -0.8374999761581421,
+            -0.887499988079071,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "count": 1,
+          "location": 5,
+          "values": [
+            0.23529411852359772,
+            0.572549045085907,
+            0.843137264251709,
+            0.7607843279838562
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 4,
+          "value": 0
+        },
+        {
+          "call": "glUniform2fv",
+          "count": 1,
+          "location": 6,
+          "values": [
+            1.4222222566604614,
+            1.4222222566604614
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        },
+        {
+          "call": "glUniform1i",
+          "location": 7,
+          "value": 0
+        },
+        {
+          "call": "glUniform2fv",
+          "count": 1,
+          "location": 1,
+          "values": [
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "draw_calls": [
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33985,
+            "blend_dst_alpha": 771,
+            "blend_dst_rgb": 771,
+            "blend_enabled": true,
+            "blend_equation_alpha": 32774,
+            "blend_equation_rgb": 32774,
+            "blend_src_alpha": 1,
+            "blend_src_rgb": 770,
+            "color_mask": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 2,
+            "vao": 0,
+            "viewport": [
+              0,
+              0,
+              160,
+              160
+            ]
+          },
+          "values": [
+            5,
+            0,
+            4,
+            1
+          ]
+        }
+      ],
+      "host_gl_identity": {
+        "egl_version": "1.5",
+        "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "shading_language": "OpenGL ES GLSL ES 3.20",
+        "vendor": "Mesa",
+        "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+      },
+      "execution_closure": {
+        "helper_sha256": {
+          "conformance/airbrush_saved_native.py": "cad2bd9ec88a393f0b0b4a7dbe58c7b469f9b00b283d4c544f491a8ab190999a",
+          "conformance/airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+          "conformance/elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "conformance/fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "conformance/fountain_saved_caller_native.py": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+          "conformance/inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+          "conformance/marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+          "conformance/native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "conformance/oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "host_gl_paths": {
+          "libEGL.so.1": "/usr/lib/x86_64-linux-gnu/libEGL.so.1.1.0",
+          "libGLESv2.so.2": "/usr/lib/x86_64-linux-gnu/libGLESv2.so.2.1.0"
+        },
+        "host_gl_sha256": {
+          "libEGL.so.1": "f4b60a4618fbf760f395f64dfd53320446ba1011151a80e411742b3232b194e6",
+          "libGLESv2.so.2": "a705c66de30ca4e883120c70acae0f1011d7c3f97605eef331e03493beae3812"
+        },
+        "native_dso_sha256": {
+          "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "libSPenCrayon2.so": "4e9de0e699eb3781e7cdb17d6816370ce3e2f75cf6fe2087fada50cfa816739e",
+          "libSPenDefaultPen.so": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "libSPenObliquePen.so": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "runner_path": "conformance/crayon2_drawing_paint_native.py"
+      },
+      "native_vector_sha256": "b63e1c5b8a6a8967e81b56838d609fa17402afd667ec65b30357ee9482afc88e",
+      "view_translation": [
+        13.0,
+        9.0
+      ]
+    },
+    "identity": {
+      "hex": "9c0406bf02b3d1be000000000000803ffd94e33e0c60283f9c0406bf46f7c1be000000000000803ffd94e33efb4e2c3f7c4dfcbe02b3d1be000000000000803fdb72eb3e0c60283f7c4dfcbe02b3d1be000000000000803fdb72eb3e0c60283f9c0406bf46f7c1be000000000000803ffd94e33efb4e2c3f7c4dfcbe46f7c1be000000000000803fdb72eb3efb4e2c3f",
+      "sha256": "007c7732130e93ff1cf94306b47091f2c628be6d47afaca987143d77b88bfefa",
+      "shader_sha256": [
+        "cc671cd74f75ad998bb1fdc280d591b45562bb4b5340c4a5526fb0acdfbf8638",
+        "76c928a4560e504586065849cd8ced522f5ec13fddb8f4a0ec36e2f7d981d133",
+        "9e98cc3339052d45eea9d89341cecf5146ccc110c9326b093b51725d13363c8d",
+        "5e183f1c804117981433930b583a968a204a754b8b9c72f0c767e3ab68534895"
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.012500000186264515,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.012500000186264515,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "count": 1,
+          "location": 5,
+          "values": [
+            0.23529411852359772,
+            0.572549045085907,
+            0.843137264251709,
+            0.7607843279838562
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 4,
+          "value": 0
+        },
+        {
+          "call": "glUniform2fv",
+          "count": 1,
+          "location": 6,
+          "values": [
+            1.4222222566604614,
+            1.4222222566604614
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        },
+        {
+          "call": "glUniform1i",
+          "location": 7,
+          "value": 0
+        },
+        {
+          "call": "glUniform2fv",
+          "count": 1,
+          "location": 1,
+          "values": [
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "draw_calls": [
+        {
+          "call": "glDrawArraysInstanced",
+          "state": {
+            "activeTexture": 33985,
+            "blend_dst_alpha": 771,
+            "blend_dst_rgb": 771,
+            "blend_enabled": true,
+            "blend_equation_alpha": 32774,
+            "blend_equation_rgb": 32774,
+            "blend_src_alpha": 1,
+            "blend_src_rgb": 770,
+            "color_mask": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "framebuffer": 1,
+            "program": 3,
+            "texture2d": 2,
+            "vao": 0,
+            "viewport": [
+              0,
+              0,
+              160,
+              160
+            ]
+          },
+          "values": [
+            5,
+            0,
+            4,
+            1
+          ]
+        }
+      ],
+      "host_gl_identity": {
+        "egl_version": "1.5",
+        "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "shading_language": "OpenGL ES GLSL ES 3.20",
+        "vendor": "Mesa",
+        "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+      },
+      "execution_closure": {
+        "helper_sha256": {
+          "conformance/airbrush_saved_native.py": "cad2bd9ec88a393f0b0b4a7dbe58c7b469f9b00b283d4c544f491a8ab190999a",
+          "conformance/airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+          "conformance/elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+          "conformance/fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+          "conformance/fountain_saved_caller_native.py": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+          "conformance/inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+          "conformance/marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+          "conformance/native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+          "conformance/oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+        },
+        "host_gl_paths": {
+          "libEGL.so.1": "/usr/lib/x86_64-linux-gnu/libEGL.so.1.1.0",
+          "libGLESv2.so.2": "/usr/lib/x86_64-linux-gnu/libGLESv2.so.2.1.0"
+        },
+        "host_gl_sha256": {
+          "libEGL.so.1": "f4b60a4618fbf760f395f64dfd53320446ba1011151a80e411742b3232b194e6",
+          "libGLESv2.so.2": "a705c66de30ca4e883120c70acae0f1011d7c3f97605eef331e03493beae3812"
+        },
+        "native_dso_sha256": {
+          "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+          "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+          "libSPenCrayon2.so": "4e9de0e699eb3781e7cdb17d6816370ce3e2f75cf6fe2087fada50cfa816739e",
+          "libSPenDefaultPen.so": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+          "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+          "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+          "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+          "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+          "libSPenObliquePen.so": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+          "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+          "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+          "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+        },
+        "runner_path": "conformance/crayon2_drawing_paint_native.py"
+      },
+      "native_vector_sha256": "b63e1c5b8a6a8967e81b56838d609fa17402afd667ec65b30357ee9482afc88e",
+      "view_translation": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "script_sha256": {
+    "tools/crayon2-transform-control/intervention.py": "eb5907b9288701ec0a0743ac8721a7b1178055595a2c36dd32984d7fc5c96f60",
+    "tools/crayon2-transform-control/capture.py": "8b4fe4fe953288e45d21484df23e60be1091273e67c0aa3af2f3d1de76900a4a",
+    "tools/crayon2-varied-path/capture.py": "a306d1524adb90f198882cb68ee53194a53938db2e35eb0e3140928634db5e4d"
+  },
+  "verify_sha256": "b33c9e0fe0f23269f8612ca9d5e0819078549201659df58086f68c7f4684527a"
+}
