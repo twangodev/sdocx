@@ -1,0 +1,9 @@
+# Asynchronous drawing matrix route
+
+`python3 tools/pencil2-async-route/check.py` checks the checkout-local Drawing DSO hash, selected instructions and one vtable relocation. Manual disassembly gives the following conditional static route:
+
+* `ObjectAsyncDrawing::DrawingData` receives an optional Matrix3 from its caller. When present, its constructor copies it to offset 68 and marks offset 104 present.
+* `ObjectAsyncDrawing::DrawObjectList` copies this optional into a temporary, then passes it to the `AsyncDrawingData` constructor, which copies it to offset 60 and marks offset 96 present. That constructor also creates a new object list; a type-1 object follows the `ObjectStroke::CloneDrawData` branch before insertion.
+* `ObjectAsyncDrawingImpl::draw` selects either null or the matrix at offset 60 according to the presence byte at offset 96, and passes that pointer in argument x4 to a virtual call at byte offset 16 from its drawing object's vtable address point. The default `ObjectDrawing` vtable's corresponding entry relocates to `ObjectDrawing::DrawObjectList`, the entry previously exercised in the synthetic synchronous list probe. The method supplies a newly created bitmap for that call.
+
+This identifies a concrete asynchronous caller that can pass a caller-supplied Matrix3 to the existing native list path. It does not establish what a real page supplies, that the queued request ran, that the virtual object uses the default vtable, or a conversion to Matrix4 or RTV4 paint. Static branches, virtual methods, symbol interposition and cancellation can change the actual route. The check samples instructions and relocation rather than proving all control flow or copies; the DSO is pinned by hash but its APK provenance, host binutils and transitive tool dependencies are not independently established. No target execution is claimed.
