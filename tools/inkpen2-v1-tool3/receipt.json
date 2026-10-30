@@ -1,0 +1,360 @@
+{
+  "schema": "sdocx-inkpen2-v1-tool3-native-v1",
+  "scope": "Synthetic ObjectStroke native Drawing and RTV1 host Mesa, transparent 128x96 target; not device or app canvas.",
+  "cases": {
+    "curve": {
+      "2": {
+        "input": {
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              16,
+              3
+            ],
+            [
+              24,
+              3
+            ]
+          ],
+          "size": 4,
+          "curve_enabled": true,
+          "stroke_type": 0,
+          "pressure": [
+            0.2,
+            0.4,
+            0.6,
+            0.8
+          ],
+          "timestamps": [
+            0,
+            10,
+            20,
+            30
+          ],
+          "tilt": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "orientation": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "tool_type": 2
+        },
+        "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+        "rgba_sha256": "0a97a6a22866d24fffd482caefc8a6b0dc897015c03d5ac6d6a2226d4224ce4c",
+        "rgba_zlib_base64": "eNrt1s1LVFEcBuC56phmaJPGaIMf5DCUqc1HUESgC0HzI2hhSQsnK0eKCqEiiBCKllHkwsbZFC1bBUEEQdC6Vbs2/QHtJNqEoQ1aE4WBtHN4Hjice7m79/fewwmFAAAAAAAAAAAAAAAAAADgt6CiMlxVs6MpXFsfLe6NNQ3RRLguEguCiirplLfWo6fnM7nF1UyuUFz51fXn9ZXO5VfS04+XD5y6+zExMvumoa17OBQEgdTKQ2P88GTy7MOltXnP/Jz79OIfHVjrxUzp+0r6wsJyYvTa22jPwKwEy3D+G/agsOGenJr/0jU+96ElPXJ7Z3vvWFBZVS3V8jn/S13Y1MqvpKbmv/ZO3v+87+St9/Hhq6/bjp1Z2JM5cad2V6xH0lvn/re9qS1VH9s/0JwcutnRf+5Z98S9T6nso6XNd+FXnwql9+q6SKukt7amrr6LidHr71LnF74V74Xf//r//9EB8y9H2xp2d0Y6D000Hxy80dGXfRIfvPQifvzKq/jQ5Zd7B3LP2/uzT1uPjD9oSY/NOf8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgfPwBJ5efB",
+        "output_size": [
+          128,
+          96
+        ],
+        "nonzero_pixels": 137
+      },
+      "3": {
+        "input": {
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              16,
+              3
+            ],
+            [
+              24,
+              3
+            ]
+          ],
+          "size": 4,
+          "curve_enabled": true,
+          "stroke_type": 0,
+          "pressure": [
+            0.2,
+            0.4,
+            0.6,
+            0.8
+          ],
+          "timestamps": [
+            0,
+            10,
+            20,
+            30
+          ],
+          "tilt": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "orientation": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "tool_type": 3
+        },
+        "geometry_sha256": "4c44864e52c01d3134712d1975692b2f6d29ce2a8e06ce141f492ea0d2ecd6fb",
+        "rgba_sha256": "0a97a6a22866d24fffd482caefc8a6b0dc897015c03d5ac6d6a2226d4224ce4c",
+        "rgba_zlib_base64": "eNrt1s1LVFEcBuC56phmaJPGaIMf5DCUqc1HUESgC0HzI2hhSQsnK0eKCqEiiBCKllHkwsbZFC1bBUEEQdC6Vbs2/QHtJNqEoQ1aE4WBtHN4Hjice7m79/fewwmFAAAAAAAAAAAAAAAAAADgt6CiMlxVs6MpXFsfLe6NNQ3RRLguEguCiirplLfWo6fnM7nF1UyuUFz51fXn9ZXO5VfS04+XD5y6+zExMvumoa17OBQEgdTKQ2P88GTy7MOltXnP/Jz79OIfHVjrxUzp+0r6wsJyYvTa22jPwKwEy3D+G/agsOGenJr/0jU+96ElPXJ7Z3vvWFBZVS3V8jn/S13Y1MqvpKbmv/ZO3v+87+St9/Hhq6/bjp1Z2JM5cad2V6xH0lvn/re9qS1VH9s/0JwcutnRf+5Z98S9T6nso6XNd+FXnwql9+q6SKukt7amrr6LidHr71LnF74V74Xf//r//9EB8y9H2xp2d0Y6D000Hxy80dGXfRIfvPQifvzKq/jQ5Zd7B3LP2/uzT1uPjD9oSY/NOf8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgfPwBJ5efB",
+        "output_size": [
+          128,
+          96
+        ],
+        "nonzero_pixels": 137
+      }
+    },
+    "diagonal": {
+      "2": {
+        "input": {
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              8,
+              8
+            ],
+            [
+              16,
+              16
+            ],
+            [
+              24,
+              24
+            ]
+          ],
+          "size": 4,
+          "curve_enabled": true,
+          "stroke_type": 0,
+          "pressure": [
+            0.2,
+            0.4,
+            0.6,
+            0.8
+          ],
+          "timestamps": [
+            0,
+            10,
+            20,
+            30
+          ],
+          "tilt": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "orientation": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "tool_type": 2
+        },
+        "geometry_sha256": "f5fddedcc312085f2c2ed36709ff64b5c2493c392dabc189c80fbc58e3b9f273",
+        "rgba_sha256": "a09a21e042b78545218149ace508ada03fffe6ca58e83578ad4759bae160f804",
+        "rgba_zlib_base64": "eNrt2j9LlWEYB+AzREE5hDVooCloVgTqKQhKJVwSS5BoKfunB3VyKCgCqaGhMYJET9LSUJ8g2mpoamnpA/QNoqkiSOzc2jm+5/QBGu7rggedf/d7/3xeXkslAAAAAAAAAAAAAAAAAACAUunQqalHveOV1/t7hqalkW/2Q7eefju58HyzPL/2u7M8+UAqecTex+yLp39i6a1kcojOj71vfQY6hyeXpZNDdH5j9vM7z0DfxNIb6eQQnd/UAYvbP7tHZ6rSSdIDtc4vzr5+jly88146OUTnt94F4vSMXl+XTg7R+U3z/3snGJi6+0E6OUTn78x+vXaqW7/3jF3TA0lE5293QLXpb8HR6fsfpZNDdH7xnbB+usduvJBOkh6odf6/d8L1zWOXlj9JJ4fo/J3ZrzWeg66zM6vSSfJeUOv87btgy7vhudmX0skhOr91/uWF6saBvtMz0skhOr94D9h6Biqrvw4OnJmVTpI7Ya3zY++beqCy8mNve9ewdHKIzo+9L3bB8Nyz720d/SPSySE6P/a+eC8cvPnk6649+9qlk0N0fux9sQdOXHn8RTJ5ROfH3jd6YL66cfzyw8+SySM6P/Y+Zt/434ELt99JJpfY+/p3o/Lcys/e8corqeQSex+zr/dAx+D5e1LJJfa+8b1w5KrvBAnF3sfsd7e1H5YGAAAAAAAAAAAAAAAAAAAAAAAAAP/bH/IjOGo=",
+        "output_size": [
+          128,
+          96
+        ],
+        "nonzero_pixels": 168
+      },
+      "3": {
+        "input": {
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              8,
+              8
+            ],
+            [
+              16,
+              16
+            ],
+            [
+              24,
+              24
+            ]
+          ],
+          "size": 4,
+          "curve_enabled": true,
+          "stroke_type": 0,
+          "pressure": [
+            0.2,
+            0.4,
+            0.6,
+            0.8
+          ],
+          "timestamps": [
+            0,
+            10,
+            20,
+            30
+          ],
+          "tilt": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "orientation": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "tool_type": 3
+        },
+        "geometry_sha256": "f5fddedcc312085f2c2ed36709ff64b5c2493c392dabc189c80fbc58e3b9f273",
+        "rgba_sha256": "a09a21e042b78545218149ace508ada03fffe6ca58e83578ad4759bae160f804",
+        "rgba_zlib_base64": "eNrt2j9LlWEYB+AzREE5hDVooCloVgTqKQhKJVwSS5BoKfunB3VyKCgCqaGhMYJET9LSUJ8g2mpoamnpA/QNoqkiSOzc2jm+5/QBGu7rggedf/d7/3xeXkslAAAAAAAAAAAAAAAAAACAUunQqalHveOV1/t7hqalkW/2Q7eefju58HyzPL/2u7M8+UAqecTex+yLp39i6a1kcojOj71vfQY6hyeXpZNDdH5j9vM7z0DfxNIb6eQQnd/UAYvbP7tHZ6rSSdIDtc4vzr5+jly88146OUTnt94F4vSMXl+XTg7R+U3z/3snGJi6+0E6OUTn78x+vXaqW7/3jF3TA0lE5293QLXpb8HR6fsfpZNDdH7xnbB+usduvJBOkh6odf6/d8L1zWOXlj9JJ4fo/J3ZrzWeg66zM6vSSfJeUOv87btgy7vhudmX0skhOr91/uWF6saBvtMz0skhOr94D9h6Biqrvw4OnJmVTpI7Ya3zY++beqCy8mNve9ewdHKIzo+9L3bB8Nyz720d/SPSySE6P/a+eC8cvPnk6649+9qlk0N0fux9sQdOXHn8RTJ5ROfH3jd6YL66cfzyw8+SySM6P/Y+Zt/434ELt99JJpfY+/p3o/Lcys/e8corqeQSex+zr/dAx+D5e1LJJfa+8b1w5KrvBAnF3sfsd7e1H5YGAAAAAAAAAAAAAAAAAAAAAAAAAP/bH/IjOGo=",
+        "output_size": [
+          128,
+          96
+        ],
+        "nonzero_pixels": 168
+      }
+    },
+    "zigzag": {
+      "2": {
+        "input": {
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              8,
+              10
+            ],
+            [
+              16,
+              -3
+            ],
+            [
+              24,
+              6
+            ]
+          ],
+          "size": 7,
+          "curve_enabled": false,
+          "stroke_type": 0,
+          "pressure": [
+            0.2,
+            0.4,
+            0.6,
+            0.8
+          ],
+          "timestamps": [
+            0,
+            10,
+            20,
+            30
+          ],
+          "tilt": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "orientation": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "tool_type": 2
+        },
+        "geometry_sha256": "e6009411d420ff7d1a41999a7e11b92b400ac4b870e0d07274d11c65d3e6e762",
+        "rgba_sha256": "9eaf583b083f7f8d1931888344fd32a3bb1916a51bfb333233cc3999b0cc27e7",
+        "rgba_zlib_base64": "eNrt2F1IU2EYwPE5N51Nc0xrfqXNVq19f1QQZYGCJmb2ZSoLtdqZFGUXlUJgGCZWlBmFzt1HdBlBdBkRdBfeRF8U9HVTRkV0o+k6w23OdlzedYz/D96L93Ce9+J5nvd9z6ZQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAArFsnUVgTU7Tj6wNfe/WVVz9E5WXoljobHqJblFBldN94rNzTeK19f36spcDWR0EdXesu2INzAanh3BsLNt8LNupWt3qjiNvtBibel/7Q4MT8RjBXF0jIrxV8aNVf5bZFf+zDu7HkVqPrcHRsOeQ9d/anSFZqkYg6P6lKt96PufMZHaewOh6DwUtu7vfZZdsLqCLMuTUpWR5Wwf+jZbw9Ccerrarn5NU6arE2PyzVv8XiE4nVT76Nkxp5fEfvAIwanI/UK25cnW1PditnbJ9bTs7XkSezcjR18q9sSX5JonzkNJz93iWWKwVXaSbfnRmza2iPf2lGQNO2bmproT9yPvOlsHx6XP/BRDiI1geGmJtYaMy4+18dzz5D0dSqhtcNojjEymrHOs1vP2RShsbxl4q9bqism4/Dh8lz7G96pE7ZLmid964t52tl7+FFlHZ3TvsfsuvhefT0n1iHifjJFt+dEayjd5hZFff93j8X0ejJ8Vbv/wREa2vjRxvQJX7RlPIJjUA3bfwDuVJjufjMvPcmtlp1cYnpSs9/z3/LTBWd0ltV7m0nyjpbH3aeL7/C8gb+VVwu0F3fHRfjDv6n6car00pVK1tv70Q2tz30tj5eGbuWWOerIsb6ba4/e8/tjZHf0WlPh9aNp+7O5C10xXa3LI7OJRtKGhz5P0PTDTC+6D136Ubj0QIkv/N1WmVl/orTtrazr/yu678MGyr2esrMIXVGm0eWQHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/9pvvmcAdA==",
+        "output_size": [
+          128,
+          96
+        ],
+        "nonzero_pixels": 268
+      },
+      "3": {
+        "input": {
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              8,
+              10
+            ],
+            [
+              16,
+              -3
+            ],
+            [
+              24,
+              6
+            ]
+          ],
+          "size": 7,
+          "curve_enabled": false,
+          "stroke_type": 0,
+          "pressure": [
+            0.2,
+            0.4,
+            0.6,
+            0.8
+          ],
+          "timestamps": [
+            0,
+            10,
+            20,
+            30
+          ],
+          "tilt": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "orientation": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "tool_type": 3
+        },
+        "geometry_sha256": "e6009411d420ff7d1a41999a7e11b92b400ac4b870e0d07274d11c65d3e6e762",
+        "rgba_sha256": "9eaf583b083f7f8d1931888344fd32a3bb1916a51bfb333233cc3999b0cc27e7",
+        "rgba_zlib_base64": "eNrt2F1IU2EYwPE5N51Nc0xrfqXNVq19f1QQZYGCJmb2ZSoLtdqZFGUXlUJgGCZWlBmFzt1HdBlBdBkRdBfeRF8U9HVTRkV0o+k6w23OdlzedYz/D96L93Ce9+J5nvd9z6ZQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAArFsnUVgTU7Tj6wNfe/WVVz9E5WXoljobHqJblFBldN94rNzTeK19f36spcDWR0EdXesu2INzAanh3BsLNt8LNupWt3qjiNvtBibel/7Q4MT8RjBXF0jIrxV8aNVf5bZFf+zDu7HkVqPrcHRsOeQ9d/anSFZqkYg6P6lKt96PufMZHaewOh6DwUtu7vfZZdsLqCLMuTUpWR5Wwf+jZbw9Ccerrarn5NU6arE2PyzVv8XiE4nVT76Nkxp5fEfvAIwanI/UK25cnW1PditnbJ9bTs7XkSezcjR18q9sSX5JonzkNJz93iWWKwVXaSbfnRmza2iPf2lGQNO2bmproT9yPvOlsHx6XP/BRDiI1geGmJtYaMy4+18dzz5D0dSqhtcNojjEymrHOs1vP2RShsbxl4q9bqism4/Dh8lz7G96pE7ZLmid964t52tl7+FFlHZ3TvsfsuvhefT0n1iHifjJFt+dEayjd5hZFff93j8X0ejJ8Vbv/wREa2vjRxvQJX7RlPIJjUA3bfwDuVJjufjMvPcmtlp1cYnpSs9/z3/LTBWd0ltV7m0nyjpbH3aeL7/C8gb+VVwu0F3fHRfjDv6n6car00pVK1tv70Q2tz30tj5eGbuWWOerIsb6ba4/e8/tjZHf0WlPh9aNp+7O5C10xXa3LI7OJRtKGhz5P0PTDTC+6D136Ubj0QIkv/N1WmVl/orTtrazr/yu678MGyr2esrMIXVGm0eWQHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/9pvvmcAdA==",
+        "output_size": [
+          128,
+          96
+        ],
+        "nonzero_pixels": 268
+      }
+    }
+  }
+}

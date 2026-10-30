@@ -5398,7 +5398,7 @@ fn prepare_inkpen2_internal(
         && (!matches!(
             (profile.screen_width, profile.screen_height),
             (1920, 1080) | (1080, 1920)
-        ) && !((profile.screen_width, profile.screen_height) == (1440, 2560)
+        ) && !(matches!((profile.screen_width, profile.screen_height), (1440, 2560) | (2560, 1440))
             && matches!(
                 v1_scale,
                 Some(InkPen2V1OutputScale::One | InkPen2V1OutputScale::Double)
@@ -5419,7 +5419,8 @@ fn prepare_inkpen2_internal(
     if unsupported_v1
         || !supported_name
         || !supported_setting
-        || rendering.tool_type_raw != 2
+        || !(rendering.tool_type_raw == 2
+            || (rendering.tool_type_raw == 3 && v1_scale.is_some()))
         || rendering.style.stroke_type_raw.unwrap_or(0) != 0
         || rendering.style.line_type_raw.unwrap_or(0) != 0
         // Type 1 retains source RGB with rainbow disabled, even with a
@@ -21446,6 +21447,608 @@ mod tests {
             eprintln!("{name}: public={a}, generic={g}");
             assert!(a <= 1_500, "{name}: public={a}");
             assert!(a * 4 < g, "{name}: public={a}, generic={g}");
+        }
+    }
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_v1_tool3_native_alias_exports() {
+        let receipt: serde_json::Value =
+            serde_json::from_str(include_str!("../../../tools/inkpen2-v1-tool3/receipt.json"))
+                .unwrap();
+        let options = RenderOptions {
+            inkpen2_profile: Some(InkPen2RenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+                enhanced_antialias: false,
+            }),
+            inkpen2_v1_output_scale: Some(super::InkPen2V1OutputScale::One),
+            ..Default::default()
+        };
+        for (name, pair) in receipt["cases"].as_object().unwrap() {
+            assert_eq!(pair["2"]["geometry_sha256"], pair["3"]["geometry_sha256"]);
+            assert_eq!(pair["2"]["rgba_sha256"], pair["3"]["rgba_sha256"]);
+            let input = &pair["2"]["input"];
+            let mut stroke = inkpen2_color_stroke(0xff33_6699, None);
+            stroke.rendering.as_mut().unwrap().advanced_settings = None;
+            let size = input["size"].as_f64().unwrap() as f32;
+            stroke.pen_width = size;
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            stroke.points = input["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| Point {
+                    x: p[0].as_f64().unwrap() + 32.,
+                    y: p[1].as_f64().unwrap() + 32.,
+                })
+                .collect();
+            stroke.pressures = input["pressure"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_f64().unwrap())
+                .collect();
+            stroke.timestamps = vec![0, 10, 20, 30];
+            stroke.tilts = vec![0.; 4];
+            stroke.orientations = vec![0.; 4];
+            let mut outputs = Vec::new();
+            for tool in [2, 3] {
+                stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
+                assert!(
+                    super::prepare_inkpen2_v1(
+                        &stroke,
+                        options.inkpen2_profile,
+                        RenderTheme::for_canvas(false),
+                        super::InkPen2V1OutputScale::One
+                    )
+                    .is_some()
+                );
+                if tool == 3 {
+                    stroke.rendering.as_mut().unwrap().advanced_settings = Some("9;".into());
+                    assert!(
+                        super::prepare_inkpen2_v9(
+                            &stroke,
+                            options.inkpen2_profile,
+                            RenderTheme::for_canvas(false)
+                        )
+                        .is_none()
+                    );
+                    stroke.rendering.as_mut().unwrap().advanced_settings = None;
+                }
+                let mut page = page_with_uncolored_stroke();
+                page.width = 128;
+                page.height = 96;
+                page.objects = vec![stroke.clone().into()];
+                let doc = document(page);
+                let layout = layout_document(&doc);
+                let request =
+                    super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+                let svg = super::DocumentTextCache::default()
+                    .render_layout_page_scene_requests(
+                        &doc,
+                        &[request],
+                        &options,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg;
+                let pdf = crate::render_layout_pages_pdf_detailed_with_fonts(
+                    &doc,
+                    &layout,
+                    &[0],
+                    &options,
+                    &Default::default(),
+                    &super::fonts::FontBook::default(),
+                )
+                .unwrap()
+                .bytes;
+                if let Some(dir) = std::env::var_os("SDOCX_V1_TOOL3_EXPORT_DIR") {
+                    std::fs::write(
+                        std::path::Path::new(&dir).join(format!("{name}-{tool}.svg")),
+                        &svg,
+                    )
+                    .unwrap();
+                    std::fs::write(
+                        std::path::Path::new(&dir).join(format!("{name}-{tool}.pdf")),
+                        &pdf,
+                    )
+                    .unwrap();
+                }
+                outputs.push((svg, pdf));
+            }
+            assert_eq!(outputs[0], outputs[1], "{name}");
+            if let Some(dir) = std::env::var_os("SDOCX_V1_TOOL3_EXPORT_DIR") {
+                let mut page = page_with_uncolored_stroke();
+                page.width = 128;
+                page.height = 96;
+                page.objects = vec![stroke.clone().into()];
+                let doc = document(page);
+                let layout = layout_document(&doc);
+                let request =
+                    super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+                let generic = RenderOptions::default();
+                let svg = super::DocumentTextCache::default()
+                    .render_layout_page_scene_requests(
+                        &doc,
+                        &[request],
+                        &generic,
+                        &super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg;
+                let pdf = crate::render_layout_pages_pdf_detailed_with_fonts(
+                    &doc,
+                    &layout,
+                    &[0],
+                    &generic,
+                    &Default::default(),
+                    &super::fonts::FontBook::default(),
+                )
+                .unwrap()
+                .bytes;
+                std::fs::write(
+                    std::path::Path::new(&dir).join(format!("{name}-generic.svg")),
+                    svg,
+                )
+                .unwrap();
+                std::fs::write(
+                    std::path::Path::new(&dir).join(format!("{name}-generic.pdf")),
+                    pdf,
+                )
+                .unwrap();
+            }
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_v1_tool3_extended_native_alias_exports() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read as _;
+        for source in [
+            include_str!("../../../tools/inkpen2-v1-tool3/extended-receipt.json"),
+            include_str!("../../../tools/inkpen2-v1-landscape/receipt.json"),
+        ] {
+            let receipt: serde_json::Value = serde_json::from_str(source).unwrap();
+            if receipt["cases"]["landscape1"].is_object() {
+                for scale in [1, 2] {
+                    let portrait = &receipt["cases"][format!("portrait{scale}")]["pair"]["2"];
+                    let landscape = &receipt["cases"][format!("landscape{scale}")]["pair"]["2"];
+                    assert_eq!(portrait["geometry_hex"], landscape["geometry_hex"]);
+                    assert_eq!(portrait["rgba_sha256"], landscape["rgba_sha256"]);
+                }
+            }
+            for (name, case) in receipt["cases"].as_object().unwrap() {
+                let pair = &case["pair"];
+                let mut frames = Vec::new();
+                let mut geometries = Vec::new();
+                for tool in ["2", "3"] {
+                    let capture = &pair[tool];
+                    let hex = capture["geometry_hex"].as_str().unwrap();
+                    let geometry: Vec<u8> = hex
+                        .as_bytes()
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
+                        .map(|digits| {
+                            u8::from_str_radix(std::str::from_utf8(digits).unwrap(), 16).unwrap()
+                        })
+                        .collect();
+                    assert_eq!(hex.len() % 2, 0);
+                    assert_eq!(
+                        format!("{:x}", Sha256::digest(&geometry)),
+                        capture["geometry_sha256"].as_str().unwrap(),
+                        "{name} tool {tool}"
+                    );
+                    let compressed = base64::engine::general_purpose::STANDARD
+                        .decode(capture["rgba_zlib_base64"].as_str().unwrap())
+                        .unwrap();
+                    let mut frame = Vec::new();
+                    flate2::read::ZlibDecoder::new(compressed.as_slice())
+                        .read_to_end(&mut frame)
+                        .unwrap();
+                    assert_eq!(capture["output_size"], serde_json::json!([128, 96]));
+                    assert_eq!(frame.len(), 128 * 96 * 4);
+                    assert_eq!(
+                        format!("{:x}", Sha256::digest(&frame)),
+                        capture["rgba_sha256"].as_str().unwrap(),
+                        "{name} tool {tool}"
+                    );
+                    frames.push(frame);
+                    geometries.push(geometry);
+                }
+                assert_eq!(geometries[0], geometries[1], "{name}");
+                assert_eq!(frames[0], frames[1], "{name}");
+                let input = &receipt["input"];
+                let scale = match case["scale"].as_f64().unwrap() {
+                    0.5 => super::InkPen2V1OutputScale::Half,
+                    1.0 => super::InkPen2V1OutputScale::One,
+                    2.0 => super::InkPen2V1OutputScale::Double,
+                    _ => unreachable!(),
+                };
+                let options = RenderOptions {
+                    inkpen2_profile: Some(InkPen2RenderProfile {
+                        screen_width: case["profile"][0].as_u64().unwrap() as u32,
+                        screen_height: case["profile"][1].as_u64().unwrap() as u32,
+                        enhanced_antialias: false,
+                    }),
+                    inkpen2_v1_output_scale: Some(scale),
+                    ..Default::default()
+                };
+                let mut stroke = inkpen2_color_stroke(0xff33_6699, None);
+                stroke.rendering.as_mut().unwrap().advanced_settings =
+                    (case["setting"] == "1").then(|| "1;".into());
+                stroke.rendering.as_mut().unwrap().pen_name = Some(format!(
+                    "com.samsung.android.sdk.pen.pen.preload.{}",
+                    case["pen"].as_str().unwrap()
+                ));
+                let size = input["size"].as_f64().unwrap() as f32;
+                stroke.pen_width = size;
+                stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+                stroke.points = input["points"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|p| Point {
+                        x: p[0].as_f64().unwrap() + 32.,
+                        y: p[1].as_f64().unwrap() + 32.,
+                    })
+                    .collect();
+                stroke.pressures = input["pressure"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_f64().unwrap())
+                    .collect();
+                stroke.timestamps = vec![0, 10, 20, 30];
+                stroke.tilts = vec![0.; 4];
+                stroke.orientations = vec![0.; 4];
+                if name.starts_with("landscape") {
+                    assert!(
+                        super::prepare_inkpen2_v1(
+                            &stroke,
+                            options.inkpen2_profile,
+                            RenderTheme::for_canvas(false),
+                            super::InkPen2V1OutputScale::Half,
+                        )
+                        .is_none()
+                    );
+                    let mut unsupported = stroke.clone();
+                    unsupported.rendering.as_mut().unwrap().advanced_settings = Some("1;".into());
+                    assert!(
+                        super::prepare_inkpen2_v1(
+                            &unsupported,
+                            options.inkpen2_profile,
+                            RenderTheme::for_canvas(false),
+                            scale
+                        )
+                        .is_some()
+                    );
+                    unsupported.rendering.as_mut().unwrap().advanced_settings = None;
+                    unsupported.rendering.as_mut().unwrap().pen_name =
+                        Some("com.samsung.android.sdk.pen.pen.preload.StraightInkPen2".into());
+                    assert!(
+                        super::prepare_inkpen2_v1(
+                            &unsupported,
+                            options.inkpen2_profile,
+                            RenderTheme::for_canvas(false),
+                            scale
+                        )
+                        .is_some()
+                    );
+                    unsupported.rendering.as_mut().unwrap().pen_name =
+                        Some("com.samsung.android.sdk.pen.pen.preload.InkPen2".into());
+                    unsupported.rendering.as_mut().unwrap().advanced_settings = Some("9;".into());
+                    assert!(
+                        super::prepare_inkpen2_v9(
+                            &unsupported,
+                            options.inkpen2_profile,
+                            RenderTheme::for_canvas(false)
+                        )
+                        .is_some()
+                    );
+                }
+                let mut outputs = Vec::new();
+                for tool in [2, 3] {
+                    stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
+                    assert!(
+                        super::prepare_inkpen2_v1(
+                            &stroke,
+                            options.inkpen2_profile,
+                            RenderTheme::for_canvas(false),
+                            scale
+                        )
+                        .is_some()
+                    );
+                    let mut page = page_with_uncolored_stroke();
+                    page.width = 128;
+                    page.height = 96;
+                    page.objects = vec![stroke.clone().into()];
+                    let doc = document(page);
+                    let layout = layout_document(&doc);
+                    let request =
+                        super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+                    let svg = super::DocumentTextCache::default()
+                        .render_layout_page_scene_requests(
+                            &doc,
+                            &[request],
+                            &options,
+                            &super::fonts::FontBook::default(),
+                            &mut |_| {},
+                        )
+                        .remove(0)
+                        .page
+                        .svg;
+                    let pdf = crate::render_layout_pages_pdf_detailed_with_fonts(
+                        &doc,
+                        &layout,
+                        &[0],
+                        &options,
+                        &Default::default(),
+                        &super::fonts::FontBook::default(),
+                    )
+                    .unwrap()
+                    .bytes;
+                    if let Some(dir) = std::env::var_os("SDOCX_V1_TOOL3_EXTENDED_EXPORT_DIR") {
+                        std::fs::write(
+                            std::path::Path::new(&dir).join(format!("{name}-{tool}.svg")),
+                            &svg,
+                        )
+                        .unwrap();
+                        std::fs::write(
+                            std::path::Path::new(&dir).join(format!("{name}-{tool}.pdf")),
+                            &pdf,
+                        )
+                        .unwrap();
+                    }
+                    outputs.push((svg, pdf));
+                }
+                assert_eq!(outputs[0], outputs[1], "{name}");
+                if let Some(dir) = std::env::var_os("SDOCX_V1_TOOL3_EXTENDED_EXPORT_DIR") {
+                    let mut page = page_with_uncolored_stroke();
+                    page.width = 128;
+                    page.height = 96;
+                    page.objects = vec![stroke.clone().into()];
+                    let doc = document(page);
+                    let layout = layout_document(&doc);
+                    let request =
+                        super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+                    let generic = RenderOptions::default();
+                    let svg = super::DocumentTextCache::default()
+                        .render_layout_page_scene_requests(
+                            &doc,
+                            &[request],
+                            &generic,
+                            &super::fonts::FontBook::default(),
+                            &mut |_| {},
+                        )
+                        .remove(0)
+                        .page
+                        .svg;
+                    let pdf = crate::render_layout_pages_pdf_detailed_with_fonts(
+                        &doc,
+                        &layout,
+                        &[0],
+                        &generic,
+                        &Default::default(),
+                        &super::fonts::FontBook::default(),
+                    )
+                    .unwrap()
+                    .bytes;
+                    std::fs::write(
+                        std::path::Path::new(&dir).join(format!("{name}-generic.svg")),
+                        svg,
+                    )
+                    .unwrap();
+                    std::fs::write(
+                        std::path::Path::new(&dir).join(format!("{name}-generic.pdf")),
+                        pdf,
+                    )
+                    .unwrap();
+                }
+            }
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_v1_landscape_expanded_exports() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read as _;
+        for source in [include_str!(
+            "../../../tools/inkpen2-v1-landscape-expanded/receipt.json"
+        )] {
+            let receipt: serde_json::Value = serde_json::from_str(source).unwrap();
+            for (name, case) in receipt["cases"].as_object().unwrap() {
+                let pair = &case["pair"];
+                let mut frames = Vec::new();
+                let mut geometries = Vec::new();
+                for tool in ["portrait", "landscape"] {
+                    let capture = &pair[tool];
+                    let hex = capture["geometry_hex"].as_str().unwrap();
+                    let geometry: Vec<u8> = hex
+                        .as_bytes()
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
+                        .map(|digits| {
+                            u8::from_str_radix(std::str::from_utf8(digits).unwrap(), 16).unwrap()
+                        })
+                        .collect();
+                    assert_eq!(hex.len() % 2, 0);
+                    assert_eq!(
+                        format!("{:x}", Sha256::digest(&geometry)),
+                        capture["geometry_sha256"].as_str().unwrap(),
+                        "{name} tool {tool}"
+                    );
+                    let compressed = base64::engine::general_purpose::STANDARD
+                        .decode(capture["rgba_zlib_base64"].as_str().unwrap())
+                        .unwrap();
+                    let mut frame = Vec::new();
+                    flate2::read::ZlibDecoder::new(compressed.as_slice())
+                        .read_to_end(&mut frame)
+                        .unwrap();
+                    assert_eq!(capture["output_size"], serde_json::json!([128, 96]));
+                    assert_eq!(frame.len(), 128 * 96 * 4);
+                    assert_eq!(
+                        format!("{:x}", Sha256::digest(&frame)),
+                        capture["rgba_sha256"].as_str().unwrap(),
+                        "{name} tool {tool}"
+                    );
+                    frames.push(frame);
+                    geometries.push(geometry);
+                }
+                assert_eq!(geometries[0], geometries[1], "{name}");
+                assert_eq!(frames[0], frames[1], "{name}");
+                let input = &receipt["paths"][case["path"].as_str().unwrap()];
+                let scale = match case["scale"].as_f64().unwrap() {
+                    0.5 => super::InkPen2V1OutputScale::Half,
+                    1.0 => super::InkPen2V1OutputScale::One,
+                    2.0 => super::InkPen2V1OutputScale::Double,
+                    _ => unreachable!(),
+                };
+                let options = RenderOptions {
+                    inkpen2_profile: Some(InkPen2RenderProfile {
+                        screen_width: 2560,
+                        screen_height: 1440,
+                        enhanced_antialias: false,
+                    }),
+                    inkpen2_v1_output_scale: Some(scale),
+                    ..Default::default()
+                };
+                let mut stroke = inkpen2_color_stroke(0xff33_6699, None);
+                stroke.rendering.as_mut().unwrap().advanced_settings =
+                    (case["setting"] == "1").then(|| "1;".into());
+                stroke.rendering.as_mut().unwrap().pen_name = Some(format!(
+                    "com.samsung.android.sdk.pen.pen.preload.{}",
+                    case["pen"].as_str().unwrap()
+                ));
+                let size = 4.0;
+                stroke.pen_width = size;
+                stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+                stroke.points = input["points"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|p| Point {
+                        x: p[0].as_f64().unwrap() + 32.,
+                        y: p[1].as_f64().unwrap() + 32.,
+                    })
+                    .collect();
+                stroke.pressures = input["pressure"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_f64().unwrap())
+                    .collect();
+                stroke.timestamps = vec![0, 10, 20, 30];
+                stroke.tilts = vec![0.; 4];
+                stroke.orientations = vec![0.; 4];
+                let mut outputs = Vec::new();
+                for tool in [2, 3] {
+                    stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
+                    assert!(
+                        super::prepare_inkpen2_v1(
+                            &stroke,
+                            options.inkpen2_profile,
+                            RenderTheme::for_canvas(false),
+                            scale
+                        )
+                        .is_some()
+                    );
+                    let mut page = page_with_uncolored_stroke();
+                    page.width = 128;
+                    page.height = 96;
+                    page.objects = vec![stroke.clone().into()];
+                    let doc = document(page);
+                    let layout = layout_document(&doc);
+                    let request =
+                        super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+                    let svg = super::DocumentTextCache::default()
+                        .render_layout_page_scene_requests(
+                            &doc,
+                            &[request],
+                            &options,
+                            &super::fonts::FontBook::default(),
+                            &mut |_| {},
+                        )
+                        .remove(0)
+                        .page
+                        .svg;
+                    let pdf = crate::render_layout_pages_pdf_detailed_with_fonts(
+                        &doc,
+                        &layout,
+                        &[0],
+                        &options,
+                        &Default::default(),
+                        &super::fonts::FontBook::default(),
+                    )
+                    .unwrap()
+                    .bytes;
+                    if let Some(dir) = std::env::var_os("SDOCX_V1_LANDSCAPE_EXPANDED_EXPORT_DIR") {
+                        std::fs::write(
+                            std::path::Path::new(&dir).join(format!("{name}-{tool}.svg")),
+                            &svg,
+                        )
+                        .unwrap();
+                        std::fs::write(
+                            std::path::Path::new(&dir).join(format!("{name}-{tool}.pdf")),
+                            &pdf,
+                        )
+                        .unwrap();
+                    }
+                    outputs.push((svg, pdf));
+                }
+                assert_eq!(outputs[0], outputs[1], "{name}");
+                if let Some(dir) = std::env::var_os("SDOCX_V1_LANDSCAPE_EXPANDED_EXPORT_DIR") {
+                    let mut page = page_with_uncolored_stroke();
+                    page.width = 128;
+                    page.height = 96;
+                    page.objects = vec![stroke.clone().into()];
+                    let doc = document(page);
+                    let layout = layout_document(&doc);
+                    let request =
+                        super::PageSceneRequest::sliced(&layout.pages[0], 0, 96, false).unwrap();
+                    let generic = RenderOptions::default();
+                    let svg = super::DocumentTextCache::default()
+                        .render_layout_page_scene_requests(
+                            &doc,
+                            &[request],
+                            &generic,
+                            &super::fonts::FontBook::default(),
+                            &mut |_| {},
+                        )
+                        .remove(0)
+                        .page
+                        .svg;
+                    let pdf = crate::render_layout_pages_pdf_detailed_with_fonts(
+                        &doc,
+                        &layout,
+                        &[0],
+                        &generic,
+                        &Default::default(),
+                        &super::fonts::FontBook::default(),
+                    )
+                    .unwrap()
+                    .bytes;
+                    std::fs::write(
+                        std::path::Path::new(&dir).join(format!("{name}-generic.svg")),
+                        svg,
+                    )
+                    .unwrap();
+                    std::fs::write(
+                        std::path::Path::new(&dir).join(format!("{name}-generic.pdf")),
+                        pdf,
+                    )
+                    .unwrap();
+                }
+            }
         }
     }
 }
