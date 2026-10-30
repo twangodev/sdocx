@@ -47,5 +47,5 @@
   },
   "full_frames": "Original full frames were temporary and are not retained; their hashes identify the measured inputs and can be checked by recapture and the extraction script. Capture JSON receipts also were temporary; their old hashes are omitted because their path-dependent content is not retained.",
   "capture_script_base_sha256": "f1ff217a5d835c28078cf22d7fefd9bb1f0d0af1462094d9cbfce587ff402b5f",
-  "regression_dependency": "crates/sdocx/tests/marker4_host_compositing.rs imports crates/sdocx/src/ink/host_rgba8.rs, a currently uncommitted shared host arithmetic module authored in parallel."
+  "regression_dependency": "crates/sdocx/tests/marker4_host_compositing.rs checks the compact captured pixels against shared host arithmetic in crates/sdocx/src/ink/host_rgba8.rs. The crate-local fixture at crates/sdocx/tests/assets/marker4-independent-colors.rgba is byte-identical to compact_fixture.path and is included in the published crate."
 }
