@@ -1,0 +1,1109 @@
+{
+  "cases": {
+    "proto8-v3": {
+      "display": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "input": {
+        "advanced_setting_ascii": "4;",
+        "color_argb_u32": "0xff6cdd8f",
+        "curve_enabled": true,
+        "native_model_getter_snapshot": {
+          "advanced_setting": "4;",
+          "advanced_setting_getter_called": true,
+          "color_argb_u32": "0xff6cdd8f",
+          "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+          "size": 3.1440000534057617,
+          "size_level": 30,
+          "tool_type": 2
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 8,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "4c374940",
+            "stroke_type": 0,
+            "tool_type": 2
+          }
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+        "point_count": 8,
+        "size_f32_bits": "4c374940",
+        "size_level": 30,
+        "source_arrays": {
+          "orientations": {
+            "count": 8,
+            "data_hex": "cdcc4c3eae47613e8fc2753eb81e853e295c8f3e9a99993e0ad7a33e7b14ae3e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 8,
+            "data_hex": "00000000000000000000c04000004040000010410000404100008841000050410000b841000070410000f84100009041000010420000e0410000344200000842",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 8,
+            "data_hex": "9a99993ecdcc0c3f0000403f3333b33e3333733f0000003f3333333fcdcccc3e",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 8,
+            "data_hex": "8fc2f53db81e053e295c0f3e9a99193e0ad7233e7b142e3eec51383e5c8f423e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 8,
+            "data_hex": "2c01000037010000440100005201000063010000780100008601000097010000",
+            "element_size": 4
+          }
+        },
+        "stroke_type": 0,
+        "tool_type": 2
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "paired": {
+        "4": {
+          "buffer_bytes": 512,
+          "buffer_sha256": "4e7b93d798e599093cabf861cb4bb2df95a76b73d0765b7e75f94a5109388770",
+          "callback_count": 32,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "4;"
+        },
+        "5": {
+          "buffer_bytes": 512,
+          "buffer_sha256": "4e7b93d798e599093cabf861cb4bb2df95a76b73d0765b7e75f94a5109388770",
+          "callback_count": 32,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "5;"
+        }
+      },
+      "producer": {
+        "buffer_hex": "00000000000000006e565d3f9a99993dfcffbe3ffcff473f6e56553ffa7e8a3ffcff3d40fbffcf3f6e564d3f2db20540fcbf8d40fbff21406e56453fdd244640fcffbb40faff5f406e563d3fc74b8340fbbfe940fcff90406e56353f1f85a340fc7f0b41faffb3406e562d3f77bec340fcdf2141f9ffd8406e56253fb6f3fd3d00003841000000416e561d3fae47913fd25f4e41da5f13417c14203f39b40840a17f6541ba7f25418ad2223f9cc448406c5f7d419d5f36419890253f7f6a84409bff8a4187ff4541a64e283fb072a440b1af9741ac5f5441b40c2b3fe17ac440c9bfa441cc7f6141c2ca2d3f4e62103ee22fb241e75f6d41d088303f0e2d923f0000c04100007841dd46333f9a99094094b7cd41188f81416b2a2c3f37894940266fdb411a708841f90d253f6abc8440b926e94107a3904187f11d3f39b4a4404cdef641df279a4115d5163f08acc4405d3901421238a341a3b80f3fe17a143e06eb0642b20cad41319c083f986e923fae9c0c4238cab741bf7f013fe9260940564e1242a770c3419ac6f43e87164940000018420000d041ba8de63ee17a84405ae01d42846edd416c2bee3e5839a440ba0f23428448e9411ec9f53ecff7c3401f8e2742ff8df341d066fd3e6891ed3d8c5b2b42f63efc414182023ff2d28d3f81e33042b97104421a51063f666606400000344200000842f31f0a3f54e34540",
+        "buffer_sha256": "4e7b93d798e599093cabf861cb4bb2df95a76b73d0765b7e75f94a5109388770",
+        "callback_count": 32
+      },
+      "redraw_target": [
+        "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ]
+    },
+    "size-high-v3": {
+      "display": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "input": {
+        "advanced_setting_ascii": "4;",
+        "color_argb_u32": "0xff6cdd8f",
+        "curve_enabled": true,
+        "native_model_getter_snapshot": {
+          "advanced_setting": "4;",
+          "advanced_setting_getter_called": true,
+          "color_argb_u32": "0xff6cdd8f",
+          "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+          "size": 900.0,
+          "size_level": 30,
+          "tool_type": 2
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 5,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "00006144",
+            "stroke_type": 0,
+            "tool_type": 2
+          }
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+        "point_count": 5,
+        "size_f32_bits": "00006144",
+        "size_level": 30,
+        "source_arrays": {
+          "orientations": {
+            "count": 5,
+            "data_hex": "cdcc4c3eae47613e8fc2753eb81e853e295c8f3e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 5,
+            "data_hex": "00000000000000000000c04000004040000010410000404100008841000050410000b84100007041",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 5,
+            "data_hex": "9a99993ecdcc0c3f0000403f3333b33e3333733f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 5,
+            "data_hex": "8fc2f53db81e053e295c0f3e9a99193e0ad7233e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 5,
+            "data_hex": "2c01000037010000440100005201000063010000",
+            "element_size": 4
+          }
+        },
+        "stroke_type": 0,
+        "tool_type": 2
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "paired": {
+        "4": {
+          "buffer_bytes": 112,
+          "buffer_sha256": "159530f288461e87c28968ca3787c05e584b047200186c45052de6813ce3fdd7",
+          "callback_count": 7,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "4;"
+        },
+        "5": {
+          "buffer_bytes": 112,
+          "buffer_sha256": "159530f288461e87c28968ca3787c05e584b047200186c45052de6813ce3fdd7",
+          "callback_count": 7,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "5;"
+        }
+      },
+      "producer": {
+        "buffer_hex": "000000000000000000005c439a99993dc0717c40df380e4055555a43f6288c3f88e3f840c2719c40aaaa5843295c0740000038410000004100005743d7a34840c91470412abd2e41abaa58437f6a84406b1a974115ec554156555a431283a440fdffb7410000704101005c43a69bc440",
+        "buffer_sha256": "159530f288461e87c28968ca3787c05e584b047200186c45052de6813ce3fdd7",
+        "callback_count": 7
+      },
+      "redraw_target": [
+        "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ]
+    },
+    "three-display-portrait-v3": {
+      "display": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 2560,
+        "width": 1440
+      },
+      "input": {
+        "advanced_setting_ascii": "4;",
+        "color_argb_u32": "0xff6cdd8f",
+        "curve_enabled": true,
+        "native_model_getter_snapshot": {
+          "advanced_setting": "4;",
+          "advanced_setting_getter_called": true,
+          "color_argb_u32": "0xff6cdd8f",
+          "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+          "size": 3.1440000534057617,
+          "size_level": 30,
+          "tool_type": 2
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 3,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "4c374940",
+            "stroke_type": 0,
+            "tool_type": 2
+          }
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+        "point_count": 3,
+        "size_f32_bits": "4c374940",
+        "size_level": 30,
+        "source_arrays": {
+          "orientations": {
+            "count": 3,
+            "data_hex": "cdcc4c3eae47613e8fc2753e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 3,
+            "data_hex": "0000803f000000c0000040400000803f0000c04000008040",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 3,
+            "data_hex": "9a99993e9a99193f9a99593f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 3,
+            "data_hex": "8fc2f53db81e053e295c0f3e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 3,
+            "data_hex": "2c0100003b01000054010000",
+            "element_size": 4
+          }
+        },
+        "stroke_type": 0,
+        "tool_type": 2
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "paired": {
+        "4": {
+          "buffer_bytes": 80,
+          "buffer_sha256": "f678079382ede20a36ee1ab399dc6b5490da94c5dd88c0ad98ead4c2d86a16e7",
+          "callback_count": 5,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 2560,
+            "width": 1440
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 2560,
+              "width": 1440
+            }
+          ],
+          "setting": "4;"
+        },
+        "5": {
+          "buffer_bytes": 80,
+          "buffer_sha256": "f678079382ede20a36ee1ab399dc6b5490da94c5dd88c0ad98ead4c2d86a16e7",
+          "callback_count": 5,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 2560,
+            "width": 1440
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 2560,
+              "width": 1440
+            }
+          ],
+          "setting": "5;"
+        }
+      },
+      "producer": {
+        "buffer_hex": "0000803f000000c09b08ab3f3d0ad73d68c6214028b82abe9b08ab3f04568e3ffdc57140f8a7aa3f9b08ab3fb29d07405eff97407bfe1f409b08ab3f621048400000c040000080409b08ab3f89418440",
+        "buffer_sha256": "f678079382ede20a36ee1ab399dc6b5490da94c5dd88c0ad98ead4c2d86a16e7",
+        "callback_count": 5
+      },
+      "redraw_target": [
+        "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ]
+    },
+    "three-duplicate-v3": {
+      "display": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "input": {
+        "advanced_setting_ascii": "4;",
+        "color_argb_u32": "0xff6cdd8f",
+        "curve_enabled": true,
+        "native_model_getter_snapshot": {
+          "advanced_setting": "4;",
+          "advanced_setting_getter_called": true,
+          "color_argb_u32": "0xff6cdd8f",
+          "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+          "size": 3.1440000534057617,
+          "size_level": 30,
+          "tool_type": 2
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 3,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "4c374940",
+            "stroke_type": 0,
+            "tool_type": 2
+          }
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+        "point_count": 3,
+        "size_f32_bits": "4c374940",
+        "size_level": 30,
+        "source_arrays": {
+          "orientations": {
+            "count": 3,
+            "data_hex": "cdcc4c3eae47613e8fc2753e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 3,
+            "data_hex": "0000803f000000c00000803f000000c00000c04000008040",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 3,
+            "data_hex": "9a99993e9a99193f9a99593f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 3,
+            "data_hex": "8fc2f53db81e053e295c0f3e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 3,
+            "data_hex": "2c0100003b01000054010000",
+            "element_size": 4
+          }
+        },
+        "stroke_type": 0,
+        "tool_type": 2
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "paired": {
+        "4": {
+          "buffer_bytes": 80,
+          "buffer_sha256": "f678079382ede20a36ee1ab399dc6b5490da94c5dd88c0ad98ead4c2d86a16e7",
+          "callback_count": 5,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "4;"
+        },
+        "5": {
+          "buffer_bytes": 80,
+          "buffer_sha256": "f678079382ede20a36ee1ab399dc6b5490da94c5dd88c0ad98ead4c2d86a16e7",
+          "callback_count": 5,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "5;"
+        }
+      },
+      "producer": {
+        "buffer_hex": "0000803f000000c09b08ab3f3d0ad73d68c6214028b82abe9b08ab3f04568e3ffdc57140f8a7aa3f9b08ab3fb29d07405eff97407bfe1f409b08ab3f621048400000c040000080409b08ab3f89418440",
+        "buffer_sha256": "f678079382ede20a36ee1ab399dc6b5490da94c5dd88c0ad98ead4c2d86a16e7",
+        "callback_count": 5
+      },
+      "redraw_target": [
+        "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ]
+    },
+    "three-micro-v3": {
+      "display": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "input": {
+        "advanced_setting_ascii": "4;",
+        "color_argb_u32": "0xff6cdd8f",
+        "curve_enabled": true,
+        "native_model_getter_snapshot": {
+          "advanced_setting": "4;",
+          "advanced_setting_getter_called": true,
+          "color_argb_u32": "0xff6cdd8f",
+          "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+          "size": 3.1440000534057617,
+          "size_level": 30,
+          "tool_type": 2
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 3,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "4c374940",
+            "stroke_type": 0,
+            "tool_type": 2
+          }
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+        "point_count": 3,
+        "size_f32_bits": "4c374940",
+        "size_level": 30,
+        "source_arrays": {
+          "orientations": {
+            "count": 3,
+            "data_hex": "cdcc4c3eae47613e8fc2753e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 3,
+            "data_hex": "0000803f000000c0cdcc8c3f666606c09a99993fcdcc0cc0",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 3,
+            "data_hex": "9a99993e9a99193f9a99593f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 3,
+            "data_hex": "8fc2f53db81e053e295c0f3e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 3,
+            "data_hex": "2c0100003b01000054010000",
+            "element_size": 4
+          }
+        },
+        "stroke_type": 0,
+        "tool_type": 2
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "paired": {
+        "4": {
+          "buffer_bytes": 16,
+          "buffer_sha256": "f035bf0a178232f627bbd696a9a8ad5b535bc6cc4b0c8cc5425327175e0bf26d",
+          "callback_count": 1,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "4;"
+        },
+        "5": {
+          "buffer_bytes": 16,
+          "buffer_sha256": "f035bf0a178232f627bbd696a9a8ad5b535bc6cc4b0c8cc5425327175e0bf26d",
+          "callback_count": 1,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "5;"
+        }
+      },
+      "producer": {
+        "buffer_hex": "0000803f000000c04c37493f713d0a3e",
+        "buffer_sha256": "f035bf0a178232f627bbd696a9a8ad5b535bc6cc4b0c8cc5425327175e0bf26d",
+        "callback_count": 1
+      },
+      "redraw_target": [
+        "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ]
+    },
+    "three-pressure-v3": {
+      "display": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "input": {
+        "advanced_setting_ascii": "4;",
+        "color_argb_u32": "0xff6cdd8f",
+        "curve_enabled": true,
+        "native_model_getter_snapshot": {
+          "advanced_setting": "4;",
+          "advanced_setting_getter_called": true,
+          "color_argb_u32": "0xff6cdd8f",
+          "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+          "size": 3.1440000534057617,
+          "size_level": 30,
+          "tool_type": 2
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 3,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "4c374940",
+            "stroke_type": 0,
+            "tool_type": 2
+          }
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+        "point_count": 3,
+        "size_f32_bits": "4c374940",
+        "size_level": 30,
+        "source_arrays": {
+          "orientations": {
+            "count": 3,
+            "data_hex": "cdcc4c3eae47613e8fc2753e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 3,
+            "data_hex": "0000803f000000c0000040400000803f0000c04000008040",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 3,
+            "data_hex": "cdcc4c3dcdcccc3e6666663f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 3,
+            "data_hex": "8fc2f53db81e053e295c0f3e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 3,
+            "data_hex": "2c0100003b01000054010000",
+            "element_size": 4
+          }
+        },
+        "stroke_type": 0,
+        "tool_type": 2
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "paired": {
+        "4": {
+          "buffer_bytes": 80,
+          "buffer_sha256": "7f342c18e171e621f2aeb49bca644f7ac673e7d6f1c27b86bd795611997d2b3d",
+          "callback_count": 5,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "4;"
+        },
+        "5": {
+          "buffer_bytes": 80,
+          "buffer_sha256": "7f342c18e171e621f2aeb49bca644f7ac673e7d6f1c27b86bd795611997d2b3d",
+          "callback_count": 5,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "5;"
+        }
+      },
+      "producer": {
+        "buffer_hex": "0000803f000000c00af9203f8fc2753d89dd0f408ec369bef41f3a3f713d8a3f648858400a5f9a3fde46533f6666064088b2954034d12940c86d6c3f14ae4740fdffbf40faff7f4059ca823fe17a8440",
+        "buffer_sha256": "7f342c18e171e621f2aeb49bca644f7ac673e7d6f1c27b86bd795611997d2b3d",
+        "callback_count": 5
+      },
+      "redraw_target": [
+        "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ]
+    },
+    "three-repeat-floor5-v3": {
+      "display": {
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 1080,
+        "width": 1920
+      },
+      "input": {
+        "advanced_setting_ascii": "4;",
+        "color_argb_u32": "0xff6cdd8f",
+        "curve_enabled": true,
+        "native_model_getter_snapshot": {
+          "advanced_setting": "4;",
+          "advanced_setting_getter_called": true,
+          "color_argb_u32": "0xff6cdd8f",
+          "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+          "size": 8.333333015441895,
+          "size_level": 30,
+          "tool_type": 2
+        },
+        "native_object_stroke_snapshots": [
+          {
+            "curve_enabled": 1,
+            "fixed_width_bits": "00000000",
+            "fixed_width_enabled": 0,
+            "label": "before_drawObjectStroke",
+            "line_type": 0,
+            "point_count": 3,
+            "rainbow_distance": 0,
+            "rainbow_enabled": 0,
+            "rainbow_offset_bits": "00000000",
+            "shape": 0,
+            "size_bits": "55550541",
+            "stroke_type": 0,
+            "tool_type": 2
+          }
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+        "point_count": 3,
+        "size_f32_bits": "55550541",
+        "size_level": 30,
+        "source_arrays": {
+          "orientations": {
+            "count": 3,
+            "data_hex": "cdcc4c3eae47613e8fc2753e",
+            "element_size": 4
+          },
+          "points": {
+            "count": 3,
+            "data_hex": "0000803f000000c00000c040000080400000204100000041",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 3,
+            "data_hex": "9a99993e9a99193f9a99593f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 3,
+            "data_hex": "8fc2f53db81e053e295c0f3e",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 3,
+            "data_hex": "2c0100003075000060ea0000",
+            "element_size": 4
+          }
+        },
+        "stroke_type": 0,
+        "tool_type": 2
+      },
+      "libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "paired": {
+        "4": {
+          "buffer_bytes": 128,
+          "buffer_sha256": "cbee9e095a140d631826ee3af347bcf85fb5102df1f7bddd47e7930b6924d3e2",
+          "callback_count": 8,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "4;"
+        },
+        "5": {
+          "buffer_bytes": 128,
+          "buffer_sha256": "cbee9e095a140d631826ee3af347bcf85fb5102df1f7bddd47e7930b6924d3e2",
+          "callback_count": 8,
+          "display": {
+            "canvas_model_matrix_f32_bits": [
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f",
+              "00000000",
+              "00000000",
+              "00000000",
+              "0000803f"
+            ],
+            "height": 1080,
+            "width": 1920
+          },
+          "screen_resolution_calls": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "setting": "5;"
+        }
+      },
+      "producer": {
+        "buffer_hex": "0000803f000000c0000020400ad7a33d552217403002c1bec3302640d1228b3f48a56440e4d5853f86612c40190406400ecc994084f51d4049923240c97646405ac7c24045237a400cc33840bc7483402e23ee409728ac40cff33e4014aea340c0a50c412e0cd940922445406de7c340fdff1f41faffff4055554b409318043e",
+        "buffer_sha256": "cbee9e095a140d631826ee3af347bcf85fb5102df1f7bddd47e7930b6924d3e2",
+        "callback_count": 8
+      },
+      "redraw_target": [
+        "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ]
+    }
+  },
+  "native_library_pins": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "schema": "chinesebrush-setting-4-5-drawing-matrix-v1",
+  "scope": "Synthetic ObjectStroke on host Unicorn with native Drawing and GLV3; no device or real-note parity."
+}

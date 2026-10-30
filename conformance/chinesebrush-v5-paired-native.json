@@ -1,0 +1,3435 @@
+{
+  "cases": {
+    "4": {
+      "drawing_input": {
+        "advanced_setting_ascii": "4;",
+        "color_argb_u32": null,
+        "curve_enabled": true,
+        "native_model_getter_snapshot": {
+          "advanced_setting": "4;",
+          "advanced_setting_getter_called": true,
+          "color_argb_u32": "0xff000000",
+          "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+          "size": 3.1440000534057617,
+          "size_level": 30,
+          "tool_type": 2
+        },
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+        "point_count": 3,
+        "size_f32_bits": "4c374940",
+        "size_level": 30,
+        "source_arrays": {
+          "orientations": {
+            "count": 3,
+            "data_hex": "cdcc4c3e3333b33ecdcc0c3f",
+            "element_size": 4
+          },
+          "points": {
+            "count": 3,
+            "data_hex": "0000803f000000c0000040400000803f0000c04000008040",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 3,
+            "data_hex": "9a99993e9a99193f9a99593f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 3,
+            "data_hex": "8fc2f53d0ad7a33ecdcc0c3f",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 3,
+            "data_hex": "2c0100003b01000054010000",
+            "element_size": 4
+          }
+        },
+        "stroke_type": 0,
+        "tool_type": 2
+      },
+      "drawing_producer": {
+        "append_rows": [
+          {
+            "after_count_bytes": 16,
+            "before_count_bytes": 0,
+            "delta_bytes": "0000803f000000c08f75713f0ad7a33d",
+            "float_args": [
+              "0x42a00000",
+              "0x42a00000",
+              "0x0",
+              "0x3f800000",
+              "0x3f000000"
+            ]
+          },
+          {
+            "after_count_bytes": 32,
+            "before_count_bytes": 16,
+            "delta_bytes": "89dd0f408ec369be04097e3f6de78b3f",
+            "float_args": [
+              "0x42ba0000",
+              "0x42ba0000",
+              "0x3f800000",
+              "0x3f800000",
+              "0x3f000000"
+            ]
+          },
+          {
+            "after_count_bytes": 48,
+            "before_count_bytes": 32,
+            "delta_bytes": "648858400a5f9a3f3c4e853fb4c80640",
+            "float_args": [
+              "0x42d40000",
+              "0x42d40000",
+              "0x40000000",
+              "0x3f800000",
+              "0x3f000000"
+            ]
+          },
+          {
+            "after_count_bytes": 64,
+            "before_count_bytes": 48,
+            "delta_bytes": "88b2954034d12940f6978b3fb29d4740",
+            "float_args": [
+              "0x42ee0000",
+              "0x42ee0000",
+              "0x40400000",
+              "0x3f800000",
+              "0x3f000000"
+            ]
+          },
+          {
+            "after_count_bytes": 80,
+            "before_count_bytes": 64,
+            "delta_bytes": "fdffbf40faff7f40b0e1913f58398440",
+            "float_args": [
+              "0x43040000",
+              "0x43040000",
+              "0x40800000",
+              "0x3f800000",
+              "0x3f000000"
+            ]
+          }
+        ],
+        "buffer_bytes": 80,
+        "buffer_hex": "0000803f000000c08f75713f0ad7a33d89dd0f408ec369be04097e3f6de78b3f648858400a5f9a3f3c4e853fb4c8064088b2954034d12940f6978b3fb29d4740fdffbf40faff7f40b0e1913f58398440",
+        "buffer_sha256": "43ab5d696b12aa9cf8085b7773bb25c35f22a0e754b1d5cec061267a8309c23b",
+        "callback_count": 5,
+        "callback_entries": [
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "0000803f000000c08f75713f00000000f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000d5000e3f4001553f0000803f000000c00000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42a00000",
+              "s1": "0x42a00000",
+              "s2": "0x0",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x0",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x50",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "89dd0f408ec369be04097e3f0000803ff0debc9a7856341260ec0e20000000006489030500000000010000000000000001000000000000006744193f970c4d3f89dd0f408ec369be0000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42ba0000",
+              "s1": "0x42ba0000",
+              "s2": "0x3f800000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3e605dea",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x5d",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "648858400a5f9a3f3c4e853f00000040f0debc9a7856341260ec0e200000000064890305000000000100000000000000010000000000000060aa243f7003443f648858400a5f9a3f0000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42d40000",
+              "s1": "0x42d40000",
+              "s2": "0x40000000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3ee05dea",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x6a",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "88b2954034d12940f6978b3f00004040f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000731e303f60ca393f88b2954034d129400000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42ee0000",
+              "s1": "0x42ee0000",
+              "s2": "0x40400000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3f357f1a",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x77",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "fdffbf40faff7f40b0e1913f00008040f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000f204353ff304353ffdffbf40faff7f400000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x43040000",
+              "s1": "0x43040000",
+              "s2": "0x40800000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3f7ffffa",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x84",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          }
+        ],
+        "instance_float_count": 20,
+        "rt_ids": [
+          "0x10035a60"
+        ]
+      },
+      "drawing_selection": {
+        "constructor_settings_snapshots": [
+          {
+            "constructor_this": "0x10034780",
+            "pen_object_plus32_plus36_bytes": "a0050000000a0000",
+            "pen_object_plus32_plus36_i32": [
+              1440,
+              2560
+            ],
+            "phase": "draw_object_stroke",
+            "settings_address": "0x10034798",
+            "settings_offset_from_pen": 24,
+            "snapshot_point": "factory-created ChineseBrush ctor return, before Drawing screen-resolution setter"
+          }
+        ],
+        "draw_object_stroke_entries": [
+          {
+            "pc": "0x503a740",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "5894040500000000605a03100000000030d4021000000000600500100000000000000000000000000000000000000000486d07010000000000000000000000006048031000000000304e031000000000304e0310000000004856031000000000",
+              "x1_head": "20304907000000000000000000000000000000000000000060ca02100000000060c60210000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+              "x2_head": "00000000000000000000000000000000c0ee0e2000000000bc570c02000000000042031000000000d0bf0e020000000040ef0e20000000001c6b0c020000000040ef0e20000000002c6b0c020000000000000000000000005042031000000000",
+              "x3_head": "00000000000000000000000000000000c0ee0e2000000000bc570c02000000000042031000000000d0bf0e020000000040ef0e20000000001c6b0c020000000040ef0e20000000002c6b0c020000000000000000000000005042031000000000",
+              "x4_head": "636f6d2e73616d73756e672e616e64726f69642e73646b2e70656e2e70656e2e7072656c6f61642e4368696e6573654272757368000000000000000000000000f0bf0e0200000000180000001600000000000000000000000000000000000000"
+            },
+            "regs": {
+              "s0": "0x0",
+              "s1": "0x4049374c",
+              "s2": "0x3ecccccd",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10034d08",
+              "x1": "0x1002c560",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x10034670",
+              "x5": "0x10032660",
+              "x6": "0x3",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          }
+        ],
+        "drawable_entry_snapshots": [
+          {
+            "drawable_offset_100_u8": 0,
+            "drawable_offset_44_u32_le": "00000000",
+            "drawable_offset_88_u32_le": "48560310",
+            "drawable_offset_92_u32_le": "00000000",
+            "drawable_offset_96_u32_le": "50560310",
+            "entry_pc": "0x503a740",
+            "phase": "draw_object_stroke",
+            "receiver_address": "0x10034d08",
+            "receiver_role": "selected primary drawable after native non-virtual thunk adjustment"
+          },
+          {
+            "drawable_offset_100_u8": 0,
+            "drawable_offset_44_u32_le": "00000000",
+            "drawable_offset_88_u32_le": "304e0310",
+            "drawable_offset_92_u32_le": "00000000",
+            "drawable_offset_96_u32_le": "48560310",
+            "entry_pc": "0x5039e24",
+            "phase": "draw_object_stroke",
+            "receiver_address": "0x10034d00",
+            "receiver_role": "selected primary drawable after native non-virtual thunk adjustment"
+          }
+        ],
+        "drawable_memory_0_0x180": "a8930405000000005894040500000000605a03100000000030d4021000000000600500100000000000000000000000000000000000000000486d07010000000000000000000000006048031000000000304e031000000000504e0310000000004856031000000000505603100000000058560310000000005c5a03100000000002000000040000006951fa4003000000000100000000000000000000000000000000000000000000b061031000000000c061031000000000c061031000000000d061031000000000f061031000000000f06103100000000000010000010000000000803f000000c0000040400000803f00009040000020408f75f13f0000c040000080400000000050000000000000005401000000000000de6b0d4505000000000000000000000000000000000000000000803f000000c0000040400000803f00009040000020400000c04000008040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "drawable_threshold_entries": [
+          {
+            "entry_pc": "0x5039aa8",
+            "offset_44_bytes": "00000000",
+            "offset_96_bytes": "48560310",
+            "phase": "draw_object_stroke",
+            "primary_drawable_address": null,
+            "receiver_address": "0x10034d00",
+            "receiver_minus_primary": null
+          },
+          {
+            "entry_pc": "0x5039aa8",
+            "offset_44_bytes": "00000000",
+            "offset_96_bytes": "48560310",
+            "phase": "draw_object_stroke",
+            "primary_drawable_address": null,
+            "receiver_address": "0x10034d00",
+            "receiver_minus_primary": null
+          }
+        ],
+        "factory_symbol": "createPenInst",
+        "getStrokeDrawableGL_primary_vptr": "0x50493a8",
+        "loader_calls": [
+          {
+            "flags": 2,
+            "fn": "dlopen",
+            "name": "libSPenChineseBrush.so"
+          },
+          {
+            "fn": "dlsym",
+            "handle": "0x50000001",
+            "name": "createPenInst"
+          }
+        ],
+        "motion_getter_returns": [
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0aa8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x10036180",
+              "s0": "0x10036180",
+              "x0": "0x2"
+            },
+            "return_pc": "0x503860c",
+            "return_pc_expected": "0x503860c",
+            "signature": "SPen::MotionEvent::GetToolType(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0a9c",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x10036180",
+              "s0": "0x10036180",
+              "x0": "0x0"
+            },
+            "return_pc": "0x503861c",
+            "return_pc_expected": "0x503861c",
+            "signature": "SPen::MotionEvent::GetSource() const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4018000000000000",
+              "s0": "0x0",
+              "x0": "0x200eed00"
+            },
+            "return_pc": "0x5038650",
+            "return_pc_expected": "0x5038650",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4010000000000000",
+              "s0": "0x0",
+              "x0": "0x200eed00"
+            },
+            "return_pc": "0x5038660",
+            "return_pc_expected": "0x5038660",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0aa8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4010000000000000",
+              "s0": "0x0",
+              "x0": "0x2"
+            },
+            "return_pc": "0x5038670",
+            "return_pc_expected": "0x5038670",
+            "signature": "SPen::MotionEvent::GetToolType(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c094c",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x3f59999a",
+              "s0": "0x3f59999a",
+              "x0": "0x200eed00"
+            },
+            "return_pc": "0x5038688",
+            "return_pc_expected": "0x5038688",
+            "signature": "SPen::MotionEvent::GetPressure(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0634",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x3f59999a",
+              "s0": "0x3f59999a",
+              "x0": "0x28"
+            },
+            "return_pc": "0x50386a4",
+            "return_pc_expected": "0x50386a4",
+            "signature": "SPen::MotionEvent::GetEventTime() const"
+          }
+        ],
+        "native_call_entries": [
+          {
+            "drawline_offset_44_bytes": "00000000",
+            "drawline_offset_96_bytes": "48560310",
+            "pc": "0x5039aa8",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "a8930405000000005894040500000000605a03100000000030d4021000000000600500100000000000000000000000000000000000000000486d07010000000000000000000000006048031000000000304e031000000000304e031000000000",
+              "x1_head": "unmapped",
+              "x2_head": null,
+              "x3_head": "unmapped",
+              "x4_head": "unmapped"
+            },
+            "regs": {
+              "s0": "0x40400000",
+              "s1": "0x3f800000",
+              "s2": "0x3f19999a",
+              "s3": "0xc0000000",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10034d00",
+              "x1": "0x13b",
+              "x2": "0x0",
+              "x3": "0x24",
+              "x4": "0x69d",
+              "x5": "0x1003479c",
+              "x6": "0x3",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableGLV3::drawLine(float, float, float, long long)"
+            ]
+          },
+          {
+            "drawline_offset_44_bytes": "00000000",
+            "drawline_offset_96_bytes": "48560310",
+            "pc": "0x5039aa8",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "a8930405000000005894040500000000605a03100000000030d4021000000000600500100000000000000000000000000000000000000000486d07010000000000000000000000006048031000000000304e031000000000304e031000000000",
+              "x1_head": "unmapped",
+              "x2_head": null,
+              "x3_head": "unmapped",
+              "x4_head": "unmapped"
+            },
+            "regs": {
+              "s0": "0x40c00000",
+              "s1": "0x40800000",
+              "s2": "0x3f59999a",
+              "s3": "0xc0000000",
+              "s4": "0x3f800000",
+              "s5": "0x40400000",
+              "s6": "0x40000000",
+              "s7": "0x3f800000",
+              "x0": "0x10034d00",
+              "x1": "0x154",
+              "x2": "0x0",
+              "x3": "0x24",
+              "x4": "0x69d",
+              "x5": "0x1003479c",
+              "x6": "0x3",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableGLV3::drawLine(float, float, float, long long)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "806003100000000054010000000000000000000000000000cdcc0c3f9a99593fcdcc0c3f0000000000000000ffffffff00000000000018400000000000001040",
+            "pc": "0x50385b4",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "a8930405000000005894040500000000605a03100000000030d4021000000000600500100000000000000000000000000000000000000000486d07010000000000000000000000006048031000000000304e031000000000304e031000000000",
+              "x1_head": "806003100000000054010000000000000000000000000000cdcc0c3f9a99593fcdcc0c3f0000000000000000ffffffff00000000000018400000000000001040000000000000000000000000000000000000000002000000a874070100000000",
+              "x2_head": "00000000000000000000000000000000806003100000000054010000000000000000000000000000cdcc0c3f9a99593fcdcc0c3f0000000000000000ffffffff0000000000001840000000000000104000000000000000000000000000000000",
+              "x3_head": null,
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x10036180",
+              "s1": "0xb",
+              "s2": "0x3f59999a",
+              "s3": "0xc0000000",
+              "s4": "0x40400000",
+              "s5": "0x40400000",
+              "s6": "0x40400000",
+              "s7": "0x40800000",
+              "x0": "0x10034d00",
+              "x1": "0x200eed00",
+              "x2": "0x200eecf0",
+              "x3": "0x0",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableGLV3::endPen(SPen::MotionEvent const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "0000803f000000c08f75713f00000000f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000d5000e3f4001553f0000803f000000c00000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42a00000",
+              "s1": "0x42a00000",
+              "s2": "0x0",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x0",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x50",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "89dd0f408ec369be04097e3f0000803ff0debc9a7856341260ec0e20000000006489030500000000010000000000000001000000000000006744193f970c4d3f89dd0f408ec369be0000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42ba0000",
+              "s1": "0x42ba0000",
+              "s2": "0x3f800000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3e605dea",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x5d",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "648858400a5f9a3f3c4e853f00000040f0debc9a7856341260ec0e200000000064890305000000000100000000000000010000000000000060aa243f7003443f648858400a5f9a3f0000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42d40000",
+              "s1": "0x42d40000",
+              "s2": "0x40000000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3ee05dea",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x6a",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "88b2954034d12940f6978b3f00004040f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000731e303f60ca393f88b2954034d129400000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42ee0000",
+              "s1": "0x42ee0000",
+              "s2": "0x40400000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3f357f1a",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x77",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "fdffbf40faff7f40b0e1913f00008040f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000f204353ff304353ffdffbf40faff7f400000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x43040000",
+              "s1": "0x43040000",
+              "s2": "0x40800000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3f7ffffa",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x84",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          }
+        ],
+        "native_path_entry_counts": {
+          "AddPoint(": 5,
+          "RedrawPen(": 2,
+          "drawLine(": 2,
+          "drawPoint(": 0,
+          "endPen(": 1,
+          "startPen(": 0
+        },
+        "paint_color_calls": [
+          {
+            "argb_u32": "0xff000000",
+            "entry_pc": "0x104602c",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "setup",
+            "this": "0x1002cad0"
+          },
+          {
+            "argb_u32": "0xff000000",
+            "entry_pc": "0x104602c",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke",
+            "this": "0x10034780"
+          },
+          {
+            "argb_u32": "0xff000000",
+            "entry_pc": "0x104602c",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke",
+            "this": "0x10034780"
+          },
+          {
+            "argb_u32": "0xff000000",
+            "entry_pc": "0x104a558",
+            "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+            "phase": "draw_object_stroke",
+            "size_f32_bits": "0x4049374c",
+            "this": "0x10035a60"
+          }
+        ],
+        "pen_address": "0x10034780",
+        "pen_memory_0_0xa8": "188e04050000000030d402100000000001000100000000004c374940000000ff0000000000000000d0bf0e0200000000104803100000000080070000380400000000000000000000000000000000000000000000000000000400000000000000c88f040500000000004d0310000000000000000000000000604803100000000003000000ffffffff0000000000000000f0bf0e02000000001000000002000000c04c031000000000",
+        "redraw_target_symbols": [
+          "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+        ],
+        "redraw_vtable_slot_target": "0x503a740",
+        "rt_address": "0x10035a60",
+        "rt_memory_0_0x130": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f0300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030d402100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063006f006d002e00730061006d00730075006e0067002e0061006e00640072006f00690064002e00730064006b002e00700065006e002e00700065006e002e00",
+        "rt_vptr": "0x5049660",
+        "screen_resolution_calls": [
+          {
+            "height": 1080,
+            "width": 1920
+          }
+        ],
+        "selected_drawable_subobject_vptr": "0x5049458",
+        "size_f32_bits": "4c374940",
+        "version": 4
+      },
+      "geometry_dsos": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "geometry_helpers": {
+        "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+        "oblique_canvas_native": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+      },
+      "paint_dimensions": [
+        321,
+        228
+      ],
+      "paint_framebuffer_status": [
+        {
+          "bound_draw_framebuffer": 2,
+          "is_framebuffer_complete": true,
+          "phase": "native PenGLRenderMsg task2",
+          "status_enum": 36053,
+          "status_hex": "0x8cd5",
+          "target_enum": 36160
+        }
+      ],
+      "paint_gl_errors": {
+        "after_readback": 0,
+        "before_readback": 0,
+        "graphics_calls": [
+          {
+            "args": [
+              34962,
+              5
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34962,
+              256,
+              null,
+              35040
+            ],
+            "call": "glBufferData",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34963,
+              0
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34962,
+              0
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              36160,
+              2
+            ],
+            "call": "glBindFramebuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              36160
+            ],
+            "call": "glCheckFramebufferStatus",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              0,
+              321,
+              228
+            ],
+            "call": "glViewport",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              32774,
+              32774
+            ],
+            "call": "glBlendEquationSeparate",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              770,
+              771,
+              1,
+              771
+            ],
+            "call": "glBlendFuncSeparate",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              3042
+            ],
+            "call": "glEnable",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "call": "glColorMask",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              7
+            ],
+            "call": "glUseProgram",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              1,
+              0,
+              null
+            ],
+            "call": "glUniformMatrix4fv",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              3,
+              1,
+              null
+            ],
+            "call": "glUniform4fv",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1,
+              null
+            ],
+            "call": "glUniform1f",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              33984
+            ],
+            "call": "glActiveTexture",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              3553,
+              5
+            ],
+            "call": "glBindTexture",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              4
+            ],
+            "call": "glBindSampler",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2,
+              0
+            ],
+            "call": "glUniform1i",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34962,
+              4
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0
+            ],
+            "call": "glEnableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              4,
+              5126,
+              0,
+              16,
+              null
+            ],
+            "call": "glVertexAttribPointer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34962,
+              5
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1
+            ],
+            "call": "glEnableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1,
+              3,
+              5126,
+              0,
+              16,
+              null
+            ],
+            "call": "glVertexAttribPointer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1,
+              1
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2
+            ],
+            "call": "glEnableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2,
+              1,
+              5126,
+              0,
+              16,
+              null
+            ],
+            "call": "glVertexAttribPointer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2,
+              1
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              5,
+              0,
+              4,
+              16
+            ],
+            "call": "glDrawArraysInstanced",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0
+            ],
+            "call": "glDisableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1,
+              0
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1
+            ],
+            "call": "glDisableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2,
+              0
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2
+            ],
+            "call": "glDisableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34962,
+              0
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              36006,
+              null
+            ],
+            "call": "glGetIntegerv",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              36160,
+              2,
+              null
+            ],
+            "call": "glInvalidateFramebuffer",
+            "error_after": 0,
+            "prior_error": 0
+          }
+        ]
+      },
+      "paint_input": {
+        "advanced_setting_ascii": "4;",
+        "color_argb_u32": "0xff6cdd8f",
+        "curve_enabled": true,
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+        "pen_size_f32_bits": "4c374940",
+        "size_level": 30,
+        "stroke_type": 0,
+        "tool_type": 2
+      },
+      "paint_motion_case": {
+        "name": "chinesebrush-v3-five-point",
+        "orientations": [
+          0.2,
+          0.35,
+          0.55,
+          0.18,
+          0.7
+        ],
+        "points": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            6.0,
+            3.0
+          ],
+          [
+            9.0,
+            12.0
+          ],
+          [
+            17.0,
+            13.0
+          ],
+          [
+            23.0,
+            15.0
+          ]
+        ],
+        "pressures": [
+          0.3,
+          0.55,
+          0.75,
+          0.35,
+          0.95
+        ],
+        "tilts": [
+          0.12,
+          0.32,
+          0.55,
+          0.22,
+          0.65
+        ],
+        "times": [
+          300,
+          311,
+          324,
+          338,
+          355
+        ],
+        "tool_type": 2
+      },
+      "paint_native_symbols": [],
+      "paint_nonzero_pixels": [
+        {
+          "index": 0,
+          "rgba": [
+            3,
+            6,
+            4,
+            7
+          ]
+        },
+        {
+          "index": 1,
+          "rgba": [
+            8,
+            16,
+            10,
+            19
+          ]
+        },
+        {
+          "index": 322,
+          "rgba": [
+            4,
+            9,
+            6,
+            10
+          ]
+        },
+        {
+          "index": 323,
+          "rgba": [
+            13,
+            26,
+            17,
+            30
+          ]
+        },
+        {
+          "index": 324,
+          "rgba": [
+            9,
+            18,
+            12,
+            21
+          ]
+        },
+        {
+          "index": 646,
+          "rgba": [
+            15,
+            30,
+            20,
+            35
+          ]
+        },
+        {
+          "index": 968,
+          "rgba": [
+            6,
+            12,
+            8,
+            14
+          ]
+        },
+        {
+          "index": 969,
+          "rgba": [
+            2,
+            3,
+            2,
+            4
+          ]
+        },
+        {
+          "index": 1291,
+          "rgba": [
+            8,
+            17,
+            11,
+            20
+          ]
+        },
+        {
+          "index": 1613,
+          "rgba": [
+            7,
+            14,
+            9,
+            17
+          ]
+        },
+        {
+          "index": 1936,
+          "rgba": [
+            6,
+            12,
+            8,
+            14
+          ]
+        },
+        {
+          "index": 2258,
+          "rgba": [
+            4,
+            8,
+            5,
+            9
+          ]
+        },
+        {
+          "index": 2579,
+          "rgba": [
+            3,
+            6,
+            4,
+            7
+          ]
+        },
+        {
+          "index": 2901,
+          "rgba": [
+            7,
+            14,
+            9,
+            16
+          ]
+        },
+        {
+          "index": 2902,
+          "rgba": [
+            9,
+            20,
+            13,
+            23
+          ]
+        },
+        {
+          "index": 3224,
+          "rgba": [
+            22,
+            45,
+            29,
+            52
+          ]
+        },
+        {
+          "index": 3546,
+          "rgba": [
+            6,
+            11,
+            7,
+            13
+          ]
+        },
+        {
+          "index": 3547,
+          "rgba": [
+            12,
+            24,
+            16,
+            28
+          ]
+        },
+        {
+          "index": 3869,
+          "rgba": [
+            23,
+            47,
+            30,
+            54
+          ]
+        },
+        {
+          "index": 3870,
+          "rgba": [
+            2,
+            3,
+            2,
+            4
+          ]
+        },
+        {
+          "index": 4190,
+          "rgba": [
+            3,
+            5,
+            3,
+            6
+          ]
+        },
+        {
+          "index": 4192,
+          "rgba": [
+            11,
+            24,
+            15,
+            28
+          ]
+        },
+        {
+          "index": 4194,
+          "rgba": [
+            3,
+            5,
+            3,
+            6
+          ]
+        },
+        {
+          "index": 4513,
+          "rgba": [
+            3,
+            5,
+            3,
+            6
+          ]
+        },
+        {
+          "index": 4514,
+          "rgba": [
+            7,
+            15,
+            10,
+            17
+          ]
+        },
+        {
+          "index": 4515,
+          "rgba": [
+            18,
+            36,
+            24,
+            42
+          ]
+        },
+        {
+          "index": 4516,
+          "rgba": [
+            56,
+            115,
+            75,
+            133
+          ]
+        },
+        {
+          "index": 4517,
+          "rgba": [
+            60,
+            123,
+            80,
+            142
+          ]
+        },
+        {
+          "index": 4837,
+          "rgba": [
+            29,
+            60,
+            39,
+            71
+          ]
+        },
+        {
+          "index": 4838,
+          "rgba": [
+            30,
+            62,
+            40,
+            72
+          ]
+        }
+      ],
+      "paint_provenance": {
+        "host_gles_dsos": {
+          "/usr/lib/x86_64-linux-gnu/libEGL.so.1.1.0": {
+            "sha256": "f4b60a4618fbf760f395f64dfd53320446ba1011151a80e411742b3232b194e6"
+          },
+          "/usr/lib/x86_64-linux-gnu/libGLESv2.so.2.1.0": {
+            "sha256": "a705c66de30ca4e883120c70acae0f1011d7c3f97605eef331e03493beae3812"
+          }
+        },
+        "native_dsos": {
+          "Base": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBase.so",
+            "sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
+          },
+          "BrushPen": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBrushPen.so",
+            "sha256": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce"
+          },
+          "ChineseBrush": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenChineseBrush.so",
+            "sha256": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5"
+          },
+          "Composer": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so",
+            "sha256": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f"
+          },
+          "Drawing": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so",
+            "sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd"
+          },
+          "FountainPen": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so",
+            "sha256": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec"
+          },
+          "Graphics": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenGraphics.so",
+            "sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621"
+          },
+          "Model": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so",
+            "sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a"
+          },
+          "PenCommon": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so",
+            "sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+          },
+          "Renderer": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so",
+            "sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+          },
+          "libSPenCxx.so": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenCxx.so",
+            "sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+          },
+          "libc++_shared.so": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libc++_shared.so",
+            "sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+          }
+        },
+        "pinned_helpers": {
+          "conformance/brushpen-handoff-native.json": {
+            "path": "conformance/brushpen-handoff-native.json",
+            "sha256": "626ac51b248fafcaec37ea7a5a99f33b932779815d8acfd3f340cc9ebc1c70ae"
+          },
+          "conformance/brushpen-saved-caller-native.json": {
+            "path": "conformance/brushpen-saved-caller-native.json",
+            "sha256": "e4e017a356b54c7f339a39aabc60d678cb87c9bc2152e0303ea9d2a9d91e47a3"
+          },
+          "conformance/brushpen-saved-native.json": {
+            "path": "conformance/brushpen-saved-native.json",
+            "sha256": "38332867aa6cfd4f879829ed5844d65906e4591e9624d76bf0e6b2f16ede04c6"
+          },
+          "conformance/brushpen-texture-native.json": {
+            "path": "conformance/brushpen-texture-native.json",
+            "sha256": "827aee3f567fecdce3e04b4a29217dc1f5d140e130d11ef7720734ef4e7e992c"
+          },
+          "conformance/brushpen_paint_positive_native.py": {
+            "path": "conformance/brushpen_paint_positive_native.py",
+            "sha256": "3223d0d0d85a2d228c6e348253c6c90c7bcc1944304a8de15b0a760bf0234242"
+          },
+          "conformance/brushpen_queue_native.py": {
+            "path": "conformance/brushpen_queue_native.py",
+            "sha256": "8d9672741385b77c02445e039e5982e0deb744a01ae51c77b1dc2c554baf5e26"
+          },
+          "conformance/brushpen_saved_caller_native.py": {
+            "path": "conformance/brushpen_saved_caller_native.py",
+            "sha256": "66f4790e8eeb1ca867f3273a796303b6ffb108286916e1e245fc063cbd744ae0"
+          },
+          "conformance/brushpen_saved_native.py": {
+            "path": "conformance/brushpen_saved_native.py",
+            "sha256": "af92a74d666f365ffe92fb50b0ab09f77a233bf9ac10e884e05d2a632dfaa9cd"
+          },
+          "conformance/brushpen_texture_native.py": {
+            "path": "conformance/brushpen_texture_native.py",
+            "sha256": "ba6a8280580f1c737a90849389b5772fc1dd1d82e4837f27fae68f27218ac267"
+          },
+          "conformance/chinesebrush_reuse_native.py": {
+            "path": "conformance/chinesebrush_reuse_native.py",
+            "sha256": "490e27448607e77ef8b70fa13e5fff1981c747859ab19d3fd16703e5d945deff"
+          },
+          "conformance/fountain_native.py": {
+            "path": "conformance/fountain_native.py",
+            "sha256": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30"
+          },
+          "conformance/inkpen_paint_native.py": {
+            "path": "conformance/inkpen_paint_native.py",
+            "sha256": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae"
+          }
+        },
+        "source_caller_case": "curve-v3",
+        "source_case_contract_scope": "canonical JSON of cases.curve-v3 only; unrelated source-fixture cases are intentionally outside this data pin",
+        "source_case_contract_sha256": "0dd9a905a6c5b61cec192c5e8063d7c424ceec824bc1c639eef75e5c41c065d1",
+        "source_fixture_case": "curve-v3"
+      },
+      "paint_rgba_bytes": 292752,
+      "paint_rgba_sha256": "c5e10fefbfcf65775da4fc03c83af42f0cc2ee21d0d035adbad8c20309b19394",
+      "paint_upload_sha256": "5f9b53b73a77a8bb0cff79b684215c15d3102cf74e54ec29059adeebe923c5d7"
+    },
+    "5": {
+      "drawing_input": {
+        "advanced_setting_ascii": "5;",
+        "color_argb_u32": null,
+        "curve_enabled": true,
+        "native_model_getter_snapshot": {
+          "advanced_setting": "5;",
+          "advanced_setting_getter_called": true,
+          "color_argb_u32": "0xff000000",
+          "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+          "size": 3.1440000534057617,
+          "size_level": 30,
+          "tool_type": 2
+        },
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+        "point_count": 3,
+        "size_f32_bits": "4c374940",
+        "size_level": 30,
+        "source_arrays": {
+          "orientations": {
+            "count": 3,
+            "data_hex": "cdcc4c3e3333b33ecdcc0c3f",
+            "element_size": 4
+          },
+          "points": {
+            "count": 3,
+            "data_hex": "0000803f000000c0000040400000803f0000c04000008040",
+            "element_size": 8
+          },
+          "pressures": {
+            "count": 3,
+            "data_hex": "9a99993e9a99193f9a99593f",
+            "element_size": 4
+          },
+          "tilts": {
+            "count": 3,
+            "data_hex": "8fc2f53d0ad7a33ecdcc0c3f",
+            "element_size": 4
+          },
+          "timestamps": {
+            "count": 3,
+            "data_hex": "2c0100003b01000054010000",
+            "element_size": 4
+          }
+        },
+        "stroke_type": 0,
+        "tool_type": 2
+      },
+      "drawing_producer": {
+        "append_rows": [
+          {
+            "after_count_bytes": 16,
+            "before_count_bytes": 0,
+            "delta_bytes": "0000803f000000c08f75713f0ad7a33d",
+            "float_args": [
+              "0x42a00000",
+              "0x42a00000",
+              "0x0",
+              "0x3f800000",
+              "0x3f000000"
+            ]
+          },
+          {
+            "after_count_bytes": 32,
+            "before_count_bytes": 16,
+            "delta_bytes": "89dd0f408ec369be04097e3f6de78b3f",
+            "float_args": [
+              "0x42ba0000",
+              "0x42ba0000",
+              "0x3f800000",
+              "0x3f800000",
+              "0x3f000000"
+            ]
+          },
+          {
+            "after_count_bytes": 48,
+            "before_count_bytes": 32,
+            "delta_bytes": "648858400a5f9a3f3c4e853fb4c80640",
+            "float_args": [
+              "0x42d40000",
+              "0x42d40000",
+              "0x40000000",
+              "0x3f800000",
+              "0x3f000000"
+            ]
+          },
+          {
+            "after_count_bytes": 64,
+            "before_count_bytes": 48,
+            "delta_bytes": "88b2954034d12940f6978b3fb29d4740",
+            "float_args": [
+              "0x42ee0000",
+              "0x42ee0000",
+              "0x40400000",
+              "0x3f800000",
+              "0x3f000000"
+            ]
+          },
+          {
+            "after_count_bytes": 80,
+            "before_count_bytes": 64,
+            "delta_bytes": "fdffbf40faff7f40b0e1913f58398440",
+            "float_args": [
+              "0x43040000",
+              "0x43040000",
+              "0x40800000",
+              "0x3f800000",
+              "0x3f000000"
+            ]
+          }
+        ],
+        "buffer_bytes": 80,
+        "buffer_hex": "0000803f000000c08f75713f0ad7a33d89dd0f408ec369be04097e3f6de78b3f648858400a5f9a3f3c4e853fb4c8064088b2954034d12940f6978b3fb29d4740fdffbf40faff7f40b0e1913f58398440",
+        "buffer_sha256": "43ab5d696b12aa9cf8085b7773bb25c35f22a0e754b1d5cec061267a8309c23b",
+        "callback_count": 5,
+        "callback_entries": [
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "0000803f000000c08f75713f00000000f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000d5000e3f4001553f0000803f000000c00000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42a00000",
+              "s1": "0x42a00000",
+              "s2": "0x0",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x0",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x50",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "89dd0f408ec369be04097e3f0000803ff0debc9a7856341260ec0e20000000006489030500000000010000000000000001000000000000006744193f970c4d3f89dd0f408ec369be0000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42ba0000",
+              "s1": "0x42ba0000",
+              "s2": "0x3f800000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3e605dea",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x5d",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "648858400a5f9a3f3c4e853f00000040f0debc9a7856341260ec0e200000000064890305000000000100000000000000010000000000000060aa243f7003443f648858400a5f9a3f0000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42d40000",
+              "s1": "0x42d40000",
+              "s2": "0x40000000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3ee05dea",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x6a",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "88b2954034d12940f6978b3f00004040f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000731e303f60ca393f88b2954034d129400000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42ee0000",
+              "s1": "0x42ee0000",
+              "s2": "0x40400000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3f357f1a",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x77",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "fdffbf40faff7f40b0e1913f00008040f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000f204353ff304353ffdffbf40faff7f400000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x43040000",
+              "s1": "0x43040000",
+              "s2": "0x40800000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3f7ffffa",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x84",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          }
+        ],
+        "instance_float_count": 20,
+        "rt_ids": [
+          "0x10035a60"
+        ]
+      },
+      "drawing_selection": {
+        "constructor_settings_snapshots": [
+          {
+            "constructor_this": "0x10034780",
+            "pen_object_plus32_plus36_bytes": "a0050000000a0000",
+            "pen_object_plus32_plus36_i32": [
+              1440,
+              2560
+            ],
+            "phase": "draw_object_stroke",
+            "settings_address": "0x10034798",
+            "settings_offset_from_pen": 24,
+            "snapshot_point": "factory-created ChineseBrush ctor return, before Drawing screen-resolution setter"
+          }
+        ],
+        "draw_object_stroke_entries": [
+          {
+            "pc": "0x503a740",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "5894040500000000605a03100000000030d4021000000000600500100000000000000000000000000000000000000000486d07010000000000000000000000006048031000000000304e031000000000304e0310000000004856031000000000",
+              "x1_head": "20304907000000000000000000000000000000000000000060ca02100000000060c60210000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+              "x2_head": "00000000000000000000000000000000c0ee0e2000000000bc570c02000000000042031000000000d0bf0e020000000040ef0e20000000001c6b0c020000000040ef0e20000000002c6b0c020000000000000000000000005042031000000000",
+              "x3_head": "00000000000000000000000000000000c0ee0e2000000000bc570c02000000000042031000000000d0bf0e020000000040ef0e20000000001c6b0c020000000040ef0e20000000002c6b0c020000000000000000000000005042031000000000",
+              "x4_head": "636f6d2e73616d73756e672e616e64726f69642e73646b2e70656e2e70656e2e7072656c6f61642e4368696e6573654272757368000000000000000000000000f0bf0e0200000000180000001600000000000000000000000000000000000000"
+            },
+            "regs": {
+              "s0": "0x0",
+              "s1": "0x4049374c",
+              "s2": "0x3ecccccd",
+              "s3": "0x0",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10034d08",
+              "x1": "0x1002c560",
+              "x2": "0x200eee90",
+              "x3": "0x200eee90",
+              "x4": "0x10034670",
+              "x5": "0x10032660",
+              "x6": "0x3",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          }
+        ],
+        "drawable_entry_snapshots": [
+          {
+            "drawable_offset_100_u8": 0,
+            "drawable_offset_44_u32_le": "00000000",
+            "drawable_offset_88_u32_le": "48560310",
+            "drawable_offset_92_u32_le": "00000000",
+            "drawable_offset_96_u32_le": "50560310",
+            "entry_pc": "0x503a740",
+            "phase": "draw_object_stroke",
+            "receiver_address": "0x10034d08",
+            "receiver_role": "selected primary drawable after native non-virtual thunk adjustment"
+          },
+          {
+            "drawable_offset_100_u8": 0,
+            "drawable_offset_44_u32_le": "00000000",
+            "drawable_offset_88_u32_le": "304e0310",
+            "drawable_offset_92_u32_le": "00000000",
+            "drawable_offset_96_u32_le": "48560310",
+            "entry_pc": "0x5039e24",
+            "phase": "draw_object_stroke",
+            "receiver_address": "0x10034d00",
+            "receiver_role": "selected primary drawable after native non-virtual thunk adjustment"
+          }
+        ],
+        "drawable_memory_0_0x180": "a8930405000000005894040500000000605a03100000000030d4021000000000600500100000000000000000000000000000000000000000486d07010000000000000000000000006048031000000000304e031000000000504e0310000000004856031000000000505603100000000058560310000000005c5a03100000000002000000040000006951fa4003000000000100000000000000000000000000000000000000000000b061031000000000c061031000000000c061031000000000d061031000000000f061031000000000f06103100000000000010000010000000000803f000000c0000040400000803f00009040000020408f75f13f0000c040000080400000000050000000000000005401000000000000de6b0d4505000000000000000000000000000000000000000000803f000000c0000040400000803f00009040000020400000c04000008040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "drawable_threshold_entries": [
+          {
+            "entry_pc": "0x5039aa8",
+            "offset_44_bytes": "00000000",
+            "offset_96_bytes": "48560310",
+            "phase": "draw_object_stroke",
+            "primary_drawable_address": null,
+            "receiver_address": "0x10034d00",
+            "receiver_minus_primary": null
+          },
+          {
+            "entry_pc": "0x5039aa8",
+            "offset_44_bytes": "00000000",
+            "offset_96_bytes": "48560310",
+            "phase": "draw_object_stroke",
+            "primary_drawable_address": null,
+            "receiver_address": "0x10034d00",
+            "receiver_minus_primary": null
+          }
+        ],
+        "factory_symbol": "createPenInst",
+        "getStrokeDrawableGL_primary_vptr": "0x50493a8",
+        "loader_calls": [
+          {
+            "flags": 2,
+            "fn": "dlopen",
+            "name": "libSPenChineseBrush.so"
+          },
+          {
+            "fn": "dlsym",
+            "handle": "0x50000001",
+            "name": "createPenInst"
+          }
+        ],
+        "motion_getter_returns": [
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0aa8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x10036180",
+              "s0": "0x10036180",
+              "x0": "0x2"
+            },
+            "return_pc": "0x503860c",
+            "return_pc_expected": "0x503860c",
+            "signature": "SPen::MotionEvent::GetToolType(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0a9c",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x10036180",
+              "s0": "0x10036180",
+              "x0": "0x0"
+            },
+            "return_pc": "0x503861c",
+            "return_pc_expected": "0x503861c",
+            "signature": "SPen::MotionEvent::GetSource() const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0ad8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4018000000000000",
+              "s0": "0x0",
+              "x0": "0x200eed00"
+            },
+            "return_pc": "0x5038650",
+            "return_pc_expected": "0x5038650",
+            "signature": "SPen::MotionEvent::GetX(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0b34",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4010000000000000",
+              "s0": "0x0",
+              "x0": "0x200eed00"
+            },
+            "return_pc": "0x5038660",
+            "return_pc_expected": "0x5038660",
+            "signature": "SPen::MotionEvent::GetY(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0aa8",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x4010000000000000",
+              "s0": "0x0",
+              "x0": "0x2"
+            },
+            "return_pc": "0x5038670",
+            "return_pc_expected": "0x5038670",
+            "signature": "SPen::MotionEvent::GetToolType(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c094c",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x3f59999a",
+              "s0": "0x3f59999a",
+              "x0": "0x200eed00"
+            },
+            "return_pc": "0x5038688",
+            "return_pc_expected": "0x5038688",
+            "signature": "SPen::MotionEvent::GetPressure(int) const"
+          },
+          {
+            "args": {
+              "x0": "0x200eed00",
+              "x1": "0x0",
+              "x2": "0x200eecf0",
+              "x3": "0x0"
+            },
+            "entry_pc": "0x20c0634",
+            "phase_entry": "draw_object_stroke",
+            "phase_return": "draw_object_stroke",
+            "return": {
+              "d0": "0x3f59999a",
+              "s0": "0x3f59999a",
+              "x0": "0x28"
+            },
+            "return_pc": "0x50386a4",
+            "return_pc_expected": "0x50386a4",
+            "signature": "SPen::MotionEvent::GetEventTime() const"
+          }
+        ],
+        "native_call_entries": [
+          {
+            "drawline_offset_44_bytes": "00000000",
+            "drawline_offset_96_bytes": "48560310",
+            "pc": "0x5039aa8",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "a8930405000000005894040500000000605a03100000000030d4021000000000600500100000000000000000000000000000000000000000486d07010000000000000000000000006048031000000000304e031000000000304e031000000000",
+              "x1_head": "unmapped",
+              "x2_head": null,
+              "x3_head": "unmapped",
+              "x4_head": "unmapped"
+            },
+            "regs": {
+              "s0": "0x40400000",
+              "s1": "0x3f800000",
+              "s2": "0x3f19999a",
+              "s3": "0xc0000000",
+              "s4": "0x0",
+              "s5": "0x0",
+              "s6": "0x0",
+              "s7": "0x0",
+              "x0": "0x10034d00",
+              "x1": "0x13b",
+              "x2": "0x0",
+              "x3": "0x24",
+              "x4": "0x69d",
+              "x5": "0x1003479c",
+              "x6": "0x3",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableGLV3::drawLine(float, float, float, long long)"
+            ]
+          },
+          {
+            "drawline_offset_44_bytes": "00000000",
+            "drawline_offset_96_bytes": "48560310",
+            "pc": "0x5039aa8",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "a8930405000000005894040500000000605a03100000000030d4021000000000600500100000000000000000000000000000000000000000486d07010000000000000000000000006048031000000000304e031000000000304e031000000000",
+              "x1_head": "unmapped",
+              "x2_head": null,
+              "x3_head": "unmapped",
+              "x4_head": "unmapped"
+            },
+            "regs": {
+              "s0": "0x40c00000",
+              "s1": "0x40800000",
+              "s2": "0x3f59999a",
+              "s3": "0xc0000000",
+              "s4": "0x3f800000",
+              "s5": "0x40400000",
+              "s6": "0x40000000",
+              "s7": "0x3f800000",
+              "x0": "0x10034d00",
+              "x1": "0x154",
+              "x2": "0x0",
+              "x3": "0x24",
+              "x4": "0x69d",
+              "x5": "0x1003479c",
+              "x6": "0x3",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableGLV3::drawLine(float, float, float, long long)"
+            ]
+          },
+          {
+            "motion_event_entry_bytes": "806003100000000054010000000000000000000000000000cdcc0c3f9a99593fcdcc0c3f0000000000000000ffffffff00000000000018400000000000001040",
+            "pc": "0x50385b4",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "a8930405000000005894040500000000605a03100000000030d4021000000000600500100000000000000000000000000000000000000000486d07010000000000000000000000006048031000000000304e031000000000304e031000000000",
+              "x1_head": "806003100000000054010000000000000000000000000000cdcc0c3f9a99593fcdcc0c3f0000000000000000ffffffff00000000000018400000000000001040000000000000000000000000000000000000000002000000a874070100000000",
+              "x2_head": "00000000000000000000000000000000806003100000000054010000000000000000000000000000cdcc0c3f9a99593fcdcc0c3f0000000000000000ffffffff0000000000001840000000000000104000000000000000000000000000000000",
+              "x3_head": null,
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x10036180",
+              "s1": "0xb",
+              "s2": "0x3f59999a",
+              "s3": "0xc0000000",
+              "s4": "0x40400000",
+              "s5": "0x40400000",
+              "s6": "0x40400000",
+              "s7": "0x40800000",
+              "x0": "0x10034d00",
+              "x1": "0x200eed00",
+              "x2": "0x200eecf0",
+              "x3": "0x0",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableGLV3::endPen(SPen::MotionEvent const*, SPen::RectF*)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "0000803f000000c08f75713f00000000f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000d5000e3f4001553f0000803f000000c00000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42a00000",
+              "s1": "0x42a00000",
+              "s2": "0x0",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x0",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x50",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "89dd0f408ec369be04097e3f0000803ff0debc9a7856341260ec0e20000000006489030500000000010000000000000001000000000000006744193f970c4d3f89dd0f408ec369be0000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42ba0000",
+              "s1": "0x42ba0000",
+              "s2": "0x3f800000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3e605dea",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x5d",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "648858400a5f9a3f3c4e853f00000040f0debc9a7856341260ec0e200000000064890305000000000100000000000000010000000000000060aa243f7003443f648858400a5f9a3f0000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42d40000",
+              "s1": "0x42d40000",
+              "s2": "0x40000000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3ee05dea",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x6a",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "88b2954034d12940f6978b3f00004040f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000731e303f60ca393f88b2954034d129400000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x42ee0000",
+              "s1": "0x42ee0000",
+              "s2": "0x40400000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3f357f1a",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x77",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          },
+          {
+            "pc": "0x503b62c",
+            "phase": "draw_object_stroke",
+            "pointer_heads": {
+              "x0_head": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f030000000000000000000000000000000000000060600310000000000000000000000000",
+              "x1_head": "fdffbf40faff7f40b0e1913f00008040f0debc9a7856341260ec0e2000000000648903050000000001000000000000000100000000000000f204353ff304353ffdffbf40faff7f400000c04000008040f0debc9a785634120000000000000000",
+              "x2_head": "unmapped",
+              "x3_head": "000800000000000000f7c1000012000e004c800800000000006c00000000000000d9c4000011001000b81a0d000000000010010000000000008c34010012000e00bc790a000000000068000000000000002499010012000e00a8030c00000000",
+              "x4_head": null
+            },
+            "regs": {
+              "s0": "0x43040000",
+              "s1": "0x43040000",
+              "s2": "0x40800000",
+              "s3": "0x3f800000",
+              "s4": "0x3f000000",
+              "s5": "0x40400000",
+              "s6": "0x3f7ffffa",
+              "s7": "0x40800000",
+              "x0": "0x10035a60",
+              "x1": "0x200eebd8",
+              "x2": "0x84",
+              "x3": "0x7fff",
+              "x4": "0x0",
+              "x5": "0x10036180",
+              "x6": "0x10036180",
+              "x7": "0x0"
+            },
+            "signatures": [
+              "SPen::ChineseBrushStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)"
+            ]
+          }
+        ],
+        "native_path_entry_counts": {
+          "AddPoint(": 5,
+          "RedrawPen(": 2,
+          "drawLine(": 2,
+          "drawPoint(": 0,
+          "endPen(": 1,
+          "startPen(": 0
+        },
+        "paint_color_calls": [
+          {
+            "argb_u32": "0xff000000",
+            "entry_pc": "0x104602c",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "setup",
+            "this": "0x1002cad0"
+          },
+          {
+            "argb_u32": "0xff000000",
+            "entry_pc": "0x104602c",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke",
+            "this": "0x10034780"
+          },
+          {
+            "argb_u32": "0xff000000",
+            "entry_pc": "0x104602c",
+            "method": "SPen::Pen::SetColor(int)",
+            "phase": "draw_object_stroke",
+            "this": "0x10034780"
+          },
+          {
+            "argb_u32": "0xff000000",
+            "entry_pc": "0x104a558",
+            "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+            "phase": "draw_object_stroke",
+            "size_f32_bits": "0x4049374c",
+            "this": "0x10035a60"
+          }
+        ],
+        "pen_address": "0x10034780",
+        "pen_memory_0_0xa8": "188e04050000000030d402100000000001000100000000004c374940000000ff0000000000000000d0bf0e0200000000104803100000000080070000380400000000000000000000000000000000000000000000000000000500000000000000c88f040500000000004d0310000000000000000000000000604803100000000003000000ffffffff0000000000000000f0bf0e02000000001000000002000000c04c031000000000",
+        "redraw_target_symbols": [
+          "non-virtual thunk to SPen::ChineseBrushStrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+        ],
+        "redraw_vtable_slot_target": "0x503a740",
+        "rt_address": "0x10035a60",
+        "rt_memory_0_0x130": "60960405000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000803f0300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030d402100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063006f006d002e00730061006d00730075006e0067002e0061006e00640072006f00690064002e00730064006b002e00700065006e002e00700065006e002e00",
+        "rt_vptr": "0x5049660",
+        "screen_resolution_calls": [
+          {
+            "height": 1080,
+            "width": 1920
+          }
+        ],
+        "selected_drawable_subobject_vptr": "0x5049458",
+        "size_f32_bits": "4c374940",
+        "version": 5
+      },
+      "geometry_dsos": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "ChineseBrush": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "geometry_helpers": {
+        "elf_plt": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+        "oblique_canvas_native": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+      },
+      "paint_dimensions": [
+        321,
+        228
+      ],
+      "paint_framebuffer_status": [
+        {
+          "bound_draw_framebuffer": 2,
+          "is_framebuffer_complete": true,
+          "phase": "native PenGLRenderMsg task2",
+          "status_enum": 36053,
+          "status_hex": "0x8cd5",
+          "target_enum": 36160
+        }
+      ],
+      "paint_gl_errors": {
+        "after_readback": 0,
+        "before_readback": 0,
+        "graphics_calls": [
+          {
+            "args": [
+              34962,
+              5
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34962,
+              256,
+              null,
+              35040
+            ],
+            "call": "glBufferData",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34963,
+              0
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34962,
+              0
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              36160,
+              2
+            ],
+            "call": "glBindFramebuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              36160
+            ],
+            "call": "glCheckFramebufferStatus",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              0,
+              321,
+              228
+            ],
+            "call": "glViewport",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              32774,
+              32774
+            ],
+            "call": "glBlendEquationSeparate",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              770,
+              771,
+              1,
+              771
+            ],
+            "call": "glBlendFuncSeparate",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              3042
+            ],
+            "call": "glEnable",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "call": "glColorMask",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              7
+            ],
+            "call": "glUseProgram",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              1,
+              0,
+              null
+            ],
+            "call": "glUniformMatrix4fv",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              3,
+              1,
+              null
+            ],
+            "call": "glUniform4fv",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1,
+              null
+            ],
+            "call": "glUniform1f",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              33984
+            ],
+            "call": "glActiveTexture",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              3553,
+              5
+            ],
+            "call": "glBindTexture",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              4
+            ],
+            "call": "glBindSampler",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2,
+              0
+            ],
+            "call": "glUniform1i",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34962,
+              4
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0
+            ],
+            "call": "glEnableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              4,
+              5126,
+              0,
+              16,
+              null
+            ],
+            "call": "glVertexAttribPointer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34962,
+              5
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1
+            ],
+            "call": "glEnableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1,
+              3,
+              5126,
+              0,
+              16,
+              null
+            ],
+            "call": "glVertexAttribPointer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1,
+              1
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2
+            ],
+            "call": "glEnableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2,
+              1,
+              5126,
+              0,
+              16,
+              null
+            ],
+            "call": "glVertexAttribPointer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2,
+              1
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              5,
+              0,
+              4,
+              16
+            ],
+            "call": "glDrawArraysInstanced",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              0
+            ],
+            "call": "glDisableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1,
+              0
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              1
+            ],
+            "call": "glDisableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2,
+              0
+            ],
+            "call": "glVertexAttribDivisor",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              2
+            ],
+            "call": "glDisableVertexAttribArray",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              34962,
+              0
+            ],
+            "call": "glBindBuffer",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              36006,
+              null
+            ],
+            "call": "glGetIntegerv",
+            "error_after": 0,
+            "prior_error": 0
+          },
+          {
+            "args": [
+              36160,
+              2,
+              null
+            ],
+            "call": "glInvalidateFramebuffer",
+            "error_after": 0,
+            "prior_error": 0
+          }
+        ]
+      },
+      "paint_input": {
+        "advanced_setting_ascii": "5;",
+        "color_argb_u32": "0xff6cdd8f",
+        "curve_enabled": true,
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.ChineseBrush",
+        "pen_size_f32_bits": "4c374940",
+        "size_level": 30,
+        "stroke_type": 0,
+        "tool_type": 2
+      },
+      "paint_motion_case": {
+        "name": "chinesebrush-v3-five-point",
+        "orientations": [
+          0.2,
+          0.35,
+          0.55,
+          0.18,
+          0.7
+        ],
+        "points": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            6.0,
+            3.0
+          ],
+          [
+            9.0,
+            12.0
+          ],
+          [
+            17.0,
+            13.0
+          ],
+          [
+            23.0,
+            15.0
+          ]
+        ],
+        "pressures": [
+          0.3,
+          0.55,
+          0.75,
+          0.35,
+          0.95
+        ],
+        "tilts": [
+          0.12,
+          0.32,
+          0.55,
+          0.22,
+          0.65
+        ],
+        "times": [
+          300,
+          311,
+          324,
+          338,
+          355
+        ],
+        "tool_type": 2
+      },
+      "paint_native_symbols": [],
+      "paint_nonzero_pixels": [
+        {
+          "index": 0,
+          "rgba": [
+            3,
+            6,
+            4,
+            7
+          ]
+        },
+        {
+          "index": 1,
+          "rgba": [
+            8,
+            16,
+            10,
+            19
+          ]
+        },
+        {
+          "index": 322,
+          "rgba": [
+            4,
+            9,
+            6,
+            10
+          ]
+        },
+        {
+          "index": 323,
+          "rgba": [
+            13,
+            26,
+            17,
+            30
+          ]
+        },
+        {
+          "index": 324,
+          "rgba": [
+            9,
+            18,
+            12,
+            21
+          ]
+        },
+        {
+          "index": 646,
+          "rgba": [
+            15,
+            30,
+            20,
+            35
+          ]
+        },
+        {
+          "index": 968,
+          "rgba": [
+            6,
+            12,
+            8,
+            14
+          ]
+        },
+        {
+          "index": 969,
+          "rgba": [
+            2,
+            3,
+            2,
+            4
+          ]
+        },
+        {
+          "index": 1291,
+          "rgba": [
+            8,
+            17,
+            11,
+            20
+          ]
+        },
+        {
+          "index": 1613,
+          "rgba": [
+            7,
+            14,
+            9,
+            17
+          ]
+        },
+        {
+          "index": 1936,
+          "rgba": [
+            6,
+            12,
+            8,
+            14
+          ]
+        },
+        {
+          "index": 2258,
+          "rgba": [
+            4,
+            8,
+            5,
+            9
+          ]
+        },
+        {
+          "index": 2579,
+          "rgba": [
+            3,
+            6,
+            4,
+            7
+          ]
+        },
+        {
+          "index": 2901,
+          "rgba": [
+            7,
+            14,
+            9,
+            16
+          ]
+        },
+        {
+          "index": 2902,
+          "rgba": [
+            9,
+            20,
+            13,
+            23
+          ]
+        },
+        {
+          "index": 3224,
+          "rgba": [
+            22,
+            45,
+            29,
+            52
+          ]
+        },
+        {
+          "index": 3546,
+          "rgba": [
+            6,
+            11,
+            7,
+            13
+          ]
+        },
+        {
+          "index": 3547,
+          "rgba": [
+            12,
+            24,
+            16,
+            28
+          ]
+        },
+        {
+          "index": 3869,
+          "rgba": [
+            23,
+            47,
+            30,
+            54
+          ]
+        },
+        {
+          "index": 3870,
+          "rgba": [
+            2,
+            3,
+            2,
+            4
+          ]
+        },
+        {
+          "index": 4190,
+          "rgba": [
+            3,
+            5,
+            3,
+            6
+          ]
+        },
+        {
+          "index": 4192,
+          "rgba": [
+            11,
+            24,
+            15,
+            28
+          ]
+        },
+        {
+          "index": 4194,
+          "rgba": [
+            3,
+            5,
+            3,
+            6
+          ]
+        },
+        {
+          "index": 4513,
+          "rgba": [
+            3,
+            5,
+            3,
+            6
+          ]
+        },
+        {
+          "index": 4514,
+          "rgba": [
+            7,
+            15,
+            10,
+            17
+          ]
+        },
+        {
+          "index": 4515,
+          "rgba": [
+            18,
+            36,
+            24,
+            42
+          ]
+        },
+        {
+          "index": 4516,
+          "rgba": [
+            56,
+            115,
+            75,
+            133
+          ]
+        },
+        {
+          "index": 4517,
+          "rgba": [
+            60,
+            123,
+            80,
+            142
+          ]
+        },
+        {
+          "index": 4837,
+          "rgba": [
+            29,
+            60,
+            39,
+            71
+          ]
+        },
+        {
+          "index": 4838,
+          "rgba": [
+            30,
+            62,
+            40,
+            72
+          ]
+        }
+      ],
+      "paint_provenance": {
+        "host_gles_dsos": {
+          "/usr/lib/x86_64-linux-gnu/libEGL.so.1.1.0": {
+            "sha256": "f4b60a4618fbf760f395f64dfd53320446ba1011151a80e411742b3232b194e6"
+          },
+          "/usr/lib/x86_64-linux-gnu/libGLESv2.so.2.1.0": {
+            "sha256": "a705c66de30ca4e883120c70acae0f1011d7c3f97605eef331e03493beae3812"
+          }
+        },
+        "native_dsos": {
+          "Base": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBase.so",
+            "sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
+          },
+          "BrushPen": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBrushPen.so",
+            "sha256": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce"
+          },
+          "ChineseBrush": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenChineseBrush.so",
+            "sha256": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5"
+          },
+          "Composer": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so",
+            "sha256": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f"
+          },
+          "Drawing": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so",
+            "sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd"
+          },
+          "FountainPen": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so",
+            "sha256": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec"
+          },
+          "Graphics": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenGraphics.so",
+            "sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621"
+          },
+          "Model": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so",
+            "sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a"
+          },
+          "PenCommon": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so",
+            "sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d"
+          },
+          "Renderer": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so",
+            "sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+          },
+          "libSPenCxx.so": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libSPenCxx.so",
+            "sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+          },
+          "libc++_shared.so": {
+            "path": "scratch/apk-analysis-native/arm64-v8a/libc++_shared.so",
+            "sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+          }
+        },
+        "pinned_helpers": {
+          "conformance/brushpen-handoff-native.json": {
+            "path": "conformance/brushpen-handoff-native.json",
+            "sha256": "626ac51b248fafcaec37ea7a5a99f33b932779815d8acfd3f340cc9ebc1c70ae"
+          },
+          "conformance/brushpen-saved-caller-native.json": {
+            "path": "conformance/brushpen-saved-caller-native.json",
+            "sha256": "e4e017a356b54c7f339a39aabc60d678cb87c9bc2152e0303ea9d2a9d91e47a3"
+          },
+          "conformance/brushpen-saved-native.json": {
+            "path": "conformance/brushpen-saved-native.json",
+            "sha256": "38332867aa6cfd4f879829ed5844d65906e4591e9624d76bf0e6b2f16ede04c6"
+          },
+          "conformance/brushpen-texture-native.json": {
+            "path": "conformance/brushpen-texture-native.json",
+            "sha256": "827aee3f567fecdce3e04b4a29217dc1f5d140e130d11ef7720734ef4e7e992c"
+          },
+          "conformance/brushpen_paint_positive_native.py": {
+            "path": "conformance/brushpen_paint_positive_native.py",
+            "sha256": "3223d0d0d85a2d228c6e348253c6c90c7bcc1944304a8de15b0a760bf0234242"
+          },
+          "conformance/brushpen_queue_native.py": {
+            "path": "conformance/brushpen_queue_native.py",
+            "sha256": "8d9672741385b77c02445e039e5982e0deb744a01ae51c77b1dc2c554baf5e26"
+          },
+          "conformance/brushpen_saved_caller_native.py": {
+            "path": "conformance/brushpen_saved_caller_native.py",
+            "sha256": "66f4790e8eeb1ca867f3273a796303b6ffb108286916e1e245fc063cbd744ae0"
+          },
+          "conformance/brushpen_saved_native.py": {
+            "path": "conformance/brushpen_saved_native.py",
+            "sha256": "af92a74d666f365ffe92fb50b0ab09f77a233bf9ac10e884e05d2a632dfaa9cd"
+          },
+          "conformance/brushpen_texture_native.py": {
+            "path": "conformance/brushpen_texture_native.py",
+            "sha256": "ba6a8280580f1c737a90849389b5772fc1dd1d82e4837f27fae68f27218ac267"
+          },
+          "conformance/chinesebrush_reuse_native.py": {
+            "path": "conformance/chinesebrush_reuse_native.py",
+            "sha256": "490e27448607e77ef8b70fa13e5fff1981c747859ab19d3fd16703e5d945deff"
+          },
+          "conformance/fountain_native.py": {
+            "path": "conformance/fountain_native.py",
+            "sha256": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30"
+          },
+          "conformance/inkpen_paint_native.py": {
+            "path": "conformance/inkpen_paint_native.py",
+            "sha256": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae"
+          }
+        },
+        "source_caller_case": "curve-v3",
+        "source_case_contract_scope": "canonical JSON of cases.curve-v3 only; unrelated source-fixture cases are intentionally outside this data pin",
+        "source_case_contract_sha256": "0dd9a905a6c5b61cec192c5e8063d7c424ceec824bc1c639eef75e5c41c065d1",
+        "source_fixture_case": "curve-v3"
+      },
+      "paint_rgba_bytes": 292752,
+      "paint_rgba_sha256": "c5e10fefbfcf65775da4fc03c83af42f0cc2ee21d0d035adbad8c20309b19394",
+      "paint_upload_sha256": "5f9b53b73a77a8bb0cff79b684215c15d3102cf74e54ec29059adeebe923c5d7"
+    }
+  },
+  "provenance": {
+    "capture_script_sha256": "f32a8ca1cf0f2974994fb710c942749bdfc1545d8d23f0d948e4b4dcebac4007",
+    "geometry_script_sha256": "613782ca45a8abeb864f85fa2eae20190da312767ab3c02a413bcf86a3bd8775",
+    "paint_script_sha256": "0377f7de9c48e7c79fc596603128d49bff3a7427ce59e6052db14a53d8cf342a"
+  },
+  "schema": "chinesebrush-setting-5-paired-native-v1",
+  "scope": "Synthetic ObjectStroke, host adapters, native Drawing and RTV1, Unicorn and host Mesa; no device or real-note parity."
+}

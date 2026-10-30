@@ -84,7 +84,7 @@ fn gl_version(setting: Option<&str>) -> Option<i32> {
         None | Some("0;" | "1;") => Some(1),
         Some("2;") => Some(2),
         Some("" | "3;") => Some(3),
-        Some("4;") => Some(3),
+        Some("4;" | "5;") => Some(3),
         _ => None,
     }
 }
@@ -826,7 +826,340 @@ mod tests {
         assert_eq!(prepared[0].sample_ends, prepared[1].sample_ends);
         assert_eq!(prepared[0].tiles, prepared[1].tiles);
         assert!(prepared[0].fringe_masks.is_empty() && prepared[1].fringe_masks.is_empty());
-        assert!(prepare(&capture_stroke(source, "5;"), profile, None).is_none());
+        assert!(prepare(&capture_stroke(source, "6;"), profile, None).is_none());
+    }
+
+    #[test]
+    fn setting45_matrix_native_geometry_and_public_exports() {
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../tools/chinesebrush-v5-matrix/receipt.json"
+        ))
+        .unwrap();
+        let cases = receipt["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 7);
+        for (name, case) in cases {
+            let source = &case["input"];
+            let profile = ChineseBrushRenderProfile {
+                screen_width: case["display"]["width"].as_u64().unwrap() as u32,
+                screen_height: case["display"]["height"].as_u64().unwrap() as u32,
+            };
+            let native = fixture_bytes(case["producer"]["buffer_hex"].as_str().unwrap());
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&native)),
+                case["producer"]["buffer_sha256"].as_str().unwrap(),
+                "{name}"
+            );
+            assert_eq!(
+                case["paired"]["4"]["buffer_sha256"], case["paired"]["5"]["buffer_sha256"],
+                "{name}"
+            );
+            assert_eq!(
+                case["paired"]["4"]["buffer_sha256"], case["producer"]["buffer_sha256"],
+                "{name}: paired stream matches retained producer"
+            );
+            let four = capture_stroke(source, "4;");
+            let five = capture_stroke(source, "5;");
+            let points: Vec<[f32; 2]> = four
+                .points
+                .iter()
+                .map(|p| [p.x as f32, p.y as f32])
+                .collect();
+            let pressures: Vec<f32> = four.pressures.iter().map(|p| *p as f32).collect();
+            let times: Vec<i32> = four.timestamps.iter().map(|t| *t as i32).collect();
+            let model = crate::ink::chinesebrush_glv123::run_model_bounded(
+                &points,
+                &pressures,
+                &times,
+                four.pen_width,
+                3,
+                profile.screen_width as i32,
+                profile.screen_height as i32,
+                2,
+                true,
+                1024,
+            )
+            .unwrap();
+            let mut stream = Vec::new();
+            for [x, y, radius, phase, scalar] in model {
+                for value in [
+                    x,
+                    y,
+                    radius,
+                    crate::ink::chinesebrush_glv123::packed_w(phase, scalar),
+                ] {
+                    stream.extend_from_slice(&value.to_le_bytes());
+                }
+            }
+            assert_eq!(stream, native, "{name}: model geometry");
+            let admitted = prepare(&four, profile, None).is_some();
+            assert!(admitted, "{name}: captured input should be admitted");
+            assert_eq!(admitted, prepare(&five, profile, None).is_some(), "{name}");
+            let doc = |stroke: Stroke| crate::Document {
+                pages: vec![crate::Page {
+                    uuid: "matrix".into(),
+                    width: 1920,
+                    height: 1080,
+                    objects: vec![stroke.into()],
+                    background_color: None,
+                    content_bbox: crate::BoundingBox::default(),
+                    template: None,
+                    background: Default::default(),
+                }],
+                metadata: Default::default(),
+            };
+            let four = doc(four);
+            let five = doc(five);
+            let options = crate::RenderOptions {
+                chinesebrush_profile: Some(profile),
+                ..Default::default()
+            };
+            let svg = |d: &crate::Document, o: &crate::RenderOptions| {
+                crate::render_document_svg(d, o).remove(0).svg
+            };
+            assert_eq!(
+                svg(&four, &options),
+                svg(&five, &options),
+                "{name}: SVG aliases"
+            );
+            assert_eq!(
+                svg(&five, &options) != svg(&five, &Default::default()),
+                admitted,
+                "{name}: SVG dispatch"
+            );
+            let rejected = doc(capture_stroke(source, "5;0;"));
+            assert_eq!(
+                svg(&rejected, &options),
+                svg(&rejected, &Default::default()),
+                "{name}: SVG fallback"
+            );
+            #[cfg(feature = "pdf")]
+            {
+                let pdf = |d: &crate::Document, o: &crate::RenderOptions| {
+                    crate::render_document_pdf(d, o, &Default::default()).unwrap()
+                };
+                assert_eq!(
+                    pdf(&four, &options),
+                    pdf(&five, &options),
+                    "{name}: PDF aliases"
+                );
+                assert_eq!(
+                    pdf(&five, &options) != pdf(&five, &Default::default()),
+                    admitted,
+                    "{name}: PDF dispatch"
+                );
+                assert_eq!(
+                    pdf(&rejected, &options),
+                    pdf(&rejected, &Default::default()),
+                    "{name}: PDF fallback"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn setting45_color_background_replay_and_slice_aliases() {
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../tools/chinesebrush-v5-matrix/receipt.json"
+        ))
+        .unwrap();
+        let source = &receipt["cases"]["proto8-v3"]["input"];
+        let options = crate::RenderOptions {
+            chinesebrush_profile: Some(ChineseBrushRenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+            }),
+            ..Default::default()
+        };
+        for color in [
+            0xff6c_dd8f,
+            0xff00_0000,
+            0xffe2_315a,
+            0x4044_aaee,
+            0x0044_aaee,
+        ] {
+            for background in [
+                None,
+                Some(crate::Color {
+                    r: 19,
+                    g: 27,
+                    b: 37,
+                }),
+            ] {
+                let document = |setting| {
+                    let mut stroke = capture_stroke(source, setting);
+                    stroke.rendering.as_mut().unwrap().style.color_argb = Some(color);
+                    crate::Document {
+                        pages: vec![crate::Page {
+                            uuid: "alias-colors".into(),
+                            width: 1920,
+                            height: 1080,
+                            objects: vec![stroke.into()],
+                            background_color: background,
+                            content_bbox: crate::BoundingBox::default(),
+                            template: None,
+                            background: Default::default(),
+                        }],
+                        metadata: Default::default(),
+                    }
+                };
+                let four = document("4;");
+                let five = document("5;");
+                let svg = |doc: &crate::Document, opts: &crate::RenderOptions| {
+                    crate::render_document_svg(doc, opts)[0].svg.clone()
+                };
+                let profiled = svg(&five, &options);
+                assert_eq!(svg(&four, &options), profiled);
+                assert_ne!(profiled, svg(&five, &Default::default()));
+                assert!(profiled.contains("<image"));
+                #[cfg(feature = "pdf")]
+                {
+                    let pdf = |doc: &crate::Document, opts: &crate::RenderOptions| {
+                        crate::render_document_pdf(doc, opts, &Default::default()).unwrap()
+                    };
+                    assert_eq!(pdf(&four, &options), pdf(&five, &options));
+                    assert_ne!(pdf(&five, &options), pdf(&five, &Default::default()));
+                }
+                let replay = |doc: &crate::Document, opts: &crate::RenderOptions| {
+                    let layout = crate::layout_document(doc);
+                    crate::render::render_layout_page_replay_svg(doc, &layout, 0, opts)
+                        .unwrap()
+                        .svg
+                };
+                let profiled_replay = replay(&five, &options);
+                assert_eq!(replay(&four, &options), profiled_replay);
+                assert_ne!(profiled_replay, replay(&five, &Default::default()));
+                assert!(profiled_replay.contains("data-replay-part"));
+                assert!(profiled_replay.contains("<image"));
+                #[cfg(feature = "pdf")]
+                {
+                    let slice = |doc: &crate::Document, opts: &crate::RenderOptions| {
+                        let layout = crate::layout_document(doc);
+                        let request =
+                            crate::render::PageSceneRequest::sliced(&layout.pages[0], 0, 256, true)
+                                .unwrap();
+                        let mut cache = crate::render::DocumentTextCache::default();
+                        cache
+                            .render_layout_page_scene_requests(
+                                doc,
+                                &[request],
+                                opts,
+                                &crate::render::fonts::FontBook::default(),
+                                &mut |_| {},
+                            )
+                            .remove(0)
+                            .page
+                            .svg
+                    };
+                    let profiled_slice = slice(&five, &options);
+                    assert_eq!(slice(&four, &options), profiled_slice);
+                    assert_ne!(profiled_slice, slice(&five, &Default::default()));
+                    assert!(profiled_slice.contains("<image"));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn setting5_paired_native_control_and_public_exports() {
+        let pair: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/chinesebrush-v5-paired-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            pair["cases"]["4"]["drawing_producer"]["buffer_hex"],
+            pair["cases"]["5"]["drawing_producer"]["buffer_hex"]
+        );
+        assert_eq!(
+            pair["cases"]["4"]["paint_rgba_sha256"],
+            pair["cases"]["5"]["paint_rgba_sha256"]
+        );
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/chinesebrush-glv3-setting4-native.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            pair["cases"]["4"]["drawing_producer"]["buffer_hex"],
+            fixture["native_addpoint_stream"]["buffer_hex"]
+        );
+        let source = &fixture["source_input"];
+        for setting in ["4", "5"] {
+            for key in [
+                "source_arrays",
+                "size_f32_bits",
+                "tool_type",
+                "curve_enabled",
+                "stroke_type",
+                "pen_name",
+            ] {
+                assert_eq!(
+                    pair["cases"][setting]["drawing_input"][key], source[key],
+                    "{setting} {key}"
+                );
+            }
+        }
+        let doc = |setting: &str| crate::Document {
+            pages: vec![crate::Page {
+                uuid: "pair".into(),
+                width: 1920,
+                height: 1080,
+                objects: vec![capture_stroke(source, setting).into()],
+                background_color: None,
+                content_bbox: crate::BoundingBox::default(),
+                template: None,
+                background: Default::default(),
+            }],
+            metadata: Default::default(),
+        };
+        let options = crate::RenderOptions {
+            chinesebrush_profile: Some(ChineseBrushRenderProfile {
+                screen_width: 1920,
+                screen_height: 1080,
+            }),
+            ..Default::default()
+        };
+        let svg = |d: &crate::Document, o: &crate::RenderOptions| {
+            crate::render_document_svg(d, o).remove(0).svg
+        };
+        let four = doc("4;");
+        let five = doc("5;");
+        assert_eq!(svg(&four, &options), svg(&five, &options));
+        assert_ne!(svg(&five, &options), svg(&five, &Default::default()));
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            crate::render_document_pdf(&four, &options, &Default::default()).unwrap(),
+            crate::render_document_pdf(&five, &options, &Default::default()).unwrap()
+        );
+        #[cfg(feature = "pdf")]
+        assert_ne!(
+            crate::render_document_pdf(&five, &options, &Default::default()).unwrap(),
+            crate::render_document_pdf(&five, &Default::default(), &Default::default()).unwrap()
+        );
+        for setting in ["6;", "05;", "5;0;"] {
+            let rejected = doc(setting);
+            assert_eq!(
+                svg(&rejected, &options),
+                svg(&rejected, &Default::default())
+            );
+            #[cfg(feature = "pdf")]
+            assert_eq!(
+                crate::render_document_pdf(&rejected, &options, &Default::default()).unwrap(),
+                crate::render_document_pdf(&rejected, &Default::default(), &Default::default())
+                    .unwrap()
+            );
+        }
+        let invalid = crate::RenderOptions {
+            chinesebrush_profile: Some(ChineseBrushRenderProfile {
+                screen_width: 0,
+                screen_height: 1080,
+            }),
+            ..Default::default()
+        };
+        assert_eq!(svg(&five, &invalid), svg(&five, &Default::default()));
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            crate::render_document_pdf(&five, &invalid, &Default::default()).unwrap(),
+            crate::render_document_pdf(&five, &Default::default(), &Default::default()).unwrap()
+        );
     }
 
     #[test]
