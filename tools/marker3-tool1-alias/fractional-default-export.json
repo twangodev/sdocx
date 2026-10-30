@@ -1,0 +1,26 @@
+{
+  "scope": "Synthetic native Drawing tool-1 vector re-fed to RTV1, host Mesa RGBA8, 2x; phase is recorded by the enclosing case receipt. Public SVG and direct PDF compared to native transparent frame and mathematical #fcfcfc composition; not saved-note, device, opaque native backdrop, or general transform parity.",
+  "versions": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "pdfium": "150.0.7869.0",
+    "numpy": "2.4.2",
+    "pillow": "12.1.1"
+  },
+  "frame_sha256": "19034dbd1f75d3648c5c95859b7d0092ac1f3a998119be907f5c6138922b0807",
+  "results": {
+    "baseline": {
+      "svg_rgba_l1": 496373,
+      "mupdf_rgb_l1": 468959,
+      "pdfium_rgb_l1": 344519,
+      "native_missing": 1546
+    },
+    "profile": {
+      "svg_rgba_l1": 44092,
+      "mupdf_rgb_l1": 165533,
+      "pdfium_rgb_l1": 44908,
+      "native_missing": 0
+    }
+  }
+}

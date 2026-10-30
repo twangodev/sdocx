@@ -33,9 +33,7 @@ pub(crate) fn prepare_for_page(s: &Stroke) -> Option<Ink> {
     let style = &rendering.style;
     let argb = style.color_argb?;
     if (rendering.tool_type_raw == 1
-        && (rendering.pen_name.as_deref() != Some(PEN)
-            || rendering.advanced_settings.as_deref() != Some("5;")
-            || !style.pen_size.is_some_and(|size| (4.0..=8.0).contains(&size))))
+        && !style.pen_size.is_some_and(|size| (4.0..=8.0).contains(&size)))
         || !matches!(rendering.pen_name.as_deref(), Some(PEN | STRAIGHT_PEN))
         || !matches!(rendering.advanced_settings.as_deref(), Some("" | "5;"))
         || !matches!(rendering.tool_type_raw, 1..=3)
@@ -383,15 +381,25 @@ mod tests {
             let stroke = caller_stroke(case);
             let ink = prepare_for_page(&stroke).unwrap();
             assert_caller_xy_matches(&ink, case);
-            for change in 0..6 {
+            for pen in [PEN, STRAIGHT_PEN] {
+                for setting in ["", "5;"] {
+                    let mut alias = stroke.clone();
+                    let rendering = alias.rendering.as_mut().unwrap();
+                    rendering.pen_name = Some(pen.into());
+                    rendering.advanced_settings = Some(setting.into());
+                    let actual = prepare_for_page(&alias).unwrap();
+                    assert_eq!(actual.points, ink.points);
+                    assert_eq!(actual.radii, ink.radii);
+                    assert_eq!(actual.sample_ends, ink.sample_ends);
+                }
+            }
+            for change in 0..4 {
                 let mut rejected = stroke.clone();
                 let rendering = rejected.rendering.as_mut().unwrap();
                 match change {
-                    0 => rendering.pen_name = Some(STRAIGHT_PEN.into()),
-                    1 => rendering.advanced_settings = Some(String::new()),
-                    2 => rendering.style.pen_size = Some(3.99),
-                    3 => rendering.style.pen_size = Some(8.01),
-                    4 => rendering.style.pen_size = Some(f32::NAN),
+                    0 => rendering.style.pen_size = Some(3.99),
+                    1 => rendering.style.pen_size = Some(8.01),
+                    2 => rendering.style.pen_size = Some(f32::NAN),
                     _ => rendering.style.color_argb = None,
                 }
                 assert!(prepare_for_page(&rejected).is_none());

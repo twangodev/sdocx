@@ -1369,10 +1369,21 @@ mod tool_one_export_control {
         } else {
             panic!("expected stroke");
         }
-        assert_eq!(
-            crate::render_document_svg(&straight, &RenderOptions::default())[0].svg,
-            crate::render_document_svg(&straight, &double)[0].svg
-        );
+        for setting in ["", "5;"] {
+            if let crate::PageObjectContent::Stroke(stroke) =
+                &mut straight.pages[0].objects[0].content
+            {
+                stroke.rendering.as_mut().unwrap().advanced_settings = Some(setting.into());
+            }
+            assert_eq!(
+                crate::render_document_svg(&document, &RenderOptions::default())[0].svg,
+                crate::render_document_svg(&straight, &RenderOptions::default())[0].svg
+            );
+            assert_eq!(
+                crate::render_document_svg(&document, &double)[0].svg,
+                crate::render_document_svg(&straight, &double)[0].svg
+            );
+        }
         assert_eq!(
             crate::render_document_svg(&straight, &RenderOptions::default())[0].svg,
             crate::render_document_svg(&straight, &quadruple)[0].svg

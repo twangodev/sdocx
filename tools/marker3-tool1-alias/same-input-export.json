@@ -1,0 +1,137 @@
+{
+  "comparisons": {
+    "crossing-baseline": {
+      "export_sha256": {
+        "after.pdf": "adf4a51ee86837dd9286a67f936aa32f00633a86b6f55209a57526fe1260ccc0",
+        "after.svg": "0c5cccc203615575af988e3b186a9957c97cd5b7742521a421b9ff517746f6b1",
+        "before.pdf": "a4afd2e9e628daa561c0caf0e4745a572f9b5976a7a646226c626350a906bbe0",
+        "before.svg": "7ba35e35c30bd09c34be6591fdef31b6211bce7a3e3a5d4d7cbc7e08b3131a24"
+      },
+      "frame_sha256": "74d08cead2088c03029a86844ebd0fd331e1451368a07940ccd8e004d8b0afcd",
+      "options": "default",
+      "results": {
+        "baseline": {
+          "mupdf_rgb_l1": 1533266,
+          "native_missing": 3715,
+          "pdfium_rgb_l1": 1420712,
+          "svg_rgba_l1": 2830105
+        },
+        "profile": {
+          "mupdf_rgb_l1": 245250,
+          "native_missing": 0,
+          "pdfium_rgb_l1": 152461,
+          "svg_rgba_l1": 238654
+        }
+      },
+      "scope": "Synthetic native Drawing tool-1 vector re-fed to RTV1, host Mesa RGBA8, 2x; phase is recorded by the enclosing case receipt. Public SVG and direct PDF compared to native transparent frame and mathematical #fcfcfc composition; not saved-note, device, opaque native backdrop, or general transform parity.",
+      "versions": {
+        "numpy": "2.4.2",
+        "pdfium": "150.0.7869.0",
+        "pillow": "12.1.1",
+        "pymupdf": "1.28.2",
+        "pypdfium2": "5.9.0",
+        "resvg": "0.45.1"
+      }
+    },
+    "crossing-profile": {
+      "export_sha256": {
+        "after.pdf": "67f26a1f09767a1c2eb4d2e0af82b97421bd4277f9bb2049240c58e0bb9054a3",
+        "after.svg": "21e044c6bf1e3f4c78842b260248ad379d7219fedcbf00da94623964e494a55f",
+        "before.pdf": "a4afd2e9e628daa561c0caf0e4745a572f9b5976a7a646226c626350a906bbe0",
+        "before.svg": "7ba35e35c30bd09c34be6591fdef31b6211bce7a3e3a5d4d7cbc7e08b3131a24"
+      },
+      "frame_sha256": "74d08cead2088c03029a86844ebd0fd331e1451368a07940ccd8e004d8b0afcd",
+      "options": "explicit 2x",
+      "results": {
+        "baseline": {
+          "mupdf_rgb_l1": 1533266,
+          "native_missing": 3715,
+          "pdfium_rgb_l1": 1420712,
+          "svg_rgba_l1": 2830105
+        },
+        "profile": {
+          "mupdf_rgb_l1": 161959,
+          "native_missing": 0,
+          "pdfium_rgb_l1": 62009,
+          "svg_rgba_l1": 80276
+        }
+      },
+      "scope": "Synthetic native Drawing tool-1 vector re-fed to RTV1, host Mesa RGBA8, 2x; phase is recorded by the enclosing case receipt. Public SVG and direct PDF compared to native transparent frame and mathematical #fcfcfc composition; not saved-note, device, opaque native backdrop, or general transform parity.",
+      "versions": {
+        "numpy": "2.4.2",
+        "pdfium": "150.0.7869.0",
+        "pillow": "12.1.1",
+        "pymupdf": "1.28.2",
+        "pypdfium2": "5.9.0",
+        "resvg": "0.45.1"
+      }
+    },
+    "fractional-baseline": {
+      "export_sha256": {
+        "after.pdf": "6cd8be3bbb7a3c7cf973f98934a324318dec7f12bc3264a3b92ecf154f129076",
+        "after.svg": "b6745988291988064139c43a2252696f706e9d074b20b4a7184cbfa124dbc9f8",
+        "before.pdf": "2f99759bd62d8621a186c558f3271ca1d0562065269bee0f38552a97d9398c56",
+        "before.svg": "20a6519a07940c45640c8c4dc7bba3e1defbb1a63c68ed05767933c8a8c814bc"
+      },
+      "frame_sha256": "19034dbd1f75d3648c5c95859b7d0092ac1f3a998119be907f5c6138922b0807",
+      "options": "default",
+      "results": {
+        "baseline": {
+          "mupdf_rgb_l1": 468959,
+          "native_missing": 1546,
+          "pdfium_rgb_l1": 344519,
+          "svg_rgba_l1": 496373
+        },
+        "profile": {
+          "mupdf_rgb_l1": 165533,
+          "native_missing": 0,
+          "pdfium_rgb_l1": 44908,
+          "svg_rgba_l1": 44092
+        }
+      },
+      "scope": "Synthetic native Drawing tool-1 vector re-fed to RTV1, host Mesa RGBA8, 2x; phase is recorded by the enclosing case receipt. Public SVG and direct PDF compared to native transparent frame and mathematical #fcfcfc composition; not saved-note, device, opaque native backdrop, or general transform parity.",
+      "versions": {
+        "numpy": "2.4.2",
+        "pdfium": "150.0.7869.0",
+        "pillow": "12.1.1",
+        "pymupdf": "1.28.2",
+        "pypdfium2": "5.9.0",
+        "resvg": "0.45.1"
+      }
+    },
+    "fractional-profile": {
+      "export_sha256": {
+        "after.pdf": "068c108d4eb6a099dcd52a8585486b7447ecd88100dcb47da0715ab9e9fcadd0",
+        "after.svg": "08e6dab6ed41c42d2f82a51fa118bef0c7a1cbd7960526d7d159cd6e8f37e873",
+        "before.pdf": "2f99759bd62d8621a186c558f3271ca1d0562065269bee0f38552a97d9398c56",
+        "before.svg": "20a6519a07940c45640c8c4dc7bba3e1defbb1a63c68ed05767933c8a8c814bc"
+      },
+      "frame_sha256": "19034dbd1f75d3648c5c95859b7d0092ac1f3a998119be907f5c6138922b0807",
+      "options": "explicit 2x",
+      "results": {
+        "baseline": {
+          "mupdf_rgb_l1": 468959,
+          "native_missing": 1546,
+          "pdfium_rgb_l1": 344519,
+          "svg_rgba_l1": 496373
+        },
+        "profile": {
+          "mupdf_rgb_l1": 143769,
+          "native_missing": 0,
+          "pdfium_rgb_l1": 20176,
+          "svg_rgba_l1": 14722
+        }
+      },
+      "scope": "Synthetic native Drawing tool-1 vector re-fed to RTV1, host Mesa RGBA8, 2x; phase is recorded by the enclosing case receipt. Public SVG and direct PDF compared to native transparent frame and mathematical #fcfcfc composition; not saved-note, device, opaque native backdrop, or general transform parity.",
+      "versions": {
+        "numpy": "2.4.2",
+        "pdfium": "150.0.7869.0",
+        "pillow": "12.1.1",
+        "pymupdf": "1.28.2",
+        "pypdfium2": "5.9.0",
+        "resvg": "0.45.1"
+      }
+    }
+  },
+  "scope": "Same-input before/after StraightMarker tool-1 empty-setting exports; synthetic host controls, not saved-note or device parity."
+}

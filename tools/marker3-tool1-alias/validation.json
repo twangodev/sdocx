@@ -1,0 +1,20 @@
+{
+  "base_commit": "e3cd1f2cecc108fa8425f45472b4f2f2a50063e8",
+  "before_build_note": "The before build restores ink/marker3.rs and render.rs to HEAD. The updated cfg(test) regression in render/marker3.rs is present but excluded from the exporter build. The rest of the checkout is a git archive of base_commit, with this evidence directory and exporter example added.",
+  "before_source_sha256": {
+    "crates/sdocx/src/ink/marker3.rs": "ad3821b827ab9d356034a707985af0349b4e248110350dd673d4897a4356a78f",
+    "crates/sdocx/src/render.rs": "c55297a33e6f227bb5fbbfd4c4d983d8bf4b34cdd37c00f2b9bca450dc92181b"
+  },
+  "candidate_source_sha256": {
+    "crates/sdocx/src/ink/marker3.rs": "7f3964a700eae6d450559191ad3f4f795031a53f432b5ea2e643d27240186a54",
+    "crates/sdocx/src/render.rs": "af9d2668877470167281c28a902109e0d58d7a4716662f57e281e8dc73181de7",
+    "crates/sdocx/src/render/marker3.rs": "38575ca1590a047d33f64410b547bd98afe3e86862d80992dcc455241a2af6ac"
+  },
+  "comparator_sha256": "2efc14d25fd0952e253a15293b8d646b53e3758fafab2dd274e9c251d81b2d24",
+  "comparison_sha256": "36f928db2e8b0685080eef5a3a3a1492d0d60dc673f0b78de522d141e6eb9d59",
+  "exporter_sha256": "9c7b135d31f4b0696bf0ccc15e783fe17518856a5978bb8699445ca1f9cb82c3",
+  "native_receipt_sha256": "e0323301178cfcf8395ba693d59da780aa3a9a329fcdf4647a916bd559974f2e",
+  "native_verification": "All 12 freshly captured aliases passed verify.py; the resulting receipt exactly equals native.json.",
+  "test_command": "cargo test -p sdocx --features serde,pdf marker3 --lib",
+  "test_result": "22 passed, 0 failed"
+}
