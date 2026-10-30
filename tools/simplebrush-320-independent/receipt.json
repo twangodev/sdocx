@@ -1,0 +1,71 @@
+{
+  "input": {
+    "tool": 2,
+    "points": 320,
+    "size": 8,
+    "variant": "alternate",
+    "matrix": [
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0.25,
+      0.5,
+      1
+    ],
+    "canvas": [
+      256,
+      256
+    ]
+  },
+  "native_geometry_sha256": "883f647ace401189122d7f825af3652716f013263eecdbe3623f21e7456b0db3",
+  "native_frame_sha256": "017e8ac46b6d672026fd014d34bb85c03758d6e36899546e3eb3a97741e3fbf6",
+  "native_paint_clean": true,
+  "rust_geometry_matches": true,
+  "svg_support_intersection_union": {
+    "generic": [
+      3696,
+      5870
+    ],
+    "profile": [
+      5870,
+      5870
+    ]
+  },
+  "svg_alpha_error": {
+    "generic": 690907,
+    "profile": 10118
+  },
+  "direct_pdf_mupdf_matched_paper_rgb_error": {
+    "generic": 765930,
+    "profile": 65504
+  },
+  "direct_pdf_pdfium_rgb_error": {
+    "generic": 763386,
+    "profile": 110461
+  },
+  "export_bytes": {
+    "generic.svg": 36528,
+    "one.svg": 465270,
+    "generic.pdf": 4027,
+    "one.pdf": 2235640
+  },
+  "export_sha256": {
+    "generic.svg": "736222707ce2f0754b24a34633633d6af47d6b93be7ac55464ea855596c2ed61",
+    "one.svg": "9179731390ca06fdc801e480d47285cd65001a41d6728fb44498593496989b0d",
+    "generic.pdf": "d1d74111bbaf4efe2aeedbcbc3340539b2887a77f9854d746b23a66612594dcb",
+    "one.pdf": "ffdc3aa3e4763d25ec2ed202c901980814dd2a7203f496d3f81c998aac446bad"
+  },
+  "replay_source_sha256": {
+    "crates/sdocx/src/ink/simplebrush.rs": "293444738eba4548886b3a69ce9a7b5b888a610abf7863842ba0ae463ad45698",
+    "crates/sdocx/src/render/simplebrush_tests.rs": "5eb618f0dfd6c26b70611c72be38f6df510667bd3bb1112618d583763de99276",
+    "tools/simplebrush-one-long/capture.py": "200ed47e85738af02df95f97d4f066c1efcc69f6e59033aa71fc80bd98a4dd0a",
+    "tools/simplebrush-one-long/compare.py": "bd7de051131232b3dfb54e50f86b27c6723d6522811af78f0b52f504ce5d35fa",
+    "tools/simplebrush-one-long/pdfium.py": "fe0c9e29be9b54164a1c9399a2d8d0681b45aae1fc439f8d16ad0b86bf3a0273",
+    "tools/simplebrush-320-independent/capture.py": "b425fc00ae11c2a15acc0a1e3b95376b3f3382c74c4ead6d8efd97d76609880f"
+  },
+  "rustc": "rustc 1.98.0 (88d9e12ae 2026-08-18)",
+  "source_revision": "1328cff568ca44556ff687e3d044cda3d3a9b0e5"
+}
