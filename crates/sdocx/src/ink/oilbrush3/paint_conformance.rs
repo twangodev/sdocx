@@ -2339,17 +2339,20 @@ fn oilbrush3_source_model_public_canvas_export() {
     let prefixes = decode_v17_native_prefix_bundle(V17_PREFIX_BUNDLE);
     let native = decode_v17_expected(prefixes[14], V17_PREFIX_SHA256[14]);
     assert_eq!(compare_frame(&pixels, &native).diff_pixels, 0);
-    let white: Vec<[u8; 4]> = (0..V17_PAGE_HEIGHT)
-        .rev()
-        .flat_map(|y| {
-            let pixels = &pixels;
-            (0..V17_PAGE_WIDTH).map(move |x| {
-                let p = pixels[y * V17_PAGE_WIDTH + x].0;
-                let channel = |c: usize| (u16::from(p[c]) + u16::from(255 - p[3])).min(255) as u8;
-                [channel(0), channel(1), channel(2), 255]
-            })
-        })
-        .collect();
+    let mut production = InkRasterCanvas::new(
+        InkRasterContext { width: 1920, height: 1080, pixels_per_unit: 1, origin: InkRasterOrigin::TopLeft },
+        [0; 4],
+    ).unwrap();
+    production.paint_oilbrush3_cold_host(&stroke, &mask, &depth).unwrap();
+    let expected: Vec<[u8; 4]> = pixels.chunks_exact(V17_PAGE_WIDTH).rev().flat_map(|row| row.iter().map(|pixel| pixel.0)).collect();
+    assert_eq!(production.pixels(), expected);
+    let before = production.pixels().to_vec();
+    assert!(production.paint_oilbrush3_cold_host(&stroke, &mask, &depth).is_err());
+    assert_eq!(production.pixels(), before);
+    let white: Vec<[u8; 4]> = production.pixels().iter().map(|p| {
+        let channel = |c: usize| (u16::from(p[c]) + u16::from(255 - p[3])).min(255) as u8;
+        [channel(0), channel(1), channel(2), 255]
+    }).collect();
     let canvas = InkRasterCanvas::from_pixels(
         InkRasterContext {
             width: V17_PAGE_WIDTH as u32,
@@ -2392,4 +2395,45 @@ fn oilbrush3_source_model_public_canvas_export() {
         }
         std::fs::write(dir.join("native.rgb"), native_white).unwrap();
     }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn oilbrush3_public_canvas_rejections_preserve_pixels_and_budget() {
+    use crate::{InkRasterCanvas, InkRasterContext, InkRasterOrigin};
+    let fixture: serde_json::Value = serde_json::from_str(super::tests::FIXTURE).unwrap();
+    let stroke = super::tests::public_stroke_from_fixture(&fixture);
+    let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
+    let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
+    let mut canvas = InkRasterCanvas::new(
+        InkRasterContext { width: 1920, height: 1080, pixels_per_unit: 1, origin: InkRasterOrigin::TopLeft },
+        [0; 4],
+    ).unwrap();
+    let mut malformed = stroke.clone();
+    malformed.pressures.pop();
+    let mut oversized = stroke.clone();
+    oversized.points.resize(4097, stroke.points[0]);
+    let mut oversized_channel = stroke.clone();
+    oversized_channel.pressures.resize(4097, 0.5);
+    let mut out_of_page = stroke.clone();
+    out_of_page.points[0].x = -1.0;
+    let mut nonfinite = stroke.clone();
+    nonfinite.points[0].y = f64::NAN;
+    let mut long = stroke.clone();
+    long.points[1].x = 1900.0;
+    for rejected in [&malformed, &oversized, &oversized_channel, &out_of_page, &nonfinite, &long] {
+        assert!(canvas.paint_oilbrush3_cold_host(rejected, &mask, &depth).is_err());
+        assert!(canvas.pixels().iter().all(|pixel| *pixel == [0; 4]));
+    }
+    let mut wrong_mask = mask.clone();
+    wrong_mask[0] ^= 1;
+    let mut wrong_depth = depth.clone();
+    wrong_depth[0] ^= 1;
+    for _ in 0..31 {
+        assert!(canvas.paint_oilbrush3_cold_host(&stroke, &wrong_mask, &depth).is_err());
+    }
+    assert!(canvas.paint_oilbrush3_cold_host(&stroke, &mask, &wrong_depth).is_err());
+    assert!(canvas.pixels().iter().all(|pixel| *pixel == [0; 4]));
+    canvas.paint_oilbrush3_cold_host(&stroke, &mask, &depth).unwrap();
+    assert!(canvas.pixels().iter().any(|pixel| *pixel != [0; 4]));
 }

@@ -1,10 +1,10 @@
-//! Test-only saved-stroke mesh sampler for OilBrush3 RTV1.
+//! Bounded saved-stroke mesh sampler for OilBrush3 RTV1.
 //!
 //! This models the cold Drawing `ObjectStroke` route through
 //! `OilBrush3StrokeDrawableGLV1::RedrawPen(ObjectStroke const*)` and the
 //! `OilBrush3StrokeDrawableRTV1::AddPoint` float-vector append. It stops at the
-//! native 28-float quad record; texture generation and final GL composition are
-//! separate work and are not represented here. RNG uses the captured glibc
+//! native 28-float quad record; the paint module reconstructs a separate
+//! bounded host composition. RNG uses the captured glibc
 //! profile; atan2f is an explicit captured input/output boundary, so this does
 //! not reconstruct the platform math library or establish Android parity.
 
@@ -15,6 +15,7 @@ use super::{
 use crate::Point;
 
 const MAX_INPUT_POINTS: usize = 4096;
+#[cfg(test)]
 const MAX_OUTPUT_DABS: usize = 65_536;
 const OIL_SIZE_SCALE: f32 = f32::from_bits(0x3fa6_6666); // OilBrush3::SetSize rodata: 1.3.
 const NEG_ONE_AND_HALF: f32 = -1.5;
@@ -53,8 +54,8 @@ struct PublicStrokeContext {
 }
 
 /// Adapt only the pinned OilBrush3 Model setter profile into the sampler.
-/// This remains test-only and does not turn the synthetic input into evidence
-/// for general serialized-stroke admission.
+/// The explicit host canvas uses this bounded adapter; the synthetic controls
+/// do not establish general serialized-stroke admission.
 fn sample_public_stroke<F>(
     stroke: &crate::Stroke,
     context: PublicStrokeContext,
@@ -126,6 +127,16 @@ where
     {
         return Err("Stroke RGB and retained ARGB disagree");
     }
+    let count = stroke.points.len();
+    if !(2..=MAX_INPUT_POINTS).contains(&count)
+        || stroke.pressures.len() != count
+        || stroke.timestamps.len() != count
+        || stroke.tilts.len() != count
+        || stroke.orientations.len() != count
+        || stroke.points.iter().any(|p| !(0.0..=1920.0).contains(&p.x) || !(0.0..=1080.0).contains(&p.y))
+    {
+        return Err("OilBrush3 input channels or coordinates are outside the bounded host profile");
+    }
     let timestamps = stroke
         .timestamps
         .iter()
@@ -159,7 +170,7 @@ where
         curve_enabled: properties.compressed,
         color_argb: argb,
     };
-    sample_saved_stroke(&input, atan2f)
+    sample_saved_stroke_bounded(&input, atan2f, 128)
 }
 
 #[derive(Default)]
@@ -223,9 +234,21 @@ impl AddPointState {
 
 /// Generate the source-shaped AddPoint record stream for the bounded saved
 /// stroke profile captured in `oilbrush3-native.json`.
+#[cfg(test)]
 fn sample_saved_stroke<F>(
     input: &SavedStrokeInput<'_>,
+    atan2f: F,
+) -> Result<Vec<[f32; 28]>, &'static str>
+where
+    F: FnMut(f32, f32) -> Result<f32, &'static str>,
+{
+    sample_saved_stroke_bounded(input, atan2f, MAX_OUTPUT_DABS)
+}
+
+fn sample_saved_stroke_bounded<F>(
+    input: &SavedStrokeInput<'_>,
     mut atan2f: F,
+    max_output_dabs: usize,
 ) -> Result<Vec<[f32; 28]>, &'static str>
 where
     F: FnMut(f32, f32) -> Result<f32, &'static str>,
@@ -338,7 +361,7 @@ where
         }
 
         while next_distance <= path.length {
-            if output.len() == MAX_OUTPUT_DABS {
+            if output.len() == max_output_dabs {
                 return Err("OilBrush3 AddPoint output limit exceeded");
             }
             let position = path.at(next_distance);
@@ -633,3 +656,6 @@ mod tests {
 #[cfg(test)]
 #[path = "oilbrush3/paint_conformance.rs"]
 mod paint_conformance;
+
+#[cfg(feature = "render")]
+pub(crate) mod paint;

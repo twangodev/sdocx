@@ -77,11 +77,16 @@
       }
     }
   },
-  "limitations": "Experimental test-only model; one synthetic control, host arithmetic and explicit initialization and textures. No saved-note, device, lifecycle, scaling or general parity claim.",
+  "limitations": "Explicit cold host model; one synthetic export control, host arithmetic and explicit initialization and textures. No saved-note, device, lifecycle, scaling or general parity claim.",
   "inputs_sha256": {
-    "tools/oilbrush3-public-fallback/compare_source_export.py": "1e7f189267d684107dd31ee2f585c6535efd3421dc4d967e286bf6af82576184",
+    "tools/oilbrush3-public-fallback/compare_source_export.py": "e9d8a45eaf0d4cbb29753c6d5929374595bdf155118069d6c1361bdc8f060d1d",
     "conformance/oilbrush3-native.json": "9fa36392d2a50820ad77395f6998fdf821361e72b27d22e53af8b1b7b226b6a5",
     "conformance/oilbrush3-v17-native-paint/provenance.json": "9b95accdf496b02fb0e8bb00f1dcc8d789aff99ea1e551c3478cfa1027c97179",
-    "crates/sdocx/src/ink/oilbrush3/paint_conformance.rs": "cf0a1ae12a19c034d380b9500c83e0bf45d22cd4c76a6c19aabdb951ab9b9c5f"
+    "crates/sdocx/src/ink/oilbrush3/paint_conformance.rs": "486f7dd0174f9b339678a98ff4e0cbb0aaf7102018a13555de9bad48a91be268",
+    "crates/sdocx/src/ink/oilbrush3/paint.rs": "4424ae06a8dde1bec70b9e33a4d35e29ce7feb33f789487d3b74c279200cfbb3",
+    "crates/sdocx/src/ink/oilbrush3/p3-vbo-6x4-f32le.bin": "818bdaddffdbdd6e1cad09a1dac74a1da79ee482bf8b86ee601ccd93c0af3f39",
+    "crates/sdocx/src/ink/oilbrush3.rs": "16a9981f68c5c2970fc8f373664cd7c50c6519d5b66e6cb9e054eab398a4942b",
+    "crates/sdocx/src/ink.rs": "2edbdbb65e0f7fd7f0b16b8d6cc8e2dd12465961a7855c6cfd6dc2732d5e00cf",
+    "crates/sdocx/src/ink_raster.rs": "5b57ff4e6d5eb773fac596a6ce568870fa3929e63949f36a085d1792451c1478"
   }
 }

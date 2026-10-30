@@ -40,7 +40,7 @@ result = {
     'mupdf_version': pymupdf.VersionFitz,
     'pdfium_version': str(pypdfium2.PDFIUM_INFO),
     'pdfs': {},
-    'limitations': 'Experimental test-only model; one synthetic control, host arithmetic and explicit initialization and textures. No saved-note, device, lifecycle, scaling or general parity claim.',
+    'limitations': 'Explicit cold host model; one synthetic export control, host arithmetic and explicit initialization and textures. No saved-note, device, lifecycle, scaling or general parity claim.',
 }
 for name in ('source.pdf', 'source-svg.pdf'):
     pdf = (path / name).read_bytes()
@@ -57,6 +57,11 @@ result['inputs_sha256'] = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes
     Path(__file__).resolve(), root / 'conformance/oilbrush3-native.json',
     root / 'conformance/oilbrush3-v17-native-paint/provenance.json',
     root / 'crates/sdocx/src/ink/oilbrush3/paint_conformance.rs',
+    root / 'crates/sdocx/src/ink/oilbrush3/paint.rs',
+    root / 'crates/sdocx/src/ink/oilbrush3/p3-vbo-6x4-f32le.bin',
+    root / 'crates/sdocx/src/ink/oilbrush3.rs',
+    root / 'crates/sdocx/src/ink.rs',
+    root / 'crates/sdocx/src/ink_raster.rs',
 )}
 if args.check:
     expected = json.loads((root / 'conformance/oilbrush3-source-public-canvas-export.json').read_text())

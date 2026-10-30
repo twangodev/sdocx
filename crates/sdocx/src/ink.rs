@@ -15,8 +15,8 @@ mod host_half;
 mod host_raster;
 mod host_rgba8;
 pub(crate) mod montblanc;
-#[cfg(all(test, feature = "serde"))]
-mod oilbrush3;
+#[cfg(any(feature = "render", all(test, feature = "serde")))]
+pub(crate) mod oilbrush3;
 pub(crate) mod pencil2;
 pub(crate) mod simplebrush;
 #[cfg(test)]
