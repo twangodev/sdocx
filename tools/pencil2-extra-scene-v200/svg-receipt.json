@@ -1,0 +1,58 @@
+{
+  "white:1": [
+    {
+      "sum": 188,
+      "max": 3,
+      "channels": 118,
+      "svg_bytes": 44457
+    },
+    {
+      "sum": 1340,
+      "max": 14,
+      "channels": 343,
+      "svg_bytes": 608263
+    }
+  ],
+  "white:2": [
+    {
+      "sum": 651,
+      "max": 4,
+      "channels": 440,
+      "svg_bytes": 188685
+    },
+    {
+      "sum": 5519,
+      "max": 18,
+      "channels": 1310,
+      "svg_bytes": 2449391
+    }
+  ],
+  "transparent:1": [
+    {
+      "sum": 269,
+      "max": 3,
+      "channels": 165,
+      "svg_bytes": 44412
+    },
+    {
+      "sum": 1918,
+      "max": 17,
+      "channels": 446,
+      "svg_bytes": 608218
+    }
+  ],
+  "blue:2": [
+    {
+      "sum": 672,
+      "max": 4,
+      "channels": 516,
+      "svg_bytes": 188695
+    },
+    {
+      "sum": 9318,
+      "max": 20,
+      "channels": 2150,
+      "svg_bytes": 2449401
+    }
+  ]
+}
