@@ -1,0 +1,36 @@
+{
+  "scope": "Synthetic native DrawingData submission and native RequestDraw enqueue in Unicorn; host manually invokes native draw on the queued request. No real queue execution, ownership, Matrix4, GPU paint, saved page or device behavior.",
+  "script_sha256": "973420a3de14085ea18c89c78234b6ec288a7dffb3970e5f0c329c6628ef46a6",
+  "queue_probe_sha256": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+  "draw_probe_sha256": "17f74e27d9dc0e0dc4173f08901444bd0627eae7a1b6e023232ff78cb9f72982",
+  "drawing_dso_sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+  "observed": {
+    "submission_return": 1,
+    "native_entry_order": [
+      "RequestDraw",
+      "findRequest",
+      "addRequest"
+    ],
+    "requests_enqueued": 1,
+    "condition_signals": 1,
+    "native_draw_returned": true,
+    "distinct_clone": true,
+    "clone_point_count": 4,
+    "redraw_pen_calls": 1,
+    "addpoint_calls": 84,
+    "matrix_setter_calls": 2,
+    "matrix": [
+      1,
+      0,
+      0,
+      0,
+      -1,
+      0,
+      6,
+      183,
+      1
+    ]
+  },
+  "limitations": "Host supplies initialized flag, empty completion list, synthetic bitmap methods, bitmap reference and allocation callbacks, context adapters, and no-op critical-section and condition-signal callbacks; the queued request is manually drained. This run also constructs an unused preliminary AsyncDrawingData before submission. Host runtime and transitive harness dependencies are not fully pinned.",
+  "reproduction": "python3 tools/pencil2-async-route/enqueue-probe.py"
+}
