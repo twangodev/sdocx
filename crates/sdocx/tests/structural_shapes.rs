@@ -2816,20 +2816,24 @@ fn native_moved_arcs_render_sector_and_open_outline() {
         }
         assert!(paths[0].attribute("d").unwrap().ends_with("L110,70 z"));
         assert!(!paths[1].attribute("d").unwrap().contains('L'));
-        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
-        let bytes =
-            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
-        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
-        let ops =
-            lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+        #[cfg(feature = "pdf")]
+        {
+            let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+            let bytes = sdocx::render_document_pdf(&parsed.document, &Default::default(), &options)
                 .unwrap();
-        let names: Vec<_> = ops
-            .operations
-            .iter()
-            .map(|op| op.operator.as_str())
-            .collect();
-        assert!(names.windows(2).any(|ops| ops == ["l", "h"]));
-        assert!(names.contains(&"f") && names.contains(&"S"));
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let ops = lopdf::content::Content::decode(
+                &pdf.get_page_content(pdf.get_pages()[&1]).unwrap(),
+            )
+            .unwrap();
+            let names: Vec<_> = ops
+                .operations
+                .iter()
+                .map(|op| op.operator.as_str())
+                .collect();
+            assert!(names.windows(2).any(|ops| ops == ["l", "h"]));
+            assert!(names.contains(&"f") && names.contains(&"S"));
+        }
     }
 }
 
@@ -2880,50 +2884,55 @@ fn native_moved_arcs_with_solid_outlines_render_separate_paths() {
                     < 0.0001
             );
         }
-        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
-        let bytes =
-            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
-        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
-        let ops =
-            lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+        #[cfg(feature = "pdf")]
+        {
+            let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+            let bytes = sdocx::render_document_pdf(&parsed.document, &Default::default(), &options)
                 .unwrap();
-        if color == "#009955" {
-            let resolve = |value: &lopdf::Object| -> lopdf::Dictionary {
-                value
-                    .as_reference()
-                    .map(|id| pdf.get_dictionary(id).unwrap().clone())
-                    .unwrap_or_else(|_| value.as_dict().unwrap().clone())
-            };
-            let page = pdf.get_pages()[&1];
-            let resources = resolve(pdf.get_dictionary(page).unwrap().get(b"Resources").unwrap());
-            let states = resolve(resources.get(b"ExtGState").unwrap());
-            let mut active: Option<Vec<u8>> = None;
-            let mut stack = Vec::new();
-            for op in &ops.operations {
-                match op.operator.as_str() {
-                    "q" => stack.push(active.clone()),
-                    "Q" => active = stack.pop().unwrap(),
-                    "gs" => active = Some(op.operands[0].as_name().unwrap().to_vec()),
-                    "S" => {
-                        let state = resolve(
-                            states
-                                .get(&active.clone().expect("stroke graphics state"))
-                                .unwrap(),
-                        );
-                        let alpha = state.get(b"CA").unwrap().as_float().unwrap();
-                        assert!((f64::from(alpha) - 128.0 / 255.0).abs() < 0.0001, "{alpha}");
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let ops = lopdf::content::Content::decode(
+                &pdf.get_page_content(pdf.get_pages()[&1]).unwrap(),
+            )
+            .unwrap();
+            if color == "#009955" {
+                let resolve = |value: &lopdf::Object| -> lopdf::Dictionary {
+                    value
+                        .as_reference()
+                        .map(|id| pdf.get_dictionary(id).unwrap().clone())
+                        .unwrap_or_else(|_| value.as_dict().unwrap().clone())
+                };
+                let page = pdf.get_pages()[&1];
+                let resources =
+                    resolve(pdf.get_dictionary(page).unwrap().get(b"Resources").unwrap());
+                let states = resolve(resources.get(b"ExtGState").unwrap());
+                let mut active: Option<Vec<u8>> = None;
+                let mut stack = Vec::new();
+                for op in &ops.operations {
+                    match op.operator.as_str() {
+                        "q" => stack.push(active.clone()),
+                        "Q" => active = stack.pop().unwrap(),
+                        "gs" => active = Some(op.operands[0].as_name().unwrap().to_vec()),
+                        "S" => {
+                            let state = resolve(
+                                states
+                                    .get(&active.clone().expect("stroke graphics state"))
+                                    .unwrap(),
+                            );
+                            let alpha = state.get(b"CA").unwrap().as_float().unwrap();
+                            assert!((f64::from(alpha) - 128.0 / 255.0).abs() < 0.0001, "{alpha}");
+                        }
+                        _ => {}
                     }
-                    _ => {}
                 }
             }
+            let names: Vec<_> = ops
+                .operations
+                .iter()
+                .map(|op| op.operator.as_str())
+                .collect();
+            assert!(names.windows(2).any(|ops| ops == ["l", "h"]));
+            assert!(names.contains(&"f") && names.contains(&"S"));
         }
-        let names: Vec<_> = ops
-            .operations
-            .iter()
-            .map(|op| op.operator.as_str())
-            .collect();
-        assert!(names.windows(2).any(|ops| ops == ["l", "h"]));
-        assert!(names.contains(&"f") && names.contains(&"S"));
     }
 }
 
@@ -3026,56 +3035,60 @@ fn native_dashed_arcs_export_separate_paths_and_dash() {
         assert_eq!(array, intervals);
         assert_eq!(svg_number(outline, "stroke-dashoffset"), f64::from(phase));
         assert_eq!(outline.attribute("stroke-opacity"), Some("0.5020"));
-        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
-        let bytes =
-            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
-        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
-        let ops =
-            lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+        #[cfg(feature = "pdf")]
+        {
+            let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+            let bytes = sdocx::render_document_pdf(&parsed.document, &Default::default(), &options)
                 .unwrap();
-        assert!(ops.operations.iter().any(|op| op.operator == "f"));
-        let resolve = |value: &lopdf::Object| -> lopdf::Dictionary {
-            value
-                .as_reference()
-                .map(|id| pdf.get_dictionary(id).unwrap().clone())
-                .unwrap_or_else(|_| value.as_dict().unwrap().clone())
-        };
-        let resources = resolve(
-            pdf.get_dictionary(pdf.get_pages()[&1])
-                .unwrap()
-                .get(b"Resources")
-                .unwrap(),
-        );
-        let states = resolve(resources.get(b"ExtGState").unwrap());
-        let mut active: Option<Vec<u8>> = None;
-        let mut dash: Option<(Vec<f32>, f32)> = None;
-        let mut stack = Vec::new();
-        let mut strokes = 0;
-        for op in &ops.operations {
-            match op.operator.as_str() {
-                "q" => stack.push((active.clone(), dash.clone())),
-                "Q" => (active, dash) = stack.pop().unwrap(),
-                "gs" => active = Some(op.operands[0].as_name().unwrap().to_vec()),
-                "d" => {
-                    let pattern = op.operands[0]
-                        .as_array()
-                        .unwrap()
-                        .iter()
-                        .map(|v| v.as_float().unwrap())
-                        .collect();
-                    dash = Some((pattern, op.operands[1].as_float().unwrap()));
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let ops = lopdf::content::Content::decode(
+                &pdf.get_page_content(pdf.get_pages()[&1]).unwrap(),
+            )
+            .unwrap();
+            assert!(ops.operations.iter().any(|op| op.operator == "f"));
+            let resolve = |value: &lopdf::Object| -> lopdf::Dictionary {
+                value
+                    .as_reference()
+                    .map(|id| pdf.get_dictionary(id).unwrap().clone())
+                    .unwrap_or_else(|_| value.as_dict().unwrap().clone())
+            };
+            let resources = resolve(
+                pdf.get_dictionary(pdf.get_pages()[&1])
+                    .unwrap()
+                    .get(b"Resources")
+                    .unwrap(),
+            );
+            let states = resolve(resources.get(b"ExtGState").unwrap());
+            let mut active: Option<Vec<u8>> = None;
+            let mut dash: Option<(Vec<f32>, f32)> = None;
+            let mut stack = Vec::new();
+            let mut strokes = 0;
+            for op in &ops.operations {
+                match op.operator.as_str() {
+                    "q" => stack.push((active.clone(), dash.clone())),
+                    "Q" => (active, dash) = stack.pop().unwrap(),
+                    "gs" => active = Some(op.operands[0].as_name().unwrap().to_vec()),
+                    "d" => {
+                        let pattern = op.operands[0]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|v| v.as_float().unwrap())
+                            .collect();
+                        dash = Some((pattern, op.operands[1].as_float().unwrap()));
+                    }
+                    "S" => {
+                        strokes += 1;
+                        assert_eq!(dash.as_ref(), Some(&(intervals.to_vec(), phase)));
+                        let state = resolve(states.get(&active.clone().unwrap()).unwrap());
+                        let alpha = state.get(b"CA").unwrap().as_float().unwrap();
+                        assert!((f64::from(alpha) - 128.0 / 255.0).abs() < 0.0001);
+                    }
+                    _ => {}
                 }
-                "S" => {
-                    strokes += 1;
-                    assert_eq!(dash.as_ref(), Some(&(intervals.to_vec(), phase)));
-                    let state = resolve(states.get(&active.clone().unwrap()).unwrap());
-                    let alpha = state.get(b"CA").unwrap().as_float().unwrap();
-                    assert!((f64::from(alpha) - 128.0 / 255.0).abs() < 0.0001);
-                }
-                _ => {}
             }
+            assert_eq!(strokes, 1);
         }
-        assert_eq!(strokes, 1);
     }
 }
 
@@ -3151,43 +3164,47 @@ fn native_arc_cap_join_and_dash_survive_svg_and_pdf() {
         } else {
             assert_eq!(outline.attribute("stroke-dasharray"), None);
         }
-        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
-        let bytes =
-            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
-        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
-        let ops =
-            lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+        #[cfg(feature = "pdf")]
+        {
+            let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+            let bytes = sdocx::render_document_pdf(&parsed.document, &Default::default(), &options)
                 .unwrap();
-        let mut state = (0, 0, false);
-        let mut stack = Vec::new();
-        let mut strokes = 0;
-        for op in &ops.operations {
-            match op.operator.as_str() {
-                "q" => stack.push(state),
-                "Q" => state = stack.pop().unwrap(),
-                "J" => state.0 = op.operands[0].as_i64().unwrap(),
-                "j" => state.1 = op.operands[0].as_i64().unwrap(),
-                "d" => {
-                    let values = op.operands[0]
-                        .as_array()
-                        .unwrap()
-                        .iter()
-                        .map(|v| v.as_float().unwrap())
-                        .collect::<Vec<_>>();
-                    state.2 = !values.is_empty();
-                    if state.2 {
-                        assert_eq!(values, [12., 6.]);
-                        assert_eq!(op.operands[1].as_float().unwrap(), 1.);
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let ops = lopdf::content::Content::decode(
+                &pdf.get_page_content(pdf.get_pages()[&1]).unwrap(),
+            )
+            .unwrap();
+            let mut state = (0, 0, false);
+            let mut stack = Vec::new();
+            let mut strokes = 0;
+            for op in &ops.operations {
+                match op.operator.as_str() {
+                    "q" => stack.push(state),
+                    "Q" => state = stack.pop().unwrap(),
+                    "J" => state.0 = op.operands[0].as_i64().unwrap(),
+                    "j" => state.1 = op.operands[0].as_i64().unwrap(),
+                    "d" => {
+                        let values = op.operands[0]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|v| v.as_float().unwrap())
+                            .collect::<Vec<_>>();
+                        state.2 = !values.is_empty();
+                        if state.2 {
+                            assert_eq!(values, [12., 6.]);
+                            assert_eq!(op.operands[1].as_float().unwrap(), 1.);
+                        }
                     }
+                    "S" => {
+                        strokes += 1;
+                        assert_eq!(state, (cap, join, dashed));
+                    }
+                    _ => {}
                 }
-                "S" => {
-                    strokes += 1;
-                    assert_eq!(state, (cap, join, dashed));
-                }
-                _ => {}
             }
+            assert_eq!(strokes, 1);
         }
-        assert_eq!(strokes, 1);
     }
 }
 #[cfg(feature = "pdf")]
