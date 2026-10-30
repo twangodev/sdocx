@@ -3,7 +3,11 @@
 //! This models the captured stylus/curve V2 path through Start, DrawLine,
 //! DrawEndLine, Crayon2 drawPoint and six-f32 RTV1 AddPoint records. The RNG
 //! profile is the captured host TYPE_3 adapter, not Android runtime execution.
-//! Renderer material, texture sampling, blend, and pixels are outside scope.
+//! The optional material experiment consumes explicit host inputs; it does not
+//! participate in public renderer dispatch.
+#[cfg(feature = "render")]
+mod material;
+
 use super::path::{P, Quad};
 use std::fmt;
 
@@ -625,6 +629,121 @@ mod tests {
         );
     }
 
+    fn matched_stroke(points: &[P], pressure: &[f32]) -> crate::Stroke {
+        let style = crate::StrokeStyle {
+            pen_size: Some(10.0),
+            stroke_type_raw: Some(0),
+            ..Default::default()
+        };
+        let rendering = crate::StrokeRendering {
+            metadata: None,
+            pen_name: Some("com.samsung.android.sdk.pen.pen.preload.Crayon2".into()),
+            advanced_settings: Some("2;".into()),
+            tool_type_raw: 2,
+            style,
+            properties: crate::StrokeProperties {
+                compressed: true,
+                replay_only: false,
+                stylus_channels: false,
+                eraser: false,
+                fixed_width: false,
+                millisecond_timestamps: false,
+                top_layer_pen: false,
+                alpha_lock: false,
+                binary_added: true,
+                generated: false,
+                fixed_opacity: false,
+                rainbow_effect: false,
+                straighten: false,
+                reveal_mode: false,
+            },
+        };
+        crate::Stroke {
+            rendering: Some(rendering),
+            bbox: crate::BoundingBox::default(),
+            points: points
+                .iter()
+                .map(|p| crate::Point {
+                    x: p.x as f64,
+                    y: p.y as f64,
+                })
+                .collect(),
+            pressures: pressure.iter().map(|p| *p as f64).collect(),
+            timestamps: vec![100, 110, 120],
+            tilts: vec![0.0; 3],
+            orientations: vec![0.0; 3],
+            color: Some(crate::Color {
+                r: 51,
+                g: 102,
+                b: 153,
+            }),
+            pen_width: 10.0,
+        }
+    }
+
+    #[cfg(feature = "render")]
+    #[test]
+    #[ignore = "requires local native texture inputs and writes candidate SVG"]
+    fn write_stroke_material_svg() {
+        let points = [
+            P { x: 64.0, y: 64.0 },
+            P { x: 72.0, y: 70.0 },
+            P { x: 82.0, y: 60.0 },
+        ];
+        let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
+        let output = sample_stroke(&stroke, &parse_profile(&fixture())).unwrap();
+        let textures = std::env::var_os("SDOCX_CRAYON2_TEXTURE_DIR").expect("texture directory");
+        let textures = std::path::Path::new(&textures);
+        let point = std::fs::read(textures.join("g_Crayon2PointPtn.source.bin")).unwrap();
+        let background = std::fs::read(textures.join("g_Crayon2BgPtn.source.bin")).unwrap();
+        assert_eq!(
+            sha(&point),
+            "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405"
+        );
+        assert_eq!(
+            sha(&background),
+            "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3"
+        );
+        let projection = material::Projection {
+            width: 256,
+            height: 256,
+            matrix: [
+                0.0078125,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0078125,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.000030518509447574615,
+                0.0,
+                -1.0,
+                -1.0,
+                0.0,
+                1.0,
+            ],
+            bg_scale: [2.2755556106567383, 2.2755556106567383],
+        };
+        let svg = material::emit_svg(
+            &output.records,
+            &point,
+            &background,
+            projection,
+            [51.0 / 255.0, 102.0 / 255.0, 153.0 / 255.0, 128.0 / 255.0],
+            Some([64, 128, 192]),
+            0.0,
+        )
+        .unwrap();
+        std::fs::write(
+            std::env::var_os("SDOCX_CRAYON2_SVG").expect("output SVG"),
+            svg,
+        )
+        .unwrap();
+    }
+
     #[test]
     fn translated_source_paint_capture_matches_source_derived_records() {
         use std::io::Read;
@@ -666,55 +785,7 @@ mod tests {
         );
         assert_eq!(output.records.len(), native.len() / 24);
         assert_eq!(output_bytes(&output), native);
-        let style = crate::StrokeStyle {
-            pen_size: Some(10.0),
-            stroke_type_raw: Some(0),
-            ..Default::default()
-        };
-        let rendering = crate::StrokeRendering {
-            metadata: None,
-            pen_name: Some("com.samsung.android.sdk.pen.pen.preload.Crayon2".into()),
-            advanced_settings: Some("2;".into()),
-            tool_type_raw: 2,
-            style,
-            properties: crate::StrokeProperties {
-                compressed: true,
-                replay_only: false,
-                stylus_channels: false,
-                eraser: false,
-                fixed_width: false,
-                millisecond_timestamps: false,
-                top_layer_pen: false,
-                alpha_lock: false,
-                binary_added: true,
-                generated: false,
-                fixed_opacity: false,
-                rainbow_effect: false,
-                straighten: false,
-                reveal_mode: false,
-            },
-        };
-        let mut stroke = crate::Stroke {
-            rendering: Some(rendering),
-            bbox: crate::BoundingBox::default(),
-            points: points
-                .iter()
-                .map(|p| crate::Point {
-                    x: p.x as f64,
-                    y: p.y as f64,
-                })
-                .collect(),
-            pressures: pressure.iter().map(|p| *p as f64).collect(),
-            timestamps: vec![100, 110, 120],
-            tilts: vec![0.0; 3],
-            orientations: vec![0.0; 3],
-            color: Some(crate::Color {
-                r: 51,
-                g: 102,
-                b: 153,
-            }),
-            pen_width: 10.0,
-        };
+        let mut stroke = matched_stroke(&points, &pressure);
         let profile = parse_profile(&fixture());
         assert_eq!(
             output_bytes(&sample_stroke(&stroke, &profile).unwrap()),
