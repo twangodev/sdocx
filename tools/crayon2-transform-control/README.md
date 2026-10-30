@@ -8,12 +8,21 @@ and texture uniforms are recorded in `receipt.json`. The public document SVG
 and direct PDF are produced from source points and pinned texture inputs, not
 from the captured pixels. The retained frame is bottom-up native RGBA8.
 
-Compared with that frame, resvg differs in 347 pixels, maximum RGB error 15,
-and total absolute RGB error 577. Direct PDF differs in 461/14/1237 for MuPDF
-and 461/14/1235 for PDFium. Compared with the identity control, the larger
-maximum residual leaves the transformed edge behavior unresolved. These are
-synthetic host results, not device or saved-note parity. No production paint
-correction is established.
+With the Mesa viewport FMA correction, resvg differs from that frame in 342
+pixels, maximum RGB error 3, and total absolute RGB error 478. Direct PDF differs
+in 459/3/1145 for MuPDF and 459/3/1142 for PDFium. The previous receipt
+retains the baseline 347/15/577, 461/14/1237 and 461/14/1235 respectively.
+The independent 160×160 identity and 192×192 controls retain their prior reader
+metrics. These are synthetic host results, not device or saved-note parity.
+
+The Crayon2 record 139 original paint shader's Mesa JIT diagnostic shows the
+viewport scale and translation in `llvm.fmuladd`, with `vfmadd213ps` in the
+assembly; compact excerpts and the diagnostic hash are in
+[viewport-ir-receipt.json](viewport-ir-receipt.json). The correction applies
+that operation before triangle interpolation. It selects the diagnostic texel
+(114, 3), and the retained translated UV controls match 22/22 axes; run
+`tools/crayon2-f32-interpolation/viewport_verify.py` to repeat the checks.
+This is evidence about the captured host pipeline, not other GPUs.
 
 Run the capture and exports using the prerequisites and environment in the
 document holdout README, replacing its capture with
@@ -27,11 +36,12 @@ export hashes. Native texture inputs and emulation dependencies remain local.
 
 ## Isolated translated stamp intervention
 
-At SVG pixel (52, 102), native record 139 alone renders RGB (60, 146, 215),
-while the public document SVG gives (62, 139, 207). The original shader's
+In the historical pre-correction baseline, at SVG pixel (52, 102), native
+record 139 alone renders RGB (60, 146, 215), while the public document SVG
+gives (62, 139, 207). The original shader's
 isolated paint draw and recompiled fragment diagnostics are retained in
 `intervention-receipt.json`. The recompiled diagnostic reports point 255 and background
-111. The candidate grid calculation in `model139.py` selects point 255 and
+111. The historical baseline calculation in `model139.py` selects point 255 and
 background 41 at (113, 4). The expected adjacent texel (114, 3) has value 111;
 the observed value alone does not uniquely identify a texel or establish the
 original shader sample.

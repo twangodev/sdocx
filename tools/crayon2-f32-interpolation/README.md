@@ -38,3 +38,13 @@ records 20, 100, 200 and modes `xuv`, `yuv` with
 The compact receipt keeps frame hashes and observed values rather than the
 large reproducible capture JSON files. SVG and direct PDF behavior remains as
 reported in the translated document control; no paint correction is established.
+
+## Viewport correction
+
+The later translated record 139 original-paint Mesa JIT capture establishes
+that the host viewport uses a fused scale and translation. Applying that step
+produces 22/22 translated varying observations and selects the independently
+observed record 139 diagnostic texture value. Run `viewport_verify.py`; see
+[the translated control](../crayon2-transform-control/README.md) for export
+comparisons and the JIT evidence. The earlier results above retain the baseline
+for reproducibility.

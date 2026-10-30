@@ -1,0 +1,37 @@
+{
+  "scope": "Translated record 139 original paint shader; host Mesa JIT diagnostic, no device parity",
+  "stderr_sha256": "0ad7d402a4fdf7cd852921f1ec164165abec079cc9d1e489d55ef4b19c843a9c",
+  "stderr_bytes": 243885,
+  "viewport_llvm": [
+    "  %scale = load float, ptr %580, align 4",
+    "  %582 = insertelement <8 x float> undef, float %scale, i32 0",
+    "  %583 = shufflevector <8 x float> %582, <8 x float> undef, <8 x i32> zeroinitializer",
+    "  %trans = load float, ptr %581, align 4",
+    "  %584 = insertelement <8 x float> undef, float %trans, i32 0",
+    "  %585 = shufflevector <8 x float> %584, <8 x float> undef, <8 x i32> zeroinitializer",
+    "  %586 = fmul <8 x float> %579, %578",
+    "  %587 = call <8 x float> @llvm.fmuladd.v8f32(<8 x float> %586, <8 x float> %583, <8 x float> %585) #2",
+    "  store <8 x float> %587, ptr %output, align 32",
+    "  %588 = load <8 x float>, ptr %output14, align 32",
+    "  %589 = getelementptr float, ptr %577, i32 1",
+    "  %590 = getelementptr float, ptr %577, i32 4",
+    "  %scale61 = load float, ptr %589, align 4",
+    "  %591 = insertelement <8 x float> undef, float %scale61, i32 0",
+    "  %592 = shufflevector <8 x float> %591, <8 x float> undef, <8 x i32> zeroinitializer",
+    "  %trans62 = load float, ptr %590, align 4",
+    "  %593 = insertelement <8 x float> undef, float %trans62, i32 0",
+    "  %594 = shufflevector <8 x float> %593, <8 x float> undef, <8 x i32> zeroinitializer",
+    "  %595 = fmul <8 x float> %588, %578",
+    "  %596 = call <8 x float> @llvm.fmuladd.v8f32(<8 x float> %595, <8 x float> %592, <8 x float> %594) #2",
+    "  store <8 x float> %596, ptr %output14, align 32",
+    "  %597 = load <8 x float>, ptr %output15, align 32",
+    "  %598 = getelementptr float, ptr %577, i32 2",
+    "  %599 = getelementptr float, ptr %577, i32 5"
+  ],
+  "viewport_assembly": [
+    "   4ee:\tvfmadd213ps\t12(%rdx){1to8}, %ymm24, %ymm20",
+    "   50e:\tvfmadd213ps\t16(%rdx){1to8}, %ymm24, %ymm25"
+  ],
+  "capture_command": "GALLIVM_DEBUG=ir,asm MESA_SHADER_CACHE_DISABLE=true .venv/bin/python tools/crayon2-transform-control/intervention.py 139 paint",
+  "native_frame_sha256": "446920edd42f86b52e7145587f4953d78d7ae001ac33c9675d350f266bbd92b1"
+}

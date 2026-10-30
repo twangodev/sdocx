@@ -29,6 +29,18 @@ fn plane(p: [[f32; 2]; 3], a: [f32; 3]) -> [f32; 3] {
     [a[0] - (dx * (p[0][0] - 0.5) + dy * (p[0][1] - 0.5)), dx, dy]
 }
 
+fn viewport_coordinate(clip: f32, extent: u32) -> f32 {
+    let half_extent = extent as f32 * 0.5;
+    clip.mul_add(half_extent, half_extent)
+}
+
+#[test]
+fn viewport_matches_captured_fused_operation() {
+    let clip = f32::from_bits(0xbeb8_d605);
+    assert_eq!(viewport_coordinate(clip, 160).to_bits(), 0x424c_7a3d);
+    assert_eq!(((clip + 1.0) * 0.5 * 160.0).to_bits(), 0x424c_7a3e);
+}
+
 fn texture_index(value: f32) -> Result<usize, &'static str> {
     let value = value.floor() as f64;
     if !value.is_finite() || !(-9223372036854775808.0..9223372036854775808.0).contains(&value) {
@@ -107,7 +119,7 @@ pub(super) fn sample(records: &[Record], g: &Grid<'_>) -> Result<(Vec<GridFragme
                 let b = v + off;
                 let clip = g.clip_scale[axis] * v + g.clip_translation[axis];
                 let bc = g.clip_scale[axis] * b + g.clip_translation[axis];
-                coords[i][axis] = (clip + 1.) * 0.5 * [g.width, g.height][axis] as f32;
+                coords[i][axis] = viewport_coordinate(clip, [g.width, g.height][axis]);
                 uv[i][axis] = (bc + 1.) * 0.5;
             }
             uv[i][2] = pu;

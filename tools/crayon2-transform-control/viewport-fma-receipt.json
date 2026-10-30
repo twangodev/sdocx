@@ -1,0 +1,261 @@
+{
+  "view_translation": [
+    13,
+    9
+  ],
+  "native_frame_sha256": "7199bbd9e84caf296154efa0390f5f57027e6ac79a089ebd3eb81df588177d2c",
+  "native_vector_sha256": "15509eda1113e0bfd007455ba4767b1cba2a22391487f94c75e4121d98ac5f8f",
+  "clip_matrix": [
+    {
+      "call": "glUniformMatrix4fv",
+      "location": 0,
+      "values": [
+        0.012500000186264515,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.012500000186264515,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -0.8374999761581421,
+        -0.887499988079071,
+        0.0,
+        1.0
+      ]
+    }
+  ],
+  "texture_uniforms": [
+    {
+      "call": "glUniform2fv",
+      "count": 1,
+      "location": 6,
+      "values": [
+        1.4222222566604614,
+        1.4222222566604614
+      ]
+    },
+    {
+      "call": "glUniform2fv",
+      "count": 1,
+      "location": 1,
+      "values": [
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "readers_vs_native": {
+    "resvg": [
+      342,
+      3,
+      478
+    ],
+    "mupdf": [
+      459,
+      3,
+      1145
+    ],
+    "pdfium": [
+      459,
+      3,
+      1142
+    ]
+  },
+  "export_sha256": {
+    "document.svg": "2e873334335a4040051ba85217f1d9baaa78eda7e70f782787b12a32b2de7c11",
+    "document.png": "ee645656485b1b1e1b37b3a386269c8f578344ca076effa02c2cdf3e3baafaa6",
+    "document.pdf": "42dc2e338e5d8c7c1a91489a942d47c148ff1ac4d17a8ddcf470216eeec00dd2"
+  },
+  "source": {
+    "color_argb": "0xc23c92d7",
+    "curve_enabled": true,
+    "orientation": [
+      0,
+      0,
+      0
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Crayon2",
+    "points": [
+      [
+        33,
+        58
+      ],
+      [
+        57,
+        39
+      ],
+      [
+        82,
+        72
+      ]
+    ],
+    "pressure": [
+      0.3,
+      0.6,
+      1.0
+    ],
+    "stroke_type": 0,
+    "tilt": [
+      0,
+      0,
+      0
+    ],
+    "timestamps": [
+      100,
+      110,
+      120
+    ],
+    "tool_type": 2,
+    "visible": true
+  },
+  "target_size": [
+    160,
+    160
+  ],
+  "capture_script_sha256": "8b4fe4fe953288e45d21484df23e60be1091273e67c0aa3af2f3d1de76900a4a",
+  "native_evidence": {
+    "color_uniform": [
+      {
+        "call": "glUniform4fv",
+        "count": 1,
+        "location": 5,
+        "values": [
+          0.23529411852359772,
+          0.572549045085907,
+          0.843137264251709,
+          0.7607843279838562
+        ]
+      }
+    ],
+    "scale_uniform": [
+      {
+        "call": "glUniform2fv",
+        "count": 1,
+        "location": 6,
+        "values": [
+          1.4222222566604614,
+          1.4222222566604614
+        ]
+      }
+    ],
+    "texture_allocations": [
+      {
+        "boundTexture": 1,
+        "call": "glTexImage2D",
+        "format": 6408,
+        "hasPixels": true,
+        "height": 150,
+        "internalFormat": 32856,
+        "pixelBytes": 90000,
+        "pixelsSha256": "958749651d67b7f935648ba3457e50047e20e2fe965a87f459334d4bde823246",
+        "target": 3553,
+        "type": 5121,
+        "width": 150
+      },
+      {
+        "boundTexture": 2,
+        "call": "glTexImage2D",
+        "format": 6408,
+        "hasPixels": true,
+        "height": 30,
+        "internalFormat": 32856,
+        "pixelBytes": 1200,
+        "pixelsSha256": "655a3ef0465a9f30fddf25f4dde0c19a05c6f9069b83961800c1944165955273",
+        "target": 3553,
+        "type": 5121,
+        "width": 10
+      }
+    ],
+    "blend_calls": [
+      {
+        "call": "glBlendEquationSeparate",
+        "values": [
+          32774,
+          32774
+        ]
+      },
+      {
+        "call": "glBlendFuncSeparate",
+        "values": [
+          770,
+          771,
+          1,
+          771
+        ]
+      },
+      {
+        "call": "glEnable",
+        "cap": 3042
+      },
+      {
+        "call": "glColorMask",
+        "values": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "call": "glDisable",
+        "cap": 2929
+      },
+      {
+        "call": "glDisable",
+        "cap": 2960
+      }
+    ],
+    "draw_calls": [
+      {
+        "call": "glDrawArraysInstanced",
+        "state": {
+          "activeTexture": 33985,
+          "blend_dst_alpha": 771,
+          "blend_dst_rgb": 771,
+          "blend_enabled": true,
+          "blend_equation_alpha": 32774,
+          "blend_equation_rgb": 32774,
+          "blend_src_alpha": 1,
+          "blend_src_rgb": 770,
+          "color_mask": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "framebuffer": 1,
+          "program": 3,
+          "texture2d": 2,
+          "vao": 0,
+          "viewport": [
+            0,
+            0,
+            160,
+            160
+          ]
+        },
+        "values": [
+          5,
+          0,
+          4,
+          617
+        ]
+      }
+    ],
+    "gl_errors_final": 0,
+    "background": {
+      "kind": "opaque",
+      "rgba8": [
+        64,
+        128,
+        192,
+        255
+      ]
+    }
+  }
+}

@@ -11,7 +11,7 @@ from PIL import Image
 
 here = Path(__file__).resolve().parent
 svg, png, pdf = map(Path, sys.argv[1:])
-receipt = json.loads((here / 'receipt.json').read_text())
+receipt = json.loads((here / 'viewport-fma-receipt.json').read_text())
 raw = zlib.decompress((here / 'frame.rgba.zlib').read_bytes())
 assert hashlib.sha256(raw).hexdigest() == receipt['native_frame_sha256']
 assert hashlib.sha256((here.parent / 'crayon2-document-holdout/vector.bin').read_bytes()).hexdigest() == receipt['native_vector_sha256']
