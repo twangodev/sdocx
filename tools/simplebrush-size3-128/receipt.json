@@ -1,0 +1,105 @@
+{
+  "scope": "Synthetic 128 point tool 0 size 3, fractional 2x transform; host Mesa, public SVG and direct PDF, 256x256 capture",
+  "cases": {
+    "baseline": {
+      "native_json_sha256": "0058c0bdf5f6d56ebec0625db8f849ee85a1dce24ebe038adff01af38aa5a8e1",
+      "frame_sha256": "a7616717fd54cb9b0a15eb3613c34b9c7747c1a154083044b0f21457dea6b0b1",
+      "native_gl_verdict": {
+        "adapter_hook_after_draw": [],
+        "draw_forwarded_once": true,
+        "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+        "immediately_after_real_draw": 0,
+        "immediately_after_rgba_readback": 0,
+        "immediately_before_real_draw": 0,
+        "paint_clean": true,
+        "pending_error_before_draw_hook": [],
+        "pixel_readback_available": true,
+        "preclear_available": true,
+        "status": "all_observed_draw_readback_task_errors_zero",
+        "task7_after_run": 0
+      },
+      "errors_generic_candidate": {
+        "svg_alpha": [
+          619960,
+          8991
+        ],
+        "mupdf_rgb": [
+          679655,
+          58310
+        ],
+        "pdfium_rgb": [
+          682569,
+          96656
+        ]
+      },
+      "export_sha256": {
+        "generic.svg": "f72a058281b9a48ca0c47ce043c446280a654f3fac512690221c5cbbe90a6c7d",
+        "two.svg": "a01a7b2ea0f1c57604faa4251860385f60709afbfaacbd88d7f6e8707acc94a8",
+        "generic.pdf": "93b505ab9743df8b6023799afbccc35ce8141bfbb2e1aba0533f2552c9c505e5",
+        "two.pdf": "ed81f0a6459b58242f043928d9e651c663ad8635eebdfe669273c7c30dd7c8c7",
+        "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef"
+      },
+      "export_bytes": {
+        "generic.svg": 14695,
+        "two.svg": 173910,
+        "generic.pdf": 2566,
+        "two.pdf": 852322
+      }
+    },
+    "alternate": {
+      "native_json_sha256": "4418aece7224ce596db95bcf7d4e65eb76adf2f992736d8ea8d3a54592127637",
+      "frame_sha256": "7bc72a6621cf04d8e2339340b81d1322bceeeeac344c8f83428468fe65109b3d",
+      "native_gl_verdict": {
+        "adapter_hook_after_draw": [],
+        "draw_forwarded_once": true,
+        "error_policy": "Every observed nonzero value remains in the receipt; a pre-draw error is recorded and the original draw is still forwarded exactly once. No repeated glGetError loop is used.",
+        "immediately_after_real_draw": 0,
+        "immediately_after_rgba_readback": 0,
+        "immediately_before_real_draw": 0,
+        "paint_clean": true,
+        "pending_error_before_draw_hook": [],
+        "pixel_readback_available": true,
+        "preclear_available": true,
+        "status": "all_observed_draw_readback_task_errors_zero",
+        "task7_after_run": 0
+      },
+      "errors_generic_candidate": {
+        "svg_alpha": [
+          752799,
+          15853
+        ],
+        "mupdf_rgb": [
+          823170,
+          71508
+        ],
+        "pdfium_rgb": [
+          825399,
+          100994
+        ]
+      },
+      "export_sha256": {
+        "generic.svg": "442132edcc483609a595c14fb5c3671b11eb7e5eabfa1c018f918d58f47ea239",
+        "two.svg": "92e15cdd7b198ab5a1515836954fc8f957d7a146897105720d38e181a97a845e",
+        "generic.pdf": "717be0ecc13e89af7af65af2d40e564a56323cc6fa6ff69b36a684cbae06a5aa",
+        "two.pdf": "4510ff5313badbfb46186513ca8bb24a9ad914a35a30dcbe9ac92082195c53be",
+        "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef"
+      },
+      "export_bytes": {
+        "generic.svg": 14749,
+        "two.svg": 175808,
+        "generic.pdf": 2630,
+        "two.pdf": 840063
+      }
+    }
+  },
+  "source_revision": "0ec11639ef0f5e35d1baac493f49c3b34e6a28a8",
+  "alternate_clipped": true,
+  "reader_versions": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pdfium": "150.0.7869.0",
+    "pillow": "12.1.1",
+    "numpy": "2.4.2",
+    "pypdfium2": "5.9.0"
+  }
+}

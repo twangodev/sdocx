@@ -1,0 +1,11 @@
+--- a/crates/sdocx/src/render/simplebrush_tests.rs
++++ b/crates/sdocx/src/render/simplebrush_tests.rs
+@@ -1367,7 +1367,7 @@
+                     x: if count > 128 {
+                         27.0 + (i % 64) as f64
+                     } else {
+-                        27.0 + 2.0 * i as f64
++                        27.0 + i as f64
+                     },
+                     y: if count > 128 {
+                         221.0 - (i / 64) as f64 * 18.0

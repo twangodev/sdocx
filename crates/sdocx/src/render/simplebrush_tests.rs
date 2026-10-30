@@ -1587,7 +1587,9 @@ fn two_pixel_point_and_size_boundaries() {
         simplebrush_two_pixels_per_page_unit: true,
         ..Default::default()
     };
-    for count in [2, 3, 4, 15, 16, 17, 32, 33, 64, 65, 66, 128, 129, 224, 256, 257] {
+    for count in [
+        2, 3, 4, 15, 16, 17, 32, 33, 64, 65, 66, 128, 129, 224, 256, 257,
+    ] {
         for tool in [0, 2, 3] {
             for size in [2.99, 3.0, 3.01, 7.0, 8.0, 20.0, 21.0, 32.0] {
                 let mut source = stroke();
@@ -1606,7 +1608,7 @@ fn two_pixel_point_and_size_boundaries() {
                 let admitted = count <= 256
                     && (count == 3 && (3.0..=32.0).contains(&size)
                         || (8.0..=20.0).contains(&size)
-                        || (tool == 0 && size == 3.0 && (4..=65).contains(&count)));
+                        || (tool == 0 && size == 3.0 && (4..=128).contains(&count)));
                 let actual = &render_document_svg(&doc, &two)[0].svg;
                 let fallback = &render_document_svg(&doc, &RenderOptions::default())[0].svg;
                 assert_eq!(
@@ -1614,14 +1616,26 @@ fn two_pixel_point_and_size_boundaries() {
                     admitted,
                     "count={count} tool={tool} size={size}"
                 );
-                if tool == 0 && size == 3.0 && count == 65 {
+                if tool == 0 && size == 3.0 && count == 128 {
                     assert_eq!(render_document_svg(&doc, &options())[0].svg, *fallback);
                 }
                 #[cfg(feature = "pdf")]
-                if tool == 0 && size == 3.0 && (count == 65 || count == 66) {
-                    let generic = crate::render_document_pdf(&doc, &RenderOptions::default(), &Default::default()).unwrap();
-                    assert_eq!(crate::render_document_pdf(&doc, &two, &Default::default()).unwrap() != generic, count == 65);
-                    assert_eq!(crate::render_document_pdf(&doc, &options(), &Default::default()).unwrap(), generic);
+                if tool == 0 && size == 3.0 && (count == 128 || count == 129) {
+                    let generic = crate::render_document_pdf(
+                        &doc,
+                        &RenderOptions::default(),
+                        &Default::default(),
+                    )
+                    .unwrap();
+                    assert_eq!(
+                        crate::render_document_pdf(&doc, &two, &Default::default()).unwrap()
+                            != generic,
+                        count == 128
+                    );
+                    assert_eq!(
+                        crate::render_document_pdf(&doc, &options(), &Default::default()).unwrap(),
+                        generic
+                    );
                 }
             }
         }
@@ -1629,19 +1643,84 @@ fn two_pixel_point_and_size_boundaries() {
 }
 
 #[test]
-fn tool_zero_size_three_65_point_sample_budget_is_enforced() {
+fn tool_zero_size_three_128_point_sample_budget_is_enforced() {
     let mut source = stroke();
-    source.points = (0..65).map(|i| Point { x: 25.0 + i as f64 * 0.75, y: 216.0 - [0, 2, 5, 7, 8, 7, 5, 2][i % 8] as f64 }).collect();
-    source.pressures = vec![0.5; 65];
+    source.points = (0..128)
+        .map(|i| Point {
+            x: 25.0 + i as f64 * 0.75,
+            y: 216.0 - [0, 2, 5, 7, 8, 7, 5, 2][i % 8] as f64,
+        })
+        .collect();
+    source.pressures = vec![0.5; 128];
     source.pen_width = 3.0;
     let rendering = source.rendering.as_mut().unwrap();
     rendering.tool_type_raw = 0;
     rendering.style.pen_size = Some(3.0);
-    let prepare = |budget| crate::ink::simplebrush::prepare_stroke_for_scale(&source, true, budget, true);
+    let prepare =
+        |budget| crate::ink::simplebrush::prepare_stroke_for_scale(&source, true, budget, true);
     let count = prepare(32_768).unwrap().samples.len();
     assert!(count > 0 && count <= 32_768);
     assert!(prepare(count - 1).is_err());
     assert_eq!(prepare(count).unwrap().samples.len(), count);
+}
+
+#[test]
+fn size_three_128_point_controls_match_native_geometry() {
+    for (alternate, receipt) in [
+        (
+            false,
+            include_str!("../../../../tools/simplebrush-size3-128/baseline-native.json"),
+        ),
+        (
+            true,
+            include_str!("../../../../tools/simplebrush-size3-128/alternate-native.json"),
+        ),
+    ] {
+        let native: serde_json::Value = serde_json::from_str(receipt).unwrap();
+        let points: Vec<[f32; 2]> = (0..128)
+            .map(|i| {
+                if alternate {
+                    [
+                        27.0 + i as f32,
+                        48.0 + [0, -3, -5, -4, 0, 5, 7, 3][i % 8] as f32,
+                    ]
+                } else {
+                    [
+                        25.0 + i as f32 * 0.75,
+                        40.0 + [0, 2, 5, 7, 8, 7, 5, 2][i % 8] as f32,
+                    ]
+                }
+            })
+            .collect();
+        let pressures: Vec<f32> = (0..128)
+            .map(|i| {
+                if alternate {
+                    [1.0, 0.3, 0.6, 0.8, 0.4][i % 5]
+                } else {
+                    [0.25, 0.5, 0.75, 1.0][i % 4]
+                }
+            })
+            .collect();
+        let samples = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
+            points: &points,
+            pressures: &pressures,
+            size: 3.0,
+            tool_type: 0,
+            curve_enabled: true,
+            max_samples: 32_768,
+        })
+        .unwrap();
+        let hex: String = samples
+            .iter()
+            .flatten()
+            .flat_map(|v| v.to_le_bytes())
+            .map(|v| format!("{v:02x}"))
+            .collect();
+        assert_eq!(
+            hex,
+            native["drawing_vector"]["vector_bytes"].as_str().unwrap()
+        );
+    }
 }
 
 #[test]
@@ -2687,7 +2766,7 @@ fn tool0_size3_short_profile_guards() {
     };
     let short = make(4);
     assert_eq!(render(short.clone(), &one), render(short, &fallback));
-    for count in [2, 66] {
+    for count in [2, 129] {
         let s = make(count);
         assert_eq!(render(s.clone(), &two), render(s, &fallback));
     }
