@@ -1,3 +1,5 @@
+**Correction:** The native handoff uses varying pressure, tilt 0.4, and ARGB `0x80336699`, while the Rust input below uses constant pressure, zero tilt, and opaque black. Therefore these metrics compare different strokes; see [v259](../pencil2-worker-v259/README.md) for the matched-input comparison.
+
 # Pencil2 coordinate control
 
 Run `python3 tools/pencil2-worker-v258/compare.py`. This reuses the retained v256 RGBA8-intervention native frame and the v257 source inputs. The Rust canvas uses top-left source coordinates and translation `(6,-9)` in its bottom-origin framebuffer convention. The host grain helper receives the v257 draw matrix with Y scale -1 and translation `(6,183)`, the retained 192×192 projection and dimensions, and returns `(6,183)`; this value is passed without rounding. Rust canvas pixels are top-row-first, so the script flips the native GL bottom-row-first readback before comparison.

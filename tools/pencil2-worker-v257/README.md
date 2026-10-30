@@ -1,3 +1,5 @@
+**Correction:** The Rust comparison uses a different stroke from the native handoff; its metrics do not measure matched-input parity. See [v259](../pencil2-worker-v259/README.md) for the corrected inputs and matched comparison.
+
 # Factory probe texture uploads
 
 Run `python3 tools/pencil2-worker-v257/probe.py` and `PENCIL_SKIP_DRAW=1 python3 tools/pencil2-worker-v257/probe.py` after the v219 runtime preparation. This is the v256 format-intervention probe with `glTexSubImage2D` added to its captured call list. It asserts the ordered instrumented GL calls against the v257 state receipt and the drawn frame against the v256 fixture.

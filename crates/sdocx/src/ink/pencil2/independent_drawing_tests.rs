@@ -174,3 +174,42 @@ fn compare() {
 fn independent_native() {
     compare();
 }
+
+#[test]
+fn worker_v259_geometry_probe() {
+    let mut style = serde_json::to_value(StrokeStyle::default()).unwrap();
+    for (k, v) in [
+        ("pen_size", serde_json::json!(2.)),
+        ("color_argb", serde_json::json!(0x80336699u32)),
+        ("size_level", serde_json::json!(0)),
+        ("stroke_type_raw", serde_json::json!(0)),
+        ("color_type_raw", serde_json::json!(0)),
+    ] {
+        style[k] = v;
+    }
+    let props = serde_json::json!({"compressed":true,"stylus_channels":true,"replay_only":false,"eraser":false,"fixed_width":false,"millisecond_timestamps":false,"top_layer_pen":false,"alpha_lock":false,"binary_added":false,"generated":false,"fixed_opacity":false,"rainbow_effect":false,"straighten":false,"reveal_mode":false});
+    let rendering:StrokeRendering=serde_json::from_value(serde_json::json!({"metadata":null,"pen_name":"com.samsung.android.sdk.pen.pen.preload.Pencil2","advanced_settings":"14;","tool_type_raw":2,"properties":props,"style":style})).unwrap();
+    let s = Stroke {
+        bbox: BoundingBox::default(),
+        points: vec![
+            Point { x: 0., y: 0. },
+            Point { x: 10., y: 0. },
+            Point { x: 20., y: 0. },
+            Point { x: 30., y: 10. },
+        ],
+        pressures: vec![0.25, 0.5, 0.75, 1.],
+        tilts: vec![0.4; 4],
+        orientations: vec![0.; 4],
+        timestamps: vec![10, 20, 30, 40],
+        color: Some(Color {
+            r: 0x33,
+            g: 0x66,
+            b: 0x99,
+        }),
+        pen_width: 2.,
+        rendering: Some(rendering),
+    };
+    let records = prepare_stroke(&s, 1.).unwrap();
+    let data: Vec<u8> = records.iter().flat_map(|r| r.lanes.iter().flat_map(|v| v.to_le_bytes())).collect();
+    assert_eq!(data, include_bytes!("../../../../../tools/pencil2-worker-v259/native-geometry.vbo"));
+}
