@@ -895,6 +895,100 @@ pub(super) struct Output {
     pub(super) instances: Vec<Instance>,
 }
 
+/// Reconstruct GLV10 stamp records for a saved BrushPen stroke under the
+/// modeled serialized host profile. Native stream controls cover selected sizes,
+/// screen dimensions, channel changes and curve states, not every accepted
+/// combination. Screen dimensions are the native display context, independent of the output frame. The returned eleven-float
+/// records require the caller's own texture and paint context; they are not a
+/// portable device raster or a complete rendering of the stroke.
+///
+/// Returns `None` when the source or context is outside the reconstructed path.
+pub fn sample_brushpen_glv10_host(
+    stroke: &crate::Stroke,
+    screen_width: i32,
+    screen_height: i32,
+) -> Option<Vec<[f32; 11]>> {
+    if !(1..=16384).contains(&screen_width) || !(1..=16384).contains(&screen_height) {
+        return None;
+    }
+    let rendering = stroke.rendering.as_ref()?;
+    let properties = rendering.properties;
+    let style = &rendering.style;
+    if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.BrushPen")
+        || !matches!(
+            rendering.advanced_settings.as_deref(),
+            Some("" | "10;" | "11;")
+        )
+        || rendering.tool_type_raw != 2
+        || !properties.stylus_channels
+        || properties.replay_only
+        || properties.eraser
+        || properties.fixed_width
+        || properties.top_layer_pen
+        || properties.alpha_lock
+        || properties.generated
+        || properties.fixed_opacity
+        || properties.rainbow_effect
+        || properties.straighten
+        || properties.reveal_mode
+        || !matches!(style.size_level, None | Some(30))
+        || !matches!(style.stroke_type_raw, None | Some(0))
+    {
+        return None;
+    }
+    let size = style.pen_size?;
+    if size.to_bits() != stroke.pen_width.to_bits() || !size.is_finite() || size <= 0.0 {
+        return None;
+    }
+    let count = stroke.points.len();
+    if !(2..=MAX_SAMPLES).contains(&count)
+        || stroke.timestamps.len() != count
+        || stroke.pressures.len() != count
+        || stroke.orientations.len() != count
+        || stroke.tilts.len() != count
+    {
+        return None;
+    }
+    let points: Vec<_> = stroke
+        .points
+        .iter()
+        .map(|p| P {
+            x: p.x as f32,
+            y: p.y as f32,
+        })
+        .collect();
+    let pressures: Vec<_> = stroke.pressures.iter().map(|&v| v as f32).collect();
+    let orientations: Vec<_> = stroke.orientations.iter().map(|&v| v as f32).collect();
+    let tilts: Vec<_> = stroke.tilts.iter().map(|&v| v as f32).collect();
+    let mut profile = SAVED_GLV10_CONSTRUCTOR_PROFILE;
+    profile.motion_distance_threshold = f32::from_bits(0x3fcb_7b12);
+    profile.motion_alternation_threshold = 2.6 * (screen_width.min(screen_height) as f32 / 360.0);
+    profile.motion_settings_limits = [screen_width, screen_height];
+    profile.allow_empty_curved_paths = true;
+    let samples = sample_object_stroke_wrapper(
+        GL_VERSION,
+        profile,
+        size,
+        0.0,
+        false,
+        properties.compressed,
+        false,
+        &points,
+        &stroke.timestamps,
+        &pressures,
+        &orientations,
+        &tilts,
+        2,
+    )?;
+    Some(
+        sampled_instances(GL_VERSION, &samples)?
+            .instances
+            .into_iter()
+            .map(|v| v.values)
+            .collect(),
+    )
+}
+
 /// Explicit context for the one manually configured Drawing caller profile
 /// joined to the retained 26x44 native buffer. This is test-only evidence,
 /// not a general saved-stroke admission rule.
@@ -3083,6 +3177,29 @@ mod serialized_native_controls {
                 .read_to_end(&mut expected)
                 .unwrap();
             assert!(actual == expected, "native stream mismatch for {case}");
+            let mut public = stroke.clone();
+            public.points = points
+                .iter()
+                .map(|p| crate::Point {
+                    x: p.x.into(),
+                    y: p.y.into(),
+                })
+                .collect();
+            public.pressures = pressure.iter().map(|&v| v.into()).collect();
+            public.tilts = tilt.iter().map(|&v| v.into()).collect();
+            public.pen_width = size;
+            let rendering = public.rendering.as_mut().unwrap();
+            rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.BrushPen".into());
+            rendering.advanced_settings = Some("10;".into());
+            rendering.style.pen_size = Some(size);
+            rendering.properties.compressed = case != "variant-curveoff";
+            let public_bytes: Vec<u8> = crate::sample_brushpen_glv10_host(&public, width, height)
+                .unwrap()
+                .into_iter()
+                .flatten()
+                .flat_map(f32::to_le_bytes)
+                .collect();
+            assert_eq!(public_bytes, expected, "public sampler mismatch for {case}");
         }
     }
 

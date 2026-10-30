@@ -71,6 +71,7 @@ pub use formula::{
 pub use ink::{
     CoverageMesh, CoverageTriangle, CoverageVertex, InkSupport, OrderedDiskReplay, PEN_PROFILES,
     PenProfile, PreparedInkPen2V9, PreparedStroke, RectStamp, prepare_stroke,
+    sample_brushpen_glv10_host,
 };
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;
