@@ -57,6 +57,53 @@ pub(crate) struct Output {
     pub phase_updates: u32,
 }
 
+/// Adapt retained stroke channels to the captured host sampler. The caller
+/// supplies the host RNG and phase tables; this does not select a renderer.
+fn sample_stroke(stroke: &crate::Stroke, profile: &NativeProfile) -> Result<Output, Error> {
+    if stroke.points.len() > MAX_SOURCE_POINTS || stroke.pressures.len() > MAX_SOURCE_POINTS {
+        return Err(Error::Limit("source point count"));
+    }
+    let rendering = stroke
+        .rendering
+        .as_ref()
+        .ok_or(Error::Unsupported("missing rendering metadata"))?;
+    if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Crayon2") {
+        return Err(Error::Unsupported("pen is not Crayon2"));
+    }
+    if rendering.advanced_settings.as_deref() != Some("2;") {
+        return Err(Error::Unsupported("advanced setting is not captured V2"));
+    }
+    if rendering.style.stroke_type_raw != Some(0) {
+        return Err(Error::Unsupported("stroke type is missing or not zero"));
+    }
+    let size = rendering
+        .style
+        .pen_size
+        .ok_or(Error::Unsupported("missing native pen size"))?;
+    let points: Vec<P> = stroke
+        .points
+        .iter()
+        .map(|p| P {
+            x: p.x as f32,
+            y: p.y as f32,
+        })
+        .collect();
+    let pressure: Vec<f32> = stroke.pressures.iter().map(|p| *p as f32).collect();
+    sample(
+        &SourceInput {
+            advanced_version: 2,
+            tool_type: u8::try_from(rendering.tool_type_raw)
+                .map_err(|_| Error::Unsupported("tool type out of range"))?,
+            stroke_type: 0,
+            curve_enabled: rendering.properties.compressed,
+            points: &points,
+            pressure: &pressure,
+            size,
+        },
+        profile,
+    )
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Error {
     Unsupported(&'static str),
@@ -619,6 +666,102 @@ mod tests {
         );
         assert_eq!(output.records.len(), native.len() / 24);
         assert_eq!(output_bytes(&output), native);
+        let style = crate::StrokeStyle {
+            pen_size: Some(10.0),
+            stroke_type_raw: Some(0),
+            ..Default::default()
+        };
+        let rendering = crate::StrokeRendering {
+            metadata: None,
+            pen_name: Some("com.samsung.android.sdk.pen.pen.preload.Crayon2".into()),
+            advanced_settings: Some("2;".into()),
+            tool_type_raw: 2,
+            style,
+            properties: crate::StrokeProperties {
+                compressed: true,
+                replay_only: false,
+                stylus_channels: false,
+                eraser: false,
+                fixed_width: false,
+                millisecond_timestamps: false,
+                top_layer_pen: false,
+                alpha_lock: false,
+                binary_added: true,
+                generated: false,
+                fixed_opacity: false,
+                rainbow_effect: false,
+                straighten: false,
+                reveal_mode: false,
+            },
+        };
+        let mut stroke = crate::Stroke {
+            rendering: Some(rendering),
+            bbox: crate::BoundingBox::default(),
+            points: points
+                .iter()
+                .map(|p| crate::Point {
+                    x: p.x as f64,
+                    y: p.y as f64,
+                })
+                .collect(),
+            pressures: pressure.iter().map(|p| *p as f64).collect(),
+            timestamps: vec![100, 110, 120],
+            tilts: vec![0.0; 3],
+            orientations: vec![0.0; 3],
+            color: Some(crate::Color {
+                r: 51,
+                g: 102,
+                b: 153,
+            }),
+            pen_width: 10.0,
+        };
+        let profile = parse_profile(&fixture());
+        assert_eq!(
+            output_bytes(&sample_stroke(&stroke, &profile).unwrap()),
+            native
+        );
+        stroke.rendering.as_mut().unwrap().style.stroke_type_raw = None;
+        assert!(matches!(
+            sample_stroke(&stroke, &profile),
+            Err(Error::Unsupported(_))
+        ));
+        stroke.rendering.as_mut().unwrap().style.stroke_type_raw = Some(0);
+        stroke.rendering.as_mut().unwrap().properties.compressed = false;
+        assert!(matches!(
+            sample_stroke(&stroke, &profile),
+            Err(Error::Unsupported(_))
+        ));
+        stroke.rendering.as_mut().unwrap().properties.compressed = true;
+        stroke.rendering.as_mut().unwrap().pen_name = None;
+        assert!(matches!(
+            sample_stroke(&stroke, &profile),
+            Err(Error::Unsupported(_))
+        ));
+        stroke.rendering.as_mut().unwrap().pen_name =
+            Some("com.samsung.android.sdk.pen.pen.preload.Crayon2".into());
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("1;".into());
+        assert!(matches!(
+            sample_stroke(&stroke, &profile),
+            Err(Error::Unsupported(_))
+        ));
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("2;".into());
+        stroke.rendering.as_mut().unwrap().tool_type_raw = 1;
+        assert!(matches!(
+            sample_stroke(&stroke, &profile),
+            Err(Error::Unsupported(_))
+        ));
+        stroke.rendering.as_mut().unwrap().tool_type_raw = 2;
+        stroke.rendering.as_mut().unwrap().style.pen_size = None;
+        assert!(matches!(
+            sample_stroke(&stroke, &profile),
+            Err(Error::Unsupported(_))
+        ));
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(10.0);
+        stroke.pressures.pop();
+        assert!(matches!(
+            sample_stroke(&stroke, &profile),
+            Err(Error::Invalid(_))
+        ));
     }
 
     #[test]
