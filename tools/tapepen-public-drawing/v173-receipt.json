@@ -1,0 +1,347 @@
+{
+  "scope": "synthetic host Mesa Drawing, explicit 2x matrix, standalone source-mask vector candidate and current public generic fallback; no device or saved note parity",
+  "native": {
+    "1": {
+      "input": {
+        "advanced_setting": "",
+        "color_argb": "0xc0d74433",
+        "color_type": 2,
+        "curve_enabled": true,
+        "kind": "synthetic native Model ObjectStroke Construct input; cold Drawing PenManager selects the pen by the name passed to native Construct; no serialized SDocx parser input",
+        "native_ObjectStroke_address": "0x1003b070",
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f",
+          "0000403f"
+        ],
+        "pattern_index": 1,
+        "pattern_scale_f32_bits": "0000803f",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.TapePen",
+        "pen_size_f32_bits": "00004041",
+        "points_f32_bits": [
+          [
+            "00009a42",
+            "00006c42"
+          ],
+          [
+            "0000b242",
+            "00005042"
+          ],
+          [
+            "0000ca42",
+            "00008242"
+          ],
+          [
+            "0000da42",
+            "00006442"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcccc3d",
+          "3333b33e",
+          "3333333f",
+          "0000803f"
+        ],
+        "reveal_mode": 0,
+        "stroke_type": 0,
+        "tape_pattern_asset": {
+          "byte_count": 13182,
+          "path": "scratch/apk-output/samsung-notes-4.4.45.37/res/raw/tape_pattern_01.svg",
+          "sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b",
+          "store_call": {
+            "api": "SetTapePenPatternSvgUtf8Bytes(int,char const*,unsigned long)",
+            "index": 1,
+            "return_abi": "void; return register is not interpreted",
+            "source_bytes": 13182,
+            "source_sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b"
+          }
+        },
+        "tilt_f32_bits": [
+          "00000000",
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f"
+        ],
+        "timestamps_i32": [
+          0,
+          8,
+          19,
+          37
+        ],
+        "tool_type": 2
+      },
+      "profile": {
+        "bitmap_target_dimensions": [
+          256,
+          256
+        ],
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 256,
+        "profile_source": "native View SPen::Context constructed with explicit host IDisplay profile; native constructor supplies native vtable, queue getter, Color, theme, document width/density, and system-dark defaults",
+        "screen_resolution": [
+          256,
+          256
+        ],
+        "width": 256
+      },
+      "sha256": "3ac51001c441c23f82c4f78b193254b0dad7b383d275f89c37309445ce22fe99",
+      "framebuffer_status": 36053,
+      "framebuffer_attachment": 1,
+      "readback_status": "ok",
+      "nonzero_pixels": 410,
+      "native_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "TapePen": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+        "View": "c4a17e4232c2074d3833604974d75ac961fab4d9651949bb2552704c86621dc8",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "queue_end_error_observation": {
+        "actual_mesa_error": 0,
+        "consumed_by_observer": true,
+        "does_not_run_per_draw": true,
+        "phase": "queue_end_observer",
+        "source": "single actual Mesa glGetError observer after complete native queue drain"
+      }
+    },
+    "2": {
+      "input": {
+        "advanced_setting": "",
+        "color_argb": "0xc0d74433",
+        "color_type": 2,
+        "curve_enabled": true,
+        "kind": "synthetic native Model ObjectStroke Construct input; cold Drawing PenManager selects the pen by the name passed to native Construct; no serialized SDocx parser input",
+        "native_ObjectStroke_address": "0x1003b070",
+        "orientation_f32_bits": [
+          "00000000",
+          "0000803e",
+          "0000003f",
+          "0000403f"
+        ],
+        "pattern_index": 1,
+        "pattern_scale_f32_bits": "0000803f",
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.TapePen",
+        "pen_size_f32_bits": "00004041",
+        "points_f32_bits": [
+          [
+            "00009a42",
+            "00006c42"
+          ],
+          [
+            "0000b242",
+            "00005042"
+          ],
+          [
+            "0000ca42",
+            "00008242"
+          ],
+          [
+            "0000da42",
+            "00006442"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcccc3d",
+          "3333b33e",
+          "3333333f",
+          "0000803f"
+        ],
+        "reveal_mode": 0,
+        "stroke_type": 0,
+        "tape_pattern_asset": {
+          "byte_count": 13182,
+          "path": "scratch/apk-output/samsung-notes-4.4.45.37/res/raw/tape_pattern_01.svg",
+          "sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b",
+          "store_call": {
+            "api": "SetTapePenPatternSvgUtf8Bytes(int,char const*,unsigned long)",
+            "index": 1,
+            "return_abi": "void; return register is not interpreted",
+            "source_bytes": 13182,
+            "source_sha256": "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b"
+          }
+        },
+        "tilt_f32_bits": [
+          "00000000",
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a99193f"
+        ],
+        "timestamps_i32": [
+          0,
+          8,
+          19,
+          37
+        ],
+        "tool_type": 2
+      },
+      "profile": {
+        "bitmap_target_dimensions": [
+          512,
+          512
+        ],
+        "canvas_model_matrix_f32_bits": [
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "height": 512,
+        "profile_source": "native View SPen::Context constructed with explicit host IDisplay profile; native constructor supplies native vtable, queue getter, Color, theme, document width/density, and system-dark defaults",
+        "screen_resolution": [
+          512,
+          512
+        ],
+        "width": 512
+      },
+      "sha256": "dae0bf1f3552ef5184c3ba6a6de71e2888f170066c363f9ada1ea7f1e6ef60b9",
+      "framebuffer_status": 36053,
+      "framebuffer_attachment": 1,
+      "readback_status": "ok",
+      "nonzero_pixels": 1525,
+      "native_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "TapePen": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+        "View": "c4a17e4232c2074d3833604974d75ac961fab4d9651949bb2552704c86621dc8",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "queue_end_error_observation": {
+        "actual_mesa_error": 0,
+        "consumed_by_observer": true,
+        "does_not_run_per_draw": true,
+        "phase": "queue_end_observer",
+        "source": "single actual Mesa glGetError observer after complete native queue drain"
+      }
+    }
+  },
+  "sha256": {
+    "v173-native.py": "ee3b9c9c51e38f1de887cb20f342f646f8ed16472a0040fc16f7217fa46f0878",
+    "v173-native-1x.py": "1716a2dc4ad145b337c5d4c23735fc0b1fce61cd5d4238deb521a7e2f871e244",
+    "v173-vector.py": "061a41d132786656bb80fb4084ff37be8f581698a3d900a212172380b45765ac",
+    "v173-public.rs": "ce60a2425d972de16ab3bf07924d6d423423ea9dbfb43de47b3c243952ccc842",
+    "rotation-v113.patch": "9b27f653d7d334ab5154e3a9ad75056d4a6b3d6c1e0f3a650bbe5ad869e0416e",
+    "phase-control.patch": "3b6a85f816a4bd71f8151d731b0469a00b614fbac5f7741267228491f48c089f",
+    "capture_candidate.py": "f39dcc671e7ae49ca833f7c1273ed05fba6c417f12ae21e742982346e070476f",
+    "pattern01-native.rgba.zlib": "23fb10f53b7513ffbff910bd0f92fa23614e75c995c783d5cd05af5b264930f5",
+    "v173-source-mask.patch": "b728b6b0d3ec1287e8923817e597a3964f77eed1c84ad5b45ab0de293f6544af",
+    "v173-compare.py": "f2c2b21ef32c68fa738766480a9510c4dbaf5c60e1524442a63accec320b46e8",
+    "svg_pdf.rs": "8a9fe5c7c09e41f2e3ce31ddfaf539461ae62007700b738cef81e4a38bb0728d",
+    "pdf-control-Cargo.lock": "3fafc3439b4277325003be0d75aeb9e21b365a2cb3576f76cf3636ecfddc08a2",
+    "preflight_candidate.py": "1e0985967e9e26c97d311c96979fe7009ad3d741c955fda1bb77436ef916b8a9",
+    "tapepen_canvas_native.py": "cf08a72c39f2fa8f8ad463a8ca87596adbfb9649453ad53cb3e763099c385a97",
+    "preflight.json": "dec9fcea51fb776d3b0394ea812a80cd8dd12e2964a85c468dde9bfde82d75e9",
+    "candidate.json": "55a7535e13c9e41900fb98db556b74a2d6996f7ce6423ee59a6e859fefd83747",
+    "v173-verify-native.py": "302e82a13915afcb6b7dbfc2ae9069908958121d7fb1a89c6e6b55fa2d49c47e"
+  },
+  "mask_sha256": "3dccd5f819731cb350e072ba5fb32b6aab75abb9c749c53cbae6fd53600a2394",
+  "candidate_svg_sha256": "079683c9c7fcd69494577f081167c9ddc02852ad0c0736b072a502f53875d1ad",
+  "candidate_pdf_sha256": "b2eae7ef124a6af7f0c49c78065c8940d68fd34f876abb80e80dc08bfae054ea",
+  "public_svg_sha256": "20d922ff9257e27b381912ffb78135015b730c0b7bbe6f82d60ac26c3d218a2b",
+  "public_pdf_sha256": "a8f74be8bcb7d729e976508bc318e01bae3da24d6141e6d5e9dee01761c372ee",
+  "note": "2x native captures 512x512 with 2x model matrix; candidate is the 1x pixel-grid vector zoomed 2x, not regenerated at 2x. Public fallback has white background. Color-type 2; native matrix metadata in legacy capture result is hard-coded identity and does not describe injected 2x matrix.",
+  "candidate_comparison": {
+    "metrics": {
+      "1x_svg_native": {
+        "l1": 27,
+        "max": 1,
+        "different_channels": 27
+      },
+      "1x_mupdf_native": {
+        "l1": 499,
+        "max": 2,
+        "different_channels": 494
+      },
+      "1x_pdfium_native_white": {
+        "l1": 458,
+        "max": 1,
+        "different_channels": 458
+      },
+      "2x_svg_native": {
+        "l1": 104118,
+        "max": 199,
+        "different_channels": 2143
+      },
+      "2x_mupdf_native": {
+        "l1": 105086,
+        "max": 199,
+        "different_channels": 3050
+      },
+      "2x_pdfium_native_white": {
+        "l1": 57100,
+        "max": 115,
+        "different_channels": 3176
+      }
+    },
+    "mupdf": "1.28.2",
+    "pdfium": "150.0.7869.0"
+  },
+  "public_fallback_comparison": {
+    "1x_svg_native_white": {
+      "l1": 70165,
+      "max": 204,
+      "different_channels": 1284
+    },
+    "1x_mupdf_native_white": {
+      "l1": 70043,
+      "max": 204,
+      "different_channels": 1283
+    },
+    "1x_pdfium_native_white": {
+      "l1": 70321,
+      "max": 204,
+      "different_channels": 1283
+    },
+    "2x_svg_native_white": {
+      "l1": 297521,
+      "max": 204,
+      "different_channels": 4806
+    },
+    "2x_mupdf_native_white": {
+      "l1": 296228,
+      "max": 204,
+      "different_channels": 4808
+    },
+    "2x_pdfium_native_white": {
+      "l1": 296771,
+      "max": 204,
+      "different_channels": 4816
+    }
+  },
+  "source_sha256": {
+    "crates/sdocx/src/ink/tapepen.rs": "3958194f53f572f1b0b11562ef23b97457f6d33e24231ba47214688601ca248e",
+    "crates/sdocx/src/render.rs": "b9fa760b67b7f0b8b18cc13822e2ae763e199f0f5cdb44c38602f1d5fb55686e",
+    "Cargo.lock": "5bd9bda9da7b4d02adc97ae3df5ffcea0b596e8dc02d6428c082c1093bea8153"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "versions": {
+    "pillow": "12.1.1",
+    "mupdf": "1.28.2",
+    "pdfium": "150.0.7869.0",
+    "resvg": "0.45.1"
+  },
+  "source_sha256": {
+    "crates/sdocx/src/ink/tapepen.rs": "f998c5596cb1be246728ccb68ec72639120f86840e70ca2b1c8c64811deca258",
+    "crates/sdocx/src/tapepen_pattern/mod.rs": "b989eaa63613b3e85dbb4b75a0ab59e2fe69f7470ca8d3621430dd33b964dea2",
+    "crates/sdocx/src/tapepen_pattern/scan.rs": "405400ab0f01d74c24fcf357cf8e5c9fd5989b2b4c411e1f3a10390fb393e89a",
+    "crates/sdocx/src/tapepen_pattern/stroke.rs": "69c03863d071b36ffcca2db2e0fcd57036fe36e51a5c36f9641edeba6af61cfe",
+    "crates/sdocx/src/tapepen_pattern/texture.rs": "7b45afd4b948c8baf01e2d75bea3bb407cba0ace976ce552a540cedcf4f56a6f",
+    "tools/tapepen-public-drawing/v247-scale-diagnostic.py": "9cb14692e9c29aae91c98d3a57a801ea70e161ec8e4744b7de9bc21fc009d3a3",
+    "tools/tapepen-public-drawing/svg_pdf.rs": "8a9fe5c7c09e41f2e3ce31ddfaf539461ae62007700b738cef81e4a38bb0728d",
+    "tools/tapepen-public-drawing/pdf-control-Cargo.lock": "3fafc3439b4277325003be0d75aeb9e21b365a2cb3576f76cf3636ecfddc08a2",
+    "tools/tapepen-public-drawing/v173-receipt.json": "8b04ed5af11b98cde872fad0cc257b99e92e2557de84ea38d7eae04c1463692c",
+    "tools/tapepen-public-drawing/v173-verify-native.py": "302e82a13915afcb6b7dbfc2ae9069908958121d7fb1a89c6e6b55fa2d49c47e",
+    "tools/tapepen-public-drawing/v173-1x-frame.rgba.zlib": "9f9cd8cdd6e059897deb1b184028289d426f58e775ee9b9ebe290a5f5d5260a5",
+    "tools/tapepen-public-drawing/v173-2x-frame.rgba.zlib": "69ef064c566996b00f4130b9822ece185ddfce2e0af826f0d24a0ba694693301"
+  },
+  "fresh_replay": {
+    "scope": "Fresh 2026-10-30 local v173 replay using host-local capture wrappers and prerequisites, not retained by this diagnostic. Temporary logs were verified against retained input and framebuffer bytes; logs are not retained. This package reproduces source/export comparisons and verifies supplied native logs, but does not reproduce native captures.",
+    "1x_log_sha256": "5bf3b898b4c0aebd15a59a67b3f2f015600b16d92b18bba863fa2fc8ae7b72f1",
+    "2x_log_sha256": "41a4e5ed265618a5463d22d2404154645f5baa188a3e37f14266e94bf41b2c38"
+  }
+}

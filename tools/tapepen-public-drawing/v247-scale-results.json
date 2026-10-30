@@ -1,0 +1,78 @@
+{
+  "1x_texture64": {
+    "mask_sha256": "3dccd5f819731cb350e072ba5fb32b6aab75abb9c749c53cbae6fd53600a2394",
+    "pattern_sha256": "78a0a70b418c59c460f8791d48d7f131ad7d445f3797323eb041fd9b689ba189",
+    "svg": {
+      "l1": 27,
+      "max": 1,
+      "different_channels": 27
+    },
+    "mupdf": {
+      "l1": 499,
+      "max": 2,
+      "different_channels": 494
+    },
+    "pdfium_white": {
+      "l1": 458,
+      "max": 1,
+      "different_channels": 458
+    }
+  },
+  "1x_texture128": {
+    "mask_sha256": "3dccd5f819731cb350e072ba5fb32b6aab75abb9c749c53cbae6fd53600a2394",
+    "pattern_sha256": "f290e56addf62df35c7fbd4bfb6bddaeccc047ab382c52aa9766cafb38b7d292",
+    "svg": {
+      "l1": 7054,
+      "max": 85,
+      "different_channels": 207
+    },
+    "mupdf": {
+      "l1": 7439,
+      "max": 86,
+      "different_channels": 576
+    },
+    "pdfium_white": {
+      "l1": 7384,
+      "max": 86,
+      "different_channels": 522
+    }
+  },
+  "2x_texture64": {
+    "mask_sha256": "d6012ddccdc27eb4c8e0bdb604d4d62336856eb89da863491a09861e5c7082ca",
+    "pattern_sha256": "78a0a70b418c59c460f8791d48d7f131ad7d445f3797323eb041fd9b689ba189",
+    "svg": {
+      "l1": 60203,
+      "max": 130,
+      "different_channels": 1935
+    },
+    "mupdf": {
+      "l1": 60967,
+      "max": 130,
+      "different_channels": 2789
+    },
+    "pdfium_white": {
+      "l1": 48773,
+      "max": 113,
+      "different_channels": 2788
+    }
+  },
+  "2x_texture128": {
+    "mask_sha256": "d6012ddccdc27eb4c8e0bdb604d4d62336856eb89da863491a09861e5c7082ca",
+    "pattern_sha256": "f290e56addf62df35c7fbd4bfb6bddaeccc047ab382c52aa9766cafb38b7d292",
+    "svg": {
+      "l1": 67725,
+      "max": 130,
+      "different_channels": 1453
+    },
+    "mupdf": {
+      "l1": 68452,
+      "max": 130,
+      "different_channels": 2467
+    },
+    "pdfium_white": {
+      "l1": 55454,
+      "max": 113,
+      "different_channels": 2465
+    }
+  }
+}
