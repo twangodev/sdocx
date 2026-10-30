@@ -1,0 +1,48 @@
+{
+  "pdf_sha256": "3cb701b9e861657bf4557744b0fe461873ede441e8321c441686304820d58eae",
+  "native_sha256": "349699e5ae29169749bead92a1fd35ba4c34466a86b4fb89e85a83eea0bb71a8",
+  "pymupdf": "1.28.2",
+  "pdfium": "150.0.7869.0",
+  "mupdf": {
+    "sum": 132980,
+    "max": 30,
+    "differing_channels": 131151
+  },
+  "pdfium_result": {
+    "sum": 2025,
+    "max": 28,
+    "differing_channels": 368
+  },
+  "ink_region_xy_105_145": {
+    "mupdf": {
+      "sum": 5108,
+      "max": 30,
+      "differing_channels": 3279
+    },
+    "pdfium": {
+      "sum": 2025,
+      "max": 28,
+      "differing_channels": 368
+    }
+  },
+  "corner_pixels": {
+    "native": [
+      252,
+      252,
+      252,
+      255
+    ],
+    "mupdf": [
+      251,
+      252,
+      251,
+      255
+    ],
+    "pdfium": [
+      252,
+      252,
+      252,
+      255
+    ]
+  }
+}

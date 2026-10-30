@@ -1,0 +1,86 @@
+{
+  "first": {
+    "status": "ok",
+    "phase": "immediately_after_native_draw",
+    "width": 256,
+    "height": 256,
+    "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+    "row_pitch_bytes": 1024,
+    "row_origin": "GL lower-left",
+    "byte_length": 262144,
+    "sha256": "47b8fde1cf567926c22855837464aa728815c4f0f7b3ec350a991ef2d474ed99",
+    "nonzero_pixels": 65536,
+    "nonzero_channels": [
+      65536,
+      65536,
+      65536,
+      65536
+    ],
+    "data_encoding": "zlib+base64",
+    "data_base64": "eJzt2t9qE1EQB+D3fyBfQNEiKNoUlJZiSlJNbJOmSZPsn3NgPGc1oPfFYPwuPthd9mJuZuc3h805RwYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAODkpZx+u+6PXg/wd7S5iT53RR/7/BRdbo9eE/D86pyv871q8q7YxzqtSt9vY1d6vz7rzX84Sbu8Geb7U36MbfE9TeM+38a4u4xJfx2rdBePafHHPgD8+2pPdyXrr9Mypt2XWKTZ0Pej7lVcd6O4akcx76dDFqj7gG8AnIaa99uS9WtfT/qrodfP2zdx0byN1/sXcd6cxdd+HNOSAWpGqO8du2bgedRZXnt6m9ZD5r8t8/9j6fmL9iw+7F/Gp+Z9zPqbkv+Xwxmg2Q+n5ZABHsqOP+sncVe+A5fduxj3n8vsv4lFnkfzK/sfu1bgef08+0/Dfl8t0zzu07fY5IfYpNVw/m/uw2k77AIH9b7+A3DsugAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4//wAR3ovpg==",
+    "compressed_bytes": 583,
+    "gl_errors_before": [],
+    "gl_errors_after": []
+  },
+  "second_pre": {
+    "status": "ok",
+    "phase": "immediately_before_native_draw",
+    "width": 256,
+    "height": 256,
+    "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+    "row_pitch_bytes": 1024,
+    "row_origin": "GL lower-left",
+    "byte_length": 262144,
+    "sha256": "47b8fde1cf567926c22855837464aa728815c4f0f7b3ec350a991ef2d474ed99",
+    "nonzero_pixels": 65536,
+    "nonzero_channels": [
+      65536,
+      65536,
+      65536,
+      65536
+    ],
+    "data_encoding": "zlib+base64",
+    "data_base64": "eJzt2t9qE1EQB+D3fyBfQNEiKNoUlJZiSlJNbJOmSZPsn3NgPGc1oPfFYPwuPthd9mJuZuc3h805RwYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAODkpZx+u+6PXg/wd7S5iT53RR/7/BRdbo9eE/D86pyv871q8q7YxzqtSt9vY1d6vz7rzX84Sbu8Geb7U36MbfE9TeM+38a4u4xJfx2rdBePafHHPgD8+2pPdyXrr9Mypt2XWKTZ0Pej7lVcd6O4akcx76dDFqj7gG8AnIaa99uS9WtfT/qrodfP2zdx0byN1/sXcd6cxdd+HNOSAWpGqO8du2bgedRZXnt6m9ZD5r8t8/9j6fmL9iw+7F/Gp+Z9zPqbkv+Xwxmg2Q+n5ZABHsqOP+sncVe+A5fduxj3n8vsv4lFnkfzK/sfu1bgef08+0/Dfl8t0zzu07fY5IfYpNVw/m/uw2k77AIH9b7+A3DsugAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4//wAR3ovpg==",
+    "compressed_bytes": 583,
+    "gl_errors_before": [],
+    "gl_errors_after": []
+  },
+  "second": {
+    "status": "ok",
+    "phase": "immediately_after_native_draw",
+    "width": 256,
+    "height": 256,
+    "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+    "row_pitch_bytes": 1024,
+    "row_origin": "GL lower-left",
+    "byte_length": 262144,
+    "sha256": "349699e5ae29169749bead92a1fd35ba4c34466a86b4fb89e85a83eea0bb71a8",
+    "nonzero_pixels": 65536,
+    "nonzero_channels": [
+      65536,
+      65536,
+      65536,
+      65536
+    ],
+    "data_encoding": "zlib+base64",
+    "data_base64": "eJzt2t1OXFUYBuD7vwATj6umKQeSWK02JkbNxJQo/bGlI1ApQynDDDCbGWb27L/kFVDiBVSciM/Bk5V19p6sfO9aWV3XpQMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4P+naf5c2zZt3aw+D3Dr2rZJO1+mLS9VZeqzadrFcuW5gFvw13xvqzrl+SR1Mc3y/Sjz4iTLySTN+TxdVf3dB4D/vLa7PPdNleq0SLkocjEa5ez4IEV/N5P+m5z3nme20U/5dpjlYJyurleeGfhnLLpZ6qbMdH6S6eF+jn7eyPHOi+z1vsv+Z+sZfvNDho97uXi5l2Yyu74PXHWFVecGPszV7K+bRYrpUd7NdnL85El+f/woWw/uZffBWrY/upfB2lcpnv6W2S/blx1hmnZZrTw38GHarknVlWmaZQ4W/ewcbeTlq6/zureezfsfZ+v+p9n/ZD1vP/8yk2evUg6OUp/O9H+4A65mf9PVmbfTjOpBDot+ft39NlubD/P8xcO8/mIt7378PidPn2W6t59qPDH74Q656QCTZpRhNcj4bDfbJ73s7fyUg+3NjI/fZPH+MHVRePeHO+b67f9S2c2vndXDjC8GmS7HmZanWVTnaS4WK88J3J6bu8CNq33V+esDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwL/vDz0QH0E=",
+    "compressed_bytes": 704,
+    "gl_errors_before": [],
+    "gl_errors_after": []
+  },
+  "first_event_count": 9,
+  "second_event_count": 9,
+  "first_call": {
+    "mode": 5,
+    "first": 0,
+    "vertex_count": 4,
+    "instance_count": 9
+  },
+  "second_call": {
+    "mode": 5,
+    "first": 0,
+    "vertex_count": 4,
+    "instance_count": 9
+  },
+  "scope": "Two synthetic separately constructed objects in order on native host Mesa target initialized RGBA 252,252,252,255. Inputs otherwise match native.json. Pixels are comparison evidence only."
+}

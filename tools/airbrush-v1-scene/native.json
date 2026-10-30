@@ -1,0 +1,156 @@
+{
+  "first": {
+    "status": "ok",
+    "phase": "immediately_after_native_draw",
+    "width": 256,
+    "height": 256,
+    "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+    "row_pitch_bytes": 1024,
+    "row_origin": "GL lower-left",
+    "byte_length": 262144,
+    "sha256": "4bd2dbd77dbc857e3848b9aa38d05fee405e247563b22df26d03ae385298f713",
+    "nonzero_pixels": 94,
+    "nonzero_channels": [
+      80,
+      94,
+      40,
+      94
+    ],
+    "data_encoding": "zlib+base64",
+    "data_base64": "eJzt2ctu00AUBuC52I5zaWJCWhRKWxqKuqBAJapWCSzYseL9X4dxIBIvAJHc7xuNZHs1m+PzHzsEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAnoVY1uEyhXTMowD/T6xDHXPIpepTHodxrEJ17DMB/0Dp831/73cahVFsQpNP4jy1oU2l9vtnQf+HQcqTMOn7e56FWVV2u46v23VYT2/y7fg6vWuW8WXdxRd/zwPAAJSaTiXr14vYtZf5ujmNZ5NS98tt/jb/kD/O76rPo3U677PAfh7wDoBB2Of9kvX7up5s0s3JXfWpe6q+dg/1dvWj+dk91bv2Il2N36bNPiP09Q8MQz/3l5qupnE2Kpl/cpU3i8d61z1W2+Wu+b64rx/Gb9JlLtmg/wao98OwHDJAXWb89jxd9LP/4j5/mb5Pt22p/WoVVvmQ/YFhib/X/lt/2c0qnjZn8VU1D/Oq/weg78Pw/ZkFDnt/X4f62McCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4Pn5BSawD2M=",
+    "compressed_bytes": 593,
+    "gl_errors_before": [],
+    "gl_errors_after": []
+  },
+  "second_pre": {
+    "status": "ok",
+    "phase": "immediately_before_native_draw",
+    "width": 256,
+    "height": 256,
+    "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+    "row_pitch_bytes": 1024,
+    "row_origin": "GL lower-left",
+    "byte_length": 262144,
+    "sha256": "4bd2dbd77dbc857e3848b9aa38d05fee405e247563b22df26d03ae385298f713",
+    "nonzero_pixels": 94,
+    "nonzero_channels": [
+      80,
+      94,
+      40,
+      94
+    ],
+    "data_encoding": "zlib+base64",
+    "data_base64": "eJzt2ctu00AUBuC52I5zaWJCWhRKWxqKuqBAJapWCSzYseL9X4dxIBIvAJHc7xuNZHs1m+PzHzsEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAnoVY1uEyhXTMowD/T6xDHXPIpepTHodxrEJ17DMB/0Dp831/73cahVFsQpNP4jy1oU2l9vtnQf+HQcqTMOn7e56FWVV2u46v23VYT2/y7fg6vWuW8WXdxRd/zwPAAJSaTiXr14vYtZf5ujmNZ5NS98tt/jb/kD/O76rPo3U677PAfh7wDoBB2Of9kvX7up5s0s3JXfWpe6q+dg/1dvWj+dk91bv2Il2N36bNPiP09Q8MQz/3l5qupnE2Kpl/cpU3i8d61z1W2+Wu+b64rx/Gb9JlLtmg/wao98OwHDJAXWb89jxd9LP/4j5/mb5Pt22p/WoVVvmQ/YFhib/X/lt/2c0qnjZn8VU1D/Oq/weg78Pw/ZkFDnt/X4f62McCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4Pn5BSawD2M=",
+    "compressed_bytes": 593,
+    "gl_errors_before": [],
+    "gl_errors_after": []
+  },
+  "second": {
+    "status": "ok",
+    "phase": "immediately_after_native_draw",
+    "width": 256,
+    "height": 256,
+    "format": "GL_RGBA/GL_UNSIGNED_BYTE",
+    "row_pitch_bytes": 1024,
+    "row_origin": "GL lower-left",
+    "byte_length": 262144,
+    "sha256": "f80b8f41d9ee3046584b0204f06ec29d19ed11a65dd28d2afdd56a048121e707",
+    "nonzero_pixels": 118,
+    "nonzero_channels": [
+      111,
+      113,
+      92,
+      118
+    ],
+    "data_encoding": "zlib+base64",
+    "data_base64": "eJzt2M1rXFUYB+B77tfcOzOZ78zEZCa30zY0kzTGJmWSCo1tQzfFIigogiCNsSvBleKqULos3bnxv3VSzV9gymD6POceDnf32xze9z1RBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAxygJIbk4w+JLQpwuOw/w4YUQxUVIy1qcFHkSap206BdxWi47F3D1Lut7GuKsVeSDVpp314tm1WnU1rpFbbiS1NpZCFkcRfGyswJXJCzufRylvbwc1suks1qvT9b6za2d3uh41hvOH/VvfPmgM3lSFe2tcd6epiGYAeCaSOpRPc1CrdHKhpvdldnnN8Zf71b9L053pmfns8M3z6vts+eT7bO9lU+OFjNA72IeCO/bBeB/bVH7szwU7W4+bm/m2yeb1Tdf7c5+/fno4N2L/f03vx88/OuHrf0/DvvrJ/PO+FE3q69mIc6XHRv4b0IcxYubnC8G/rx9M51N91qPj482XjydT385Pzn486f5vbfnd+6//vbO3d/uD9efVGXrdicp+/p/uAYWtT8kUZI2QrO+Hk+G02Jvb7763cP55OXxg/HL7+/tvjq9Nf3xcLT29Fa7+2kvLYZ5nNSWHRu4Gpc9QN4Lg/pGUo02yp3qs/Lx3e3Bs52bq6drw8buuNm83cnzvnd/uGbCPysuouJiF4N41BqlVdmOB2UrHeRlWCnjtLHsmMAH9O8scLnf/2dRtuxYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHx8/gbUbywv",
+    "compressed_bytes": 762,
+    "gl_errors_before": [],
+    "gl_errors_after": []
+  },
+  "first_event_count": 9,
+  "second_event_count": 9,
+  "first_call": {
+    "mode": 5,
+    "first": 0,
+    "vertex_count": 4,
+    "instance_count": 9
+  },
+  "second_call": {
+    "mode": 5,
+    "first": 0,
+    "vertex_count": 4,
+    "instance_count": 9
+  },
+  "scope": "Two separately constructed synthetic native Model ObjectStroke instances drawn in order on one 256x256 transparent bitmap; native Drawing and host Mesa. Not device or saved-page evidence. Captured pixels are comparison only.",
+  "inputs": {
+    "points": [
+      [
+        120,
+        120
+      ],
+      [
+        120.125,
+        120.25
+      ],
+      [
+        122,
+        121
+      ],
+      [
+        124,
+        118
+      ],
+      [
+        124.0625,
+        118
+      ],
+      [
+        126,
+        123
+      ]
+    ],
+    "second_offset": [
+      2,
+      1
+    ],
+    "pressure": [
+      0,
+      0.1,
+      0.9,
+      0.3,
+      1,
+      0.5
+    ],
+    "tilt": [
+      0,
+      0.1,
+      0.5,
+      0.2,
+      0.7,
+      0.3
+    ],
+    "orientation": [
+      0,
+      0.2,
+      0.9,
+      0.4,
+      1.2,
+      0.6
+    ],
+    "timestamps": [
+      300,
+      301,
+      310,
+      450,
+      451,
+      900
+    ],
+    "size": 8.75,
+    "tool": 2,
+    "colors": [
+      "8044ee11",
+      "ffd93672"
+    ]
+  }
+}
