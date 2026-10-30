@@ -1,0 +1,485 @@
+{
+  "drawing_vector": {
+    "sha256": "8edb5e1a74dff81bd41d5d36e121e3e97286334bd041c9f289e6baf0964394b6",
+    "vector_bytes": "0000d841000040429a991d408ee3d84155553f429a991d40398edb4155553d429a991d400000e04100003a429a991d400000e04100003a4298991d405655e541e43836427a141c40aaaaea418ee332425c8f1a400000f041000030423e0a19400000f04100003042340a19405655f54100002e426a3d1840aaaafa4155552d42a07017400000004200002e42d6a316400000004200002e42d6a31640aaaa02420000304284eb15405655054255553342323315400000084200003842e07a14400000084200003842e37a1440aaaa0a42398e3d42806a144056550d42388e43421d5a14400000104200004a42ba4914400000104200004a42c5491440aaaa124200005042023b144056551542abaa5442402c144000001842000058427e1d14400000184200005842861d144064671b423f3b594254e91240dcce1d42a97b574223b511400000204200005442f28010400000204200005442ee801040aaaa22428ee34e425672104056552542e4384a42be63104000002842000046422655104000002842000046421c551040aaaa2a4200004242fc47104056552d4200003e42dc3a10400000304200003a42bb2d10400000304200003a42ad2d1040aaaa3242e43836423e1f1040565535428ee33242cf101040000038420000304260021040000038420000304268021040aaaa3a4200002e4264f50f4056553d4255552d4260e80f400000404200002e425bdb0f400000404200002e4264db0f40aaaa4242000030426a110f40565545425555334270470e400000484200003842767d0d400000484200003842797d0d40aaaa4a42398e3d4276bd0d4056554d42388e434274fd0d400000504200004a42723d0e400000504200004a42723d0e40aaaa52420000504228310e4056555542abaa5442de240e40000058420000584293180e40000058420000584290180e4064675b423f3b59420c0b0e40dcce5d42a97b57428afd0d40000060420000544206f00d40000060420000544208f00d40aaaa62428ee34e42dde30d4056556542e4384a42b2d70d40000068420000464288cb0d4000006842000046428acb0d40aaaa6a42000042422c5e0d4056556d4200003e42cef00c400000704200003a4270830c400000704200003a426f830c40aaaa7242e4383642c5160d40565575428ee332421baa0d400000784200003042713d0e400000784200003042823d0e40aaaa7a4200002e4232310e4056557d4255552d42e3240e400000804200002e4294180e400000804200002e4292180e4056558142000030420e0b0e40aaaa8242555533428afd0d40000084420000384206f00d40000084420000384204f00d4056558542398e3d42dae30d40aaaa8642388e4342b1d70d400000884200004a4288cb0d400000884200004a4286cb0d4056558942000050422a5e0d40aaaa8a42abaa5442cdf00c4000008c420000584270830c4000008c420000584269830c40b2b38d423f3b5942c1160d406ee78e42a97b574219aa0d400000904200005442713d0e400000904200005442943d0e40565591428ee34e423e310e40aaaa9242e4384a42e9240e40000094420000464294180e40000094420000464281180e405655954200004242030b0e40aaaa964200003e4285fd0d400000984200003a4207f00d400000984200003a42f1ef0d4056559942e4383642cee30d40aaaa9a428ee33242abd70d4000009c420000304288cb0d4000009c42000030427ccb0d4056559d4200002e42245e0d40aaaa9e4255552d42caf00c400000a04200002e4272830c400000a04200002e4266830c405655a14200003042be160d40aaaaa2425555334218aa0d400000a44200003842703d0e400000a44200003842943d0e405655a542398e3d423e310e40aaaaa642388e4342e9240e400000a84200004a4294180e400000a84200004a42ae180e405655a94200005042210b0e40aaaaaa42abaa544294fd0d400000ac420000584207f00d400000ac420000584209f00d40b2b3ad423f3b5942dee30d406ee7ae42a97b5742b3d70d400000b0420000544288cb0d400000b042000054428acb0d405655b1428ee34e422c5e0d40aaaab242e4384a42cff00c400000b4420000464272830c400000b442000046426f830c405655b54200004242c5160d40aaaab64200003e421baa0d400000b84200003a42713d0e400000b84200003a42763d0e405655b942e43836422a310e40aaaaba428ee33242df240e400000bc420000304294180e400000bc420000304290180e405655bd4200002e420c0b0e40aaaabe4255552d428afd0d400000c04200002e4206f00d400000c04200002e42fcef0d405655c14200003042d6e30d40aaaac24255553342aed70d400000c4420000384288cb0d400000c442000038428acb0d405655c542398e3d422c5e0d40aaaac642388e4342cff00c400000c84200004a4272830c400000c84200004a4272830c405655c94200005042c7160d40aaaaca42abaa54421caa0d400000cc4200005842713d0e400000cc4200005842763d0e40b2b3cd423f3b59422b310e406ee7ce42a97b5742e0240e400000d0420000544294180e400000d04200005442af180e405655d1428ee34e42220b0e40aaaad242e4384a4294fd0d400000d4420000464206f00d400000d44200004642f1ef0d405655d54200004242cee30d40aaaad64200003e42abd70d400000d84200003a4288cb0d400000d84200003a428acb0d405655d942e43836422c5e0d40aaaada428ee33242cef00c400000dc420000304270830c400000dc420000304264830c405655dd4200002e42be160d40aaaade4255552d4218aa0d400000e04200002e42723d0e400000e04200002e42783d0e405655e142000030422c310e40aaaae24255553342e0240e400000e4420000384294180e400000e44200003842af180e405655e542398e3d42220b0e40aaaae642388e434294fd0d400000e84200004a4206f00d400000e84200004a4209f00d405655e94200005042dee30d40aaaaea42abaa5442b3d70d400000ec420000584288cb0d400000ec42000058427ccb0d40b2b3ed423f3b5942245e0d406ee7ee42a97b5742caf00c400000f0420000544272830c400000f042000054428a830c405655f1428ee34e42d6160d40aaaaf242e4384a4224aa0d400000f44200004642703d0e400000f44200004642763d0e405655f542000042422a310e40aaaaf64200003e42df240e400000f84200003a4294180e400000f84200003a4281180e405655f942e4383642030b0e40aaaafa428ee3324285fd0d400000fc420000304207f00d400000fc420000304209f00d405655fd4200002e42dee30d40aaaafe4255552d42b3d70d400000004300002e4288cb0d400000004300002e428acb0d40aaaa0043000030422c5e0d405655014355553342cff00c40000002430000384272830c40000002430000384266830c40aaaa0243398e3d42be160d4056550343388e434218aa0d400000044300004a42703d0e400000044300004a42903d0e40aaaa0443000050423c310e4056550543abaa5442e8240e40000006430000584293180e40000006430000584279180e40dad906433f3b5942fe0a0e40b6730743a97b574282fd0d40000008430000544206f00d400000084300005442e8ef0d40aaaa08438ee34e42c8e30d4056550943e4384a42a8d70d4000000a430000464288cb0d4000000a430000464255cb0d40aaaa0a4300004242095e0d4056550b4300003e42bdf00c4000000c4300003a4271830c4000000c4300003a423a830c40aaaa0c43e4383642a2160d4056550d438ee3324209aa0d4000000e4300003042703d0e4000000e4300003042763d0e40aaaa0e4300002e422b310e4056550f4355552d42e0240e400000104300002e4294180e400000104300002e4292180e40aaaa1043000030420e0b0e4056551143555533428afd0d40000012430000384206f00d400000124300003842eeef0d40aaaa1243398e3d42cce30d4056551343388e4342aad70d400000144300004a4287cb0d400000144300004a426ecb0d40aaaa1443000050421a5e0d4056551543abaa5442c6f00c40000016430000584271830c40000016430000584286830c40dad916433f3b5942d4160d40b6731743a97b574222aa0d400000184300005442713d0e400000184300005442943d0e4047e11743cdf55442c0c60f40eb511843ad705142eb4f11400000194300004c4216d91240",
+    "vector_count": 256
+  },
+  "native_draw_target_readback": {
+    "gl_error_immediately_after_rgba_readback": 0,
+    "gl_state_after_readback": {
+      "clear_color": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color_write_mask": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "draw_buffer0": 36064,
+      "draw_framebuffer": 1,
+      "read_buffer": 36064,
+      "read_framebuffer": 1,
+      "scissor_box": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "scissor_enabled": true,
+      "viewport": [
+        0,
+        0,
+        256,
+        256
+      ]
+    },
+    "gl_state_before_readback": {
+      "clear_color": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color_write_mask": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "draw_buffer0": 36064,
+      "draw_framebuffer": 1,
+      "read_buffer": 36064,
+      "read_framebuffer": 1,
+      "scissor_box": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "scissor_enabled": true,
+      "viewport": [
+        0,
+        0,
+        256,
+        256
+      ]
+    },
+    "host_fbo_state": {
+      "color_attachment_object_type": 5890,
+      "color_attachment_texture_name": 1,
+      "dimensions": [
+        256,
+        256
+      ],
+      "draw_buffer0": 36064,
+      "framebuffer_binding": 1,
+      "framebuffer_status": 36053,
+      "read_buffer": 36064,
+      "read_framebuffer_binding": 1,
+      "viewport": [
+        0,
+        0,
+        256,
+        256
+      ]
+    },
+    "native_identity": {
+      "complete_primary_vptr": "0x40cf7f0",
+      "complete_sp_subbitmap_rt": "0x10071310",
+      "draw_argument_interface": "0x10071310",
+      "draw_argument_vptr": "0x40cf7f0",
+      "draw_argument_vtable_address_point_rva": "0xcf7f0",
+      "expected_primary_vptr": "0x40cf7f0",
+      "factory_bitmap_subbitmap_vector": {
+        "begin": "0x100715f0",
+        "capacity": "0x100715f8",
+        "count": 1,
+        "end": "0x100715f8",
+        "entries": [
+          {
+            "index": 0,
+            "pointer": "0x10071310",
+            "vptr": "0x40cf7f0"
+          }
+        ],
+        "source": "SPTextureBitmap::GetSubBitmap/GetSubBitmapCount/GetBitmapData read begin/end at concrete this+208 with 8-byte pointer stride."
+      },
+      "factory_bitmap_subbitmap_vector_join": {
+        "index": 0,
+        "pointer": "0x10071310",
+        "vptr": "0x40cf7f0"
+      },
+      "field_join_source": "RTTI offset-to-top resolves the actual Draw ISPSubBitmap argument; factory SPTextureBitmap +208 vector and completed SPSubBitmapRT constructor this join that object. SPSubBitmapRT fields +80/+88 lead to texture/SPFrameBuffer; SPFrameBuffer+16 returns an RTTI-validated OffscreenRenderTarget complete/interface pointer. Its +8 word is a secondary vptr; OffscreenRenderTarget::Activate adjusts this +8 and RenderTargetBase::GetFbo reads base-this+8, so the FBO name is complete-object+16. OffscreenRenderTarget+80 is color texture; TextureObject+40 is GL target/name.",
+      "native_color_attachment_object": "0x10071390",
+      "native_constructor_ledger_join": {
+        "caller_lr": "0x408f29c",
+        "complete_object": "0x10071310",
+        "constructor": "SPen::SPSubBitmapRT::SPSubBitmapRT(IGLMsgQueue*,int,Rect const&,int,int,char const*,void const*,bool,TextureMemoryLayout,TextureTargetLayout)",
+        "constructor_arguments_x1_x5": [
+          "0x10031180",
+          "0x0",
+          "0x200eef08",
+          "0x100",
+          "0x100"
+        ],
+        "entry_pc": "0x408d89c",
+        "entry_vptr": "0x0",
+        "return_boundary_pc": "0x408d978",
+        "returned": true,
+        "this": "0x10071310",
+        "vptr_after_constructor": "0x40cf7f0",
+        "vtable_offset_to_top": 0,
+        "vtable_typeinfo_pointer": "0x40d32b0"
+      },
+      "native_gl_framebuffer_name": 1,
+      "native_render_target": "0x10071760",
+      "native_render_target_field_pointer": "0x10071760",
+      "native_render_target_pointer_resolution": {
+        "complete_offscreen_render_target": "0x10071760",
+        "complete_primary_vptr": "0xa06a510",
+        "expected_primary_vptr": "0xa06a510",
+        "field_pointer": "0x10071760",
+        "field_pointer_address_point_rva": "0x6a510",
+        "field_pointer_vptr": "0xa06a510",
+        "rtti_source": "Renderer OffscreenRenderTarget vtable address points at +0x10/+0x88/+0xd8 from vtable symbol; ABI offset-to-top 0/-8/-32.",
+        "rtti_typeinfo": "0xa06c330",
+        "vtable_offset_to_top": 0
+      },
+      "native_render_target_raw_field_chain": {
+        "color_attachment_object": "0x10071390",
+        "complete_object": "0x10071760",
+        "field_source": "OffscreenRenderTarget::Activate adjusts this by +8 to RenderTargetBase::Activate; RenderTargetBase::Activate/GetFbo reads base-this+8, i.e. complete-object+16. The +8 complete-object word is a source-verified secondary vptr, not the FBO id.",
+        "managed_subobject": {
+          "offset_to_top": -32,
+          "this": "0x10071780",
+          "typeinfo": "0xa06c330",
+          "vptr": "0xa06a5d8"
+        },
+        "offscreen_pointer_resolution": {
+          "complete_offscreen_render_target": "0x10071760",
+          "complete_primary_vptr": "0xa06a510",
+          "expected_primary_vptr": "0xa06a510",
+          "field_pointer": "0x10071760",
+          "field_pointer_address_point_rva": "0x6a510",
+          "field_pointer_vptr": "0xa06a510",
+          "rtti_source": "Renderer OffscreenRenderTarget vtable address points at +0x10/+0x88/+0xd8 from vtable symbol; ABI offset-to-top 0/-8/-32.",
+          "rtti_typeinfo": "0xa06c330",
+          "vtable_offset_to_top": 0
+        },
+        "raw_object_words": {
+          "0": "0xa06a510",
+          "16_u32": "0x1",
+          "20_u32": "0x100",
+          "24": "0x100000100",
+          "24_u32": "0x100",
+          "32": "0xa06a5d8",
+          "40": "0x0",
+          "48": "0x0",
+          "56": "0x0",
+          "64": "0x0",
+          "72": "0x1",
+          "8": "0xa06a588",
+          "80": "0x10071390",
+          "80_qword": "0x10071390"
+        },
+        "render_target_base_subobject": {
+          "fbo_field_address": "0x10071770",
+          "fbo_id_u32": 1,
+          "offset_to_top": -8,
+          "this": "0x10071768",
+          "typeinfo": "0xa06c330",
+          "vptr": "0xa06a588"
+        }
+      },
+      "native_render_target_vptr": "0xa06a510",
+      "native_sp_framebuffer": "0x10071730",
+      "native_sp_framebuffer_vptr": "0x40ce3a8",
+      "native_texture_gl_name": 1,
+      "native_texture_gl_target": "0xde1",
+      "native_texture_object": "0x10071390",
+      "native_texture_object_vptr": "0xa06af60",
+      "rtti_typeinfo": "0x40d32b0",
+      "vtable_offset_to_top": 0
+    },
+    "nonzero_alpha_pixels": 3122,
+    "nonzero_bytes": 12481,
+    "persistent_rgba_capture": {
+      "byte_count": 262144,
+      "path": "captures/simplebrush-native-draw-rgba-9fb904a0fa53a9d3a968fd92f370292ebe4d518b1f9960ad5dca38f73fd5ee31.bin",
+      "persistence": "full RGBA bytes written and hash-verified before JSON report construction",
+      "sha256": "9fb904a0fa53a9d3a968fd92f370292ebe4d518b1f9960ad5dca38f73fd5ee31"
+    },
+    "pixel_origin_or_premultiplication": "not inferred; raw bytes are directly returned by host Mesa GLES glReadPixels from the already-bound native Draw target FBO",
+    "preclear_evidence": {
+      "clear_color_before": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "clear_color_restored_after_clear": true,
+      "clear_scissor_override": false,
+      "color_write_mask": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "draw_entry_pc": "0x501db00",
+      "draw_rt": "0x1007d130",
+      "draw_target_argument_x1": "0x10071310",
+      "gl_state_after_clear": {
+        "clear_color": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "color_write_mask": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "draw_buffer0": 36064,
+        "draw_framebuffer": 1,
+        "read_buffer": 36064,
+        "read_framebuffer": 1,
+        "scissor_box": [
+          0,
+          0,
+          256,
+          256
+        ],
+        "scissor_enabled": true,
+        "viewport": [
+          0,
+          0,
+          256,
+          256
+        ]
+      },
+      "gl_state_before_any_mutation": {
+        "clear_color": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "color_write_mask": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "draw_buffer0": 36064,
+        "draw_framebuffer": 1,
+        "read_buffer": 36064,
+        "read_framebuffer": 1,
+        "scissor_box": [
+          0,
+          0,
+          256,
+          256
+        ],
+        "scissor_enabled": true,
+        "viewport": [
+          0,
+          0,
+          256,
+          256
+        ]
+      },
+      "host_boundary": "real Mesa GLES queries and explicit clear/read on the already-bound source-identified Draw target; failure guards perform no bind; only clear color/scissor-enable are temporarily changed and verified restored.",
+      "host_fbo_state": {
+        "color_attachment_object_type": 5890,
+        "color_attachment_texture_name": 1,
+        "dimensions": [
+          256,
+          256
+        ],
+        "draw_buffer0": 36064,
+        "framebuffer_binding": 1,
+        "framebuffer_status": 36053,
+        "read_buffer": 36064,
+        "read_framebuffer_binding": 1,
+        "viewport": [
+          0,
+          0,
+          256,
+          256
+        ]
+      },
+      "native_identity": {
+        "complete_primary_vptr": "0x40cf7f0",
+        "complete_sp_subbitmap_rt": "0x10071310",
+        "draw_argument_interface": "0x10071310",
+        "draw_argument_vptr": "0x40cf7f0",
+        "draw_argument_vtable_address_point_rva": "0xcf7f0",
+        "expected_primary_vptr": "0x40cf7f0",
+        "factory_bitmap_subbitmap_vector": {
+          "begin": "0x100715f0",
+          "capacity": "0x100715f8",
+          "count": 1,
+          "end": "0x100715f8",
+          "entries": [
+            {
+              "index": 0,
+              "pointer": "0x10071310",
+              "vptr": "0x40cf7f0"
+            }
+          ],
+          "source": "SPTextureBitmap::GetSubBitmap/GetSubBitmapCount/GetBitmapData read begin/end at concrete this+208 with 8-byte pointer stride."
+        },
+        "factory_bitmap_subbitmap_vector_join": {
+          "index": 0,
+          "pointer": "0x10071310",
+          "vptr": "0x40cf7f0"
+        },
+        "field_join_source": "RTTI offset-to-top resolves the actual Draw ISPSubBitmap argument; factory SPTextureBitmap +208 vector and completed SPSubBitmapRT constructor this join that object. SPSubBitmapRT fields +80/+88 lead to texture/SPFrameBuffer; SPFrameBuffer+16 returns an RTTI-validated OffscreenRenderTarget complete/interface pointer. Its +8 word is a secondary vptr; OffscreenRenderTarget::Activate adjusts this +8 and RenderTargetBase::GetFbo reads base-this+8, so the FBO name is complete-object+16. OffscreenRenderTarget+80 is color texture; TextureObject+40 is GL target/name.",
+        "native_color_attachment_object": "0x10071390",
+        "native_constructor_ledger_join": {
+          "caller_lr": "0x408f29c",
+          "complete_object": "0x10071310",
+          "constructor": "SPen::SPSubBitmapRT::SPSubBitmapRT(IGLMsgQueue*,int,Rect const&,int,int,char const*,void const*,bool,TextureMemoryLayout,TextureTargetLayout)",
+          "constructor_arguments_x1_x5": [
+            "0x10031180",
+            "0x0",
+            "0x200eef08",
+            "0x100",
+            "0x100"
+          ],
+          "entry_pc": "0x408d89c",
+          "entry_vptr": "0x0",
+          "return_boundary_pc": "0x408d978",
+          "returned": true,
+          "this": "0x10071310",
+          "vptr_after_constructor": "0x40cf7f0",
+          "vtable_offset_to_top": 0,
+          "vtable_typeinfo_pointer": "0x40d32b0"
+        },
+        "native_gl_framebuffer_name": 1,
+        "native_render_target": "0x10071760",
+        "native_render_target_field_pointer": "0x10071760",
+        "native_render_target_pointer_resolution": {
+          "complete_offscreen_render_target": "0x10071760",
+          "complete_primary_vptr": "0xa06a510",
+          "expected_primary_vptr": "0xa06a510",
+          "field_pointer": "0x10071760",
+          "field_pointer_address_point_rva": "0x6a510",
+          "field_pointer_vptr": "0xa06a510",
+          "rtti_source": "Renderer OffscreenRenderTarget vtable address points at +0x10/+0x88/+0xd8 from vtable symbol; ABI offset-to-top 0/-8/-32.",
+          "rtti_typeinfo": "0xa06c330",
+          "vtable_offset_to_top": 0
+        },
+        "native_render_target_raw_field_chain": {
+          "color_attachment_object": "0x10071390",
+          "complete_object": "0x10071760",
+          "field_source": "OffscreenRenderTarget::Activate adjusts this by +8 to RenderTargetBase::Activate; RenderTargetBase::Activate/GetFbo reads base-this+8, i.e. complete-object+16. The +8 complete-object word is a source-verified secondary vptr, not the FBO id.",
+          "managed_subobject": {
+            "offset_to_top": -32,
+            "this": "0x10071780",
+            "typeinfo": "0xa06c330",
+            "vptr": "0xa06a5d8"
+          },
+          "offscreen_pointer_resolution": {
+            "complete_offscreen_render_target": "0x10071760",
+            "complete_primary_vptr": "0xa06a510",
+            "expected_primary_vptr": "0xa06a510",
+            "field_pointer": "0x10071760",
+            "field_pointer_address_point_rva": "0x6a510",
+            "field_pointer_vptr": "0xa06a510",
+            "rtti_source": "Renderer OffscreenRenderTarget vtable address points at +0x10/+0x88/+0xd8 from vtable symbol; ABI offset-to-top 0/-8/-32.",
+            "rtti_typeinfo": "0xa06c330",
+            "vtable_offset_to_top": 0
+          },
+          "raw_object_words": {
+            "0": "0xa06a510",
+            "16_u32": "0x1",
+            "20_u32": "0x100",
+            "24": "0x100000100",
+            "24_u32": "0x100",
+            "32": "0xa06a5d8",
+            "40": "0x0",
+            "48": "0x0",
+            "56": "0x0",
+            "64": "0x0",
+            "72": "0x1",
+            "8": "0xa06a588",
+            "80": "0x10071390",
+            "80_qword": "0x10071390"
+          },
+          "render_target_base_subobject": {
+            "fbo_field_address": "0x10071770",
+            "fbo_id_u32": 1,
+            "offset_to_top": -8,
+            "this": "0x10071768",
+            "typeinfo": "0xa06c330",
+            "vptr": "0xa06a588"
+          }
+        },
+        "native_render_target_vptr": "0xa06a510",
+        "native_sp_framebuffer": "0x10071730",
+        "native_sp_framebuffer_vptr": "0x40ce3a8",
+        "native_texture_gl_name": 1,
+        "native_texture_gl_target": "0xde1",
+        "native_texture_object": "0x10071390",
+        "native_texture_object_vptr": "0xa06af60",
+        "rtti_typeinfo": "0x40d32b0",
+        "vtable_offset_to_top": 0
+      },
+      "preclear_phase": "inside real GLES glDrawArraysInstanced callback, after native Draw state setup and immediately before Mesa draw",
+      "preclear_readback": {
+        "all_zero": true,
+        "byte_count": 262144,
+        "nonzero_bytes": 0,
+        "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90"
+      },
+      "preclear_rgba": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "scissor_box": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "scissor_box_restored_before_native_draw": true,
+      "scissor_enable_restored_before_native_draw": true,
+      "scissor_enabled": true,
+      "status": "precleared_native_draw_target",
+      "task_sequence": 7
+    },
+    "readback_bytes": 262144,
+    "sample_pixels_rgba": {
+      "0,0": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "128,128": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "255,255": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "sha256": "9fb904a0fa53a9d3a968fd92f370292ebe4d518b1f9960ad5dca38f73fd5ee31",
+    "status": "mesa_readpixels_from_native_draw_target",
+    "transparent_black_pixels": 62414
+  }
+}

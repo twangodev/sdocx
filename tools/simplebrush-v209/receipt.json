@@ -1,0 +1,33 @@
+{
+  "input": {
+    "tool": 0,
+    "size": 3,
+    "count": 64,
+    "variant": "alternate",
+    "case": "fraction12"
+  },
+  "native_full_sha256": "b4796015afc871743003c8cd98b471f8e10f87952bd7f8bbde9b786ff8213731",
+  "native_frame_sha256": "9fb904a0fa53a9d3a968fd92f370292ebe4d518b1f9960ad5dca38f73fd5ee31",
+  "export_sha256": {
+    "generic.svg": "69306f661a3a12e6ed015e9a1355b9efaa20e8e86d4617a9a25b199c7b485565",
+    "two.svg": "8667e836f1cdc55aba29b174aa70abec7049a471056a7ccf8e66c313cdfeba0b",
+    "generic.pdf": "4df6c8bf845c554023a48b8d01acf43061f11efd8de44fcd8d8700d70c23c820",
+    "two.pdf": "c0c8dac119474f62bce06dbd5f11622ddc1f95730d3d9d0d53834f6048ef0594",
+    "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef"
+  },
+  "metrics": {
+    "resvg_0.45.1_alpha_absolute_error": {
+      "generic": 531930,
+      "two": 14169
+    },
+    "mupdf_1.28.2_matched_paper_rgb_absolute_error": {
+      "generic": 578720,
+      "two": 61389
+    },
+    "pdfium_150.0.7869.0_unshifted_rgb_absolute_error": {
+      "generic": 581037,
+      "two": 99945
+    }
+  },
+  "clean_source_revision": "f1b372fe110c0dc68ea8981d6dc2c93f658f6e94"
+}
