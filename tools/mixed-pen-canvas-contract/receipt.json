@@ -1,0 +1,53 @@
+{
+  "scope": "First saved Fountain Drawing in the existing native Unicorn and host Mesa capture; host context, loader, allocator and synchronous queue adapters apply. Pinned tmp/ and scratch/ capture helpers, libraries and runtime are external local dependencies. No Pencil2, mixed-scene or device parity claim.",
+  "source_sha256": "969fef6e967a41c888aa1121783da525bda435082533733b8807c425eda5358a",
+  "library_sha256": {
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621"
+  },
+  "address_provenance": "Graphics base 0x4000000: GetBitmap RVA 0xaef08, SPTextureBitmap::GetTextureBitmap RVA 0x92020; PenCommon base 0x1000000: indirect-call site RVA 0x467d8. Exported names via nm -D -C on pinned DSOs.",
+  "script_sha256": "9996ed095fb85b6909446693fb1a8b5a2fd246b60ea876efcee0888a47d38e72",
+  "observation": {
+    "pen_canvas": "0x10068220",
+    "pen_canvas_vtable": "0x40d0cc8",
+    "slot_192": "0x40aef08",
+    "getter_returns": [
+      {
+        "caller": "0x1051d68",
+        "bitmap": "0x100590c0",
+        "vtable": "0x40cfd28",
+        "slot_168": "0x4092020"
+      },
+      {
+        "caller": "0x1051d8c",
+        "bitmap": "0x100590c0",
+        "vtable": "0x40cfd28",
+        "slot_168": "0x4092020"
+      },
+      {
+        "caller": "0x10467bc",
+        "bitmap": "0x100590c0",
+        "vtable": "0x40cfd28",
+        "slot_168": "0x4092020"
+      },
+      {
+        "caller": "0x10467d0",
+        "bitmap": "0x100590c0",
+        "vtable": "0x40cfd28",
+        "slot_168": "0x4092020"
+      }
+    ],
+    "branch": {
+      "receiver": "0x100590c0",
+      "target": "0x4092020"
+    },
+    "target_entered": true,
+    "branch_returned": true,
+    "control": {
+      "case": "drawing_center_top_1_ff000000_clear",
+      "rgba_sha256": "aba612cffd994c04a11c065763b3c7799993d85a1151f375682b5d238c1b6dfe",
+      "draw_count": 1
+    }
+  }
+}

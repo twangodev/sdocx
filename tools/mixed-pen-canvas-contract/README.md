@@ -1,0 +1,7 @@
+# Native Fountain canvas contract
+
+Run `python3 tools/mixed-pen-canvas-contract/trace.py` without Python optimization. The wrapper pins the Fountain capture and three relevant DSOs; that capture verifies its other inputs and adapters. It executes the first saved Fountain Drawing case and checks its existing RGBA control hash, geometry and GL checks before emitting a compact observation. It does not overwrite the original fixture. Pinned capture helpers under `tmp/` and `scratch/`, input libraries and runtime are external local dependencies inherited from `drawing_capture.py`; this is not a standalone checkout replay.
+
+The native pen canvas slot +192 resolves to `SPPenCanvas::GetBitmap`. Four observed calls return the same native bitmap. The call returning to PenCommon RVA `0x467d0` is followed by the indirect call at `0x467d8`. At that instruction, `x0` is the returned bitmap and `x8` is its slot +168 target, `SPTextureBitmap::GetTextureBitmap`; the trace observes entry to that target and return to `0x467dc`. Addresses and DSO hashes are in the receipt. The earlier Pencil2 synthetic reference had only a 128-byte vtable, so its slot +168 failure is an adapter contract failure; it cannot be repaired by guessing a synthetic method.
+
+This is a Fountain-only Unicorn/Mesa observation with the source capture's host context, loader, allocation and synchronous queue adapters. It does not establish Pencil2 execution, a mixed scene, Android linker behavior, teardown or device parity.
