@@ -31,7 +31,7 @@ pub(crate) fn calligraphy_saved_native_mesh_for_test() -> Option<[Vec<[f32; 4]>;
 
 mod defaultpen;
 mod fountain;
-mod fountain_v14;
+pub(crate) mod fountain_v14;
 // Native numeric regression only until caller context and RTV1 paint transport
 // are integrated; production InkPen rendering remains explicitly approximate.
 #[allow(dead_code)]

@@ -148,3 +148,69 @@ fn emit(dots: &mut Dots, p: P, radius: f32, tangent: Option<P>) {
     });
     dots.radii.push(radius.max(0.1) as f64);
 }
+
+pub(crate) fn addpoint_record(
+    point: crate::Point,
+    radius: f64,
+    direction: crate::Point,
+    output_scale: f32,
+) -> Option<[f32; 9]> {
+    let (x, y, radius, direction_x, direction_y) = (
+        point.x as f32,
+        point.y as f32,
+        radius as f32,
+        direction.x as f32,
+        direction.y as f32,
+    );
+    if !output_scale.is_finite()
+        || output_scale <= 0.0
+        || !x.is_finite()
+        || !y.is_finite()
+        || !radius.is_finite()
+        || radius <= 0.0
+        || !direction_x.is_finite()
+        || !direction_y.is_finite()
+    {
+        return None;
+    }
+    let inverse_scale = 1.0_f32 / output_scale;
+    if !inverse_scale.is_finite() || inverse_scale <= 0.0 {
+        return None;
+    }
+    let rx = radius / inverse_scale;
+    let ry = radius / inverse_scale;
+    let minimum = rx.min(ry);
+    if !minimum.is_finite() || minimum <= 0.0 {
+        return None;
+    }
+    let factor = if minimum < 0.5 { 0.5 / minimum } else { 1.0 };
+    let width_alpha = 1.0 / factor;
+    let extent_device_x = rx * factor.max(1.0) + 0.5;
+    let extent_device_y = ry * factor.max(1.0) + 0.5;
+    let maximum = extent_device_x.max(extent_device_y);
+    let radial_inner = 0.5 * (maximum - 1.0) / maximum;
+    let extent_x = extent_device_x * inverse_scale;
+    let extent_y = extent_device_y * inverse_scale;
+    if !width_alpha.is_finite()
+        || !(0.0..=1.0).contains(&width_alpha)
+        || !extent_x.is_finite()
+        || !extent_y.is_finite()
+        || extent_x <= 0.0
+        || extent_y <= 0.0
+        || !radial_inner.is_finite()
+        || !(0.0..0.5).contains(&radial_inner)
+    {
+        return None;
+    }
+    Some([
+        x,
+        y,
+        extent_x,
+        extent_y,
+        direction_x,
+        direction_y,
+        1.0,
+        radial_inner,
+        width_alpha,
+    ])
+}

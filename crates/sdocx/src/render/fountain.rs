@@ -438,64 +438,7 @@ fn v14_native_addpoint_record(
     direction: crate::Point,
     output_scale: f32,
 ) -> Option<[f32; 9]> {
-    let (x, y, radius, direction_x, direction_y) = (
-        point.x as f32,
-        point.y as f32,
-        radius as f32,
-        direction.x as f32,
-        direction.y as f32,
-    );
-    if !output_scale.is_finite()
-        || output_scale <= 0.0
-        || !x.is_finite()
-        || !y.is_finite()
-        || !radius.is_finite()
-        || radius <= 0.0
-        || !direction_x.is_finite()
-        || !direction_y.is_finite()
-    {
-        return None;
-    }
-    let inverse_scale = 1.0_f32 / output_scale;
-    if !inverse_scale.is_finite() || inverse_scale <= 0.0 {
-        return None;
-    }
-    let rx = radius / inverse_scale;
-    let ry = radius / inverse_scale;
-    let minimum = rx.min(ry);
-    if !minimum.is_finite() || minimum <= 0.0 {
-        return None;
-    }
-    let factor = if minimum < 0.5 { 0.5 / minimum } else { 1.0 };
-    let width_alpha = 1.0 / factor;
-    let extent_device_x = rx * factor.max(1.0) + 0.5;
-    let extent_device_y = ry * factor.max(1.0) + 0.5;
-    let maximum = extent_device_x.max(extent_device_y);
-    let radial_inner = 0.5 * (maximum - 1.0) / maximum;
-    let extent_x = extent_device_x * inverse_scale;
-    let extent_y = extent_device_y * inverse_scale;
-    if !width_alpha.is_finite()
-        || !(0.0..=1.0).contains(&width_alpha)
-        || !extent_x.is_finite()
-        || !extent_y.is_finite()
-        || extent_x <= 0.0
-        || extent_y <= 0.0
-        || !radial_inner.is_finite()
-        || !(0.0..0.5).contains(&radial_inner)
-    {
-        return None;
-    }
-    Some([
-        x,
-        y,
-        extent_x,
-        extent_y,
-        direction_x,
-        direction_y,
-        1.0,
-        radial_inner,
-        width_alpha,
-    ])
+    crate::ink::fountain_v14::addpoint_record(point, radius, direction, output_scale)
 }
 
 fn valid_v14_scale(scale: f32) -> bool {
@@ -877,6 +820,79 @@ mod tests {
     use super::*;
     use crate::{BoundingBox, Point, Stroke};
     use std::borrow::Cow;
+
+    #[test]
+    fn original_v14_vector_geometry_matches_native_streams() {
+        let inputs: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-v14-saved-scene-inputs.json"
+        ))
+        .unwrap();
+        let native: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-v14-independent-native.json"
+        ))
+        .unwrap();
+        for id in [3, 6, 7, 18, 19, 28, 29, 30] {
+            let source = inputs["strokes"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|v| v["index"].as_u64() == Some(id))
+                .unwrap();
+            let stroke: Stroke = serde_json::from_value(source["stroke"].clone()).unwrap();
+            let mut paint = crate::prepare_stroke(&stroke, false);
+            paint.fountain_output_scale = Some(1.);
+            let plan = V14Plan::prepare(&paint, false).unwrap();
+            let hex = native["streams"][format!("{id}_1")]["stream_hex"]
+                .as_str()
+                .unwrap();
+            assert_eq!(hex.len() % 2, 0, "source {id} hex length");
+            let bytes: Vec<u8> = hex
+                .as_bytes()
+                .chunks_exact(2)
+                .map(|x| u8::from_str_radix(std::str::from_utf8(x).unwrap(), 16).unwrap())
+                .collect();
+            assert_eq!(bytes.len() % 36, 0, "source {id} record length");
+            let rows: Vec<_> = bytes.chunks_exact(36).collect();
+            assert_eq!(rows.len(), plan.stamps.len(), "source {id}");
+            let directions = paint.dot_directions.as_ref().unwrap();
+            let radii = paint.dot_radii.as_ref().unwrap();
+            assert_eq!(paint.points.len(), rows.len(), "source {id} points");
+            assert_eq!(radii.len(), rows.len(), "source {id} radii");
+            assert_eq!(directions.len(), rows.len(), "source {id} directions");
+            for (i, (((point, radius), direction), stamp)) in paint
+                .points
+                .iter()
+                .zip(radii)
+                .zip(directions)
+                .zip(&plan.stamps)
+                .enumerate()
+            {
+                let actual = v14_native_addpoint_record(*point, *radius, *direction, 1.).unwrap();
+                let expected: [f32; 9] = std::array::from_fn(|lane| {
+                    f32::from_le_bytes(rows[i][lane * 4..lane * 4 + 4].try_into().unwrap())
+                });
+                for lane in 0..9 {
+                    // The native Drawing retains its prior direction for a single dot;
+                    // independent vector preparation starts with its default direction.
+                    if id == 30 && (lane == 4 || lane == 5) {
+                        assert_ne!(actual[lane].to_bits(), expected[lane].to_bits());
+                    } else {
+                        assert_eq!(
+                            actual[lane].to_bits(),
+                            expected[lane].to_bits(),
+                            "source {id}, stamp {i}, lane {lane}"
+                        );
+                    }
+                }
+                assert_eq!(stamp.point.x, f64::from(actual[0]));
+                assert_eq!(stamp.point.y, f64::from(actual[1]));
+                assert_eq!(stamp.dx, f64::from(actual[4] * actual[2]));
+                assert_eq!(stamp.dy, f64::from(actual[5] * actual[3]));
+                assert_eq!(stamp.radial_inner, Some(actual[7]));
+                assert_eq!(stamp.width_alpha, actual[8]);
+            }
+        }
+    }
 
     fn shaded_stamp(direction: Point, count: usize) -> String {
         shaded_stamp_with_color(direction, count, "#000000", false)
