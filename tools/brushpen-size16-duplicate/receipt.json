@@ -1,0 +1,66 @@
+{
+  "scope": "Synthetic serialized-derived GLV10 native object mutated after attachment, host Unicorn and Mesa; not a new serialized fixture or device evidence",
+  "mutation": {
+    "pen_size": 16,
+    "point_2": "copy point_0"
+  },
+  "frame_sha256": "c82c23d6bcc71bf420dedd3c753df0475a2c25842189900c27172f7335ebbe00",
+  "stream_sha256": "023ea87c21108cf8303c7af3475bf6884ae810e094478ce3f4a7dcb590610b00",
+  "stream_records": 33,
+  "source_frame_sha256": "9b495ebc360c03d2b064e21bf97ce5a45d6f02290aa04410ba87316ae59874f3",
+  "source_payload_sha256": "28b0848cb3aa9dadc700bf425fd390281c8de0d222e46f7126d0bcbcd527b60f",
+  "source_table_sha256": "d28e2c2c4c9a31cf744b2ba495e8a8847f285d0aabfe3bfe6464522c12e35d73",
+  "outputs_sha256": {
+    "canvas.png": "3ec86ba84bc10c23b2638244b255841b9a4af04e4fa40c4089a7bcc8fe459aa6",
+    "canvas.svg": "d43ba38059f5f9e1ee7fd906c51f690cc4264a361e00c9eec0ec5b1832dcb8f7",
+    "direct.pdf": "34784d49fd84fc4b34033323406e884e93adae0e928db2710814b53e35958f69",
+    "svg.pdf": "af8428851d2a67b9f3ae35dbfa48e4f936205e7437ef38fefd38e1dd22e57383"
+  },
+  "versions": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.14.0",
+    "pdfium": "156.0.8076.0"
+  },
+  "comparison": {
+    "geometry": "complete native callback stream matches public sampler byte for byte",
+    "canvas_png": {
+      "alpha_l1": 1,
+      "alpha_max": 1,
+      "premultiplied_rgb_l1": 0
+    },
+    "svg_resvg": {
+      "alpha_l1": 1,
+      "alpha_max": 1,
+      "premultiplied_rgb_l1": 0
+    },
+    "direct_mupdf": {
+      "alpha_l1": 73,
+      "alpha_max": 1,
+      "premultiplied_rgb_l1": 0
+    },
+    "direct_pdfium": {
+      "alpha_l1": 1,
+      "alpha_max": 1,
+      "premultiplied_rgb_l1": 0
+    },
+    "svg_mupdf": {
+      "alpha_l1": 73,
+      "alpha_max": 1,
+      "premultiplied_rgb_l1": 0
+    },
+    "svg_pdfium": {
+      "alpha_l1": 1,
+      "alpha_max": 1,
+      "premultiplied_rgb_l1": 0
+    }
+  },
+  "source_commit": "b0b6d03408dd6094ea7dfe1cc8d364c72947848d",
+  "clean_paint_sha256": "992b83f97e3cb6528dbbe2f88f1c05888226447742aff530f2f2a8ae7c54760b",
+  "scripts_sha256": {
+    "capture.py": "f5c020a48543721f420ecf72c4cc0e2b3577bc105f2c71aab9c951498fca8f53",
+    "compare.py": "a4eb63b7d987effd59df2d5f031472d8e2a76176bd9323521609c5d6ec78bafd",
+    "export-test.rs": "fddbf1e97b3b6c82c643f54011e426600f671a89b3248eaeed2702c345b2aab3",
+    "replay.py": "3174a6cf65df4c3af9b6fa6093fb4732359bf4478921987579cc3be9cda5a635"
+  }
+}
