@@ -1,0 +1,54 @@
+{
+  "scope": "offline static AArch64 source analysis only; no guest, GL, Unicorn, Cargo, build, download, or tracked edits",
+  "inputs": [
+    {
+      "name": "Pencil",
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPencil.so",
+      "size": 228488,
+      "sha256": "39eb599262676ca5ec67b86e702b43474a04e9ca9677072f247b131222189df9",
+      "symbols": {
+        "Pencil::GetStrokeDrawableGL": "VA 0x2bf9c, size 184; selects PencilStrokeDrawableGLV1",
+        "Pencil::createPenInst": "VA 0x2c1bc, size 64",
+        "Pencil::versionTable": "VA 0x3f3d0, size 16",
+        "PencilStrokeDrawableGLV1::Draw": "VA 0x2db6c",
+        "PencilStrokeDrawableRTV1::buildTextures": "VA 0x2e8ec",
+        "PencilStrokeDrawableRTV1::setTextures": "VA 0x2e9b4",
+        "PencilStrokeStyle::drawPoint": "VA 0x31cec",
+        "g_penPtn": "VA 0x10b64, size 64512"
+      },
+      "native_evidence": "One atlas texture path and shader; separate from Pencil2/Pencil3. Current static trace confirms GLV1 selection; texture-dependent appearance is not pixel-verified."
+    },
+    {
+      "name": "Pencil2",
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPencil2.so",
+      "size": 773592,
+      "sha256": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f",
+      "symbols": {
+        "Pencil2::Pencil2": "VA 0x59880, size 492; constructor submits advanced setting 14; size 0.228f, color 0xff000000",
+        "Pencil2::GetStrokeDrawableGL": "VA 0x59d6c, size 668; settings 1..14 map to GLV1..GLV5,GLV4,GLV7..GLV14 (version 6 maps GLV4; no GLV6)",
+        "Pencil2::createPenInst": "VA 0x5a490, size 64",
+        "Pencil2::versionTable": "VA 0xc44b8, size 120",
+        "Pencil2StrokeDrawableGLV14::redraw(ObjectStroke const*, RectF*, bool)": "VA 0x73028, size 1048; consumes tool type, points, timestamps, pressure, tilt, orientation, size level; synthesizes MotionEvent samples",
+        "Pencil2StrokeDrawableGLV14::adjustTilt": "VA 0x7446c",
+        "Pencil2StrokeDrawableGLV14::getPointSize": "VA 0x744a4; quadratic pressure-size law",
+        "Pencil2StrokeDrawableGLV14::getPressureAlpha": "VA 0x744c4",
+        "Pencil2StrokeDrawableGLV14::calculateDrawColor": "VA 0x745a0; configured color or rainbow color",
+        "Pencil2StrokeDrawableGLV14::drawPoint": "VA 0x74634; emits Pencil2StrokeDrawableRTV4::AddPoint",
+        "Pencil2StrokeDrawableRTV4::buildTextures": "VA 0x981ac",
+        "Pencil2StrokeDrawableRTV4::setTextures": "VA 0x98350",
+        "Pencil2StrokeDrawableRTV4::Init": "VA 0x984ac; uses Pencil2StrokeShaderV3 and raw color blend (0,6,7), alpha blend (0,1,7); 150x150 texture init",
+        "g_backgroundPtn": "size 22500; extracted bytes sha256 dbe4f006debde4b765c1e5ee6966798dd8b14cdc939b149c9e22770a2c0f97f9",
+        "g_pointPtn": "size 30000; separate 100x300 data reshaped to 3x100x100 atlas"
+      },
+      "native_evidence": "Default app constructor selects setting 14; default v14 GL renderer owns RTv4 + shader V3, with independent 150x150 grain and 3-tile point atlas. g_backgroundPtn differs from Pencil3 bytes; Pencil2 does not reuse Pencil3's 921600-byte brush atlas. Shader source is embedded around file offset 0x3ebd5 and samples sampler0.r grain, sampler1.r point mask, orientation/taper, width alpha, per-point RGB. Raw blend enum semantics remain unresolved. No native output pixels captured."
+    },
+    {
+      "name": "Pencil3 comparison",
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPencil3.so",
+      "size": 1151976,
+      "sha256": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+      "comparison": "Pencil3 g_backgroundPtn SHA256 171b3fc88b6e693a06676bcf0e8029cdc122d50bbeb9f03fe969b153104d3994; g_penPtn is 921600 bytes. Pencil2's texture bytes/sizes differ."
+    }
+  ],
+  "native_capture_plan": "On exact app build/device, directly instantiate Pencil2 with setting 14; first read back native RGBA at 1x scale over fixed white/transparent background for deterministic timed multi-point saved and live strokes, pressure ramp, tilt/orientation and size-level changes; compare black and colored/partial-opacity runs. Then sweep settings 1..14 to capture each distinct GL class (settings 6 and 8 share GLV4 per selector). Capture Pencil's selected GLV1 using same sample. Record per-frame advanced settings, point/time/pressure/tilt/orientation/size-level, dimensions, color/alpha, blend state, and exact screenshots/readback. Native visual parity remains unverified until these paired pixels exist."
+}

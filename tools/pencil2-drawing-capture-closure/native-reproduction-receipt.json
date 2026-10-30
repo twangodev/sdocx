@@ -1,0 +1,16 @@
+{
+  "scope": "Synthetic Drawing queue intervention and native ARM64 emulation on host Mesa; no device or saved-note parity.",
+  "adapter_sha256": "89ace4e896f07c60eddd250f2fdad28521cb9668c50ca32018f0a26ff3a6224b",
+  "gles_helper_sha256": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+  "oracle_sha256": "5bf82575777d7ca09560a860506d42e2afb22935a3e59cafcab30dfa40f65d6a",
+  "capture_sha256": "41d653d218ef92b7d9f3237d9c9eef8972f8392d7a874099600e2c82bb0649ac",
+  "actual": {
+    "geometry_sha256": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8",
+    "frame_sha256": "66ffd021d845db142baf8f3da25889d9ea1cf32e55d049db3bd0c27bb7c99861"
+  },
+  "expected": {
+    "geometry_sha256": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8",
+    "frame_sha256": "66ffd021d845db142baf8f3da25889d9ea1cf32e55d049db3bd0c27bb7c99861"
+  },
+  "matches": true
+}
