@@ -1189,3 +1189,21 @@ fn v249_size_source_mask() {
     let extent = radii.map(|r| r * (1. + aa));
     std::fs::write(path, filled_mask(&points, radii, extent, aa)).unwrap();
 }
+
+#[test]
+fn v250_size24_source_mask_matches_native() {
+    use std::io::Read;
+    let points = tape_curve(
+        &[P { x: 13., y: 21. }, P { x: 22., y: 29. }, P { x: 34., y: 18. }, P { x: 47., y: 28. }],
+        0.5, 0.0, [68. / 255., 170. / 255., 238. / 255.],
+    );
+    let size = 24.;
+    let aa = tape_aa_width(tape_size_level(size, 256, 256));
+    let radii = [size / 8., size / 2.];
+    let extent = radii.map(|r| r * (1. + aa));
+    let actual = filled_mask(&points, radii, extent, aa);
+    let mut native = Vec::new();
+    flate2::read::ZlibDecoder::new(&include_bytes!("../../../../tools/tapepen-public-drawing/v250-size24-mask.alpha.zlib")[..])
+        .read_to_end(&mut native).unwrap();
+    assert_eq!(actual, native);
+}
