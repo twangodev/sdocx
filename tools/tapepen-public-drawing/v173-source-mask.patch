@@ -1,0 +1,40 @@
+--- crates/sdocx/src/ink/tapepen.rs	2026-10-29 16:12:41.001212212 -0700
++++ /tmp/tape-v173-src/crates/sdocx/src/ink/tapepen.rs	2026-10-30 00:43:03.826928262 -0700
+@@ -1056,17 +1056,17 @@
+ }
+ 
+ #[test]
+-fn v115_translated_source_mask() {
++fn v173_source_mask() {
+     let points = tape_curve(
+         &[
+-            P { x: 64.0, y: 64.0 },
+-            P { x: 73.0, y: 72.0 },
+-            P { x: 85.0, y: 61.0 },
+-            P { x: 98.0, y: 71.0 },
++            P { x: 77.0, y: 59.0 },
++            P { x: 89.0, y: 52.0 },
++            P { x: 101.0, y: 65.0 },
++            P { x: 109.0, y: 57.0 },
+         ],
+         0.5,
+         0.0,
+-        [68.0 / 255.0, 170.0 / 255.0, 238.0 / 255.0],
++        [215.0 / 255.0, 68.0 / 255.0, 51.0 / 255.0],
+     );
+     let aa = tape_aa_width(tape_size_level(12.0, 256, 256));
+     let (sin, cos) = f32::from_bits(0x3f06_0a92).sin_cos();
+@@ -1093,12 +1093,7 @@
+             }
+         }
+     }
+-    use sha2::{Digest, Sha256};
+-    assert_eq!(
+-        format!("{:x}", Sha256::digest(&mask)),
+-        "590fd4f32840d5dad3c218a67881eabe78f06df661732906449b335d9dd38531"
+-    );
+-    if let Ok(path) = std::env::var("SDOCX_TAPE_V115_MASK_OUT") {
++    if let Ok(path) = std::env::var("SDOCX_TAPE_V173_MASK_OUT") {
+         std::fs::write(path, mask).unwrap();
+     }
+ }
