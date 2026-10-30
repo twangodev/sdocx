@@ -1,0 +1,11 @@
+{
+  "capture_sha256": "6acfc9dcae6f3fbd66d6e50eaff4e1cf822db2b312017046fb1e0d9562f035c9",
+  "frame_sha256": "19eee088a631a1a3f3fcaf8e5d42ac457e9601e7de240e7b14f939a960e8a891",
+  "exporter_sha256": "22540d86dfbbfdacba3d494ae1e8f6297b24e58cc9516015f5d1b49d6e6e77fc",
+  "versions": {"resvg": "0.45.1", "mupdf": "1.28.2", "pypdfium2": "5.9.0", "pdfium": "150.0.7869.0", "pillow": "12.1.1"},
+  "exports": {
+    "fallback": {"svg": "520321caf51ef162dd771edf265934078cb2da00549fbe4dce61ee5ad1e5aa68", "pdf": "3338987fe0e23f26ded43b1d630c905334df7fd57f58ce7d71c7ff388a540db6"},
+    "public": {"svg": "2b53e62d0f304f52d71fd2bc7335f2b827846b78024da9180fbde248ea90bd50", "pdf": "665d35ca013f5e4aa51006240725d2deba975a7da4139a61d5594d837ab5c361"}
+  },
+  "rgb_l1": {"fallback": {"resvg": 4018544, "mupdf": 4014841, "pdfium": 4016752}, "public": {"resvg": 66705, "mupdf": 92285, "pdfium": 128994}}
+}
