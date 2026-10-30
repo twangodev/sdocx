@@ -1,0 +1,144 @@
+{
+  "script_sha256": "db01f63958bde0a4c49db0274f21090e02095089b97a8a6d6ef33c099224bc38",
+  "queue_probe_sha256": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+  "scope": "Synthetic one-object DrawObjectList with three context-query interventions. Traces adapter queue task entry 0x20001000 only during this call; the adapter executes each task synchronously. Does not establish native queue scheduling, real-page lifecycle or matrix conversion.",
+  "adapter_dispatch_entries": [
+    {
+      "task": "0x10038b80",
+      "vtable": "0x50bc718",
+      "run": "0x505f6e4",
+      "member_pointer_words": [
+        "0x104a4a4",
+        "0x0"
+      ],
+      "resolution": {
+        "library": "libSPenPenCommon.so",
+        "sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "load_base": "0x1000000",
+        "symbol_offset": "0x4a4a4",
+        "signature": "SPen::PenDrawableRT::SetRedrawState(bool)"
+      }
+    },
+    {
+      "task": "0x10038bb0",
+      "vtable": "0x50bc748",
+      "run": "0x505f70c",
+      "member_pointer_words": [
+        "0x104a558",
+        "0x0"
+      ],
+      "resolution": {
+        "library": "libSPenPenCommon.so",
+        "sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "load_base": "0x1000000",
+        "symbol_offset": "0x4a558",
+        "signature": "SPen::PenDrawableRT::SetPenData(float, int)"
+      }
+    },
+    {
+      "task": "0x10038d10",
+      "vtable": "0x50bb810",
+      "run": "0x5075494",
+      "member_pointer_words": [
+        "0x5098a88",
+        "0x0"
+      ],
+      "resolution": {
+        "library": "libSPenPencil2.so",
+        "sha256": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f",
+        "load_base": "0x5000000",
+        "symbol_offset": "0x98a88",
+        "signature": "SPen::Pencil2StrokeDrawableRTV4::SetStartPoint(float, float)"
+      }
+    },
+    {
+      "task": "0x1003cf50",
+      "vtable": "0x50bce88",
+      "run": "0x505f690",
+      "member_pointer_words": [
+        "0x104a4ac",
+        "0x0"
+      ],
+      "resolution": {
+        "library": "libSPenPenCommon.so",
+        "sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "load_base": "0x1000000",
+        "symbol_offset": "0x4a4ac",
+        "signature": "SPen::PenDrawableRT::SetRect(SPen::RectF)"
+      }
+    },
+    {
+      "task": "0x1003e350",
+      "vtable": "0x50bc0a8",
+      "run": "0x505f8c8",
+      "member_pointer_words": [
+        "0x1050fd0",
+        "0x0"
+      ],
+      "resolution": {
+        "library": "libSPenPenCommon.so",
+        "sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "load_base": "0x1000000",
+        "symbol_offset": "0x50fd0",
+        "signature": "SPen::PenStrokeDataManager::ReleaseStrokeData(int)"
+      }
+    },
+    {
+      "task": "0x1003e380",
+      "vtable": "0x30c3070",
+      "run": "0x307cc60",
+      "member_pointer_words": [
+        "0x28",
+        "0x1"
+      ],
+      "resolution": {
+        "library": "libSPenDrawing.so",
+        "sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "load_base": "0x3000000",
+        "vtable_symbol_offset": "0xc3060",
+        "signature": "vtable for SPen::WorkerTask::Member0<SPen::IContextHolder, void (SPen::IContextHolder::*)()>",
+        "arm64_member_pointer": "The low bit of the adjustment word marks a virtual member; adjustment is zero and the first word is byte offset 0x28 in the target vtable.",
+        "synthetic_target": "The queue probe installs stub 0x200f2500 at holder vtable offset 0x28; no real holder method identity is established."
+      }
+    }
+  ],
+  "list_observations": {
+    "set_matrix_calls": 2,
+    "addpoint_calls": 84,
+    "input_matrix": [
+      1,
+      0,
+      0,
+      0,
+      -1,
+      0,
+      6,
+      183,
+      1
+    ],
+    "observed_matrices": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        6.0,
+        183.0,
+        1.0
+      ],
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        6.0,
+        183.0,
+        1.0
+      ]
+    ]
+  }
+}
