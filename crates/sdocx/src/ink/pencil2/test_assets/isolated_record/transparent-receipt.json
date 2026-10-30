@@ -1,0 +1,205 @@
+{
+  "scope": "Isolated 30th instance substituted at upload, synthetic remapped Pencil2 tolerance 0.2, ARM64 native Drawing on host Mesa; clear target to a uniform background after first stroke and immediately before second draw. Shader diagnostics restricted to target fragment and can alter compilation.",
+  "pixel_bottom_origin": [
+    129,
+    150
+  ],
+  "background": "0,0,0,0",
+  "prior_readback_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+  "record_sha256": "f7b282dbeafe09623e444a343eb9e4fb000ed2338f92a210caadd2b4ad1b17a4",
+  "cases": {
+    "1": {
+      "native": {
+        "uniforms": [
+          [
+            "glUniform2fv",
+            4,
+            1,
+            [
+              6.0,
+              9.0
+            ]
+          ],
+          [
+            "glUniform2fv",
+            4,
+            1,
+            [
+              132.41741943359375,
+              138.97479248046875
+            ]
+          ]
+        ],
+        "pixel": [
+          247,
+          186,
+          0,
+          255
+        ],
+        "sha256": "92b228126ade185f5a195dd66706056fbdf598c5cbfbcb10581c2bead300c5c7",
+        "different_pixels": 0,
+        "sample": [],
+        "gl_errors": [
+          0,
+          0,
+          0
+        ],
+        "upload_sha256": "5cc7de6420482a530e1d74ef5bd7dba4c0fca12dcda161e39534c6c9d9c36cb1"
+      },
+      "red": {
+        "uniforms": [
+          [
+            "glUniform2fv",
+            4,
+            1,
+            [
+              6.0,
+              9.0
+            ]
+          ],
+          [
+            "glUniform2fv",
+            4,
+            1,
+            [
+              132.41741943359375,
+              138.97479248046875
+            ]
+          ]
+        ],
+        "pixel": [
+          255,
+          0,
+          0,
+          255
+        ],
+        "sha256": "d54fe16a38c0a8709dbe92675555ddd01c40904d2ec64fe12dd032eb8bb5836e",
+        "different_pixels": 1,
+        "sample": [
+          [
+            129,
+            150,
+            [
+              247,
+              186,
+              0,
+              255
+            ],
+            [
+              255,
+              0,
+              0,
+              255
+            ]
+          ]
+        ],
+        "gl_errors": [
+          0,
+          0,
+          0
+        ],
+        "upload_sha256": "5cc7de6420482a530e1d74ef5bd7dba4c0fca12dcda161e39534c6c9d9c36cb1"
+      },
+      "one": {
+        "uniforms": [
+          [
+            "glUniform2fv",
+            4,
+            1,
+            [
+              6.0,
+              9.0
+            ]
+          ],
+          [
+            "glUniform2fv",
+            4,
+            1,
+            [
+              132.41741943359375,
+              138.97479248046875
+            ]
+          ]
+        ],
+        "pixel": [
+          247,
+          186,
+          0,
+          255
+        ],
+        "sha256": "92b228126ade185f5a195dd66706056fbdf598c5cbfbcb10581c2bead300c5c7",
+        "different_pixels": 0,
+        "sample": [],
+        "gl_errors": [
+          0,
+          0,
+          0
+        ],
+        "upload_sha256": "5cc7de6420482a530e1d74ef5bd7dba4c0fca12dcda161e39534c6c9d9c36cb1"
+      },
+      "zero": {
+        "uniforms": [
+          [
+            "glUniform2fv",
+            4,
+            1,
+            [
+              6.0,
+              9.0
+            ]
+          ],
+          [
+            "glUniform2fv",
+            4,
+            1,
+            [
+              132.41741943359375,
+              138.97479248046875
+            ]
+          ]
+        ],
+        "pixel": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "sha256": "2f5a356513fc75421ce087c50936805a6eb72f581147c973c5ac3e6469e46e16",
+        "different_pixels": 1,
+        "sample": [
+          [
+            129,
+            150,
+            [
+              247,
+              186,
+              0,
+              255
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        ],
+        "gl_errors": [
+          0,
+          0,
+          0
+        ],
+        "upload_sha256": "5cc7de6420482a530e1d74ef5bd7dba4c0fca12dcda161e39534c6c9d9c36cb1"
+      }
+    }
+  },
+  "limitations": "Draw retains reused renderer state; only one geometry, shader target and host Mesa context. Clearing establishes a uniform destination before the second draw, the second draw contains exactly one instance, substituted at upload. Instrumented recompilation may change arithmetic. No device or saved-note parity.",
+  "script_sha256": "369c3d74c193494049400b01f5773d0511f2334c4ca21f21088f1526794d48b7",
+  "base_sha256": "6dd5ddb9e5fab3fa2cc63a91f522a3f25dc665c936f055c364e63caf0b691e63",
+  "transitive_source_sha256": {
+    "tools/pencil2-serialized-bridge/capture.py": "c16da1f7407f6c362a55fdd2338a450b8b99a5f02bb4e29eea5788df3a740fa9",
+    "tools/pencil2-independent-drawing/capture.py": "974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7",
+    "tools/pencil2-mixed-drawing/capture.patch": "b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83",
+    "tools/pencil2-public-replay/drawing_native_target_translated_probe.py": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861"
+  }
+}

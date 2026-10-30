@@ -1033,3 +1033,6 @@ mod terminal_zero_tests;
 
 #[cfg(any(feature = "render", all(test, feature = "serde")))]
 pub(crate) mod offset_candidate;
+
+#[cfg(test)]
+mod isolated_record_tests;

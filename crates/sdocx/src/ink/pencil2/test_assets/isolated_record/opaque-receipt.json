@@ -1,0 +1,125 @@
+{
+  "scope": "Isolated 30th instance substituted at upload, synthetic remapped Pencil2 tolerance 0.2, ARM64 native Drawing on host Mesa; clear target to a uniform background after first stroke and immediately before second draw. Shader diagnostics restricted to target fragment and can alter compilation.",
+  "pixel_bottom_origin": [
+    129,
+    150
+  ],
+  "background": "0.25,0.5,0.75,1",
+  "prior_readback_sha256": "14b0727d55999abf9bc40ba9d439edf6e1f17b6792b5659d031c36c7a1634171",
+  "record_sha256": "f7b282dbeafe09623e444a343eb9e4fb000ed2338f92a210caadd2b4ad1b17a4",
+  "cases": {
+    "1": {
+      "native": {
+        "pixel": [
+          247,
+          186,
+          0,
+          255
+        ],
+        "sha256": "e39f63ec8f109b0e629a3acd2d1ca3a3c9953105c6681e58de55cb1abb2985c8",
+        "different_pixels": 0,
+        "sample": [],
+        "gl_errors": [
+          0,
+          0,
+          0
+        ],
+        "upload_sha256": "5cc7de6420482a530e1d74ef5bd7dba4c0fca12dcda161e39534c6c9d9c36cb1"
+      },
+      "red": {
+        "pixel": [
+          255,
+          0,
+          0,
+          255
+        ],
+        "sha256": "9a73f60f6b387b9f058ea3579aca4bd0fe6d4a7cb6232b3d47b5453c3166845c",
+        "different_pixels": 1,
+        "sample": [
+          [
+            129,
+            150,
+            [
+              247,
+              186,
+              0,
+              255
+            ],
+            [
+              255,
+              0,
+              0,
+              255
+            ]
+          ]
+        ],
+        "gl_errors": [
+          0,
+          0,
+          0
+        ],
+        "upload_sha256": "5cc7de6420482a530e1d74ef5bd7dba4c0fca12dcda161e39534c6c9d9c36cb1"
+      },
+      "one": {
+        "pixel": [
+          247,
+          186,
+          0,
+          255
+        ],
+        "sha256": "e39f63ec8f109b0e629a3acd2d1ca3a3c9953105c6681e58de55cb1abb2985c8",
+        "different_pixels": 0,
+        "sample": [],
+        "gl_errors": [
+          0,
+          0,
+          0
+        ],
+        "upload_sha256": "5cc7de6420482a530e1d74ef5bd7dba4c0fca12dcda161e39534c6c9d9c36cb1"
+      },
+      "zero": {
+        "pixel": [
+          64,
+          128,
+          191,
+          255
+        ],
+        "sha256": "20a6151d3cb2b853be76a09da0577d9684af3d77eec2d33879a5b38f1196a3b6",
+        "different_pixels": 1,
+        "sample": [
+          [
+            129,
+            150,
+            [
+              247,
+              186,
+              0,
+              255
+            ],
+            [
+              64,
+              128,
+              191,
+              255
+            ]
+          ]
+        ],
+        "gl_errors": [
+          0,
+          0,
+          0
+        ],
+        "upload_sha256": "5cc7de6420482a530e1d74ef5bd7dba4c0fca12dcda161e39534c6c9d9c36cb1"
+      }
+    }
+  },
+  "limitations": "Draw retains reused renderer state; only one geometry, shader target and host Mesa context. Clearing establishes a uniform destination before the second draw, the second draw contains exactly one instance, substituted at upload. Instrumented recompilation may change arithmetic. No device or saved-note parity.",
+  "script_sha256": "6c92043d5114f5785fe00f2587efee28a4e082ca5e1279c94d17eb9d94b81231",
+  "base_sha256": "6dd5ddb9e5fab3fa2cc63a91f522a3f25dc665c936f055c364e63caf0b691e63",
+  "transitive_source_sha256": {
+    "tools/pencil2-serialized-bridge/capture.py": "c16da1f7407f6c362a55fdd2338a450b8b99a5f02bb4e29eea5788df3a740fa9",
+    "tools/pencil2-independent-drawing/capture.py": "974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7",
+    "tools/pencil2-mixed-drawing/capture.patch": "b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83",
+    "tools/pencil2-public-replay/drawing_native_target_translated_probe.py": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861"
+  }
+}
