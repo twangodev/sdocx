@@ -1,0 +1,127 @@
+{
+  "script_sha256": "2110bcb56771782b4664f39de7fa1c8b7c7b57a1cc150a1c9d3b4e0d68dba9ca",
+  "scope": "Inspection of deferred message before canvas substitution in a synthetic EventLoop, followed by native Run after explicit Init with fabricated bitmap hierarchy and host Mesa framebuffer. No normal scheduling, saved-page or device behavior established.",
+  "list": "Native ordered list dispatch, supplied Matrix3 and 84 AddPoint calls asserted by adapter",
+  "selected_rt": "0x1003b190",
+  "update_count": 0,
+  "matrix3": [
+    1,
+    0,
+    0,
+    0,
+    -1,
+    0,
+    6,
+    183,
+    1
+  ],
+  "readback_sha256": "a0230ba18bf716851b4079facb415b265ade62b80ef28bbfcaa0b1853776672e",
+  "nonzero_bytes": 322,
+  "prior_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+  "gl_error": 0,
+  "observed_run_draw": [
+    [
+      "run",
+      "0x10040ad0"
+    ],
+    [
+      "update",
+      "0x1003b190",
+      0
+    ],
+    [
+      "draw",
+      "0x1003b190",
+      "0x1007e360",
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        6.0,
+        183.0,
+        0.0,
+        1.0
+      ]
+    ]
+  ],
+  "original_canvas": {
+    "ptr": "0x10000560",
+    "bytes": "a0060010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "vtable": "0x100006a0",
+    "is_pen_canvas": true,
+    "is_draw_canvas": false,
+    "vtable_slots": {
+      "192": "0x200f2050",
+      "216": "0x40ae4dc",
+      "232": "0x0",
+      "240": "0x0"
+    },
+    "message_matrix": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      6.0,
+      183.0,
+      0.0,
+      1.0
+    ]
+  },
+  "uniforms": [
+    [
+      "glUniformMatrix4fv",
+      0,
+      1,
+      0,
+      [
+        0.010416666977107525,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -0.010416666977107525,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -0.9375,
+        0.90625,
+        0.0,
+        1.0
+      ]
+    ]
+  ],
+  "row_origin": "bottom",
+  "runtime_limitations": "Host EGL, GLES, Mesa drivers and transitive shared libraries are unpinned.",
+  "parent_sha256": {
+    "tools/pencil2-worker-v241/probe.py": "eea7a5e0c43b2e0e72c5c01679112dee5f6608e95bf9aba2ece8b1d628862222",
+    "tools/pencil2-async-route/draw-attempt.py": "17f74e27d9dc0e0dc4173f08901444bd0627eae7a1b6e023232ff78cb9f72982",
+    "tools/pencil2-page-v219/no-replay.py": "3533e38ae7cf051d28dd07666b1b2c4319c35a24eb25e74cd909ac2f1af7c07d"
+  },
+  "update_entries_during_message": [
+    [
+      "update",
+      "0x1003b190",
+      0
+    ]
+  ]
+}
