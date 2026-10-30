@@ -871,6 +871,8 @@ fn legacy_marker_argb(stroke: &Stroke, allow_profile_settings: bool) -> Option<u
 // V1 and V4 use RTV1's MAX coverage pass followed by one source-color
 // composite. That paint contract does not depend on V4's display-dependent
 // geometry; keep the geometry approximate while retaining saved source ARGB.
+// Fixed-width V1 paint is bounded to tool types 0–2 observed in
+// tools/inkpen-v1/high-scale-color-native.json.
 pub(crate) fn saved_inkpen_argb(stroke: &Stroke) -> Option<u32> {
     let rendering = stroke.rendering.as_ref()?;
     let properties = &rendering.properties;
@@ -882,7 +884,8 @@ pub(crate) fn saved_inkpen_argb(stroke: &Stroke) -> Option<u32> {
         || rendering.tool_type_raw > 4
         || properties.replay_only
         || properties.eraser
-        || properties.fixed_width
+        || (properties.fixed_width
+            && (rendering.advanced_settings.is_some() || rendering.tool_type_raw > 2))
         || properties.top_layer_pen
         || properties.alpha_lock
         || properties.fixed_opacity
@@ -1309,6 +1312,36 @@ mod tests {
     }
 
     #[test]
+    fn inkpen_v1_fixed_width_fallback_retains_saved_paint() {
+        for alpha in [0_u32, 128, 255] {
+            let mut input = defaultpen_stroke();
+            input.color = None;
+            let rendering = input.rendering.as_mut().unwrap();
+            rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.InkPen".into());
+            rendering.advanced_settings = None;
+            rendering.properties.fixed_width = true;
+            rendering.style.color_argb = Some((alpha << 24) | 0x0033_6699);
+            let prepared = prepare_stroke(&input, false);
+            assert_eq!(prepared.color, "#336699");
+            assert_eq!(prepared.opacity, f64::from(alpha) / 255.0);
+            assert_eq!(prepared.support, InkSupport::Approximate);
+            input.color = Some(crate::Color {
+                r: 0x11,
+                g: 0x22,
+                b: 0x33,
+            });
+            for dark in [false, true] {
+                let mut expected = input.clone();
+                expected.rendering = None;
+                assert_eq!(
+                    prepare_stroke(&input, dark).color,
+                    stroke_paint(&expected, dark).color
+                );
+            }
+        }
+    }
+
+    #[test]
     fn inkpen_alpha_does_not_change_unverified_profiles_or_effects() {
         for unsupported in 0..14 {
             let mut input = defaultpen_stroke();
@@ -1326,7 +1359,10 @@ mod tests {
                 4 => rendering.style.color_type_raw = Some(1),
                 5 => rendering.properties.replay_only = true,
                 6 => rendering.properties.eraser = true,
-                7 => rendering.properties.fixed_width = true,
+                7 => {
+                    rendering.properties.fixed_width = true;
+                    rendering.advanced_settings = Some("4;".into());
+                }
                 8 => rendering.properties.top_layer_pen = true,
                 9 => rendering.properties.alpha_lock = true,
                 10 => rendering.properties.fixed_opacity = true,

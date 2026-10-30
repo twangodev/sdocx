@@ -3442,6 +3442,7 @@ mod tests {
         let document = make_document(stroke.clone());
         let mut generic = stroke.clone();
         generic.rendering.as_mut().unwrap().advanced_settings = Some("unsupported".into());
+        generic.color = Some(crate::Color { r: 0, g: 0, b: 0 });
         let fallback = make_document(generic);
         let defaults = crate::RenderOptions::default();
         let svg = crate::render_document_svg(&document, &defaults)
