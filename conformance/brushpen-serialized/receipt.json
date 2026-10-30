@@ -1,0 +1,96 @@
+{
+  "source": "Stroke from the published 02-shapes-and-dot-calibration.sdocx compatibility corpus; BrushPen name, settings, and color are synthetic mutations.",
+  "boundary": "Native StringIDManager, ModelContext, frame BinaryHandler, OnAttach, getters and Drawing execute under Unicorn host context/queue; no full native archive loader, device paint, or real saved BrushPen; public Rust parser reads reconstructed archive.",
+  "cases": {
+    "v1": {
+      "advanced_setting": null,
+      "archive_sha256": "49f89b17747a2a53c49996d52c16d69e275cea5fe39b73b627f7796ca09221e9",
+      "frame_sha256": "1f73dbfc32ae402fab7ff83b676d19f0e90f3af6ad8d211e6f859c7c89cfafac",
+      "model_color": "0xff000000",
+      "native_arrays": {
+        "orientation": {
+          "count": 204,
+          "sha256": "751141dbf512853aa7662510b8b5f4b9cbd53213b91eead31529113a0248ba0b"
+        },
+        "points": {
+          "count": 204,
+          "sha256": "45bce4b3399b64a0eaa121214fda0ed6aa4dbb8e8db888b1fc0d1f1a768fa5f4"
+        },
+        "pressure": {
+          "count": 204,
+          "sha256": "4039d46b4f7c86035b24b07d2bfe7bb11aa853009bdd18e2a7872ef5a9ad37f9"
+        },
+        "tilt": {
+          "count": 204,
+          "sha256": "e56bb1cbfb7892cb63900be7f13027444ce6bf72801106d3ac805647315a18c6"
+        },
+        "timestamps": {
+          "count": 204,
+          "sha256": "c3a666ad17fb6230076b651dd27ebe61d321f97c9a337a9f4a769ca98401829a"
+        }
+      },
+      "native_records": 138,
+      "native_stream_bytes": 6072,
+      "native_stream_sha256": "d6ec992f7c97041f4d9ffb5bad32e9d61457decaf4c6368cf67e5a253bdcb271",
+      "point_count": 204,
+      "redraw_entries": [
+        "non-virtual thunk to SPen::BrushPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "SPen::BrushPenStrokeDrawableGLV1::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ],
+      "table_sha256": "693c635489098eba87cfadc9075930bbd8907c056c91fd17052371b2483e3d70"
+    },
+    "v10": {
+      "advanced_setting": "10;",
+      "archive_sha256": "f3d5088b436e637b198d9653329b47cfcb733ac879859be544d9c11af3953aa6",
+      "frame_sha256": "9b495ebc360c03d2b064e21bf97ce5a45d6f02290aa04410ba87316ae59874f3",
+      "model_color": "0xff000000",
+      "native_arrays": {
+        "orientation": {
+          "count": 204,
+          "sha256": "751141dbf512853aa7662510b8b5f4b9cbd53213b91eead31529113a0248ba0b"
+        },
+        "points": {
+          "count": 204,
+          "sha256": "45bce4b3399b64a0eaa121214fda0ed6aa4dbb8e8db888b1fc0d1f1a768fa5f4"
+        },
+        "pressure": {
+          "count": 204,
+          "sha256": "4039d46b4f7c86035b24b07d2bfe7bb11aa853009bdd18e2a7872ef5a9ad37f9"
+        },
+        "tilt": {
+          "count": 204,
+          "sha256": "e56bb1cbfb7892cb63900be7f13027444ce6bf72801106d3ac805647315a18c6"
+        },
+        "timestamps": {
+          "count": 204,
+          "sha256": "c3a666ad17fb6230076b651dd27ebe61d321f97c9a337a9f4a769ca98401829a"
+        }
+      },
+      "native_records": 63,
+      "native_stream_bytes": 2772,
+      "native_stream_sha256": "becc134bf38d9c9c3488d7d9163eee94d56a6ef94456e66c61248d0fce65888a",
+      "point_count": 204,
+      "redraw_entries": [
+        "non-virtual thunk to SPen::BrushPenStrokeDrawableGLV10::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "SPen::BrushPenStrokeDrawableGLV10::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ],
+      "table_sha256": "d28e2c2c4c9a31cf744b2ba495e8a8847f285d0aabfe3bfe6464522c12e35d73"
+    }
+  },
+  "native_dso_sha256": {
+    "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "libSPenBrushPen.so": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "regression": "isolated copied crate test checks decoded channel SHA256 and current sampler rejection",
+  "replay_limit": "Direct DSOs, frame/table, caller, and attachment template are pinned. Transitive Python host adapters and toolchain are not pinned.",
+  "source": "FountainPen-derived synthetic archive; substituted string ID pen name, and for v10 setting 10; plus explicit black color",
+  "source_archive_v1_sha256": "1a011b8fd8225d1cb5ec3b06e2fb146c5540d3bbbe46110e1727a1603ce4f910",
+  "v10_rust_result": "Five decoded channel hashes agree with native getters; unmodified sampler rejects first zero-length path."
+}

@@ -9,7 +9,7 @@
 //! joins this sampler to one manually configured native caller profile and a
 //! conditional host-Mesa frame; it is not a production dispatch route.
 
-#[cfg(feature = "serde")]
+#[cfg(all(test, feature = "serde"))]
 mod paint;
 
 use super::path::{P, Quad};
@@ -56,6 +56,8 @@ struct Glv10RuntimeProfile {
     neutral_tilt_min: f32,
     constructor_opacity: f32,
     motion_distance_threshold: f32,
+    motion_alternation_threshold: f32,
+    allow_empty_curved_paths: bool,
     /// Native per-pen limits updated by the Drawing screen-resolution setter.
     /// GLV10 scales drawLine speed by 1440 / min(limit0, limit1).
     motion_settings_limits: [i32; 2],
@@ -80,6 +82,8 @@ const SAVED_GLV10_CONSTRUCTOR_PROFILE: Glv10RuntimeProfile = Glv10RuntimeProfile
     neutral_tilt_min: 0.0001,
     constructor_opacity: 255.0,
     motion_distance_threshold: 2.6,
+    motion_alternation_threshold: 10.4,
+    allow_empty_curved_paths: false,
     motion_settings_limits: [1440, 2560],
 };
 
@@ -194,7 +198,11 @@ impl Cubic {
 
 #[derive(Clone, Copy)]
 pub(super) enum EndPath<'a> {
-    Line { from: P, to: P },
+    Line {
+        from: P,
+        to: P,
+        native_normalize: bool,
+    },
     Quad(&'a Quad),
     Cubic(&'a Cubic),
 }
@@ -202,7 +210,7 @@ pub(super) enum EndPath<'a> {
 impl EndPath<'_> {
     fn length(&self) -> f32 {
         match self {
-            Self::Line { from, to } => to.sub(*from).len(),
+            Self::Line { from, to, .. } => to.sub(*from).len(),
             Self::Quad(path) => path.length,
             Self::Cubic(path) => path.length,
         }
@@ -210,7 +218,7 @@ impl EndPath<'_> {
 
     fn at(&self, distance: f32) -> P {
         match self {
-            Self::Line { from, to } => {
+            Self::Line { from, to, .. } => {
                 let length = to.sub(*from).len();
                 if length == 0.0 {
                     *to
@@ -236,15 +244,27 @@ impl EndPath<'_> {
 
     fn normalized_tangent(&self, distance: f32) -> P {
         match self {
-            Self::Line { from, to } => {
+            Self::Line {
+                from,
+                to,
+                native_normalize,
+            } => {
                 let delta = to.sub(*from);
                 let length = delta.len();
                 if length == 0.0 {
                     P::default()
                 } else {
-                    P {
-                        x: delta.x / length,
-                        y: delta.y / length,
+                    if *native_normalize {
+                        let inverse = 1.0_f32 / length;
+                        P {
+                            x: delta.x * inverse,
+                            y: delta.y * inverse,
+                        }
+                    } else {
+                        P {
+                            x: delta.x / length,
+                            y: delta.y / length,
+                        }
                     }
                 }
             }
@@ -260,18 +280,19 @@ enum DrawLinePath {
 }
 
 impl DrawLinePath {
-    fn as_end_path(&self) -> EndPath<'_> {
+    fn as_end_path(&self, native_normalize: bool) -> EndPath<'_> {
         match self {
             Self::Line { from, to } => EndPath::Line {
                 from: *from,
                 to: *to,
+                native_normalize,
             },
             Self::Quad(path) => EndPath::Quad(path),
         }
     }
 
     fn length(&self) -> f32 {
-        self.as_end_path().length()
+        self.as_end_path(false).length()
     }
 }
 
@@ -279,6 +300,7 @@ impl DrawLinePath {
 /// event has the initial point duplicated as its quadratic control; later
 /// events continue from the previous pair's midpoint, through its latest
 /// source point, to the next midpoint.
+#[cfg(test)]
 fn motion_history_path(points: &[P], event_index: usize) -> Option<Quad> {
     if points.len() < 3 || event_index == 0 || event_index >= points.len() - 1 {
         return None;
@@ -294,6 +316,7 @@ fn motion_history_path(points: &[P], event_index: usize) -> Option<Quad> {
     }
 }
 
+#[cfg(test)]
 struct MotionHistoryTransition {
     event_index: usize,
     previous: P,
@@ -321,6 +344,7 @@ struct AdmittedMotionReplay {
 /// Replay the historical-event loop in GLV10::redraw. It starts after the
 /// initial point and consumes indices 1 through len-2; the final current
 /// MotionEvent is reserved for endPen.
+#[cfg(test)]
 fn motion_history_transitions(
     profile: Glv10RuntimeProfile,
     points: &[P],
@@ -334,7 +358,7 @@ fn motion_history_transitions(
     for event_index in 1..points.len() - 1 {
         let previous = points[event_index - 1];
         let current = points[event_index];
-        let elapsed_ms = (times[event_index] - times[event_index - 1]) as f32;
+        let elapsed_ms = times[event_index].checked_sub(times[event_index - 1])? as f32;
         let (speed, smoothed_speed) =
             motion_line_scalar(profile, previous, current, prior_speed, elapsed_ms)?;
         transitions.push(MotionHistoryTransition {
@@ -377,7 +401,7 @@ fn admitted_motion_transitions(
     let threshold336 = if matches!(tool_type, 1 | 3) {
         50.0
     } else {
-        10.4
+        profile.motion_alternation_threshold
     };
     let mut fallback_time_counter = 1.0_f32;
     for event_index in 1..points.len() - 1 {
@@ -426,7 +450,7 @@ fn admitted_motion_transitions(
         let previous_time = times[accepted_index];
         let current_time = times[event_index];
         let elapsed_us = if previous_time != 0 && current_time > previous_time {
-            (current_time - previous_time) as f32 * 1000.0_f32
+            current_time.checked_sub(previous_time)? as f32 * 1000.0_f32
         } else {
             fallback_time_counter *= GLV10_FIRST_TIME_FALLBACK_SCALE;
             (GLV10_FIRST_TIME_FALLBACK_NUMERATOR / fallback_time_counter).trunc()
@@ -451,7 +475,9 @@ fn admitted_motion_transitions(
         if first_path {
             flag226 = 0;
         }
-        flag227 = 1;
+        if !profile.allow_empty_curved_paths || admitted.last()?.path.length() > 0.0 {
+            flag227 = 1;
+        }
     }
     Some(AdmittedMotionReplay {
         transitions: admitted,
@@ -501,6 +527,7 @@ fn motion_tilt(
 /// `hypot(delta) * 10000 / (delta_time_ms * 1000) * .5`, clamps it to five units from the
 /// prior scalar, stores that clamped step, and averages old/new for the
 /// makeDrawPoint exponent. The first segment starts with prior scalar zero.
+#[cfg(test)]
 fn motion_line_scalar(
     profile: Glv10RuntimeProfile,
     previous: P,
@@ -583,6 +610,7 @@ fn motion_line_scalar_us(
 /// consumed events through `points[len - 2]`; endPen compares that stored
 /// point with the current event at `points[len - 1]`.
 #[derive(Clone, Copy)]
+#[cfg_attr(not(test), allow(dead_code))]
 struct MotionEndState {
     previous: P,
     current: P,
@@ -610,7 +638,7 @@ fn motion_end_state(
     let prior = accepted.speed;
     let last = points.len() - 1;
     let previous = accepted.event_index;
-    let elapsed = (times[last] - times[previous]) as f32;
+    let elapsed = times[last].checked_sub(times[previous])? as f32;
     let delta_us = if times[previous] != 0 && times[last] > times[previous] {
         elapsed * 1000.0_f32
     } else {
@@ -804,6 +832,7 @@ fn motion_history_radius_states(
     Some(states)
 }
 
+#[cfg(test)]
 fn motion_history_radius_state(
     profile: Glv10RuntimeProfile,
     points: &[P],
@@ -870,6 +899,7 @@ pub(super) struct Output {
 /// joined to the retained 26x44 native buffer. This is test-only evidence,
 /// not a general saved-stroke admission rule.
 #[derive(Clone, Copy)]
+#[cfg(test)]
 struct SavedBrushPenNativeContext {
     gl_version: u32,
     screen_resolution: [i32; 2],
@@ -879,6 +909,7 @@ struct SavedBrushPenNativeContext {
     fixed_opacity_enabled: bool,
 }
 
+#[cfg(test)]
 struct SavedBrushPenSamples {
     output: Output,
     argb: u32,
@@ -888,6 +919,7 @@ struct SavedBrushPenSamples {
 /// sampler profile. The fixture behind this bridge was assembled by manual
 /// native ObjectStroke setters; it is not a parsed Drawing/document stroke.
 /// Unknown pen identity, settings, flags, colors, sizes, or context fail closed.
+#[cfg(test)]
 fn sample_saved_native_stroke(
     stroke: &crate::Stroke,
     context: SavedBrushPenNativeContext,
@@ -895,6 +927,7 @@ fn sample_saved_native_stroke(
     sample_native_stroke_with_size(stroke, context, 0x4049_374c, 0xff6c_dd8f)
 }
 
+#[cfg(test)]
 fn sample_native_stroke_with_size(
     stroke: &crate::Stroke,
     context: SavedBrushPenNativeContext,
@@ -1089,9 +1122,18 @@ pub(super) fn sampled_instances(gl_version: u32, samples: &[AddPointInput]) -> O
 /// setup. The native loop stamps at distance zero, advances by one quarter of
 /// the current radius, and linearly moves that radius toward its target over
 /// the remaining distance to half the SmPath length.
+#[cfg(test)]
 pub(super) fn sample_draw_point(
     gl_version: u32,
     input: DrawPointInput<'_>,
+) -> Option<Vec<AddPointInput>> {
+    sample_draw_point_bounded(gl_version, input, MAX_SAMPLES)
+}
+
+fn sample_draw_point_bounded(
+    gl_version: u32,
+    input: DrawPointInput<'_>,
+    capacity: usize,
 ) -> Option<Vec<AddPointInput>> {
     if gl_version != GL_VERSION
         || !input.half_length.is_finite()
@@ -1113,12 +1155,18 @@ pub(super) fn sample_draw_point(
     let mut distance = 0.0_f32;
     let mut radius = input.radius_start;
     let mut opacity = input.opacity_start;
+    let mut tangent = P::default();
     loop {
-        if samples.len() == MAX_SAMPLES {
+        if samples.len() >= capacity {
             return None;
         }
         let point = input.path.at(distance);
-        let tangent = input.path.normalized_tangent(distance);
+        if !matches!(input.path, EndPath::Line { from, to, native_normalize: true } if {
+            let delta = to.sub(from);
+            delta.dot(delta) <= 2.0_f32.powi(-24)
+        }) {
+            tangent = input.path.normalized_tangent(distance);
+        }
         let offset_scale = radius.max(1.0);
         samples.push(AddPointInput {
             vector: [
@@ -1127,7 +1175,7 @@ pub(super) fn sample_draw_point(
                 input.fixed_radius.unwrap_or(offset_scale),
                 // drawPattern's multiply-high reduction wraps its counter at
                 // seven before passing the texture index to AddPoint.
-                ((input.pattern_start + samples.len()) % 7) as f32,
+                ((input.pattern_start % 7 + samples.len() % 7) % 7) as f32,
             ],
             opacity: opacity as f32,
             tilt: input.tilt,
@@ -1155,13 +1203,15 @@ pub(super) fn sample_draw_point(
 /// ordinary drawLine sampler. It uses a quarter-radius step, interpolates the
 /// unscaled radius toward a style-derived target, then applies the native
 /// distance alpha multiplier before the next drawPattern call.
-fn sample_end_pen_point(
+#[allow(clippy::too_many_arguments)]
+fn sample_end_pen_point_bounded(
     gl_version: u32,
     path: EndPath<'_>,
     radius_start: f32,
     radius_target: f32,
     tilt: [f32; 2],
     pattern_start: usize,
+    capacity: usize,
 ) -> Option<Vec<AddPointInput>> {
     let length = path.length();
     if gl_version != GL_VERSION
@@ -1181,7 +1231,7 @@ fn sample_end_pen_point(
     let mut radius = radius_start;
     let mut alpha = 1.0_f32;
     loop {
-        if output.len() >= 200 {
+        if output.len() >= 200 || output.len() >= capacity {
             return None;
         }
         let point = path.at(distance);
@@ -1193,7 +1243,7 @@ fn sample_end_pen_point(
                 tilt[0].mul_add(stamp_radius, point.x),
                 tilt[1].mul_add(stamp_radius, point.y),
                 stamp_radius,
-                ((pattern_start + output.len()) % 7) as f32,
+                ((pattern_start % 7 + output.len() % 7) % 7) as f32,
             ],
             opacity: 255.0,
             tilt,
@@ -1227,6 +1277,7 @@ fn sample_end_pen_point(
 /// moveTo/control state; the terminal MotionEvent supplies the endpoint.
 // Keep the recovered native event channels and path state explicit here.
 #[allow(clippy::too_many_arguments)]
+#[cfg(test)]
 fn sample_motion_end_segment(
     gl_version: u32,
     points: &[P],
@@ -1239,6 +1290,35 @@ fn sample_motion_end_segment(
     tilt: [f32; 2],
     pattern_start: usize,
 ) -> Option<Vec<AddPointInput>> {
+    sample_motion_end_segment_bounded(
+        gl_version,
+        points,
+        last_draw_previous,
+        last_draw_current,
+        cubic,
+        tool_type,
+        radius_start,
+        radius_target,
+        tilt,
+        pattern_start,
+        MAX_SAMPLES,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn sample_motion_end_segment_bounded(
+    gl_version: u32,
+    points: &[P],
+    last_draw_previous: P,
+    last_draw_current: P,
+    cubic: bool,
+    tool_type: i32,
+    radius_start: f32,
+    radius_target: f32,
+    tilt: [f32; 2],
+    pattern_start: usize,
+    capacity: usize,
+) -> Option<Vec<AddPointInput>> {
     if points.len() < 3 {
         return None;
     }
@@ -1248,24 +1328,26 @@ fn sample_motion_end_segment(
         let start = last_draw_previous.mid(last_draw_current);
         let next_midpoint = last_draw_current.mid(terminal);
         let path = Cubic::new([start, last_draw_current, next_midpoint, terminal]);
-        sample_end_pen_point(
+        sample_end_pen_point_bounded(
             gl_version,
             EndPath::Cubic(&path),
             radius_start,
             radius_target,
             tilt,
             pattern_start,
+            capacity,
         )
     } else if matches!(tool_type, 1 | 3) {
         let start = last_draw_previous.mid(last_draw_current);
         let path = Quad::new(start, last_draw_current, terminal);
-        sample_end_pen_point(
+        sample_end_pen_point_bounded(
             gl_version,
             EndPath::Quad(&path),
             radius_start,
             radius_target,
             tilt,
             pattern_start,
+            capacity,
         )
     } else {
         None
@@ -1347,10 +1429,20 @@ fn sample_motion_events(
             orientations[transition.event_index],
             tilts[transition.event_index],
         )?;
-        let segment = sample_draw_point(
+        if transition.path.length() == 0.0 {
+            if !profile.allow_empty_curved_paths {
+                return None;
+            }
+            prior_opacity = opacity_target;
+            previous_width = width;
+            continue;
+        }
+        let segment = sample_draw_point_bounded(
             gl_version,
             DrawPointInput {
-                path: transition.path.as_end_path(),
+                path: transition
+                    .path
+                    .as_end_path(profile.allow_empty_curved_paths),
                 half_length: transition.path.length(),
                 radius_start,
                 radius_target,
@@ -1367,6 +1459,7 @@ fn sample_motion_events(
                 },
                 pattern_start: samples.len(),
             },
+            MAX_SAMPLES.checked_sub(samples.len())?,
         )?;
         samples.extend(segment);
         prior_opacity = opacity_target;
@@ -1384,7 +1477,7 @@ fn sample_motion_events(
             orientations[orientations.len() - 1],
             tilts[tilts.len() - 1],
         )?;
-        let terminal = sample_motion_end_segment(
+        let terminal = sample_motion_end_segment_bounded(
             gl_version,
             points,
             history.last()?.accepted_current,
@@ -1395,6 +1488,7 @@ fn sample_motion_events(
             target,
             tilt,
             samples.len(),
+            MAX_SAMPLES.checked_sub(samples.len())?,
         )?;
         samples.extend(terminal);
     }
@@ -1466,6 +1560,7 @@ fn sample_object_stroke_wrapper(
 /// Source-driven multi-event replay is provided by `sample_motion_events`.
 // These are the exact fields passed through the recovered first-segment path.
 #[allow(clippy::too_many_arguments)]
+#[cfg(test)]
 pub(super) fn sample_first_motion_segment(
     gl_version: u32,
     previous: P,
@@ -2592,5 +2687,526 @@ mod tests {
             default_pen.map(f32::to_bits),
             [0.033_985_835_f32, 0.679_150_16_f32].map(f32::to_bits)
         );
+    }
+}
+
+#[cfg(test)]
+mod serialized_native_controls {
+    use super::*;
+    use std::io::Read;
+
+    fn serialized_profile(width: i32, height: i32) -> Option<Glv10RuntimeProfile> {
+        if width <= 0 || height <= 0 {
+            return None;
+        }
+        let mut profile = SAVED_GLV10_CONSTRUCTOR_PROFILE;
+        profile.motion_distance_threshold = f32::from_bits(0x3fcb_7b12);
+        profile.motion_alternation_threshold = 2.6_f32 * (width.min(height) as f32 / 360.0_f32);
+        profile.motion_settings_limits = [width, height];
+        profile.allow_empty_curved_paths = true;
+        Some(profile)
+    }
+
+    #[test]
+    fn sampling_respects_explicit_remaining_budget() {
+        let path = Quad::new(
+            P { x: 0.0, y: 0.0 },
+            P { x: 10.0, y: 0.0 },
+            P { x: 20.0, y: 0.0 },
+        );
+        let make_input = |phase| DrawPointInput {
+            path: EndPath::Quad(&path),
+            half_length: path.length,
+            radius_start: 2.0,
+            radius_target: 2.0,
+            fixed_radius: None,
+            opacity_start: 255,
+            opacity_target: 255,
+            tilt: [0.0; 2],
+            point_offset: [0.0; 2],
+            pattern_start: phase,
+        };
+        let full =
+            sample_draw_point_bounded(GL_VERSION, make_input(usize::MAX), MAX_SAMPLES).unwrap();
+        assert!(sample_draw_point_bounded(GL_VERSION, make_input(usize::MAX), 0).is_none());
+        assert!(
+            sample_draw_point_bounded(GL_VERSION, make_input(usize::MAX), full.len() - 1).is_none()
+        );
+        assert_eq!(
+            sample_draw_point_bounded(GL_VERSION, make_input(usize::MAX), full.len())
+                .unwrap()
+                .len(),
+            full.len()
+        );
+        let end = || EndPath::Quad(&path);
+        let full_end = sample_end_pen_point_bounded(
+            GL_VERSION,
+            end(),
+            2.0,
+            2.0,
+            [0.0; 2],
+            usize::MAX,
+            MAX_SAMPLES,
+        )
+        .unwrap();
+        assert!(
+            sample_end_pen_point_bounded(GL_VERSION, end(), 2.0, 2.0, [0.0; 2], usize::MAX, 0)
+                .is_none()
+        );
+        assert!(
+            sample_end_pen_point_bounded(
+                GL_VERSION,
+                end(),
+                2.0,
+                2.0,
+                [0.0; 2],
+                usize::MAX,
+                full_end.len() - 1
+            )
+            .is_none()
+        );
+        assert_eq!(
+            sample_end_pen_point_bounded(
+                GL_VERSION,
+                end(),
+                2.0,
+                2.0,
+                [0.0; 2],
+                usize::MAX,
+                full_end.len()
+            )
+            .unwrap()
+            .len(),
+            full_end.len()
+        );
+        assert!(MAX_SAMPLES.checked_sub(MAX_SAMPLES + 1).is_none());
+    }
+
+    #[test]
+    fn serialized_profile_rejects_invalid_screen_dimensions() {
+        assert!(serialized_profile(0, 1080).is_none());
+        assert!(serialized_profile(1920, -1).is_none());
+    }
+
+    #[test]
+    fn matches_controlled_serialized_glv10_native_streams() {
+        let stroke = crate::decode::decode_stroke(
+            include_bytes!("../../../../conformance/brushpen-serialized/v10-payload.bin"),
+            &crate::ParseLimits::default(),
+        )
+        .unwrap();
+        use sha2::{Digest, Sha256};
+        let receipt: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../conformance/brushpen-serialized/receipt.json"
+        ))
+        .unwrap();
+        let channels = &receipt["cases"]["v10"]["native_arrays"];
+        let check = |name: &str, count: usize, bytes: Vec<u8>| {
+            assert_eq!(
+                channels[name]["count"].as_u64().unwrap(),
+                count as u64,
+                "{name}"
+            );
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&bytes)),
+                channels[name]["sha256"].as_str().unwrap(),
+                "{name}"
+            );
+        };
+        check(
+            "points",
+            stroke.points.len(),
+            stroke
+                .points
+                .iter()
+                .flat_map(|p| [(p.x as f32).to_le_bytes(), (p.y as f32).to_le_bytes()])
+                .flatten()
+                .collect(),
+        );
+        check(
+            "timestamps",
+            stroke.timestamps.len(),
+            stroke
+                .timestamps
+                .iter()
+                .flat_map(|&v| i32::try_from(v).unwrap().to_le_bytes())
+                .collect(),
+        );
+        check(
+            "pressure",
+            stroke.pressures.len(),
+            stroke
+                .pressures
+                .iter()
+                .flat_map(|&v| (v as f32).to_le_bytes())
+                .collect(),
+        );
+        check(
+            "orientation",
+            stroke.orientations.len(),
+            stroke
+                .orientations
+                .iter()
+                .flat_map(|&v| (v as f32).to_le_bytes())
+                .collect(),
+        );
+        check(
+            "tilt",
+            stroke.tilts.len(),
+            stroke
+                .tilts
+                .iter()
+                .flat_map(|&v| (v as f32).to_le_bytes())
+                .collect(),
+        );
+        let base_points: Vec<P> = stroke
+            .points
+            .iter()
+            .map(|p| P {
+                x: p.x as f32,
+                y: p.y as f32,
+            })
+            .collect();
+        let base_pressure: Vec<f32> = stroke.pressures.iter().map(|&v| v as f32).collect();
+        let base_orientation: Vec<f32> = stroke.orientations.iter().map(|&v| v as f32).collect();
+        let base_tilt: Vec<f32> = stroke.tilts.iter().map(|&v| v as f32).collect();
+        assert!(
+            sample_object_stroke_wrapper(
+                GL_VERSION,
+                SAVED_GLV10_CONSTRUCTOR_PROFILE,
+                stroke.pen_width,
+                0.0,
+                false,
+                true,
+                false,
+                &base_points,
+                &stroke.timestamps,
+                &base_pressure,
+                &base_orientation,
+                &base_tilt,
+                2
+            )
+            .is_none()
+        );
+        let setting11: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../tools/brushpen-transform/setting11-receipt.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            setting11["drawing"]["stream_sha256"],
+            receipt["cases"]["v10"]["native_stream_sha256"]
+        );
+        let cases: &[(&str, &[u8])] = &[
+            (
+                "base",
+                include_bytes!("../../../../conformance/brushpen-serialized/v10-native-stream.zlib")
+                    as &[u8],
+            ),
+            (
+                "variant-stationary",
+                include_bytes!(
+                    "../../../../conformance/brushpen-serialized/variant-stationary.bin.zlib"
+                ) as &[u8],
+            ),
+            (
+                "variant-curveoff",
+                include_bytes!(
+                    "../../../../conformance/brushpen-serialized/variant-curveoff.bin.zlib"
+                ) as &[u8],
+            ),
+            (
+                "variant-boundary1.5896",
+                include_bytes!(
+                    "../../../../conformance/brushpen-serialized/variant-boundary1.5896.bin.zlib"
+                ) as &[u8],
+            ),
+            (
+                "variant-boundary1.5898",
+                include_bytes!(
+                    "../../../../conformance/brushpen-serialized/variant-boundary1.5898.bin.zlib"
+                ) as &[u8],
+            ),
+            (
+                "state_trace",
+                include_bytes!("../../../../conformance/brushpen-serialized/state_trace.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "variant-size1",
+                include_bytes!("../../../../conformance/brushpen-serialized/variant-size1.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "variant-size4",
+                include_bytes!("../../../../conformance/brushpen-serialized/variant-size4.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "variant-size16",
+                include_bytes!(
+                    "../../../../conformance/brushpen-serialized/variant-size16.bin.zlib"
+                ) as &[u8],
+            ),
+            (
+                "variant-pressure",
+                include_bytes!(
+                    "../../../../conformance/brushpen-serialized/variant-pressure.bin.zlib"
+                ) as &[u8],
+            ),
+            (
+                "variant-tilt",
+                include_bytes!("../../../../conformance/brushpen-serialized/variant-tilt.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "variant-duplicate",
+                include_bytes!(
+                    "../../../../conformance/brushpen-serialized/variant-duplicate.bin.zlib"
+                ) as &[u8],
+            ),
+            (
+                "variant-nearzero",
+                include_bytes!(
+                    "../../../../conformance/brushpen-serialized/variant-nearzero.bin.zlib"
+                ) as &[u8],
+            ),
+            (
+                "dim-1080x1920",
+                include_bytes!("../../../../conformance/brushpen-serialized/dim-1080x1920.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "dim-2560x1440",
+                include_bytes!("../../../../conformance/brushpen-serialized/dim-2560x1440.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "dim-960x540",
+                include_bytes!("../../../../conformance/brushpen-serialized/dim-960x540.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "dim-3840x2160",
+                include_bytes!("../../../../conformance/brushpen-serialized/dim-3840x2160.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "dim-1001x777",
+                include_bytes!("../../../../conformance/brushpen-serialized/dim-1001x777.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "dim-777x1001",
+                include_bytes!("../../../../conformance/brushpen-serialized/dim-777x1001.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "dim-1921x1081",
+                include_bytes!("../../../../conformance/brushpen-serialized/dim-1921x1081.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "dim-333x777",
+                include_bytes!("../../../../conformance/brushpen-serialized/dim-333x777.bin.zlib")
+                    as &[u8],
+            ),
+        ];
+        for &(case, compressed) in cases {
+            let mut points: Vec<P> = stroke
+                .points
+                .iter()
+                .map(|p| P {
+                    x: p.x as f32,
+                    y: p.y as f32,
+                })
+                .collect();
+            let mut pressure: Vec<f32> = stroke.pressures.iter().map(|&p| p as f32).collect();
+            let mut tilt: Vec<f32> = stroke.tilts.iter().map(|&p| p as f32).collect();
+            let orientation: Vec<f32> = stroke.orientations.iter().map(|&p| p as f32).collect();
+            let mut size = stroke.pen_width;
+            let (mut width, mut height) = (1920, 1080);
+            if let Some(dim) = case.strip_prefix("dim-") {
+                let (w, h) = dim.split_once('x').unwrap();
+                width = w.parse::<i32>().unwrap();
+                height = h.parse::<i32>().unwrap();
+            }
+            match case {
+                "variant-size1" => size = 1.0,
+                "variant-size4" => size = 4.0,
+                "variant-size16" => size = 16.0,
+                "variant-pressure" => {
+                    pressure[1] = 0.4;
+                    pressure[2] = 0.8;
+                }
+                "variant-tilt" => {
+                    tilt[1] = 0.2;
+                    tilt[2] = 0.8;
+                }
+                "variant-duplicate" => points[2] = points[0],
+                "variant-nearzero" => points[1].x = points[0].x + 0.001,
+                "variant-stationary" => {
+                    let p = points[49];
+                    for item in &mut points[50..62] {
+                        *item = p;
+                    }
+                }
+                "variant-boundary1.5896" => points[1].x = points[0].x + 1.5896,
+                "variant-boundary1.5898" => points[1].x = points[0].x + 1.5898,
+                _ => (),
+            }
+            let profile = serialized_profile(width, height).unwrap();
+            let result = sample_object_stroke_wrapper(
+                GL_VERSION,
+                profile,
+                size,
+                0.0,
+                false,
+                case != "variant-curveoff",
+                false,
+                &points,
+                &stroke.timestamps,
+                &pressure,
+                &orientation,
+                &tilt,
+                2,
+            );
+            let samples = result.unwrap();
+            let actual: Vec<u8> = sampled_instances(GL_VERSION, &samples)
+                .unwrap()
+                .instances
+                .iter()
+                .flat_map(|r| r.values)
+                .flat_map(f32::to_le_bytes)
+                .collect();
+            let mut expected = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed)
+                .read_to_end(&mut expected)
+                .unwrap();
+            assert!(actual == expected, "native stream mismatch for {case}");
+        }
+    }
+
+    #[test]
+    fn curveoff_small_movement_native_controls() {
+        use sha2::{Digest, Sha256};
+        let stroke = crate::decode::decode_stroke(
+            include_bytes!("../../../../conformance/brushpen-serialized/v10-payload.bin"),
+            &crate::ParseLimits::default(),
+        )
+        .unwrap();
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/brushpen-curveoff-controls/receipt.json"
+        ))
+        .unwrap();
+        let payload = include_bytes!("../../../../conformance/brushpen-serialized/v10-payload.bin");
+        let helper = include_bytes!("../../../../tools/brushpen-transform/curveoff_capture.py");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(payload)),
+            receipt["source_payload_sha256"].as_str().unwrap()
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(helper)),
+            receipt["capture_helper_sha256"].as_str().unwrap()
+        );
+        for (name, compressed) in [
+            (
+                "zero",
+                include_bytes!("../../../../conformance/brushpen-curveoff-controls/zero.bin.zlib")
+                    as &[u8],
+            ),
+            (
+                "ulp",
+                include_bytes!("../../../../conformance/brushpen-curveoff-controls/ulp.bin.zlib"),
+            ),
+            (
+                "below",
+                include_bytes!("../../../../conformance/brushpen-curveoff-controls/below.bin.zlib"),
+            ),
+            (
+                "exact",
+                include_bytes!("../../../../conformance/brushpen-curveoff-controls/exact.bin.zlib"),
+            ),
+            (
+                "above",
+                include_bytes!("../../../../conformance/brushpen-curveoff-controls/above.bin.zlib"),
+            ),
+            (
+                "priorx",
+                include_bytes!(
+                    "../../../../conformance/brushpen-curveoff-controls/priorx.bin.zlib"
+                ),
+            ),
+            (
+                "priory",
+                include_bytes!(
+                    "../../../../conformance/brushpen-curveoff-controls/priory.bin.zlib"
+                ),
+            ),
+            (
+                "priordiag",
+                include_bytes!(
+                    "../../../../conformance/brushpen-curveoff-controls/priordiag.bin.zlib"
+                ),
+            ),
+        ] {
+            let case = &receipt["cases"][name];
+            let mut points: Vec<P> = stroke
+                .points
+                .iter()
+                .map(|p| P {
+                    x: p.x as f32,
+                    y: p.y as f32,
+                })
+                .collect();
+            for (p, xy) in points.iter_mut().zip(case["points"].as_array().unwrap()) {
+                p.x = xy[0].as_f64().unwrap() as f32;
+                p.y = xy[1].as_f64().unwrap() as f32;
+            }
+            let pressure: Vec<f32> = stroke.pressures.iter().map(|&x| x as f32).collect();
+            let orientation: Vec<f32> = stroke.orientations.iter().map(|&x| x as f32).collect();
+            let tilt: Vec<f32> = stroke.tilts.iter().map(|&x| x as f32).collect();
+            let result = sample_object_stroke_wrapper(
+                GL_VERSION,
+                serialized_profile(1920, 1080).unwrap(),
+                stroke.pen_width,
+                0.0,
+                false,
+                false,
+                false,
+                &points,
+                &stroke.timestamps,
+                &pressure,
+                &orientation,
+                &tilt,
+                2,
+            );
+            let mut expected = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed)
+                .read_to_end(&mut expected)
+                .unwrap();
+            assert_eq!(
+                expected.len(),
+                case["records"].as_u64().unwrap() as usize * 44
+            );
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&expected)),
+                case["sha256"].as_str().unwrap(),
+                "{name}"
+            );
+            if matches!(name, "below" | "exact") {
+                assert_eq!(&expected[24..32], &[0; 8], "{name}");
+            }
+            if name == "above" {
+                assert_eq!(&expected[24..32], &[0, 0, 128, 63, 0, 0, 0, 0]);
+            }
+            let actual: Vec<u8> = sampled_instances(GL_VERSION, &result.unwrap())
+                .unwrap()
+                .instances
+                .iter()
+                .flat_map(|r| r.values)
+                .flat_map(f32::to_le_bytes)
+                .collect();
+            assert_eq!(actual, expected, "{name}");
+        }
     }
 }

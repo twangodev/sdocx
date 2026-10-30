@@ -1,0 +1,155 @@
+{
+  "scope": "Native GLV10 synthetic serialized host Unicorn controls; initial three points replaced, all later source points unchanged. No device paint claim.",
+  "capture_helper": "tools/brushpen-transform/curveoff_capture.py",
+  "cases": {
+    "zero": {
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          10
+        ]
+      ],
+      "records": 1064,
+      "sha256": "46b651f2f4c6b50e786e394551de8cf61944cb98a18c4b04804f668a32e23677"
+    },
+    "ulp": {
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          1.401298464324817e-45,
+          0
+        ],
+        [
+          10,
+          10
+        ]
+      ],
+      "records": 1064,
+      "sha256": "8e579dbc249ecd86fc2f8259420edb4c6cb6acc1a255bc9ffb81f184b2eb14e6"
+    },
+    "below": {
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0.00024414061044808477,
+          0
+        ],
+        [
+          10,
+          10
+        ]
+      ],
+      "records": 1065,
+      "sha256": "e5cbdf25efa94b96121d7b3d63114a4e060a70a424def14401694f55af19dc49"
+    },
+    "exact": {
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0.000244140625,
+          0
+        ],
+        [
+          10,
+          10
+        ]
+      ],
+      "records": 1065,
+      "sha256": "e5cbdf25efa94b96121d7b3d63114a4e060a70a424def14401694f55af19dc49"
+    },
+    "above": {
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0.00024414065410383046,
+          0
+        ],
+        [
+          10,
+          10
+        ]
+      ],
+      "records": 1065,
+      "sha256": "98a67d614d3730fb524c126dba8c0ddb8f596852d131bae175cb570b7a71d04c"
+    },
+    "priorx": {
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          10.000244140625,
+          0
+        ]
+      ],
+      "records": 1183,
+      "sha256": "099d1b6b28ac4c3e502579f55163c6e22cf7cf8945027486899d65f1ce40996a"
+    },
+    "priory": {
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          10
+        ],
+        [
+          0,
+          10.000244140625
+        ]
+      ],
+      "records": 1170,
+      "sha256": "09d8a462ea01fe13d8e0c2fb6d1b8765cf3edec6a5a8ead697ed44e29cd954c5"
+    },
+    "priordiag": {
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          10
+        ],
+        [
+          10.000244140625,
+          10
+        ]
+      ],
+      "records": 1207,
+      "sha256": "9f3fc61f7b7a09c32150696496e30c84218f50d4c03f344b965df0b719e75de9"
+    }
+  },
+  "capture_helper_sha256": "27df9ce5c8c4f705e57373c6dafe3042f5e25d20770781ae05848689afe02233",
+  "source_payload_sha256": "28b0848cb3aa9dadc700bf425fd390281c8de0d222e46f7126d0bcbcd527b60f",
+  "source_receipt": "conformance/brushpen-serialized/receipt.json",
+  "source_capture_helper": "tools/brushpen-transform/serialized_native_capture.py",
+  "interpretation": "Below and exact threshold emit 1065 native records, including a first tangent of zero; model fallback is conservative and is not a claim of native no-output. Prior direction controls can be movement gated."
+}
