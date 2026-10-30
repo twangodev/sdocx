@@ -97,6 +97,45 @@ impl Page {
             })
     }
 
+    /// Accepted objects in paint order with inherited native-geometry
+    /// admission, including container parents and non-stroke objects. This
+    /// permits callers to interleave their own handling of mixed page content.
+    pub fn composed_objects_with_context(&self) -> Vec<(&PageObject, bool)> {
+        fn visit<'a>(object: &'a PageObject, allowed: bool, out: &mut Vec<(&'a PageObject, bool)>) {
+            let allowed = allowed && !matches!(object.content, PageObjectContent::Descendant(_));
+            out.push((object, allowed));
+            fn children<'a>(
+                content: &'a PageObjectContent,
+                allowed: bool,
+                out: &mut Vec<(&'a PageObject, bool)>,
+            ) {
+                match content {
+                    PageObjectContent::Container(objects) => {
+                        for object in objects {
+                            visit(object, allowed, out);
+                        }
+                    }
+                    PageObjectContent::Descendant(inner) => children(inner, false, out),
+                    _ => {}
+                }
+            }
+            children(&object.content, allowed, out);
+        }
+
+        use crate::composition::RenderPass;
+        let mut objects = Vec::new();
+        for pass in [RenderPass::Base, RenderPass::Top, RenderPass::Masking] {
+            for root in self
+                .objects
+                .iter()
+                .filter(|root| root.render_pass() == Some(pass))
+            {
+                visit(root, true, &mut objects);
+            }
+        }
+        objects
+    }
+
     /// Strokes accepted by root composition, in stored traversal order.
     pub fn composed_strokes(&self) -> impl Iterator<Item = (&PageObject, &Stroke)> {
         self.objects
@@ -114,6 +153,20 @@ impl Page {
     /// geometry for its entire subtree, including descendants inside a
     /// container.
     pub fn composed_strokes_with_context(&self) -> Vec<(&PageObject, &Stroke, bool)> {
+        self.contextual_strokes(false)
+    }
+
+    /// Accepted strokes in composition paint order, with the renderer's
+    /// inherited native-geometry admission state. This traversal omits
+    /// non-stroke objects; use `composed_objects_with_context` when those objects must be
+    /// interleaved with strokes. Its indices differ from stored traversal order.
+    pub fn composed_strokes_in_paint_order_with_context(
+        &self,
+    ) -> Vec<(&PageObject, &Stroke, bool)> {
+        self.contextual_strokes(true)
+    }
+
+    fn contextual_strokes(&self, paint_order: bool) -> Vec<(&PageObject, &Stroke, bool)> {
         fn visit<'a>(
             object: &'a PageObject,
             native_allowed: bool,
@@ -145,12 +198,25 @@ impl Page {
         }
 
         let mut strokes = Vec::new();
-        for root in self
-            .objects
-            .iter()
-            .filter(|root| root.render_pass().is_some())
-        {
-            visit(root, true, &mut strokes);
+        if paint_order {
+            use crate::composition::RenderPass;
+            for pass in [RenderPass::Base, RenderPass::Top, RenderPass::Masking] {
+                for root in self
+                    .objects
+                    .iter()
+                    .filter(|root| root.render_pass() == Some(pass))
+                {
+                    visit(root, true, &mut strokes);
+                }
+            }
+        } else {
+            for root in self
+                .objects
+                .iter()
+                .filter(|root| root.render_pass().is_some())
+            {
+                visit(root, true, &mut strokes);
+            }
         }
         strokes
     }
@@ -194,6 +260,15 @@ fn retain_descendant(
 }
 
 impl PageObjectContent {
+    /// Return the stroke held by this object, including a promoted descendant.
+    /// Container children are visited separately by page object iterators.
+    pub fn as_stroke(&self) -> Option<&Stroke> {
+        match self.leaf() {
+            Self::Stroke(stroke) => Some(stroke),
+            _ => None,
+        }
+    }
+
     pub(crate) fn leaf(&self) -> &Self {
         match self {
             Self::Descendant(content) => content.leaf(),
@@ -357,6 +432,16 @@ mod tests {
                 .collect::<Vec<_>>(),
             [(1.0, true), (2.0, false)]
         );
+        assert_eq!(
+            page.composed_objects_with_context()
+                .into_iter()
+                .filter_map(|(object, allowed)| object
+                    .content
+                    .as_stroke()
+                    .map(|stroke| (stroke.points[0].x, allowed)))
+                .collect::<Vec<_>>(),
+            [(1.0, true), (2.0, false)]
+        );
 
         let mut mixed = page;
         mixed.objects = [
@@ -371,6 +456,26 @@ mod tests {
             content: PageObjectContent::Stroke(make_stroke(x)),
         })
         .collect();
+        mixed
+            .objects
+            .push(object(PageObjectContent::Descendant(Box::new(
+                PageObjectContent::Container(vec![object(PageObjectContent::Stroke(make_stroke(
+                    4.0,
+                )))]),
+            ))));
+        mixed.objects.push(PageObject {
+            render_layer: ObjectRenderLayer::Other(9),
+            source_offset: None,
+            content: PageObjectContent::Stroke(make_stroke(5.0)),
+        });
+        assert_eq!(
+            mixed
+                .composed_objects()
+                .filter_map(|object| object.content.as_stroke())
+                .map(|stroke| stroke.points[0].x)
+                .collect::<Vec<_>>(),
+            [1.0, 4.0, 3.0, 2.0]
+        );
         assert_eq!(
             mixed
                 .composed_strokes_with_context()
@@ -382,6 +487,25 @@ mod tests {
                 .map(|(_, stroke)| stroke.points[0].x)
                 .collect::<Vec<_>>(),
             "contextual metadata must retain stored-order replay stroke indices"
+        );
+        assert_eq!(
+            mixed
+                .composed_strokes_in_paint_order_with_context()
+                .iter()
+                .map(|(_, stroke, native_allowed)| (stroke.points[0].x, *native_allowed))
+                .collect::<Vec<_>>(),
+            [(1.0, true), (4.0, false), (3.0, true), (2.0, true)]
+        );
+        assert_eq!(
+            mixed
+                .composed_objects_with_context()
+                .into_iter()
+                .filter_map(|(object, allowed)| object
+                    .content
+                    .as_stroke()
+                    .map(|stroke| (stroke.points[0].x, allowed)))
+                .collect::<Vec<_>>(),
+            [(1.0, true), (4.0, false), (3.0, true), (2.0, true)]
         );
     }
 
@@ -428,6 +552,17 @@ mod tests {
 
         assert_eq!(page.elements().count(), 1);
         assert_eq!(page.strokes().count(), 1);
+        assert!(page.objects[1].content.as_stroke().is_none());
+        let PageObjectContent::Descendant(container) = &page.objects[1].content else {
+            unreachable!()
+        };
+        let PageObjectContent::Descendant(container) = &**container else {
+            unreachable!()
+        };
+        let PageObjectContent::Container(children) = &**container else {
+            unreachable!()
+        };
+        assert!(children[0].content.as_stroke().is_some());
         #[cfg(feature = "render")]
         assert_eq!(page.objects[1].stroke_count(), 1);
         page.strokes_mut().next().unwrap().pen_width = 4.0;
