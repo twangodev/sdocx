@@ -1974,4 +1974,157 @@ mod tests {
             .unwrap();
         }
     }
+    #[cfg(feature = "render")]
+    #[test]
+    fn third_serialized_brushpen_native() {
+        let mut stroke = crate::decode::decode_stroke(
+            include_bytes!("../../../tests/assets/brushpen-third/payload.bin"),
+            &crate::ParseLimits::default(),
+        )
+        .unwrap();
+        let point_bytes: Vec<u8> = stroke
+            .points
+            .iter()
+            .flat_map(|p| {
+                [(p.x as f32).to_le_bytes(), (p.y as f32).to_le_bytes()]
+                    .into_iter()
+                    .flatten()
+            })
+            .collect();
+        assert_eq!(
+            point_bytes,
+            include_bytes!("../../../tests/assets/brushpen-third/GetPoint.bin")
+        );
+        for (actual, native) in [
+            (
+                &stroke.pressures,
+                &include_bytes!("../../../tests/assets/brushpen-third/GetPressure.bin")[..],
+            ),
+            (
+                &stroke.tilts,
+                &include_bytes!("../../../tests/assets/brushpen-third/GetTilt.bin")[..],
+            ),
+            (
+                &stroke.orientations,
+                &include_bytes!("../../../tests/assets/brushpen-third/GetOrientation.bin")[..],
+            ),
+        ] {
+            let bytes: Vec<u8> = actual
+                .iter()
+                .flat_map(|v| (*v as f32).to_le_bytes())
+                .collect();
+            assert_eq!(bytes, native);
+        }
+        let timestamps: Vec<u8> = stroke
+            .timestamps
+            .iter()
+            .flat_map(|v| (*v as i32).to_le_bytes())
+            .collect();
+        assert_eq!(
+            timestamps,
+            include_bytes!("../../../tests/assets/brushpen-third/GetTimeStamp.bin")
+        );
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.BrushPen".into());
+        rendering.advanced_settings = Some("10;".into());
+        let records = crate::sample_brushpen_glv10_host(&stroke, 1920, 1080).unwrap();
+        let bytes: Vec<_> = records
+            .iter()
+            .flat_map(|r| r.iter().flat_map(|v| v.to_le_bytes()))
+            .collect();
+        assert_eq!(
+            bytes,
+            include_bytes!("../../../tests/assets/brushpen-third/geometry.bin")
+        );
+        let (atlas, grain) = source_textures();
+        let mut canvas = crate::InkRasterCanvas::new(
+            crate::InkRasterContext {
+                width: 321,
+                height: 228,
+                pixels_per_unit: 1,
+                origin: crate::InkRasterOrigin::TopLeft,
+            },
+            [0; 4],
+        )
+        .unwrap();
+        canvas
+            .paint_brushpen_glv10_host(
+                &stroke,
+                crate::BrushPenPaintContext {
+                    screen_width: 1920,
+                    screen_height: 1080,
+                    projection: [
+                        0.006_230_529_4,
+                        0.,
+                        0.,
+                        0.,
+                        0.,
+                        0.008_771_93,
+                        0.,
+                        0.,
+                        0.,
+                        0.,
+                        -0.000_030_518_51,
+                        0.,
+                        -1.,
+                        -1.,
+                        0.,
+                        1.,
+                    ],
+                    rgb: [0., 0., 0.],
+                    grain_period: [321., 228.],
+                    grain_offset: [132.823_96, 211.381_33],
+                    num_tiles: 3.,
+                    atlas: crate::BrushPenTexture {
+                        width: 144,
+                        height: 144,
+                        rgba: &atlas,
+                    },
+                    grain: crate::BrushPenTexture {
+                        width: 321,
+                        height: 228,
+                        rgba: &grain,
+                    },
+                },
+            )
+            .unwrap();
+        let actual: Vec<u8> = canvas
+            .pixels()
+            .as_chunks::<321>()
+            .0
+            .iter()
+            .rev()
+            .flatten()
+            .flatten()
+            .copied()
+            .collect();
+        let mut native = Vec::new();
+        flate2::read::ZlibDecoder::new(
+            &include_bytes!("../../../tests/assets/brushpen-third/frame.rgba.zlib")[..],
+        )
+        .read_to_end(&mut native)
+        .unwrap();
+        let sum: usize = actual
+            .iter()
+            .zip(&native)
+            .map(|(a, b)| usize::from(a.abs_diff(*b)))
+            .sum();
+        assert_eq!(actual.len(), native.len());
+        assert_eq!(sum, 0);
+        #[cfg(feature = "pdf")]
+        if let Some(dir) = std::env::var_os("SDOCX_BRUSHPEN_THIRD_EXPORT") {
+            let dir = std::path::PathBuf::from(dir);
+            let page = canvas.rendered_page(0).unwrap();
+            let mut options = crate::PdfOptions::default();
+            options.dpi = 72.0;
+            std::fs::write(dir.join("canvas.png"), canvas.to_png().unwrap()).unwrap();
+            std::fs::write(dir.join("canvas.svg"), &page.svg).unwrap();
+            std::fs::write(dir.join("direct.pdf"), canvas.to_pdf(&options).unwrap()).unwrap();
+            std::fs::write(
+                dir.join("svg.pdf"),
+                crate::render_svg_pages_pdf(&[page], &options).unwrap(),
+            )
+            .unwrap();
+        }
+    }
 }

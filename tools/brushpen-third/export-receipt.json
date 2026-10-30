@@ -1,0 +1,50 @@
+{
+  "scope": "A synthetic serialized GLV10 pressure and path variant; no device or saved-note parity.",
+  "native_sha256": "11e461b0c48ed4d1f62331f758061b243839eba307881d8e5077cb17dae8761c",
+  "versions": {
+    "numpy": "2.4.2",
+    "Pillow": "12.3.0",
+    "PyMuPDF": "1.28.2"
+  },
+  "pypdfium2_version": "5.14.0",
+  "pdfium_version": "156.0.8076.0",
+  "resvg_version": "0.45.1",
+  "exports_sha256": {
+    "canvas.png": "e0affa75ddc0240e129e9cc037c2972179a472188ae15af3196d667558fa4b14",
+    "canvas.svg": "2b06e218b0035ba50f37aadbc11740a9a8dfda86911dac27788df6fe8fbe138c",
+    "direct.pdf": "eb45c1b5992d4d7e0d403d6c4f46214c1e95a7324c8ce1c9ad2c89e078843217",
+    "svg.pdf": "c059761f70c31a43bf59e3c680dcc1434821473e0860bc1933793cbe87896043"
+  },
+  "results": {
+    "canvas_png": {
+      "alpha_l1": 0,
+      "alpha_max": 0,
+      "premultiplied_rgb_l1": 0
+    },
+    "svg_resvg": {
+      "alpha_l1": 0,
+      "alpha_max": 0,
+      "premultiplied_rgb_l1": 0
+    },
+    "direct_mupdf": {
+      "alpha_l1": 71,
+      "alpha_max": 1,
+      "premultiplied_rgb_l1": 0
+    },
+    "direct_pdfium": {
+      "alpha_l1": 0,
+      "alpha_max": 0,
+      "premultiplied_rgb_l1": 0
+    },
+    "svg_mupdf": {
+      "alpha_l1": 71,
+      "alpha_max": 1,
+      "premultiplied_rgb_l1": 0
+    },
+    "svg_pdfium": {
+      "alpha_l1": 0,
+      "alpha_max": 0,
+      "premultiplied_rgb_l1": 0
+    }
+  }
+}
