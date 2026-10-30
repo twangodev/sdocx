@@ -1,8 +1,7 @@
 //! Source-derived saved-stroke sampler for the shipped legacy `Pencil` GLV1.
 //!
-//! Test-only source model for the shipped legacy `Pencil` GLV1 saved-stroke
-//! route. It is registered from `ink.rs` only under `cfg(test)` and reuses the
-//! shared production SmPath implementation.
+//! Bounded source model for the shipped legacy `Pencil` GLV1 saved-stroke
+//! route, reusing the shared production SmPath implementation.
 //!
 //! Samsung Notes 4.4.45.37 Pencil DSO SHA256:
 //! 39eb599262676ca5ec67b86e702b43474a04e9ca9677072f247b131222189df9.
@@ -61,9 +60,10 @@ fn clamped_pressure(value: f32) -> f32 {
 }
 
 fn half_width(size: f32, pressure: f32) -> f32 {
-    size * (clamped_pressure(pressure) + 1.0) * 0.5
+    size.mul_add(clamped_pressure(pressure), size) * 0.5
 }
 
+#[allow(clippy::too_many_arguments)]
 fn emit_leg(
     path: &Quad,
     old_half_width: f32,
@@ -72,6 +72,7 @@ fn emit_leg(
     row_counter: &mut usize,
     records: &mut Vec<[f32; 4]>,
     leg_ends: &mut Vec<usize>,
+    max_records: usize,
 ) -> Result<f32, &'static str> {
     let length = path.length;
     if !length.is_finite() || length < 0.0 {
@@ -98,12 +99,12 @@ fn emit_leg(
     } else {
         let density_step = (old_half_width + target_half_width) * 0.25;
         let ratio = length / density_step;
-        if !ratio.is_finite() || ratio > MAX_OUTPUT_RECORDS as f32 {
+        if !ratio.is_finite() || ratio > max_records as f32 {
             return Err("Pencil path sample count exceeds the bounded output budget");
         }
         ratio.ceil() as usize
     };
-    if count == 0 || records.len().saturating_add(count) > MAX_OUTPUT_RECORDS {
+    if count == 0 || records.len().saturating_add(count) > max_records {
         return Err("Pencil path sample count exceeds the bounded output budget");
     }
 
@@ -136,12 +137,56 @@ fn emit_leg(
 /// The source curve controller joins saved points through midpoint-ended
 /// quadratics and runs one terminal leg to the last saved point. `Quad` is the
 /// shared 15-bit adaptive SmPath implementation used by production ink.
+#[cfg(test)]
 pub(crate) fn sample_saved_stroke(
     stroke: &SavedStroke<'_>,
     style: PencilStyleProfile,
 ) -> Result<SampledStroke, &'static str> {
+    sample_saved_stroke_with_policy(stroke, style, false, false, MAX_OUTPUT_RECORDS)
+}
+
+// Explicit test-only normal-stylus source context; other native event sources
+// can change the high threshold and need separate evidence.
+#[cfg(test)]
+fn sample_saved_stroke_equal_threshold(
+    stroke: &SavedStroke<'_>,
+    style: PencilStyleProfile,
+) -> Result<SampledStroke, &'static str> {
+    sample_saved_stroke_with_policy(stroke, style, true, false, MAX_OUTPUT_RECORDS)
+}
+
+#[cfg(test)]
+fn sample_synthetic_tool1_object_stroke(
+    stroke: &SavedStroke<'_>,
+    style: PencilStyleProfile,
+) -> Result<SampledStroke, &'static str> {
+    // Conditional synthetic ObjectStroke tool-1 context, observed on this
+    // host at sizes 2 and 5 and the captured projection. The 2-D distance
+    // arithmetic and other event sources have not been established.
+    sample_saved_stroke_with_policy(stroke, style, true, true, MAX_OUTPUT_RECORDS)
+}
+pub(crate) fn sample_saved_stroke_equal_threshold_bounded(
+    stroke: &SavedStroke<'_>,
+    style: PencilStyleProfile,
+    max_records: usize,
+) -> Result<SampledStroke, &'static str> {
+    sample_saved_stroke_with_policy(
+        stroke,
+        style,
+        true,
+        false,
+        max_records.min(MAX_OUTPUT_RECORDS),
+    )
+}
+fn sample_saved_stroke_with_policy(
+    stroke: &SavedStroke<'_>,
+    style: PencilStyleProfile,
+    equal_threshold: bool,
+    tool1: bool,
+    max_records: usize,
+) -> Result<SampledStroke, &'static str> {
     if stroke.pen_name != "com.samsung.android.sdk.pen.pen.preload.Pencil"
-        || stroke.tool_type != 2
+        || stroke.tool_type != if tool1 { 1 } else { 2 }
         || stroke.stroke_type != 0
         || !stroke.curve_enabled
     {
@@ -176,48 +221,116 @@ pub(crate) fn sample_saved_stroke(
     let mut records = Vec::new();
     let mut leg_ends = Vec::with_capacity(n);
     let mut row_counter = 0usize;
-    let mut previous_width = half_width(style.size, stroke.pressures[0]);
+    let mut previous_width = half_width(style.size, if tool1 { 0.5 } else { stroke.pressures[0] });
 
-    // First MotionEvent move: p0 -> midpoint(p0,p1), controlled by p0.
-    let first_mid = points[0].mid(points[1]);
-    previous_width = emit_leg(
-        &Quad::new(points[0], points[0], first_mid),
-        previous_width,
-        half_width(style.size, stroke.pressures[1]),
-        style.point_width_override,
-        &mut row_counter,
-        &mut records,
-        &mut leg_ends,
-    )?;
-
-    // Each following saved event starts at the previous midpoint, uses the
-    // prior saved point as its control, and ends at the next midpoint.
-    let mut last_mid = first_mid;
-    for i in 1..n - 1 {
-        let next_mid = points[i].mid(points[i + 1]);
-        previous_width = emit_leg(
-            &Quad::new(last_mid, points[i], next_mid),
+    if equal_threshold {
+        if style.point_width_override.is_some() {
+            return Err("unobserved Pencil distance-gate width override");
+        }
+        let mut last_point = points[0];
+        let mut last_mid = points[0];
+        let mut accepted = false;
+        let threshold = style.size / 5.0;
+        let mut flag = true;
+        for (&point, &pressure) in points.iter().zip(stroke.pressures.iter()).skip(1) {
+            let dx = last_point.x - point.x;
+            let dy = last_point.y - point.y;
+            let distance = dx.mul_add(dx, dy * dy).sqrt();
+            if distance < threshold {
+                leg_ends.push(records.len());
+                continue;
+            }
+            if tool1 && distance < 50.0 {
+                let old_flag = flag;
+                flag = !flag;
+                if old_flag {
+                    leg_ends.push(records.len());
+                    continue;
+                }
+            } else {
+                flag = true;
+            }
+            let next_mid = last_point.mid(point);
+            previous_width = emit_leg(
+                &Quad::new(last_mid, last_point, next_mid),
+                previous_width,
+                half_width(style.size, if tool1 { 0.5 } else { pressure }),
+                style.point_width_override,
+                &mut row_counter,
+                &mut records,
+                &mut leg_ends,
+                max_records,
+            )?;
+            last_mid = next_mid;
+            last_point = point;
+            accepted = true;
+        }
+        if !accepted {
+            if tool1 || !previous_width.is_finite() || previous_width <= 0.0 || max_records == 0 {
+                return Err("unsupported Pencil dot width, source context, or record budget");
+            }
+            // EndPen draws one initial point when all moves fell below size / 5.
+            records.push([points[0].x, points[0].y, previous_width * 0.5, 0.0]);
+            return Ok(SampledStroke { records, leg_ends });
+        }
+        let _ = emit_leg(
+            &Quad::new(last_mid, last_point, points[n - 1]),
             previous_width,
-            half_width(style.size, stroke.pressures[i + 1]),
+            half_width(
+                style.size,
+                if tool1 { 0.5 } else { stroke.pressures[n - 1] },
+            ),
             style.point_width_override,
             &mut row_counter,
             &mut records,
             &mut leg_ends,
+            max_records,
         )?;
-        last_mid = next_mid;
-    }
+    } else {
+        // First MotionEvent move: p0 -> midpoint(p0,p1), controlled by p0.
+        let first_mid = points[0].mid(points[1]);
+        previous_width = emit_leg(
+            &Quad::new(points[0], points[0], first_mid),
+            previous_width,
+            half_width(style.size, stroke.pressures[1]),
+            style.point_width_override,
+            &mut row_counter,
+            &mut records,
+            &mut leg_ends,
+            max_records,
+        )?;
 
-    // The terminal saved event closes midpoint -> final point. Native EndPen
-    // uses the terminal sample's pressure and shares the style row counter.
-    let _ = emit_leg(
-        &Quad::new(last_mid, points[n - 1], points[n - 1]),
-        previous_width,
-        half_width(style.size, stroke.pressures[n - 1]),
-        style.point_width_override,
-        &mut row_counter,
-        &mut records,
-        &mut leg_ends,
-    )?;
+        // Each following saved event starts at the previous midpoint, uses the
+        // prior saved point as its control, and ends at the next midpoint.
+        let mut last_mid = first_mid;
+        for i in 1..n - 1 {
+            let next_mid = points[i].mid(points[i + 1]);
+            previous_width = emit_leg(
+                &Quad::new(last_mid, points[i], next_mid),
+                previous_width,
+                half_width(style.size, stroke.pressures[i + 1]),
+                style.point_width_override,
+                &mut row_counter,
+                &mut records,
+                &mut leg_ends,
+                max_records,
+            )?;
+            last_mid = next_mid;
+        }
+
+        // The terminal saved event closes midpoint -> final point. Native EndPen
+        // uses the terminal sample's pressure and shares the style row counter.
+        let _ = emit_leg(
+            &Quad::new(last_mid, points[n - 1], points[n - 1]),
+            previous_width,
+            half_width(style.size, stroke.pressures[n - 1]),
+            style.point_width_override,
+            &mut row_counter,
+            &mut records,
+            &mut leg_ends,
+            max_records,
+        )?;
+    }
 
     Ok(SampledStroke { records, leg_ends })
 }
@@ -228,6 +341,7 @@ pub(crate) fn sample_saved_stroke(
 /// admission path. The native control was assembled with ObjectStroke setters,
 /// not deserialized from a Samsung document, so only that unresolved-name,
 /// null-setting, normal compressed-stylus projection is represented here.
+#[cfg(test)]
 fn sample_public_stroke_for_test(stroke: &crate::Stroke) -> Option<(SampledStroke, u32)> {
     const PEN_NAME: &str = "com.samsung.android.sdk.pen.pen.preload.Pencil";
     const ARGB: u32 = 0xff00_0000;
@@ -432,6 +546,81 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn equal_threshold_profile_draws_initial_dot_and_rejects_override() {
+        let points = [SavedPoint { x: 0.0, y: 0.0 }, SavedPoint { x: 0.1, y: 0.0 }];
+        let pressures = [0.5, 0.5];
+        let source = SavedStroke {
+            pen_name: "com.samsung.android.sdk.pen.pen.preload.Pencil",
+            tool_type: 2,
+            stroke_type: 0,
+            curve_enabled: true,
+            points: &points,
+            pressures: &pressures,
+            size: 2.0,
+        };
+        let sampled = sample_saved_stroke_equal_threshold(
+            &source,
+            PencilStyleProfile {
+                size: 2.0,
+                point_width_override: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(sampled.records, [[0.0, 0.0, 0.75, 0.0]]);
+        let single = SavedStroke {
+            points: &points[..1],
+            pressures: &pressures[..1],
+            ..source.clone()
+        };
+        assert!(
+            sample_saved_stroke_equal_threshold(
+                &single,
+                PencilStyleProfile {
+                    size: 2.0,
+                    point_width_override: None
+                }
+            )
+            .is_err()
+        );
+        let invalid_pressures = [-1.0, -1.0];
+        let invalid = SavedStroke {
+            pressures: &invalid_pressures,
+            ..source.clone()
+        };
+        assert!(
+            sample_saved_stroke_equal_threshold(
+                &invalid,
+                PencilStyleProfile {
+                    size: 2.0,
+                    point_width_override: None
+                }
+            )
+            .is_err()
+        );
+        assert!(
+            sample_saved_stroke_equal_threshold_bounded(
+                &source,
+                PencilStyleProfile {
+                    size: 2.0,
+                    point_width_override: None
+                },
+                0
+            )
+            .is_err()
+        );
+        assert!(
+            sample_saved_stroke_equal_threshold(
+                &source,
+                PencilStyleProfile {
+                    size: 2.0,
+                    point_width_override: Some(1.0)
+                }
+            )
+            .is_err()
+        );
     }
 
     #[test]
