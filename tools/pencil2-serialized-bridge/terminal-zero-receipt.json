@@ -1,0 +1,28 @@
+{
+  "scope": "Fresh setter-built Pencil2 V14, zero tolerance, deferred Drawing, ARM64 emulation and host Mesa; a separate deserialized object is discarded. Descriptor captured before Update; GPU submission not independently verified. No device or saved-note parity.",
+  "cases": [
+    {
+      "case": "terminal",
+      "initial_x": [
+        80,
+        90,
+        100,
+        110,
+        120,
+        130,
+        140,
+        140.3
+      ],
+      "input_sha256": "1333ce29b29174f8a7b0e6b86a9604a5d3307b24b759da98037c8e922703eef2",
+      "geometry_bytes": 8456,
+      "geometry_sha256": "4dadb38ccdcea4af23ad23e8c6446f75e524da99b577b75fc2aed0d5df42e322",
+      "native_frame_sha256": "a0bb65f1c4da66bb249af6338c36dd37f5f94d31d6d55613d3c588b6d442856b"
+    }
+  ],
+  "dependencies_sha256": {
+    "tools/pencil2-serialized-bridge/terminal-zero-control.py": "8b278e34c4016eac1f29bb064e1f348c30c2b4b9a553325c3593d702d7d3cc07",
+    "tools/pencil2-serialized-bridge/fresh-object-control.py": "a5d685a56f9c8356c738951ea30c502b4c6a7f5b35fe0656af9491ac39f9f871",
+    "tools/pencil2-serialized-bridge/capture.py": "c16da1f7407f6c362a55fdd2338a450b8b99a5f02bb4e29eea5788df3a740fa9",
+    "conformance/fountain-v14-saved-scene-inputs.json": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f"
+  }
+}

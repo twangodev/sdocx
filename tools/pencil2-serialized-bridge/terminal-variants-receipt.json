@@ -1,0 +1,63 @@
+{
+  "scope": "Fresh setter-built Pencil2 V14, zero tolerance, deferred Drawing, ARM64 emulation and host Mesa; a separate deserialized object is discarded. Descriptor captured before Update; GPU submission not independently verified. No device or saved-note parity.",
+  "cases": [
+    {
+      "case": "terminal-short",
+      "initial_x": [
+        80,
+        90,
+        100,
+        110,
+        120,
+        130,
+        140,
+        140.1
+      ],
+      "input_sha256": "dad632da49ed6cf78df17fbe92bb44b0c7e6e0ec2a8bdeb4fdbeef81835aebfb",
+      "geometry_bytes": 8456,
+      "geometry_sha256": "07337ad15f839d58eedae8cd4994aebca9e92c308ad86b2b281a413bf5df6e0a",
+      "native_frame_sha256": "9b94899815dc634d7057a77496fc983b70c58e6bbe404682674f0508c2ec7466"
+    },
+    {
+      "case": "terminal-long",
+      "initial_x": [
+        80,
+        90,
+        100,
+        110,
+        120,
+        130,
+        140,
+        145.0
+      ],
+      "input_sha256": "bd51fa506aab960da676dd0be02ec0ff5546171ab09e913d77b3c0b54a2a82b3",
+      "geometry_bytes": 9128,
+      "geometry_sha256": "7feb6d2aad17abffa0f60cfeb19b0219a7b3fa10b82ddb3eb50197cf69cc4a26",
+      "native_frame_sha256": "83424e56659dccbe6788e5e086f0dc619aede3d6f42178e8b314a703b42aebab"
+    },
+    {
+      "case": "terminal-reverse",
+      "initial_x": [
+        140,
+        130,
+        120,
+        110,
+        100,
+        90,
+        80,
+        79.7
+      ],
+      "input_sha256": "820e1fb60b84c5ad1a39b38b56cf2e8952998352f3b9565e9b4087dedc2a7ab6",
+      "geometry_bytes": 8456,
+      "geometry_sha256": "2fd031abe11b9db8a6ff51fa04078f7b5349344559c3b6f137c2afc915d14a7b",
+      "native_frame_sha256": "1fecbdf729984d35f72fd956aedd29c90bf3568f368d5a79417a7e5ff6454ac8"
+    }
+  ],
+  "dependencies_sha256": {
+    "tools/pencil2-serialized-bridge/terminal-variants-control.py": "b449003d84a0dd13f559c41941afd56b218e00211d06ee846cb70098d3366234",
+    "tools/pencil2-serialized-bridge/fresh-object-control.py": "a5d685a56f9c8356c738951ea30c502b4c6a7f5b35fe0656af9491ac39f9f871",
+    "tools/pencil2-serialized-bridge/capture.py": "c16da1f7407f6c362a55fdd2338a450b8b99a5f02bb4e29eea5788df3a740fa9",
+    "conformance/fountain-v14-saved-scene-inputs.json": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f"
+  },
+  "limitations": "Synthetic setter-built source channels only; native descriptor is captured before Update and has not been independently identified with GPU submission. Host Mesa and emulated ARM64 are not device or saved-note evidence. Capture script uses an absolute checkout path; transitive harness dependencies and host runtime libraries are not fully pinned."
+}
