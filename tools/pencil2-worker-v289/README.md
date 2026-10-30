@@ -1,0 +1,7 @@
+# Pencil2 mutex initialization control
+
+Run `python3 tools/pencil2-worker-v289/probe.py` and `PENCIL_SKIP_DRAW=1 python3 tools/pencil2-worker-v289/probe.py` after v219 preparation. This extends v288 and retains its native FIFO, guard, frame, and skip assertions.
+
+The guest pthread initialization and attribute callbacks track identity and lifecycle. The three native-constructed critical sections all initialize the mutex addresses later found in their objects. In this capture the wrapper's first section receives attribute type 1; its second section and the synthetic worker section receive a null attribute. Attribute objects are initialized, assigned type 1, and destroyed around the attributed initialization. The adapter uses a host `RLock` for type 1 and a host `Lock` for null/default attributes; other locks that predate interception retain v288's lazy RLock fallback. These host objects do not implement Android's guest mutex representation, error semantics, contention, or scheduling. Mutex destruction is not exercised. The wrapper initialization fields, renderer, list transplant, and explicit queue draining remain synthetic interventions; no device or saved-page parity follows.
+
+Both controls pass, retaining draw SHA-256 `a0230ba18bf716851b4079facb415b265ade62b80ef28bbfcaa0b1853776672e` and skip SHA-256 `8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a`. This lifecycle result does not establish a rendering change.
