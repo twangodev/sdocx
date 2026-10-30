@@ -292,3 +292,44 @@ in source order with source-over rectangle compositing, so overlaps accumulate.
 The grid API rejects the active unsupported paint and geometry flags described
 in its source; this guard is specific to the grid and does not describe the
 separate scalable material experiment's admission rules.
+
+## Document grid control
+
+The explicit `Crayon2DocumentGridProfile` uses caller-provided host context on a
+page whose dimensions match the unit-pixel grid. It emits ordered source-over
+rectangles into the document Scene, including the direct document PDF route.
+The caller asserts the effective opacity and host viewport; RGB must match the
+theme-adjusted explicit stroke color. Unsupported strokes, replay, slices and exhausted page work
+budget use the ordinary renderer. The 100,000 sample-visit ceiling applies to
+the whole page. This is a fixed-resolution experiment, not a scalable material.
+
+The retained independent 192×192 native opaque-background frame was compared to
+actual document exports using `write_independent_document_grid` with matching
+native texture hashes. The [receipt](document-grid-receipt.json) reports
+resvg 282/2/406, MuPDF 410/6/1044 and PDFium 411/6/1038 (differing pixels /
+maximum channel error / total RGB absolute error). These match the earlier
+standalone grid metrics for this source and prior; they do not establish
+arbitrary composition, saved-note or device fidelity. Reproduce using the ignored
+test with `SDOCX_CRAYON2_DOCUMENT_DIR` set to an existing directory, then
+rasterize the SVG with `crayon2_host_export` and run
+`compare_output_grid.py` with the direct document PDF as its third input.
+
+For the document control, keep the direct PDF separate from the SVG-page PDF
+produced by the rasterization helper:
+
+```sh
+export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
+work_dir=$(mktemp -d /tmp/sdocx-crayon-document.XXXXXX)
+SDOCX_CRAYON2_DOCUMENT_DIR="$work_dir" cargo test -p sdocx --features pdf,serde --lib write_independent_document_grid -- --ignored
+cargo run -p sdocx --features pdf --example crayon2_host_export -- "$work_dir/document.svg" "$work_dir/document.png" "$work_dir/svg-page.pdf"
+PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-precision-model/compare_output_grid.py "$work_dir/document.svg" "$work_dir/document.png" "$work_dir/document.pdf"
+```
+
+Compare `readers_vs_native` and `sha256` with the document receipt. The shared
+comparator's legacy scope string describes its original SVG-page use; this
+command deliberately passes the direct document PDF. Native capture uses the
+[independent control instructions](../crayon2-independent-control/README.md).
+The ignored writer requires the local native textures at
+`tmp/vector-parity-plan/crayon2-native-next/native-uploads`; it verifies their
+hashes before rendering. Reader packages and `/tmp/pdfium-lib` remain local
+prerequisites. Remove the temporary output directory after verification.

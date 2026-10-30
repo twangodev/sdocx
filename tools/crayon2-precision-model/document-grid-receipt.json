@@ -1,0 +1,46 @@
+{
+  "scope": "Actual document SVG and direct document PDF against retained synthetic 192x192 native host frame with matching native textures; opaque prior, unit output grid; not device, saved page, rescaling or arbitrary composition parity",
+  "metric_order": [
+    "differing_pixels",
+    "maximum_channel_error",
+    "absolute_rgb_error"
+  ],
+  "readers_vs_native": {
+    "resvg": [
+      282,
+      2,
+      406
+    ],
+    "mupdf": [
+      410,
+      6,
+      1044
+    ],
+    "pdfium": [
+      411,
+      6,
+      1038
+    ]
+  },
+  "sha256": {
+    "svg": "70d10e27773efdf9db6d74b5e46775f51f526410163a8e6d8577c34d75573a73",
+    "png": "86c42b59ff3644371c4c210d6f76b538856fe8ff39b90cd3fe05f01b3454f7b9",
+    "pdf": "ac772d3223f3adde4e733c031a6f9994edce314a76a7006ebaadc96f09a58b6b"
+  },
+  "producer": "write_independent_document_grid ignored Rust test",
+  "readers": "resvg 0.47.0, PyMuPDF 1.28.2, pypdfium2 5.9.0",
+  "source_sha256": {
+    "crates/sdocx/src/ink.rs": "414fdb7170e2dec7781bfda45774ebbc1906ed1a9b681c3189dff7c4fafb0524",
+    "crates/sdocx/src/ink/crayon2.rs": "4d30b49fa9cd3eaff9aa9b0b0432bc584c1403b376fb63857968fbc7ea369b9c",
+    "crates/sdocx/src/ink/crayon2/grid_test.rs": "487ee9cb6a54b0d5c88d401b058d91994dd43248b945a6cfaa2f2b48e61cd889",
+    "crates/sdocx/src/render.rs": "308a9a53f95c2869dcf646158795a4361e8df91d290e8a8913f188dfb7568c66",
+    "crates/sdocx/src/lib.rs": "184cd2d4c90a1da1bedaa679335e50a527ea7b2a8b384dd64cea477326a8479d",
+    "crates/sdocx/examples/crayon2_host_export.rs": "4e2483d4c5a9dbde4cf424cef935e6ebd61810097fdd812a4bf0cc24c9ea9088",
+    "tools/crayon2-precision-model/compare_output_grid.py": "b91520ca5d13b179f86d16d4236436f0245c5406191bbef67249a2c73da92034",
+    "tools/crayon2-independent-control/capture.py": "7c4ef0580aaa165fe4ca427a664883b00cb4bd312ccc32e39ac8e8542e5768a6",
+    "tools/crayon2-independent-control/verify_native.py": "e6eb228f3cc45200d13008f0d5b878040e8a3ad6b936b4d819b7c2a09de855c9"
+  },
+  "validation": "Clean HEAD source plus scoped document-grid change: 15 Crayon2 tests pass; fresh independent native capture verifies all geometry bytes and framebuffer hash; fresh actual document SVG and direct PDF reproduce every retained output hash and reader metric. Native replay is synthetic host Mesa; local runtime dependencies remain external. Cargo package --offline --allow-dirty --features pdf,serde compiled the packaged crate successfully.",
+  "native_vector_sha256": "4c6abae2cb7e163e959a42a21c8962b7adc8b9add770c279bfb27f1164b35b6a",
+  "native_frame_sha256": "2dc7558f45bac784ad1ba3d5e40f028ad5c7a4e96f80e1462f37930f9f742a7f"
+}

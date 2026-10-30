@@ -1,5 +1,6 @@
 //! Fixed output-grid approximation. This is not a scalable material.
 use super::Record;
+#[cfg(test)]
 use std::fmt::Write;
 
 pub(super) struct Grid<'a> {
@@ -50,7 +51,15 @@ fn value(p: [f32; 3], x: u32, y: u32) -> f32 {
     p[2].mul_add(y as f32, p[1].mul_add(x as f32, p[0]))
 }
 
-pub(super) fn fragments(records: &[Record], g: &Grid<'_>) -> Result<String, &'static str> {
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct GridFragment {
+    pub x: u32,
+    pub y: u32,
+    pub rgb: [u8; 3],
+    pub alpha: f32,
+}
+
+pub(super) fn sample(records: &[Record], g: &Grid<'_>) -> Result<(Vec<GridFragment>, u64), &'static str> {
     if g.width == 0
         || g.height == 0
         || g.width > 4096
@@ -75,7 +84,7 @@ pub(super) fn fragments(records: &[Record], g: &Grid<'_>) -> Result<String, &'st
         .iter()
         .map(|x| (x * 255.0).round() as u8)
         .collect::<Vec<_>>();
-    let mut svg = String::new();
+    let mut fragments = Vec::new();
     let mut work = 0u64;
     for r in records {
         let [x, y, rad, sel, bx, by] = r.lanes;
@@ -168,10 +177,21 @@ pub(super) fn fragments(records: &[Record], g: &Grid<'_>) -> Result<String, &'st
                     * 5.)
                     .min(1.);
                 if alpha > 0. {
-                    write!(svg,"<rect x=\"{px}\" y=\"{}\" width=\"1\" height=\"1\" fill=\"#{:02x}{:02x}{:02x}\" fill-opacity=\"{alpha:.9}\"/>\n",g.height-1-py,rgb[0],rgb[1],rgb[2]).unwrap();
+                    fragments.push(GridFragment { x: px, y: g.height - 1 - py, rgb: [rgb[0], rgb[1], rgb[2]], alpha });
                 }
             }
         }
+    }
+    Ok((fragments, work))
+}
+
+#[cfg(test)]
+pub(super) fn fragments(records: &[Record], g: &Grid<'_>) -> Result<String, &'static str> {
+    let (fragments, _) = sample(records, g)?;
+    let mut svg = String::new();
+    for fragment in fragments {
+        let GridFragment { x, y, rgb: [r, g, b], alpha } = fragment;
+        write!(svg, "<rect x=\"{x}\" y=\"{y}\" width=\"1\" height=\"1\" fill=\"#{r:02x}{g:02x}{b:02x}\" fill-opacity=\"{alpha:.9}\"/>\n").unwrap();
     }
     Ok(svg)
 }

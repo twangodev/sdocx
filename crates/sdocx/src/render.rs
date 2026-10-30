@@ -373,12 +373,46 @@ pub enum Marker3OutputScale {
     Eight,
 }
 
+/// Explicit fixed-grid Crayon2 host context for a page-sized, unit-pixel viewport.
+/// Textures, phase tables, projection, and effective color must belong to the
+/// same captured host context. RGB must match the effective themed stroke color;
+/// the caller asserts the effective opacity. This profile is resolution-specific.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Crayon2DocumentGridProfile {
+    pub phase_x: Vec<u32>,
+    pub phase_y: Vec<u32>,
+    pub point_atlas: Vec<u8>,
+    pub background_texture: Vec<u8>,
+    pub width: u32,
+    pub height: u32,
+    pub clip_scale: [f32; 2],
+    pub clip_translation: [f32; 2],
+    pub background_scale: [f32; 2],
+    pub rgba: [f32; 4],
+    /// Total sample visits permitted across the page, capped at 100,000.
+    pub max_samples: u64,
+}
+impl PartialEq for Crayon2DocumentGridProfile {
+    fn eq(&self, other: &Self) -> bool {
+        self.phase_x == other.phase_x && self.phase_y == other.phase_y
+            && self.point_atlas == other.point_atlas && self.background_texture == other.background_texture
+            && self.width == other.width && self.height == other.height && self.max_samples == other.max_samples
+            && self.clip_scale.iter().chain(&self.clip_translation).chain(&self.background_scale).chain(&self.rgba)
+                .map(|x| x.to_bits()).eq(other.clip_scale.iter().chain(&other.clip_translation).chain(&other.background_scale).chain(&other.rgba).map(|x| x.to_bits()))
+    }
+}
+impl Eq for Crayon2DocumentGridProfile {}
+
 /// Options controlling SVG rendering.
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct RenderOptions {
+    /// Opt into the explicit Crayon2 host grid for a unit-pixel page viewport.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub crayon2_grid_profile: Option<Crayon2DocumentGridProfile>,
     /// Caller asserts Pencil identity, normal stylus context, and 1920 by 1080 unit-scale output. Experimental SVG only.
     #[cfg_attr(feature = "serde", serde(default))]
     pub old_pencil_svg_profile: bool,
@@ -1003,6 +1037,7 @@ impl DocumentTextCache {
             options.marker2_output_scale,
             options.magicpen_output_scale,
             options.magicpen_host_minimum_dot_grid,
+            options.crayon2_grid_profile.as_ref(),
             options.old_pencil_svg_profile,
             #[cfg(feature = "pdf")]
             options.old_pencil_pdf_profile,
@@ -1527,6 +1562,7 @@ fn render_page_contents_svg(
     marker2_output_scale: Option<u32>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
+    crayon2_grid_profile: Option<&Crayon2DocumentGridProfile>,
     old_pencil_svg_profile: bool,
     #[cfg(feature = "pdf")] old_pencil_pdf_profile: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
@@ -1625,6 +1661,8 @@ fn render_page_contents_svg(
         marker2_remaining_vertices: Cell::new(65_536),
         magicpen_output_scale,
         magicpen_host_minimum_dot_grid,
+        crayon2_grid_profile,
+        crayon2_grid_remaining: Cell::new(crayon2_grid_profile.map_or(0, |p| p.max_samples.min(100_000))),
         old_pencil_svg_profile,
         #[cfg(feature = "pdf")]
         old_pencil_pdf_profile,
@@ -1702,6 +1740,8 @@ struct CompositionContext<'a> {
     marker2_remaining_vertices: Cell<usize>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
+    crayon2_grid_profile: Option<&'a Crayon2DocumentGridProfile>,
+    crayon2_grid_remaining: Cell<u64>,
     old_pencil_svg_profile: bool,
     #[cfg(feature = "pdf")]
     old_pencil_pdf_profile: bool,
@@ -1780,6 +1820,32 @@ fn render_object(
         native_allowed && !matches!(object.content, PageObjectContent::Descendant(_));
     match object.content.leaf() {
         PageObjectContent::Stroke(stroke) => {
+            if native_allowed && !context.replay && context.slice.is_none()
+                && let Some(profile) = context.crayon2_grid_profile
+                && [context.page.width, context.page.height] == [profile.width, profile.height]
+                && stroke.color.is_some_and(|color| { let effective = context.theme.foreground_color(color); [effective.r, effective.g, effective.b] == [profile.rgba[0], profile.rgba[1], profile.rgba[2]].map(|v| (v * 255.).round() as u8) })
+                && let (Ok(phase_x), Ok(phase_y)) = (profile.phase_x.as_slice().try_into(), profile.phase_y.as_slice().try_into())
+            {
+                let grid = crate::Crayon2HostGrid {
+                    phase_x, phase_y, point_atlas: &profile.point_atlas,
+                    background_texture: &profile.background_texture, width: profile.width,
+                    height: profile.height, clip_scale: profile.clip_scale,
+                    clip_translation: profile.clip_translation, background_scale: profile.background_scale,
+                    rgba: profile.rgba, background: None, max_samples: context.crayon2_grid_remaining.get(),
+                };
+                if let Ok((fragments, used)) = crate::ink::crayon2::sample_host_grid(stroke, &grid) {
+                    for fragment in fragments {
+                        let color = format!("#{:02x}{:02x}{:02x}", fragment.rgb[0], fragment.rgb[1], fragment.rgb[2]);
+                        let bounds = BoundingBox { x_min: f64::from(fragment.x), y_min: f64::from(fragment.y),
+                            x_max: f64::from(fragment.x + 1), y_max: f64::from(fragment.y + 1) };
+                        svg.push(rectangle(bounds, 0., 5).fill(Paint::from_hex(&color)).fill_opacity(f64::from(fragment.alpha)));
+                    }
+                    context.crayon2_grid_remaining.set(context.crayon2_grid_remaining.get() - used);
+                    *stroke_index += 1;
+                    progress.advance(1);
+                    return;
+                }
+            }
             #[cfg(feature = "pdf")]
             if native_allowed
                 && !context.replay

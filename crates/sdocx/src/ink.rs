@@ -9,7 +9,7 @@ pub(crate) mod calligraphy;
 pub(crate) mod chinesebrush_glv123;
 #[cfg(feature = "render")]
 pub(crate) mod colored_pencil;
-mod crayon2;
+pub(crate) mod crayon2;
 pub use crayon2::{Crayon2HostGrid, Crayon2HostMaterial, render_crayon2_host_grid_svg, render_crayon2_host_svg};
 mod host_half;
 mod host_raster;

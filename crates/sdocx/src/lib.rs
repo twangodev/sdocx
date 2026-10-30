@@ -110,7 +110,7 @@ pub use progress::{Progress, ProgressStage};
 #[cfg(feature = "render")]
 pub use render::{
     AirBrushRenderProfile, BackgroundDiagnostic, ChineseBrushFwidthOutputProfile,
-    ChineseBrushRenderProfile, DefaultPenOutputScale, DocumentTextCache,
+    ChineseBrushRenderProfile, Crayon2DocumentGridProfile, DefaultPenOutputScale, DocumentTextCache,
     FountainV14OutputScaleProfile, FountainV16OutputScaleProfile, FountainV17OutputScaleProfile,
     FountainV17RainbowRenderProfile, GeometryDiagnostic, GeometryDiagnosticKind,
     InkPen2HalfGridViewport, InkPen2RenderProfile, InkPen2V1OutputScale, InkPenRenderProfile, LegacyMarkerCenterlineProfile,

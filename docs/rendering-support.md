@@ -249,6 +249,12 @@ Profile admission and validation are narrower than the names above. See
 [Marker4 V7](reverse-engineering/marker4-v7.md), and
 [Marker4 V8](reverse-engineering/marker4-rendering-findings.md).
 
+The explicit `Crayon2DocumentGridProfile` adds fixed-resolution host sampling to
+document SVG and direct PDF, with a page-wide 100,000 sample-visit ceiling and
+ordinary fallback outside its guards. Its [native control](../tools/crayon2-precision-model/document-grid-receipt.json)
+retains nonzero reader errors; saved-note, device and rescaling fidelity remain
+unverified.
+
 The experimental `render_crayon2_host_svg` API accepts a source stroke and
 explicit `Crayon2HostMaterial` phase tables, textures and projection. Its bounded
 standalone SVG matches a retained synthetic host geometry stream but has
