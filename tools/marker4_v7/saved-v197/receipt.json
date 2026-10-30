@@ -1,0 +1,49 @@
+{
+  "scope": "Original quiz.sdocx saved Marker4 V7 stylus stroke 69. Native redraw then isolated RTV3 paint through host Unicorn/Mesa adapters, 1x, 1024x512 white composite. Public SVG and direct PDF. No archive Drawing or Samsung device claim. Source coordinates translated for export and generic control changes settings to force fallback.",
+  "note_sha256": "38fd0ef0729d3a113e1c14bcc10557dcc263e5a3582fd80a3cf99c8c2c4ad40a",
+  "source_sha256": "6f14596ccc02d2436b8f4404caebf62b11692f406d01d9635a72696bc0628733",
+  "native_receipt_sha256": "30426891930c5039570f9a1f2e64c5b753248313a8e655453c3d6021a645037f",
+  "native_rgba_sha256": "4a4b9cd8de1ce1b9b88131b0b3bd74e459e857627fa5982d83e25029115218bb",
+  "native_stamp_json_sha256": "73291a374f455adfdf744d774581a961eb63823396d4ad6544321400c2ac560c",
+  "native_producer_sha256": "926df325c626c4804d0648f55b25e5fc00aecc29c41cd73cea1fdc2a2684a089",
+  "native_stamp_count": 504,
+  "input_samples": 824,
+  "tool": 2,
+  "width": 35.50513458251953,
+  "argb": "0x733396ff",
+  "script_sha256": {
+    "capture.py": "60f58ec96d69796573cae4aa590885ec40d15f23dcad2b253b9a4f8bc729aa78",
+    "verify_source.py": "6183ea91a7b79a849e8f5a41bb52be0fdb10137d9726b14297ab3d31be69bcdc",
+    "export.rs": "8ae875819f2cec1a74520bb270c77f349390aae52b3fc8741e3fdc09d95a0ab9",
+    "compare.py": "9994b4ef717ca656793b643b596cdfb0388ccc8b18268cb456d6c213082e4ed0"
+  },
+  "export_sha256": {
+    "public": {
+      "svg": "aedf3227990c45536f83373aebe8ed92997d33872adfc54e3225c183fac2bb8f",
+      "pdf": "27a59d572fb49d176015d4d5897e61b3ccd53512ee3c5f2251a8e09a55f5dd60"
+    },
+    "generic": {
+      "svg": "febdcc4cfd261aeaad32924830312e4633d8ee999b7261128746b955cf692f67",
+      "pdf": "98332abf77165464c68b7c8ed2ca12edf0365399edde22117d0af1b8f0e6e34b"
+    }
+  },
+  "readers": {
+    "resvg": "0.45.1",
+    "mupdf": "1.28.2",
+    "pypdfium2": "5.14.0",
+    "pillow": "12.1.1"
+  },
+  "rgb_l1": {
+    "public": {
+      "resvg": 42275,
+      "mupdf": 60364,
+      "pdfium": 95966
+    },
+    "generic": {
+      "resvg": 2701500,
+      "mupdf": 2682620,
+      "pdfium": 2693820
+    }
+  },
+  "dependency_boundary": "Capture pins listed DSOs and helpers; native transitive dependencies and runtime environment are not fully pinned. Parser binary build provenance is unattested."
+}
