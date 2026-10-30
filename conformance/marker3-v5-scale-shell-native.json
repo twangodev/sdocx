@@ -1,0 +1,5853 @@
+{
+  "schema": "sdocx.marker3-v5-scale-shell-native.v1",
+  "scope": "Synthetic Drawing callback vectors replayed into RTV1, native host-Mesa transparent RGBA8 frames. Explicit projection intervention; no saved-note/device or native opaque-backdrop parity.",
+  "cases": {
+    "saved1-4-ffe72946-0.5": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          20,
+          0
+        ]
+      ],
+      "pressures": [
+        0.05,
+        1
+      ],
+      "case": "saved1",
+      "scale": 0.5,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0xffe72946",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 4.0
+        },
+        "matrix_f32": [
+          0.5,
+          0,
+          0,
+          0,
+          0,
+          0.5,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          112.0,
+          80.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 176,
+        "native_addpoint_xy_upload_sha256": "819544e76182ca6ed6d555844a042a0233a3beb6c1286698c4cb87d21c42cfc9",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            96.0
+          ],
+          [
+            32.79985296726227,
+            96.0
+          ],
+          [
+            33.799742221832275,
+            96.0
+          ],
+          [
+            34.68860363960266,
+            96.0
+          ],
+          [
+            35.75525259971619,
+            96.0
+          ],
+          [
+            36.999691009521484,
+            96.0
+          ],
+          [
+            37.831692695617676,
+            96.0
+          ],
+          [
+            38.72769832611084,
+            96.0
+          ],
+          [
+            39.687705993652344,
+            96.0
+          ],
+          [
+            40.71171855926514,
+            96.0
+          ],
+          [
+            41.79973602294922,
+            96.0
+          ],
+          [
+            42.95175647735596,
+            96.0
+          ],
+          [
+            43.901817321777344,
+            96.0
+          ],
+          [
+            44.79979419708252,
+            96.0
+          ],
+          [
+            45.73042869567871,
+            96.0
+          ],
+          [
+            46.693716049194336,
+            96.0
+          ],
+          [
+            47.68966197967529,
+            96.0
+          ],
+          [
+            48.718257904052734,
+            96.0
+          ],
+          [
+            49.77951431274414,
+            96.0
+          ],
+          [
+            50.87342071533203,
+            96.0
+          ],
+          [
+            51.99998474121094,
+            96.0
+          ],
+          [
+            52.0,
+            96.0
+          ]
+        ],
+        "rt_size": 4.0,
+        "saved_object_stroke_replay": false,
+        "scale": 0.5,
+        "source_case": "marker3_linked_saved1",
+        "source_point_bytes_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91"
+      },
+      "frame_sha256": "1acfa7c777d2a1f719a5198e033d459a4ef7a079b654f2a69fd465407b7557b4",
+      "frame_zlib_base64": "eNrt0zEOgkAQBVAuQKewrdLs3sTOo9hQaWMgQKsR72smFB6C95rJT341ya8qAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2Fzq5jqnsvbH7rmk8o0b+XY4P8Y2vyNPKX8iR9fHYB/7H9r8+u//dLd/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAffgBMY0b6Q==",
+      "gl_error": 0,
+      "native_vector_bytes": 176,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved1-4-ffe72946-1": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          20,
+          0
+        ]
+      ],
+      "pressures": [
+        0.05,
+        1
+      ],
+      "case": "saved1",
+      "scale": 1,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0xffe72946",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 4.0
+        },
+        "matrix_f32": [
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          96.0,
+          32.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 176,
+        "native_addpoint_xy_upload_sha256": "819544e76182ca6ed6d555844a042a0233a3beb6c1286698c4cb87d21c42cfc9",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            96.0
+          ],
+          [
+            32.79985296726227,
+            96.0
+          ],
+          [
+            33.799742221832275,
+            96.0
+          ],
+          [
+            34.68860363960266,
+            96.0
+          ],
+          [
+            35.75525259971619,
+            96.0
+          ],
+          [
+            36.999691009521484,
+            96.0
+          ],
+          [
+            37.831692695617676,
+            96.0
+          ],
+          [
+            38.72769832611084,
+            96.0
+          ],
+          [
+            39.687705993652344,
+            96.0
+          ],
+          [
+            40.71171855926514,
+            96.0
+          ],
+          [
+            41.79973602294922,
+            96.0
+          ],
+          [
+            42.95175647735596,
+            96.0
+          ],
+          [
+            43.901817321777344,
+            96.0
+          ],
+          [
+            44.79979419708252,
+            96.0
+          ],
+          [
+            45.73042869567871,
+            96.0
+          ],
+          [
+            46.693716049194336,
+            96.0
+          ],
+          [
+            47.68966197967529,
+            96.0
+          ],
+          [
+            48.718257904052734,
+            96.0
+          ],
+          [
+            49.77951431274414,
+            96.0
+          ],
+          [
+            50.87342071533203,
+            96.0
+          ],
+          [
+            51.99998474121094,
+            96.0
+          ],
+          [
+            52.0,
+            96.0
+          ]
+        ],
+        "rt_size": 4.0,
+        "saved_object_stroke_replay": false,
+        "scale": 1.0,
+        "source_case": "marker3_linked_saved1",
+        "source_point_bytes_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91"
+      },
+      "frame_sha256": "a05eda46502b0450e7504bef8fae2dc9a814033bc5b92557256beb149dc82cb3",
+      "frame_zlib_base64": "eNrt1z1OgkEQBmBOQK2hc/mz8QLfRyCR2GsnB/MIHkRFoSQQJYAGKqIthXaaKTYaawtinieZZnczxSaTvFOpAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAt4vq4eCqdnI9aXS3s2bv7S4V89tUPG2Pzz6jRvXO87jeeblP5TIqn/98HxV3D6lcrVqnu027/xE9o7cfhv0Vc5pn+q8revthMP/A/jmvHlzm/D9t9F4j+98cFY95hiPTxw4wTOXid/6P93lfyPtB5P91u/8u/wMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/A9fDtrKhQ==",
+      "gl_error": 0,
+      "native_vector_bytes": 176,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved1-4-ffe72946-2": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          20,
+          0
+        ]
+      ],
+      "pressures": [
+        0.05,
+        1
+      ],
+      "case": "saved1",
+      "scale": 2,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0xffe72946",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 4.0
+        },
+        "matrix_f32": [
+          2.0,
+          0,
+          0,
+          0,
+          0,
+          2.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          64.0,
+          -64.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 176,
+        "native_addpoint_xy_upload_sha256": "819544e76182ca6ed6d555844a042a0233a3beb6c1286698c4cb87d21c42cfc9",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            96.0
+          ],
+          [
+            32.79985296726227,
+            96.0
+          ],
+          [
+            33.799742221832275,
+            96.0
+          ],
+          [
+            34.68860363960266,
+            96.0
+          ],
+          [
+            35.75525259971619,
+            96.0
+          ],
+          [
+            36.999691009521484,
+            96.0
+          ],
+          [
+            37.831692695617676,
+            96.0
+          ],
+          [
+            38.72769832611084,
+            96.0
+          ],
+          [
+            39.687705993652344,
+            96.0
+          ],
+          [
+            40.71171855926514,
+            96.0
+          ],
+          [
+            41.79973602294922,
+            96.0
+          ],
+          [
+            42.95175647735596,
+            96.0
+          ],
+          [
+            43.901817321777344,
+            96.0
+          ],
+          [
+            44.79979419708252,
+            96.0
+          ],
+          [
+            45.73042869567871,
+            96.0
+          ],
+          [
+            46.693716049194336,
+            96.0
+          ],
+          [
+            47.68966197967529,
+            96.0
+          ],
+          [
+            48.718257904052734,
+            96.0
+          ],
+          [
+            49.77951431274414,
+            96.0
+          ],
+          [
+            50.87342071533203,
+            96.0
+          ],
+          [
+            51.99998474121094,
+            96.0
+          ],
+          [
+            52.0,
+            96.0
+          ]
+        ],
+        "rt_size": 4.0,
+        "saved_object_stroke_replay": false,
+        "scale": 2.0,
+        "source_case": "marker3_linked_saved1",
+        "source_point_bytes_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91"
+      },
+      "frame_sha256": "3c03d3d3d6440b25188b45c31b544ff3a825dd70686206365930cdde3ccefe73",
+      "frame_zlib_base64": "eNrt2jlLA0EUAOCgVcRkc6gx8QpYiLWNvRBEEDUSg4lH8IoXiPEo/afW/gF7ZYqFkCYSbRa/D4aBYYZ9y/BgZvelUgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMNxaOlpv5+YuQrsqLD1uZ0uN0Ldyc+d3xeprPVtuXReqT7XJ6e143mVh8aERVU5uitXneF4zqnRui9WXeP1WplQ/zs93w3gnv3Bbj8rtMN6/LszvXx/Gd7KzzW5hqbeZmdk9yy/e72VnD+PnhljtGPxeemx8oje1/PaxWvtKUgsxh9jtIIwu5NH7ysZn0vI/xBxit4Mw+pk/aXk/2NwFYDThLp30/A/vYCdB/gPO/8DP+P4H/5f/f8DQ+p+o3P6L+p/9qHw0WP8T1sX9QVQ5Vf8DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJAc30HMwvI=",
+      "gl_error": 0,
+      "native_vector_bytes": 176,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved1-4-ffe72946-4": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          20,
+          0
+        ]
+      ],
+      "pressures": [
+        0.05,
+        1
+      ],
+      "case": "saved1",
+      "scale": 4,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0xffe72946",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 4.0
+        },
+        "matrix_f32": [
+          4.0,
+          0,
+          0,
+          0,
+          0,
+          4.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.0,
+          -256.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 176,
+        "native_addpoint_xy_upload_sha256": "819544e76182ca6ed6d555844a042a0233a3beb6c1286698c4cb87d21c42cfc9",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            96.0
+          ],
+          [
+            32.79985296726227,
+            96.0
+          ],
+          [
+            33.799742221832275,
+            96.0
+          ],
+          [
+            34.68860363960266,
+            96.0
+          ],
+          [
+            35.75525259971619,
+            96.0
+          ],
+          [
+            36.999691009521484,
+            96.0
+          ],
+          [
+            37.831692695617676,
+            96.0
+          ],
+          [
+            38.72769832611084,
+            96.0
+          ],
+          [
+            39.687705993652344,
+            96.0
+          ],
+          [
+            40.71171855926514,
+            96.0
+          ],
+          [
+            41.79973602294922,
+            96.0
+          ],
+          [
+            42.95175647735596,
+            96.0
+          ],
+          [
+            43.901817321777344,
+            96.0
+          ],
+          [
+            44.79979419708252,
+            96.0
+          ],
+          [
+            45.73042869567871,
+            96.0
+          ],
+          [
+            46.693716049194336,
+            96.0
+          ],
+          [
+            47.68966197967529,
+            96.0
+          ],
+          [
+            48.718257904052734,
+            96.0
+          ],
+          [
+            49.77951431274414,
+            96.0
+          ],
+          [
+            50.87342071533203,
+            96.0
+          ],
+          [
+            51.99998474121094,
+            96.0
+          ],
+          [
+            52.0,
+            96.0
+          ]
+        ],
+        "rt_size": 4.0,
+        "saved_object_stroke_replay": false,
+        "scale": 4.0,
+        "source_case": "marker3_linked_saved1",
+        "source_point_bytes_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91"
+      },
+      "frame_sha256": "618b5040ab743e84faaf81ba6e9f437ddea44b20c29e048c21b18132cb996487",
+      "frame_zlib_base64": "eNrt3MlqU1EYAGAREWmT2CZpU6ttE22tgt24ERStY53nWRywWGdtcW4VdKUbXakvoL6NLvQFHDb6BLpVfiQ0hroQ0txIvw9+uCe5uYd7ck6499yTf9YsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqI3i3KYl+zMdx0ey3aMRsX0lV7wzml98P7Y3pvLbK8sHMgtOxPbFbPHm+ubc1m3p9n1RjtiRLhxYMre5v/p4F7I9N0bzpYmD8xec3J0pHI59r+VK94ZSbbvLx7uUK96K4+3NdByNctS5OdW2s7r+gXmZlcdaFp6N/Ydbu69uT7fvP93adfFqrnT3ZMui89X7V9a3Nd2253d9pYn4/IZUflvl+UR5T6bjSJSv50rjW1JtuyJiO16L91Y1ta49l+2+Hsc73rJweHVTdn31+Uab6lk0ssHm3NCLzoHXb3vXfv62fOhnreLTss0/anm8/zHe9a778rJz4E20sZ5GI0nPnpOZaO978qFv8NtMH6fTHdHG0dap2XPSeh5Ji374qND/zNisbzwsLH3qN4Ckjbf3PTYek4m4DtADSfB+f8v7vsGvxmJy9wLmA0hKzPUZh8lGzAnqidRbPI+KOWljMPnnAp4NUm/xTNr4a4yI70KPpJ5Gsj1jxl5jRKwR0iMx/o1/cP3v+h+me/6v1ut8xb9HfAfm/0jC884Vr4zBZCOeweqJJMH6H+t/mNms/7X+l5kr/vvn/z/1j2jzaHs9kEb4DYjrAPcC0x/RxtHW/vtHI84HxJxgrZ8LfOzf9N0633VfYq4v2lhPo5FN5v/qGYuI7cilVZn/q7Ic+bLG8osflPN1Rf6vKMf7O9OFg5P5vyaPF7m14v1D8ztPlfNxRU6tcj6u+PzlXPH23/J/VdY/Vf6vM61dlyrzf1XuP1V9UY76yvm/yuczVf6vyFE2Vf6veC3yf61pym6oPl/P+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP70C5y0NB8=",
+      "gl_error": 0,
+      "native_vector_bytes": 176,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved1-4-ffe72946-8": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          20,
+          0
+        ]
+      ],
+      "pressures": [
+        0.05,
+        1
+      ],
+      "case": "saved1",
+      "scale": 8,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0xffe72946",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 4.0
+        },
+        "matrix_f32": [
+          8.0,
+          0,
+          0,
+          0,
+          0,
+          8.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -128.0,
+          -640.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 176,
+        "native_addpoint_xy_upload_sha256": "819544e76182ca6ed6d555844a042a0233a3beb6c1286698c4cb87d21c42cfc9",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            96.0
+          ],
+          [
+            32.79985296726227,
+            96.0
+          ],
+          [
+            33.799742221832275,
+            96.0
+          ],
+          [
+            34.68860363960266,
+            96.0
+          ],
+          [
+            35.75525259971619,
+            96.0
+          ],
+          [
+            36.999691009521484,
+            96.0
+          ],
+          [
+            37.831692695617676,
+            96.0
+          ],
+          [
+            38.72769832611084,
+            96.0
+          ],
+          [
+            39.687705993652344,
+            96.0
+          ],
+          [
+            40.71171855926514,
+            96.0
+          ],
+          [
+            41.79973602294922,
+            96.0
+          ],
+          [
+            42.95175647735596,
+            96.0
+          ],
+          [
+            43.901817321777344,
+            96.0
+          ],
+          [
+            44.79979419708252,
+            96.0
+          ],
+          [
+            45.73042869567871,
+            96.0
+          ],
+          [
+            46.693716049194336,
+            96.0
+          ],
+          [
+            47.68966197967529,
+            96.0
+          ],
+          [
+            48.718257904052734,
+            96.0
+          ],
+          [
+            49.77951431274414,
+            96.0
+          ],
+          [
+            50.87342071533203,
+            96.0
+          ],
+          [
+            51.99998474121094,
+            96.0
+          ],
+          [
+            52.0,
+            96.0
+          ]
+        ],
+        "rt_size": 4.0,
+        "saved_object_stroke_replay": false,
+        "scale": 8.0,
+        "source_case": "marker3_linked_saved1",
+        "source_point_bytes_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91"
+      },
+      "frame_sha256": "ceebb7a290b067a435d50a2c4a7d8fd1127d99ae37599f5b9e9d336242397b39",
+      "frame_zlib_base64": "eNrt3UtsVFUYB3CEttOZTufdMrSUTqf2hYhC5aEg0FoQFSUiiuATREFAKyhqfEUXutClLmSvCxcuxbhy6SMujDEG4isx8RFjiDHGxIXRfIsmDdFOQmOq3N8v+SeTuefeew45X5m5cx/z5gEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwH/PcCq77Or2jhv2l5Y8+FCl/lQkXsd76zKlsdsKi+89VK4dP1bpf+ZIue+xHblFe9Zkild2Nbf2zLR8fVtpfGe+647Y3iMd/c9Gm92F7n2XZ4obO5tS1ZFU9uIt2Y7r7y0tmZys9D1xtFJ/+r5S79Gt7Z3bL2ptv2T+vAvmT+9fLIs20/s3ms6vjX0cKPUei31MVupP3lro3ruprXz1inR+9bbcwp1TfXug3Pf43mLP4bFsZWu9JTPQqH+r0oV123PVXbHe1NhuK3Tv39BWnljSnO5rNP7iguZyfkFzMV7He7Es2kTbWCfW7W1O1zdnO7btKXTfE3043tH/XIwt9ru8NTc60/Zj+d+NbyLbcd2FLW3DMY6b8otun77fqfFVm1JdU8vPHr+KOL+lLpjfGnX3QnXklZO1NR98P7Llz3PJ50Pjv5zruqcGx840avNO39qPZtO/2aRR/74Znvi90fg/uPDKryIztfly6Kpf52J8p4fGf/6nZSrk/BT/F91RXHzgzd7L3p2LOSf/j6iU8098pn6tZ+Vb5reo/+TILWgqxHe7jwc2fmdui/pPjlpLpv+lRUtPmNOi/pMljiuf6F7+hvks6j95n/lfrC591VwW9Z888X3fPBb1n8zj/J8MbPrBPBb1nyxxvtnrPStPmsOi/pPnzmLPQfNX1H/yxDm9zusT9Z9McQ2JuSvqP5merw6/bO6K+k+mt2pr3jd3Rf0nz0CqbcS8FfXvu7+I+k+Wu4s9h8xbUf/JFPd9Mm9F/at/EfXv87+I+nf8T0T9+/1PRP2fv+bqPtmi/pl7cS9/c1fUv2MAIuo/WVz/K+o/2eLZPuavqP9kiud7ecaPqP/kivt/fjq46UfzWNR/Mrn/t6j/5PL8D1H/yeb5X6L+/Q3wOUDUf7K/C8TxAMcERf0n+3cBvw2K+k/2+QFxjpDzBEX9J1ecKxzXC8Q1Q7O5bvD00PjP57ruZ4NjPzVq83ZtzYf/1nWN345s/mM2/ft6eOK3RuN/r3/9F5GZ2nw+NP7LXNT4qcGxM+qfEPcPiL8HcR+huJdYJF7He2szxQ27C937DpR6j01W6k8eLNUe3p6r7lqVLlxRbUp1zbT88kxx447coj2xvYcq9aeizS35rrtWZwrrK00tnYOp7NKrspVr9xZ7Dh8u1x6drPQ9sb+05MHY73Aqu+zs/sWyaDO9fyvS+dWxj1gW+zhS7nvs5nzXnRvayhPLW3Oj17R33nhfqfdo9O1QuXY8npG4sa28udaS6W/Uv9F0fu223MKdsV6sf3+59siufNfd6zKlscXN6d5G449jL7n5Tfl4He/FsmgTbWOdWDe2M56tXBPbjT4crdSfjn+P2O+y1vYVM23/otb2S/9ufGPZytZ6S2YgxnFjrrp7+n6nxtfZlKpOLT97/CoCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPi/+At7UXnX",
+      "gl_error": 0,
+      "native_vector_bytes": 176,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-8-80336699-0.5": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 0.5,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 8.0
+        },
+        "matrix_f32": [
+          0.5,
+          0,
+          0,
+          0,
+          0,
+          0.5,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          112.0,
+          93.5,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 8.0,
+        "saved_object_stroke_replay": false,
+        "scale": 0.5,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "550f67ba933026e97659d68df9b63acff1eddaa275f007a102a40a305b201b2e",
+      "frame_zlib_base64": "eNrt2T1Lw3AQB+BCbdqmQZNUtEatSttBLPhGOyhOboIgOOmX8Cv40fW2kEGck+eBI/sP7sj9r9cDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAID/6Q/TYpDm1WCSH8d3ZzgppQLtlx0uHg7Wz1/V/et3vfbm65d0//RWQtBe0efN3q9XzId+MtqVFLTPKD+6LJebj79mQFSSlXNpQUv3/9j9fyvJpmfx39/s/+Li7n1cVFfSgm7MhGy2eGzOgfH05Fo60A35+c1bvf/L5fYzdgbJQHfeCJq3AalAd2Sz1VPcCaPiJiAR6N6bQJQkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AeAkM+4=",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-8-80336699-1": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 1,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 8.0
+        },
+        "matrix_f32": [
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          96.0,
+          59.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 8.0,
+        "saved_object_stroke_replay": false,
+        "scale": 1.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "2885536da78c334ffe397c81dfc80d8552e92cdba7151094780a892ec8f9f949",
+      "frame_zlib_base64": "eNrt28trE1EUB+A2jzaJjnknTbA2takNWtM2bUQsiPWF0hZRBK3gQt24UBBFcFP1T9dbKPgoONGNmXwfnO0sfnDP3Dn3ztQUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPyb9GyhXJxfvV9b2X45t37vU7N/+31z7e7HxurO29Zg9zBUeWnrSWlx49FsVFucTqWzUoPxl8mdrlW6w4P25v7XONUa7H1uXNp5U6idG6Qy2bwEYXxF7Qs34q79n/rA5t6X6sq1F7nSXE+KMJ7C3v5v1v9xhe+EUmftQXqmUJImTNb6P66j2UCxsSxRSP7+/+TZwO5hmAtIFcbDqPO/P1Xj8q13Ubt3czqVykgX/n+/n//d+fDr+d+ofSA8L53NRdKF8Zb6vpDzlbP94kJ/f6SZQGfjYegtEoRkKFTn1ytLw6dxe0D5/OBxJhfVJQdJmRmcqoZ3e9weEPpFmDNIDhK0F6gvbIV5Qawe0B0e6AGQvO+B+sXrr+P0gHDWKDFIlpmo2qn1tl/F+XdAWpDMHlBdvvrc+ofJlM2faVa6V57Z/8OE9oBCsXXSfULzP5gMP94nDHV0F9A9IAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAICJ9A1G6vnn",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-8-80336699-2": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 2,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 8.0
+        },
+        "matrix_f32": [
+          2.0,
+          0,
+          0,
+          0,
+          0,
+          2.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          64.0,
+          -10.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 8.0,
+        "saved_object_stroke_replay": false,
+        "scale": 2.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "3e44cb233d78877a3a585753379997f511efe917ea343a98a055a7502ba6a017",
+      "frame_zlib_base64": "eNrt3etPXEUUAPB22YV9swv7pCsstFBhgS1QtbEtQlpBrfURjR+NMSYarTGa+oiJ0T/dnGrRNGpr2btc4PdLJoTl8mUmZ5h75sxw4QIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACky8Rkvlqozw1KraUb0cqdK7eKzYXr8fXR993l3VKr/3K5s3y72Hhh6/Fz8TtT063lbL7S1ItwuuSK1c70/Ma91mD/wdzO/d+O02ZXXv2k1r/2XmFmbj0zkcvrXUiviNOI2ePG/T+19sbdb6u9tYOpavOynob0xX578+BhErH/ZKv1t97P17treh1SsOYvVNtJ/d3/t9bdefvX6YXN+1PV1hUjACdnen79rXHG/t9b59obP1Xmru5nC5WWkYDxijx/c7D31UnF/+PWePHWZ94JYLwi5k469o/eCbbv/VLrD9/N5kuzRgaSF3v2aYn/v/YNb3xcmLm0YXTg/MX/UV6gu/JaJpsrGCVIRtTrpTH+j/YKF4bvRE2SkYLRS0v+72l1hFFTbLRg9E5y/+9ZW2v9zjfFxvy20YLROon6n+fLCRz+WJlb2buYmcgZNRhhHmCM9b/HbdXe6uuZ3FTZqMFo54DTsA6IVl+6/pE6ARj9u0DkA9KeE/xjDtj+cLJU7xk1GK2n3v/RWb5davZfevT5n/d/xLt5nOnpDA9/GOveQKWxaMQgHWJdHnNDc233i7HNAdXGkp6H9IgcXawLmmt7Xya/P7j/db7WXdXrkC7xjl7tDQ4TP0N49ean8c6ixyF9io2FnYjRJOeA9ubd75wjhnTKlWqXIm+f5BwQeYfCTG9Tb0MK8wLZXKHcuXyzs/Xmz8mtAw4eRj2D3ob0vg80V3c/T3JfwNlBSK/Yt4v7PpKaA+J/GehlSK+4+7O+uP1BIvuCg/0HUcuklyHFOYHcVDmpc8j2BCH9Lmayk3EX+KjjP2qQ9C6cDrE3MMqzyOIfTpdSa/GVuAPU+h/OpzhvGHX98n9wPkUdX3t48L39Pzi/c8DznCVW/wNnZA6Y7Q3/T05Q/S+ctXXAs91PGM+IfTh7/ut+wvgsfhbP6Ck4u568nzDO/MvzAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAnE+/A81STNc=",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-8-80336699-4": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 4,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 8.0
+        },
+        "matrix_f32": [
+          4.0,
+          0,
+          0,
+          0,
+          0,
+          4.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.0,
+          -148.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 8.0,
+        "saved_object_stroke_replay": false,
+        "scale": 4.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "a41bb62c701ff75ae97d84761ab36ac6d6e7ae5ca44e1144174d9ada525cdcc6",
+      "frame_zlib_base64": "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",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-8-80336699-8": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 8,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 8.0
+        },
+        "matrix_f32": [
+          8.0,
+          0,
+          0,
+          0,
+          0,
+          8.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -128.0,
+          -424.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 8.0,
+        "saved_object_stroke_replay": false,
+        "scale": 8.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "d549844b83b844719f2547d72365e410287363bd947efb7570dfdb660144eedc",
+      "frame_zlib_base64": "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",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-12-40be5520-0.5": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 0.5,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x40be5520",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 12.0
+        },
+        "matrix_f32": [
+          0.5,
+          0,
+          0,
+          0,
+          0,
+          0.5,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          112.0,
+          93.5,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 12.0,
+        "saved_object_stroke_replay": false,
+        "scale": 0.5,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "9725ad8457ef1839e5d3b6a56bac82e23b7058fe801283ba0d873facfee8ad29",
+      "frame_zlib_base64": "eNrt2s1Kw0AUBtD8TZPGNpbYVsHSiiBUpeJKNyK+/1PpLAKlVK3b8Ry4kEWy+eBeuDPJMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4m7rM2zYU3VBNlZ9JBdKW51mxmoS7bV+/PC+aj/1aT8N2Pi6v86/XJAXpuWyrzWHfH5sD01HRSwvSEnv7t/6P9bRo3md1uZQYpKNvyqtT+n+ouCtIDdLZ/zddeLjv69dTZ8CyrdbxO+lBGvbP/yehmC3G1eqnGXDThUczANLVjYqL2/PR7rsZEHcHKUG6QpHXcT/YzZu3Y/cCEoK0VUUe4rnfYf/Hu0PpQPqKPCuH/4RixWf7P/wv8ZwwliQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGHwCG5Mtog==",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-12-40be5520-1": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 1,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x40be5520",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 12.0
+        },
+        "matrix_f32": [
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          96.0,
+          59.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 12.0,
+        "saved_object_stroke_replay": false,
+        "scale": 1.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "6c353d53819563c5d0593ec39fb6d39e414562c7a61bd56c5ebaaf56f0db363e",
+      "frame_zlib_base64": "eNrt3FtrE2EQBuDsedscmwOtthqJra3V1iIoePb//yqdC6GIlJjsxW73eWBoSKCBF2bYfDvsYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM2aVdlqMy1vLufVh5tl/e3tsvoSf68X1ad3q/pH1PmsvFtPiuujOjsu0qSSGnRbnibls3Fxebuqv9+t6p/bVsyGJ8N8MyrSmRShm6KH/6fv/zUHTob5izpPhtKE7pjX2ck+vX+/4ndD/D+pQjc8HxdXTfV/VJwZnI2KizJLaulCu8WZXpP9/6fiHHFSpgsJQ//6P+pqXn2M+wRShn5c//9dbxbV5+PDfC1paJ8mz/8eqpgByWCQSBzaZd/7f9vW2bh4lSVJLnFoj133f3apmDXxfVKHdtlm/7eJGbCeFK/NAOiWKksOYs/v4qh8v+8MeDrKX0oUuif2fOP3Qlwb7DMD7ApCdy0PstPfM+Drrv0f9x6lCN01rbLlZlre7tL/cZ4gQei2wyKdxHMB9D/0+0zA9T/0UzwPKJ4N5PwP+jsDTkfF+TZ7QNKCx+ehfcJ4Lz6z/wOP2/19wqh4He9JBgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAX1q60iE=",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-12-40be5520-2": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 2,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x40be5520",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 12.0
+        },
+        "matrix_f32": [
+          2.0,
+          0,
+          0,
+          0,
+          0,
+          2.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          64.0,
+          -10.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 12.0,
+        "saved_object_stroke_replay": false,
+        "scale": 2.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "754b15ed8d4ea5e94aa10611bda9ab2a98721ef24dfab8c29acef93f0d66cfbb",
+      "frame_zlib_base64": "eNrt3YdOW0kUAFBet41tDIZUSK8kYbNKlL6r/f+vWt+IJ6EoOE6wX8HniJEpBgGjuZ6503Z2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACgP5LF2yhPJweD7NaNUX5yXu4dDrO78Xg0zI9vjvL78Rgfz4fZnfp58T3TMp2PinSaJUnuvwn9EG3+1m7+4Pl+9f7t0eC/q5YXB9WHR3vlWcSKSZkeJN9DC9Al8Todr92n8+rTOtr9ZWURC95EfIk4478O7Rvm6fj+tDjdZLv/sSzizOeTSfE8+gRqANoxyJPdB9PiVZNt/2J5czj4dm9SvFjEgX21Ac32+Zt+3b+svD6svh6Pi6dVlozUDGxejPe70PYvlmf75bv4vdJkJ1NDsBmRf3t5UH3sWvuvy6Jf8lJuADYjcvBdbfsXcoSfYr2BvgCsT8zBr2t+v6G+wGnMUag5WE/fvy9tvy5PZ+Xf+4PsptqDq5kPstt9a//nc4X/xFpj4wH4c13M+/9OOZ4Uz6osGapJ2L72X68jHhfpTG3CdvT/f5YT2KuyQzUKq+tj/m/ZHGHsPVarsJq+zf+tmBc8UbOwmj6s//mdcnY0+PfOOH9sbgBWGwNseq9/G+X2bv4oT5NSDcNy12Ee4LK9A2IALNel/b/rLnGmgL3EsFysq2/z/I9N7xuI803UMiyPAde1HxB/l34A/Hos0MT5n22Uh3vla/sH4dfWff53V0qMcYwFYDX1/R+xVri+16O+7yMe64/rx/N7QU7ujosnsS63q2MB95HAZuVpUkQ8eDIr33YtBlgnCM0o0qSKsUTcAdSV9h9nHrp7BJoTZ/vHft2uxICISWoFmh0TRJ4gzvlvu/1HbtM9hNC8uBu4C/lBYwBoR9wL3vaaw4hDagLaUWbJIO77Mg8A2ytycW3kBLR/6IY4v+vVvPqi/w/baVZlN5pccyz/B90yLdN53P9r/g+2UxNrhaz/ge7aLdK9x7Pyr02dF67vD90W+/Vj3768P2xvDFiMBc7s/4XtjQHrWCsYP8MZQNDPGHCV8wmdAwr99ifnE8Ze//gefX64HlY5nzC+Fs+R54fr6WfnE8b78TlrewAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+NH/bAOEUw==",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-12-40be5520-4": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 4,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x40be5520",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 12.0
+        },
+        "matrix_f32": [
+          4.0,
+          0,
+          0,
+          0,
+          0,
+          4.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.0,
+          -148.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 12.0,
+        "saved_object_stroke_replay": false,
+        "scale": 4.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "2c6abff1e34654f83e68a11e9429c54362d8e17c4b312e810eeceb1f66a15dde",
+      "frame_zlib_base64": "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",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-12-40be5520-8": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 8,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x40be5520",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 12.0
+        },
+        "matrix_f32": [
+          8.0,
+          0,
+          0,
+          0,
+          0,
+          8.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -128.0,
+          -424.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 12.0,
+        "saved_object_stroke_replay": false,
+        "scale": 8.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "29ac5ea276a0a98d8b234475011c1b91004949235df3c6013376e76923792891",
+      "frame_zlib_base64": "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",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-1-80336699-0.5": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 0.5,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 1.0
+        },
+        "matrix_f32": [
+          0.5,
+          0,
+          0,
+          0,
+          0,
+          0.5,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          112.0,
+          93.5,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 1.0,
+        "saved_object_stroke_replay": false,
+        "scale": 0.5,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "247fbf476c3c7359126de83e67e8cf20229caec3dff4ef5be1cc5141ddeec0a4",
+      "frame_zlib_base64": "eNrt2MsRgkAQRVFgbD4zJUq5QAsX5B+lRQBG0OeEcFfdr+sAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4L9oz2Ns23e8v86o61sRyGu4TS3q46ME5HXdBCpAXmWqWz+UUAKS7gPLul8/gRKQdBMoMasAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAkNMPHycCDw==",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-1-80336699-1": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 1,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 1.0
+        },
+        "matrix_f32": [
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          96.0,
+          59.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 1.0,
+        "saved_object_stroke_replay": false,
+        "scale": 1.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "3cebf593eb238b057f47309d5d8ddfd5dacd980cba71a00532d55efc8808d947",
+      "frame_zlib_base64": "eNrt2stKAlEcwGEvIzPqjI63HE0wKG3Q0IWbKIMuRKvqCYIWbVv1Aj16zCO0Pt8Hh7P/wf/AOZxaDQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+pz2Yb+eH199sXj5We2+xfan2arU6/ZlCEOb8n1w9fOdn+/ckL8p6M4rVgrDUG81We7jYpcXFcbS++VQEwjQuj1/ZfH0fJdlEDQhPlHRH093zz2h1/aEGhHgGZJO0WN0lg9lGDQhT0p+u8+X+rdGKUzUgwDMgn152xstDFHeHakB44t7kPDstn7wLQphanV6RFue31V8BNSDAu8BgtqneBas/RWpAeKrZN/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYfgDTLoaqw==",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-1-80336699-8": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 8,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 1.0
+        },
+        "matrix_f32": [
+          8.0,
+          0,
+          0,
+          0,
+          0,
+          8.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -128.0,
+          -424.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 1.0,
+        "saved_object_stroke_replay": false,
+        "scale": 8.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "db05ac608cda44a05c24c603e7bddd71afa9239109a829d623ce947fc0baddf7",
+      "frame_zlib_base64": "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",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-2-80336699-0.5": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 0.5,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 2.0
+        },
+        "matrix_f32": [
+          0.5,
+          0,
+          0,
+          0,
+          0,
+          0.5,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          112.0,
+          93.5,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 2.0,
+        "saved_object_stroke_replay": false,
+        "scale": 0.5,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "4625dfa472fca3c39505a20b04942ff54d0332019a0240f8509e51ca90b89374",
+      "frame_zlib_base64": "eNrt1zEKwkAQQNFkXWNcRRJcFANRCFbaqKm8/8UkvTfY92Au8IthpqoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4L/Y7nPKtznl8b1M218eqyZ1ykCZNofTPeXrpw6xUQPKU4cQ03F8LfeBGlDqLZCnbT88lYAy7c7T1w6Acq1TN/gFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMr0AzVeBUg=",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-2-80336699-1": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 1,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 2.0
+        },
+        "matrix_f32": [
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          96.0,
+          59.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 2.0,
+        "saved_object_stroke_replay": false,
+        "scale": 1.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "52078b4df27a2590f61e9c0168c891540404346c6a026a598a78f39524eb9e26",
+      "frame_zlib_base64": "eNrt2ksvg0EUBuD2a6uq99KLipYWQbSISioukRAbrYgFsbAjlkTs+enyLWwl1vM8yfkDb3LezEwmkQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA/2kOrz7bB9PvvyadzdckBWHuf23t8LHY3jhPZWaLEoMAJJPRTKG6nKu1d+bXx0/xxF1Q7g6nwoGwumCu3h3F+7+wefpSaPWP07liQzAQjsxcqZVv9Ma/94LZ6uK2VCAsv/tfWd2/0wEQ4FkgX1mqrOzdLh5MvkpLW5cSgbDkm72jan/0sLB58lzuDCfxO4FUIBxRJluo9kb39a2z10p390YHQGB3gVypWe4MrpvDy4/G4OI9GUVpqUA4klEq09i5eIv/E8UjEQisA1LprP0HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACMcPd/syfA==",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "saved3-2-80336699-8": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 8,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 2.0
+        },
+        "matrix_f32": [
+          8.0,
+          0,
+          0,
+          0,
+          0,
+          8.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -128.0,
+          -424.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 2.0,
+        "saved_object_stroke_replay": false,
+        "scale": 8.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "17eef48e7fe6bcd433401faec747e2878086154e38760a45ffb35ddfec8d3378",
+      "frame_zlib_base64": "eNrt3YtPW9cZAPD4AQbbGBsbm2dIeCe8AkkakixZSEiyJO2q7t1VaddVq6q1zfrYQ+vWaX/6+oHoaAUJarF9zf39pCuQLWTr3vMdzvM7584BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASdRXHB4v1qevlFtzt+KK3+O1XP9AZaA6tlxqXnitPL5wt9S8eKMw1LiYzfcX4+9e9n6ub2CoUBmdK7Vmb+69N3rh+kC1tRSvf/u5g5XWYH1q49vPbUxvxuee9Pt5cvDDROxG3DaWbv9xfOvpvyeuvvHfw1e81lx98Jfvvx5Xc+3BZ9WLm7+In8e931p/+OWR763ufFq9sPFmffHWH8Y2n3x11Oc2lm9/UGrObr/q+8V7UbfULm79srl6/0Vrbffz+sL28+Hz668P1iZWsn2FsicN3zU4MrEasXNUfJ6la3Tl3sfR/sjmC6WD69y5TEYJIK3KYwt3jvvffGbrgcv3/vz/9sf9F9FGiPZF9D+UCNIU+2mK+1dd0V8Ymlja+aZZMKJ0cLbb/JNrafu/f9IrxiIKleZ8X7EyFuMiSgtnbayvsXznT2L91df41rOvY4yyMr3ys5jbUHrodTGOLrZ/2FW9sPlWzGMqRfSq+tKt98XyjxgnWN/9IupQfQN6TfRpxzef/kscn9JYwcL28xgz7CtWJ5QuEj/uV5/aELenf8Uap8rUpYe5QrGmlJHYvn9r9qZ4bd81Mn/97VjzrKQh/tN5xdxK7G/YqwcymaxSh/Z/WtcSbL9bHpu7fXifExj/S984YexBUgLpNvN/3Zo3fPhlcXTmmhJIV8cArP/p2jV25fE/YmzgIGcCdNr++t/bH4jHLs4Xrt5/EXkKBmrjl40R0vFxQPt/kjNnOHf9d4VKY1appJPs/01WToJiY+aqUkmn6wDtgISMDWw++UodQDf6AsYDkpOjLOYI5CKi02OCMS8Qc4NHrQ+I116Z//Ml7x+b/3Nl55PqzMbP64s33xu78uSfx+X1PMj/+bLvd6bmCjce/a02u/WryJGsdNJJsUYo1gnGWuG44veDXDhRHmP+qjw2/5OIx/6h+oXv5v8++v3IvRtjXJETPPoc0c4dGG4tHs7Ju5f/e2Rq/eBz9/N6V8ZO+v3iZ4ypj16++9HhvbpH5RXupXogco/k+geHlUw4mYM6J5PN5mPd3cj8jXcil0+v1gO12au/PqouBE4m2h+VyUu7tdlrv9nvk+x+0Wt1QK6/WPUk4XREH+Vwf6EX9hZGHaYtAKc03lGqTg6fX3sWa/J6Z73A3Y/i7LNMJpvzBOHHyw+U6jH3Njy9+qRX5kPju+6fYwScZl0Q4+49UQecX32ayeb7PTU4XXE2YswpJr0OiDlVYwLQHv3l2nSsXYj8/8nNL/Dor3tjg9YOQltksrm+oYnFe0edQZ6YOYJLdz6MdounBe1RbExvxjmBSc4vYC8RtM/+nonZ7di/n8j9hBuP/64dAO0XZ4bH+R9JzD8c65+j3+IpQRvHBnL5QmXq8qMkjg3E/ofYT+UpQVtrgUzMExy3F7q7Z5m//p+9M8qcRQBtFeeBDk0s309iPRC5GpxdDO0Xe5Ajz0HS5goqUyuPPR3ojEJldC7yGCWpDoi9j54MdK4OSFo7IHIhRN4kTwfaLz9QbsQa3aNyHXZ1D9HM+hv2D0BnRF7EocnlB83VnU+Ts1bg5nv95fqMpwOdEflOk1UHbL+rHQAdrAO+6X8nKfdQ5GN3JiF0TuQmjXn55MwNzG7nB4eangx0RuTyizW6UQ/EWr2u7yFce/CZpwKdF2sHk9AO8CSgC22BXL4QuT3FP6S0Dsjm+4cmlna6eT6zpwDdFWcqjsxff7sbYwLuPiRDrB+OekD8Q0rrgOHmwujKvY/FP6RT5PNqrux8Iv4hrWMCY8v1he3n4h/SKc4Cj/mBdp5f7C5DD9QD44s/Ff+QTnEGcDv2D7iz0Bv6StXJ+tKt98U/pFN/qTZ1mucVu6PQY32BvkJ5b1zwFNYJuJvQo/2BwUorziqOc8HFP6RT5PoX/5BOMT9Ym7v2W/EPKe0LlKqTI/Ov/V78QzrF2QOR23N869nX4h/SKfINR65/8Q9pbQuU6ifZP+ROwdkUewhba7ufi39IaV9gZGK1cenOh+If0mk/r9iNd8Q/pFM21zdQHJ259v39Q+4MpEfUAYfzDLsjkC6Hzx5yNyBdDp895G5AGiuBTDbOAHYjAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAs+Z/j7CM5A==",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "phase-1": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 1,
+      "phase": 0.25,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 8.0
+        },
+        "matrix_f32": [
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          96.25,
+          59.25,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 8.0,
+        "saved_object_stroke_replay": false,
+        "scale": 1.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "816b41957e9f70074a49cb055e258459a60e28e33c1a07cabd10149dd9990e27",
+      "frame_zlib_base64": "eNrt28lPU1EUB2A60nkepRWKBRFRoMqw0KghokRNjLpQHHYuNDG6MC5MNP7peiVsiMYSWNjH9yU33bzVLznnnd5739QUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJxcptxeLM4s7dSGWy9rC1uvfq/h5n51MHoafku95d18a24zmSk2pQXRkW/Nb5+79ujHOKu1svOxvrD9OlNpX5QcTLbpYmPQXL71btz6P1ztq7ufa8ONF+lCfVaKMJnCfH/c2j86D5T6l+/Hk6msNGGyhHf4Ser/cFXm1h6HWUKiMDlyzdnrp1H/YXVW733J1ftrUoXJkEhliqc1Axz8H7jzodAZ3piKxeLShf9fMlNoVAbrT1pXdj6dVh8o9S7djSfTOenCpPSBfD2dr/bShWo/rFS+MpPKltrpQu18sbt4q3Zh4/m49d8dPfgW9gQS6WxZsjD5Yr9e6PnWYCuc/4/bB6rzo2ehh0gPoiGVK3WOs2cQng2zheQgKrNAIhXuDXZHD7+P2wNC35AcREc4P2wu334/Tg8o91f2JAbRMl1qzDeWbr4dpwfYC4DoSRfrc+GbwX/VfzhLkBZEz8G+4Ob+32q/vrj9JpZITksKotoDyt0/nQ101ve+hv1CCUG0Hb1PGL4RzNZ7q5KBs9QH8vVwhzCeSGWkAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcLb9BFid+kY=",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "phase-2": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 2,
+      "phase": 0.25,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 8.0
+        },
+        "matrix_f32": [
+          2.0,
+          0,
+          0,
+          0,
+          0,
+          2.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          64.25,
+          -9.75,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 8.0,
+        "saved_object_stroke_replay": false,
+        "scale": 2.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "2dc70858d26a2af4b33267838eff2648e312a96fd090f27a82138fe009c41bf1",
+      "frame_zlib_base64": "eNrt3ftPW1UcAHBKaWnpu4XSMhjvARvv4WBz0+lwm5sz0xk1PmN8JOoPvnWJGv3T3RfDgolGt/WyW/x8kpMG0gTyPTnfe+8533PuwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACkz2A2V8iNVDv5cmMqX2pM5kZq3YefD343VKy0//y52jn83lCh1Bocyo+IHvSnQn18qXZ67XZn88ZPE+fv/P6orbt9+9f22rWva1OrL5c7C5cjL4gqpPx6nxsuVyaWX+xu3/rlccb9P7XII63FvfdL7bm9XLE6LtKQvrHfmN2+18tx/3dtfH3/2+qplf18pTUj6pAOcd1Peuz/NQ9c/z7+Zq5UPyX68HSf97tbt34+zvH/MA+s7X9Tas9cyOYKFT0Bxy/m+p7G2D/aWmf2PhiutRf1Bhzjc/9Qrvi48/y9fyZ46bvq1Lmb2XyxpmcgebGWn4axf7Q15nfeKtQ7y3oHkhVr82kb/wf3AhvXf4j1wsxgNqeXIBlRr5fG8X9QR3T+ld9ibmJouNTUU5CM5uLue2nNAdHi/xuuthf0FPReubN4Jc3jP9rY2atfjLSmNvUW9FbMtzcXdt9New6IdYrS+NzFgYFMRq9B7xQa3bNRk5f2HBAt6ocz2aFhvQa9U2xOro8uX/m0H3JAY277jZi71GvQO/ly83SMrc7mzftpzwH1ma3X7B+AZPJAZeLM1frM5t3m/DNvN+Z23qzPbr1++NlcuPBOfXrj1ajVie8cfm90+fInx1o3vHTpI+cLQIpyR6U1E3v7op73ePYOXPxwuDo2L/KQHnE+WOSBzsaNH5NfH3z+czXDkD5xbY5n9aRzQDx7FOrdFRGHdMlkBrPl8flLSa8vxPlCxebEqohDCu8FKqOzSdcaRY6JtUzRhvSJs34OzhlN8Myh2D8oB0B6ldqzu1HXn+R9QKxjijSk9Hmg2l4YXX7248TqBGe374kypFe8OyjqipLZM3TzvvogSPmcQH6kXju9eiuJHBB1jCIM6RZnkVYmll7o/T6BzbuiC/0gkyl3F5/rZe1w7EsQV+gfcc5Hr9YHY5+SiEJ/GRmb3mmvXvvqScd/sXlqTTSh/0QNz5PsHxo7d/VL7xaDPs4BrcmN0ZUrnz3O+eFRYySC0P/3AY96PmFtev2O94fAyckB/2X/4MF7Qx6M/Wy+UBU1ODn+7XzCeN6Pe37XfTjZeeDo+YSxxhfz/K75AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/z9/ANnrTG8=",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "phase-4": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          20,
+          10
+        ]
+      ],
+      "pressures": [
+        1,
+        0.05,
+        1
+      ],
+      "case": "saved3",
+      "scale": 4,
+      "phase": 0.25,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 8.0
+        },
+        "matrix_f32": [
+          4.0,
+          0,
+          0,
+          0,
+          0,
+          4.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.25,
+          -147.75,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 200,
+        "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            64.0
+          ],
+          [
+            32.79995059967041,
+            64.0
+          ],
+          [
+            33.799925327301025,
+            64.0
+          ],
+          [
+            34.68882751464844,
+            64.0
+          ],
+          [
+            35.75551724433899,
+            64.0
+          ],
+          [
+            36.999996185302734,
+            64.0
+          ],
+          [
+            37.905282497406006,
+            64.07528027892113
+          ],
+          [
+            38.885844707489014,
+            64.30112111568451
+          ],
+          [
+            39.90738868713379,
+            64.66341364383698
+          ],
+          [
+            40.73071479797363,
+            65.03308916091919
+          ],
+          [
+            41.59480857849121,
+            65.48429822921753
+          ],
+          [
+            42.49966812133789,
+            66.01704096794128
+          ],
+          [
+            43.39899253845215,
+            66.59998154640198
+          ],
+          [
+            44.147393226623535,
+            67.12121677398682
+          ],
+          [
+            44.91958713531494,
+            67.69003748893738
+          ],
+          [
+            45.71557426452637,
+            68.30644607543945
+          ],
+          [
+            46.53535461425781,
+            68.97044038772583
+          ],
+          [
+            47.36556053161621,
+            69.67053270339966
+          ],
+          [
+            48.05668258666992,
+            70.27296018600464
+          ],
+          [
+            48.76300621032715,
+            70.90579175949097
+          ],
+          [
+            49.48453330993652,
+            71.56902980804443
+          ],
+          [
+            50.221261978149414,
+            72.26267433166504
+          ],
+          [
+            50.973196029663086,
+            72.98672389984131
+          ],
+          [
+            51.74033164978027,
+            73.74117946624756
+          ],
+          [
+            52.0,
+            74.0
+          ]
+        ],
+        "rt_size": 8.0,
+        "saved_object_stroke_replay": false,
+        "scale": 4.0,
+        "source_case": "marker3_nontrivial_saved3",
+        "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+      },
+      "frame_sha256": "26e3e347f9a16a682f3ab1b78fe45bdda1e1a90161246bb7d18674935d23d95e",
+      "frame_zlib_base64": "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",
+      "gl_error": 0,
+      "native_vector_bytes": 200,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "cross-1": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          18,
+          12
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          18,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "pressures": [
+        0.1,
+        0.9,
+        0.3,
+        0.8,
+        0.2
+      ],
+      "case": "saved1",
+      "scale": 1,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 8.0
+        },
+        "matrix_f32": [
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          96.0,
+          32.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 416,
+        "native_addpoint_xy_upload_sha256": "5970863d7c9ee4c3363ea428f9a7eee91b7f935f4a5abc2baf2973ae3fcaef9a",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            96.0
+          ],
+          [
+            32.75643861293793,
+            96.50429236888885
+          ],
+          [
+            33.53647446632385,
+            97.02431631088257
+          ],
+          [
+            34.451090574264526,
+            97.63406038284302
+          ],
+          [
+            35.1950945854187,
+            98.1300630569458
+          ],
+          [
+            36.03756523132324,
+            98.69171023368835
+          ],
+          [
+            36.97850322723389,
+            99.31900215148926
+          ],
+          [
+            37.73648166656494,
+            99.82432126998901
+          ],
+          [
+            38.52080059051514,
+            100.34720039367676
+          ],
+          [
+            39.35535764694214,
+            100.90357160568237
+          ],
+          [
+            40.24015522003174,
+            101.49343633651733
+          ],
+          [
+            41.190879821777344,
+            102.12794303894043
+          ],
+          [
+            42.15916442871094,
+            102.80149507522583
+          ],
+          [
+            43.004393577575684,
+            103.43402910232544
+          ],
+          [
+            43.72657012939453,
+            104.02554607391357
+          ],
+          [
+            44.32569122314453,
+            104.5760440826416
+          ],
+          [
+            45.11504077911377,
+            105.49423027038574
+          ],
+          [
+            45.48167610168457,
+            106.30245685577393
+          ],
+          [
+            45.26895618438721,
+            107.10275554656982
+          ],
+          [
+            44.28722381591797,
+            107.65316009521484
+          ],
+          [
+            43.50168323516846,
+            107.83305263519287
+          ],
+          [
+            42.52100944519043,
+            107.94790077209473
+          ],
+          [
+            41.34520149230957,
+            107.99770450592041
+          ],
+          [
+            40.079580307006836,
+            107.98246765136719
+          ],
+          [
+            38.995322704315186,
+            107.90220069885254
+          ],
+          [
+            38.10615110397339,
+            107.7569055557251
+          ],
+          [
+            37.19730758666992,
+            107.44850254058838
+          ],
+          [
+            36.52834606170654,
+            106.72865200042725
+          ],
+          [
+            36.63145446777344,
+            105.94343566894531
+          ],
+          [
+            37.21851396560669,
+            105.06173419952393
+          ],
+          [
+            37.93948793411255,
+            104.3234167098999
+          ],
+          [
+            38.596309185028076,
+            103.75364208221436
+          ],
+          [
+            39.37621450424194,
+            103.14283990859985
+          ],
+          [
+            40.27920436859131,
+            102.49100923538208
+          ],
+          [
+            41.32439994812012,
+            101.77960968017578
+          ],
+          [
+            42.31494331359863,
+            101.03967523574829
+          ],
+          [
+            43.077500343322754,
+            100.35040426254272
+          ],
+          [
+            43.61207103729248,
+            99.71179699897766
+          ],
+          [
+            43.97972583770752,
+            98.8903911113739
+          ],
+          [
+            43.72831439971924,
+            97.92454826831818
+          ],
+          [
+            42.96287441253662,
+            97.32921946048737
+          ],
+          [
+            42.216108322143555,
+            97.00675928592682
+          ],
+          [
+            41.268073081970215,
+            96.72902619838715
+          ],
+          [
+            40.118767738342285,
+            96.49601942300797
+          ],
+          [
+            39.01184701919556,
+            96.33657422661781
+          ],
+          [
+            38.1878719329834,
+            96.24652653932571
+          ],
+          [
+            37.300940990448,
+            96.17046862840652
+          ],
+          [
+            36.35105609893799,
+            96.10840074717999
+          ],
+          [
+            35.33821511268616,
+            96.06032268330455
+          ],
+          [
+            34.2624192237854,
+            96.02623455412686
+          ],
+          [
+            33.12367260456085,
+            96.00613638246432
+          ],
+          [
+            32.0,
+            96.0
+          ]
+        ],
+        "rt_size": 8.0,
+        "saved_object_stroke_replay": false,
+        "scale": 1.0,
+        "source_case": "marker3_linked_saved1",
+        "source_point_bytes_sha256": "d5ea0d2aa143eb28414a12c09c3a5de8e2ce904b1c7f2c854a2e527e4bbec4a7"
+      },
+      "frame_sha256": "15fc8689b5de93fe1792d31f014d82d2c94eb55ffbe1155f262b5525e7a589f4",
+      "frame_zlib_base64": "eNrt3MtrE1EUB+AkpnnayTttal+kSps2TdtEQSoKtlhraQVBca0gbkRdiCAI+qfbKwhddGESN9d8HxwCQ7L5wZm5OXdmUikAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC4XjZfrldWB+fNzQdvF/eefl3cf/at1Xv0vt0/+tjYPHwTjlfXD16EKjXXRrn5xnomO1eUHMTf+6Gvl0YXP8epcH6odYcv80mzK0WIU7juj9v7V2thcPIlWdk5tR6A+IS1/TT9/6eS5d6TVDqdkSjMXv+HKrfW70kUZmf9f7Uqq/0ziUI8Jp3/XVdh30CiEN85oLI2uAh7f1P1/+XvpQlxKlQ7vebWw3eT9v/NhY1DKULEa4FCuTG/tHU0bu+He4XmismCBCF+1bW95+Z/MHuK9Vu7neHZ93H7vzM6/1Fqrg4lCHG6kSsk7f7xp0lnAO3d48+ZbK4kSYhPPmnfnnYfsFBd3JIkxKfc7t53HyDMplJz5WDa/s8nrQ1JQnzCc3y17ujVpL1f27j7Op3JZCUJkc4AKu074bneSfq/WF8eSBDiFmZ44Vr+t30fniEo1DrbkoP/5b9ArlRqrOyH93uEfb3ftfP4Q1gbhM/wbrBkefskzPvSl1+WGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/KLyKaUG4=",
+      "gl_error": 0,
+      "native_vector_bytes": 416,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "cross-2": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          18,
+          12
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          18,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "pressures": [
+        0.1,
+        0.9,
+        0.3,
+        0.8,
+        0.2
+      ],
+      "case": "saved1",
+      "scale": 2,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 8.0
+        },
+        "matrix_f32": [
+          2.0,
+          0,
+          0,
+          0,
+          0,
+          2.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          64.0,
+          -64.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 416,
+        "native_addpoint_xy_upload_sha256": "5970863d7c9ee4c3363ea428f9a7eee91b7f935f4a5abc2baf2973ae3fcaef9a",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            96.0
+          ],
+          [
+            32.75643861293793,
+            96.50429236888885
+          ],
+          [
+            33.53647446632385,
+            97.02431631088257
+          ],
+          [
+            34.451090574264526,
+            97.63406038284302
+          ],
+          [
+            35.1950945854187,
+            98.1300630569458
+          ],
+          [
+            36.03756523132324,
+            98.69171023368835
+          ],
+          [
+            36.97850322723389,
+            99.31900215148926
+          ],
+          [
+            37.73648166656494,
+            99.82432126998901
+          ],
+          [
+            38.52080059051514,
+            100.34720039367676
+          ],
+          [
+            39.35535764694214,
+            100.90357160568237
+          ],
+          [
+            40.24015522003174,
+            101.49343633651733
+          ],
+          [
+            41.190879821777344,
+            102.12794303894043
+          ],
+          [
+            42.15916442871094,
+            102.80149507522583
+          ],
+          [
+            43.004393577575684,
+            103.43402910232544
+          ],
+          [
+            43.72657012939453,
+            104.02554607391357
+          ],
+          [
+            44.32569122314453,
+            104.5760440826416
+          ],
+          [
+            45.11504077911377,
+            105.49423027038574
+          ],
+          [
+            45.48167610168457,
+            106.30245685577393
+          ],
+          [
+            45.26895618438721,
+            107.10275554656982
+          ],
+          [
+            44.28722381591797,
+            107.65316009521484
+          ],
+          [
+            43.50168323516846,
+            107.83305263519287
+          ],
+          [
+            42.52100944519043,
+            107.94790077209473
+          ],
+          [
+            41.34520149230957,
+            107.99770450592041
+          ],
+          [
+            40.079580307006836,
+            107.98246765136719
+          ],
+          [
+            38.995322704315186,
+            107.90220069885254
+          ],
+          [
+            38.10615110397339,
+            107.7569055557251
+          ],
+          [
+            37.19730758666992,
+            107.44850254058838
+          ],
+          [
+            36.52834606170654,
+            106.72865200042725
+          ],
+          [
+            36.63145446777344,
+            105.94343566894531
+          ],
+          [
+            37.21851396560669,
+            105.06173419952393
+          ],
+          [
+            37.93948793411255,
+            104.3234167098999
+          ],
+          [
+            38.596309185028076,
+            103.75364208221436
+          ],
+          [
+            39.37621450424194,
+            103.14283990859985
+          ],
+          [
+            40.27920436859131,
+            102.49100923538208
+          ],
+          [
+            41.32439994812012,
+            101.77960968017578
+          ],
+          [
+            42.31494331359863,
+            101.03967523574829
+          ],
+          [
+            43.077500343322754,
+            100.35040426254272
+          ],
+          [
+            43.61207103729248,
+            99.71179699897766
+          ],
+          [
+            43.97972583770752,
+            98.8903911113739
+          ],
+          [
+            43.72831439971924,
+            97.92454826831818
+          ],
+          [
+            42.96287441253662,
+            97.32921946048737
+          ],
+          [
+            42.216108322143555,
+            97.00675928592682
+          ],
+          [
+            41.268073081970215,
+            96.72902619838715
+          ],
+          [
+            40.118767738342285,
+            96.49601942300797
+          ],
+          [
+            39.01184701919556,
+            96.33657422661781
+          ],
+          [
+            38.1878719329834,
+            96.24652653932571
+          ],
+          [
+            37.300940990448,
+            96.17046862840652
+          ],
+          [
+            36.35105609893799,
+            96.10840074717999
+          ],
+          [
+            35.33821511268616,
+            96.06032268330455
+          ],
+          [
+            34.2624192237854,
+            96.02623455412686
+          ],
+          [
+            33.12367260456085,
+            96.00613638246432
+          ],
+          [
+            32.0,
+            96.0
+          ]
+        ],
+        "rt_size": 8.0,
+        "saved_object_stroke_replay": false,
+        "scale": 2.0,
+        "source_case": "marker3_linked_saved1",
+        "source_point_bytes_sha256": "d5ea0d2aa143eb28414a12c09c3a5de8e2ce904b1c7f2c854a2e527e4bbec4a7"
+      },
+      "frame_sha256": "1f9cf633f1c5d70d58d3d1a91e75d58e07b53f3ab9aa959bb165185a7fe736f4",
+      "frame_zlib_base64": "eNrt3elrnEUYAPDskU323mQ3ezWbs7maozlakxgrbbVH0lTUDyqUVhHxi6KIghZF/dN1kIpC0Vp933eCvx8M5ENLYB6eNzPzzDE2BgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/TqE02ShPDTer3aWj0Cqd+YNqb+m43J69Wu0uHlbao93w8+TU4MpEo7NUqrXni5PVdvh/Y2O5nB6Ei2e80ug357YfdDdvfT48ePjzy7T+7unT3vabX7VXjh63FvbeqfWXTyqd0V6xXO/qYYhTeXq41V599aOXzfu/a4P98x/7u/e+Dd+E6szC9fCt0esQR+73du5+k1TuP3+ccP+76cuHj8LvzhfHy6IAGYz5y41ekn/3X6R11k4+Lk9f2hYNSFdzbussy9z/43igPly/nS+MT4oKJC+s189s3vwshvx/1lrzV9+yVgjJC/W7mHL/WZtevv7Bb7VEICmhth9j/odWH67dEiH4f+Z/qBWWatNzogTJCHv8Ys3/0GqDlddFCZIR4/rfn+qC6699IkqQnFjqf89r3a03viyUKi1RgmTEsP/nr1qoUYgSJLgOkMH+3xdt4ayACEHy34AYxwHhrLHoQDpzgeb8zsNwVi+W/J+odxZFBtIcC8zudDZufJp17rdXjz/M5fIFEYGUxwKV5qAxu3En0/p/f/lEJCA74e6v9urRk9Rr/7+OP9T+IIaxQKMfzuUN9s6+Tyv/m3M75/niRFXvQyRjgfZoN811gcbslbt6HeIQ5uNpzgFCHcIaAGQv1OF6O3e+Tv8c4OlTd4NBdsKdXFNL197Lqg4wtXzt/bFcLi8SkL5qd+GVzM8BtPrrIgHpy/Jv/+/3Ai7svi0SkK5CqdyMZS+wN0MgXePV1qVY8j/cVyQikJ5Q84/mLHBv6VhEID0xrP25CwCyEcsbAYP9sx/CXEREIMX5f7nRi+MuwNtfiAakL9Tess5/ZwEgozlAa7AxODj/Kdv9P701kYBshLd5s8r95tz2AxGA7IQzAI3R5v307wA7emLfD0TwDSiWKuEekNTeAb58+KhUmxrpeYhDeDOsMbt5L8m8D28R1IerN93/BXEKZ/Jbi3vv/tf3fTRHW6fq/HAxFCfrM9Xu4mG4qzvU6P9pzof3R9srR4/DPT+lWntej8JF/h7UOuGuoInGzHKlM7cf9uyGsUKtv3Ij7N8P5wlCC/P68G9z+cK4XgMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgovgFCXGkLw==",
+      "gl_error": 0,
+      "native_vector_bytes": 416,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    },
+    "cross-4": {
+      "samples": [
+        [
+          0,
+          0
+        ],
+        [
+          18,
+          12
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          18,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "pressures": [
+        0.1,
+        0.9,
+        0.3,
+        0.8,
+        0.2
+      ],
+      "case": "saved1",
+      "scale": 4,
+      "phase": 0,
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0x80336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 8.0
+        },
+        "matrix_f32": [
+          4.0,
+          0,
+          0,
+          0,
+          0,
+          4.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.0,
+          -256.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 416,
+        "native_addpoint_xy_upload_sha256": "5970863d7c9ee4c3363ea428f9a7eee91b7f935f4a5abc2baf2973ae3fcaef9a",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            96.0
+          ],
+          [
+            32.75643861293793,
+            96.50429236888885
+          ],
+          [
+            33.53647446632385,
+            97.02431631088257
+          ],
+          [
+            34.451090574264526,
+            97.63406038284302
+          ],
+          [
+            35.1950945854187,
+            98.1300630569458
+          ],
+          [
+            36.03756523132324,
+            98.69171023368835
+          ],
+          [
+            36.97850322723389,
+            99.31900215148926
+          ],
+          [
+            37.73648166656494,
+            99.82432126998901
+          ],
+          [
+            38.52080059051514,
+            100.34720039367676
+          ],
+          [
+            39.35535764694214,
+            100.90357160568237
+          ],
+          [
+            40.24015522003174,
+            101.49343633651733
+          ],
+          [
+            41.190879821777344,
+            102.12794303894043
+          ],
+          [
+            42.15916442871094,
+            102.80149507522583
+          ],
+          [
+            43.004393577575684,
+            103.43402910232544
+          ],
+          [
+            43.72657012939453,
+            104.02554607391357
+          ],
+          [
+            44.32569122314453,
+            104.5760440826416
+          ],
+          [
+            45.11504077911377,
+            105.49423027038574
+          ],
+          [
+            45.48167610168457,
+            106.30245685577393
+          ],
+          [
+            45.26895618438721,
+            107.10275554656982
+          ],
+          [
+            44.28722381591797,
+            107.65316009521484
+          ],
+          [
+            43.50168323516846,
+            107.83305263519287
+          ],
+          [
+            42.52100944519043,
+            107.94790077209473
+          ],
+          [
+            41.34520149230957,
+            107.99770450592041
+          ],
+          [
+            40.079580307006836,
+            107.98246765136719
+          ],
+          [
+            38.995322704315186,
+            107.90220069885254
+          ],
+          [
+            38.10615110397339,
+            107.7569055557251
+          ],
+          [
+            37.19730758666992,
+            107.44850254058838
+          ],
+          [
+            36.52834606170654,
+            106.72865200042725
+          ],
+          [
+            36.63145446777344,
+            105.94343566894531
+          ],
+          [
+            37.21851396560669,
+            105.06173419952393
+          ],
+          [
+            37.93948793411255,
+            104.3234167098999
+          ],
+          [
+            38.596309185028076,
+            103.75364208221436
+          ],
+          [
+            39.37621450424194,
+            103.14283990859985
+          ],
+          [
+            40.27920436859131,
+            102.49100923538208
+          ],
+          [
+            41.32439994812012,
+            101.77960968017578
+          ],
+          [
+            42.31494331359863,
+            101.03967523574829
+          ],
+          [
+            43.077500343322754,
+            100.35040426254272
+          ],
+          [
+            43.61207103729248,
+            99.71179699897766
+          ],
+          [
+            43.97972583770752,
+            98.8903911113739
+          ],
+          [
+            43.72831439971924,
+            97.92454826831818
+          ],
+          [
+            42.96287441253662,
+            97.32921946048737
+          ],
+          [
+            42.216108322143555,
+            97.00675928592682
+          ],
+          [
+            41.268073081970215,
+            96.72902619838715
+          ],
+          [
+            40.118767738342285,
+            96.49601942300797
+          ],
+          [
+            39.01184701919556,
+            96.33657422661781
+          ],
+          [
+            38.1878719329834,
+            96.24652653932571
+          ],
+          [
+            37.300940990448,
+            96.17046862840652
+          ],
+          [
+            36.35105609893799,
+            96.10840074717999
+          ],
+          [
+            35.33821511268616,
+            96.06032268330455
+          ],
+          [
+            34.2624192237854,
+            96.02623455412686
+          ],
+          [
+            33.12367260456085,
+            96.00613638246432
+          ],
+          [
+            32.0,
+            96.0
+          ]
+        ],
+        "rt_size": 8.0,
+        "saved_object_stroke_replay": false,
+        "scale": 4.0,
+        "source_case": "marker3_linked_saved1",
+        "source_point_bytes_sha256": "d5ea0d2aa143eb28414a12c09c3a5de8e2ce904b1c7f2c854a2e527e4bbec4a7"
+      },
+      "frame_sha256": "7870aae67644c49f061260aa8c4cbaea34169798cd46ebbdb2fab424503ac251",
+      "frame_zlib_base64": "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",
+      "gl_error": 0,
+      "native_vector_bytes": 416,
+      "topology": {
+        "color_attachment": {
+          "framebuffer": 2,
+          "texture": 2
+        },
+        "composite_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 2,
+          "program": 5,
+          "texture2d": 1,
+          "vao": 0
+        },
+        "mask_attachment": {
+          "framebuffer": 1,
+          "texture": 1
+        },
+        "mask_draw_state": {
+          "activeTexture": 33984,
+          "framebuffer": 1,
+          "program": 4,
+          "texture2d": 0,
+          "vao": 0
+        },
+        "output_format": {
+          "format": 6408,
+          "height": 256,
+          "internal": 32856,
+          "width": 256
+        }
+      }
+    }
+  },
+  "zero_alpha_control": {
+    "input": {
+      "canvas": [
+        256,
+        256
+      ],
+      "color_state": {
+        "argb": "0x336699",
+        "mode": "native PenDrawableRT::SetPenData(float,int)",
+        "size": 8.0
+      },
+      "matrix_f32": [
+        1.0,
+        0,
+        0,
+        0,
+        0,
+        1.0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        96.0,
+        59.0,
+        0,
+        1
+      ],
+      "native_addpoint_xy_upload_bytes": 200,
+      "native_addpoint_xy_upload_sha256": "fba1ad7f023663e06298d79744241132f173c2837880b95fcdcc110727dddce8",
+      "output_texture_memory_layout": 6,
+      "output_texture_target_layout": 2,
+      "point_limit": null,
+      "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+      "points": [
+        [
+          32.0,
+          64.0
+        ],
+        [
+          32.79995059967041,
+          64.0
+        ],
+        [
+          33.799925327301025,
+          64.0
+        ],
+        [
+          34.68882751464844,
+          64.0
+        ],
+        [
+          35.75551724433899,
+          64.0
+        ],
+        [
+          36.999996185302734,
+          64.0
+        ],
+        [
+          37.905282497406006,
+          64.07528027892113
+        ],
+        [
+          38.885844707489014,
+          64.30112111568451
+        ],
+        [
+          39.90738868713379,
+          64.66341364383698
+        ],
+        [
+          40.73071479797363,
+          65.03308916091919
+        ],
+        [
+          41.59480857849121,
+          65.48429822921753
+        ],
+        [
+          42.49966812133789,
+          66.01704096794128
+        ],
+        [
+          43.39899253845215,
+          66.59998154640198
+        ],
+        [
+          44.147393226623535,
+          67.12121677398682
+        ],
+        [
+          44.91958713531494,
+          67.69003748893738
+        ],
+        [
+          45.71557426452637,
+          68.30644607543945
+        ],
+        [
+          46.53535461425781,
+          68.97044038772583
+        ],
+        [
+          47.36556053161621,
+          69.67053270339966
+        ],
+        [
+          48.05668258666992,
+          70.27296018600464
+        ],
+        [
+          48.76300621032715,
+          70.90579175949097
+        ],
+        [
+          49.48453330993652,
+          71.56902980804443
+        ],
+        [
+          50.221261978149414,
+          72.26267433166504
+        ],
+        [
+          50.973196029663086,
+          72.98672389984131
+        ],
+        [
+          51.74033164978027,
+          73.74117946624756
+        ],
+        [
+          52.0,
+          74.0
+        ]
+      ],
+      "rt_size": 8.0,
+      "saved_object_stroke_replay": false,
+      "scale": 1.0,
+      "source_case": "marker3_nontrivial_saved3",
+      "source_point_bytes_sha256": "e66756ff0ec133545a2ad5ab453354afb9f6e01b1d0b539efc6fa1aee0c08bfe"
+    },
+    "gl_error": 0,
+    "native_vector_bytes": 200,
+    "topology": {
+      "color_attachment": {
+        "framebuffer": 2,
+        "texture": 2
+      },
+      "composite_draw_state": {
+        "activeTexture": 33984,
+        "framebuffer": 2,
+        "program": 5,
+        "texture2d": 1,
+        "vao": 0
+      },
+      "mask_attachment": {
+        "framebuffer": 1,
+        "texture": 1
+      },
+      "mask_draw_state": {
+        "activeTexture": 33984,
+        "framebuffer": 1,
+        "program": 4,
+        "texture2d": 0,
+        "vao": 0
+      },
+      "output_format": {
+        "format": 6408,
+        "height": 256,
+        "internal": 32856,
+        "width": 256
+      }
+    },
+    "frame_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+    "frame_zlib_base64": "eNrtwTEBAAAAwqD1T+1tB6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AADwAAQ=="
+  }
+}

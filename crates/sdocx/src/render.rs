@@ -34,6 +34,7 @@ mod image_crop;
 mod inkpen2_vector;
 #[cfg(all(test, feature = "pdf"))]
 mod legacy_marker_alpha_tests;
+mod marker3_scale;
 mod simplebrush;
 #[cfg(test)]
 mod simplebrush_tests;
@@ -332,6 +333,17 @@ pub enum MontblancRenderProfile {
     HostUnitScale,
 }
 
+/// Assert the uniform output scale used for the experimental Marker3 V5 fringe.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum Marker3OutputScale {
+    Half,
+    One,
+    Two,
+    Four,
+    Eight,
+}
+
 /// Options controlling Svg rendering.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -377,6 +389,10 @@ pub struct RenderOptions {
     /// Invalid or absent profiles preserve the existing V14 vector output.
     #[cfg_attr(feature = "serde", serde(default))]
     pub fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    /// Experimental Marker3 V5 fringe for a caller-asserted uniform output scale.
+    /// Replay and sliced scenes preserve the canonical route.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub marker3_output_scale: Option<Marker3OutputScale>,
     /// Experimental MagicPen contour for a caller-asserted uniform output
     /// scale in pixels per page unit (1, 2, or 4), with an axis-aligned
     /// output grid and no rotation. Other values, replay, and sliced scenes
@@ -925,6 +941,7 @@ impl DocumentTextCache {
             options.fountain_v17_output_scale_profile,
             options.fountain_v16_output_scale_profile,
             options.fountain_v14_output_scale_profile,
+            options.marker3_output_scale,
             options.magicpen_output_scale,
             options.magicpen_host_minimum_dot_grid,
             options.pencil3_profile,
@@ -1441,6 +1458,7 @@ fn render_page_contents_svg(
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    marker3_output_scale: Option<Marker3OutputScale>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
@@ -1522,6 +1540,7 @@ fn render_page_contents_svg(
         fountain_v17_output_scale_profile,
         fountain_v16_output_scale_profile,
         fountain_v14_output_scale_profile,
+        marker3_output_scale,
         magicpen_output_scale,
         magicpen_host_minimum_dot_grid,
         pencil3_profile,
@@ -1586,6 +1605,7 @@ struct CompositionContext<'a> {
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    marker3_output_scale: Option<Marker3OutputScale>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
@@ -1696,6 +1716,7 @@ fn render_object(
                 context.fountain_v17_output_scale_profile,
                 context.fountain_v16_output_scale_profile,
                 context.fountain_v14_output_scale_profile,
+                context.marker3_output_scale,
                 context.magicpen_output_scale,
                 context.magicpen_host_minimum_dot_grid,
                 context.pencil3_profile,
@@ -4414,6 +4435,7 @@ fn render_stroke(
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    marker3_output_scale: Option<Marker3OutputScale>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
     pencil3_profile: Option<Pencil3RenderProfile>,
@@ -4750,6 +4772,30 @@ fn render_stroke(
             .dot_radii
             .as_ref()
             .is_some_and(|radii| !radii.is_empty() && radii.iter().all(|&radius| radius == 0.0))
+    {
+        return;
+    }
+    if native_allowed
+        && replay_index.is_none()
+        && slice.is_none()
+        && matches!(paint.profile, Some("Marker3" | "StraightMarker"))
+        && stroke.rendering.as_ref().is_some_and(|rendering| {
+            (rendering.tool_type_raw == 2
+                || (rendering.tool_type_raw == 1
+                    && (marker3_output_scale == Some(Marker3OutputScale::One)
+                        || (marker3_output_scale == Some(Marker3OutputScale::Two)
+                            && rendering.pen_name.as_deref()
+                                == Some("com.samsung.android.sdk.pen.pen.preload.Marker3")))))
+                && matches!(
+                    rendering.pen_name.as_deref(),
+                    Some(
+                        "com.samsung.android.sdk.pen.pen.preload.Marker3"
+                            | "com.samsung.android.sdk.pen.pen.preload.StraightMarker"
+                    )
+                )
+        })
+        && let Some(profile) = marker3_output_scale
+        && marker3_scale::render(svg, &paint, profile)
     {
         return;
     }

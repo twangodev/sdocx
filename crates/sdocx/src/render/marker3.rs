@@ -95,12 +95,12 @@ mod tests {
     }
 
     #[derive(Deserialize)]
-    struct Input {
-        samples: Vec<[f64; 2]>,
-        width: f32,
-        pressures: Option<Vec<f64>>,
-        tool_type_raw: u16,
-        fixed_width: bool,
+    pub(super) struct Input {
+        pub(super) samples: Vec<[f64; 2]>,
+        pub(super) width: f32,
+        pub(super) pressures: Option<Vec<f64>>,
+        pub(super) tool_type_raw: u16,
+        pub(super) fixed_width: bool,
     }
 
     #[derive(Deserialize)]
@@ -108,7 +108,7 @@ mod tests {
         stamps: Vec<[f32; 3]>,
     }
 
-    fn marker3_stroke(input: &Input) -> Stroke {
+    pub(super) fn marker3_stroke(input: &Input) -> Stroke {
         Stroke {
             rendering: Some(StrokeRendering {
                 metadata: None,
@@ -413,6 +413,549 @@ mod tests {
             }
         }
         assert_eq!(native["cases"].as_object().unwrap().len(), 8);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn scale_profile_preserves_support_and_improves_native_host_controls() {
+        use base64::Engine;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+        let native: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-v5-scale-shell-native.json"
+        ))
+        .unwrap();
+        assert!(
+            crate::RenderOptions::default()
+                .marker3_output_scale
+                .is_none()
+        );
+        #[cfg(feature = "serde")]
+        {
+            let mut old = serde_json::to_value(crate::RenderOptions::default()).unwrap();
+            old.as_object_mut().unwrap().remove("marker3_output_scale");
+            assert!(
+                serde_json::from_value::<crate::RenderOptions>(old)
+                    .unwrap()
+                    .marker3_output_scale
+                    .is_none()
+            );
+            for scale in [
+                crate::Marker3OutputScale::Half,
+                crate::Marker3OutputScale::One,
+                crate::Marker3OutputScale::Two,
+                crate::Marker3OutputScale::Four,
+                crate::Marker3OutputScale::Eight,
+            ] {
+                let opts = crate::RenderOptions {
+                    marker3_output_scale: Some(scale),
+                    ..Default::default()
+                };
+                let roundtrip: crate::RenderOptions =
+                    serde_json::from_value(serde_json::to_value(opts).unwrap()).unwrap();
+                assert_eq!(roundtrip.marker3_output_scale, Some(scale));
+            }
+        }
+        let zero_alpha = &native["zero_alpha_control"];
+        assert_eq!(zero_alpha["input"]["color_state"]["argb"], "0x336699");
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(zero_alpha["frame_zlib_base64"].as_str().unwrap())
+            .unwrap();
+        let mut empty_frame = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut empty_frame)
+            .unwrap();
+        assert_eq!(empty_frame.len(), 256 * 256 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&empty_frame)),
+            zero_alpha["frame_sha256"].as_str().unwrap()
+        );
+        assert!(empty_frame.iter().all(|&byte| byte == 0));
+        let transparent = Input {
+            samples: vec![[24.0, 16.0], [34.0, 16.0], [44.0, 26.0]],
+            width: 8.0,
+            pressures: Some(vec![1.0, 0.05, 1.0]),
+            tool_type_raw: 2,
+            fixed_width: false,
+        };
+        let mut stroke = marker3_stroke(&transparent);
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x0033_6699);
+        let document = crate::Document {
+            pages: vec![crate::Page {
+                uuid: "marker3-transparent".into(),
+                width: 128,
+                height: 32,
+                content_bbox: BoundingBox::default(),
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            }],
+            metadata: Default::default(),
+        };
+        let mut blank = document.clone();
+        blank.pages[0].objects.clear();
+        let raster = |doc: &crate::Document, opts: &crate::RenderOptions| {
+            let svg = crate::render_document_svg(doc, opts).remove(0).svg;
+            let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+            let mut pix = resvg::tiny_skia::Pixmap::new(128, 32).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pix.as_mut(),
+            );
+            pix.data().to_vec()
+        };
+        let canonical = crate::RenderOptions::default();
+        let opts = crate::RenderOptions {
+            marker3_output_scale: Some(crate::Marker3OutputScale::One),
+            ..Default::default()
+        };
+        assert_eq!(
+            raster(&document, &opts),
+            raster(&blank, &canonical),
+            "zero-alpha source"
+        );
+        for (name, case) in native["cases"].as_object().unwrap() {
+            let scale = case["scale"].as_f64().unwrap();
+            let phase = case["phase"].as_f64().unwrap();
+            let profile = match scale {
+                0.5 => crate::Marker3OutputScale::Half,
+                1.0 => crate::Marker3OutputScale::One,
+                2.0 => crate::Marker3OutputScale::Two,
+                4.0 => crate::Marker3OutputScale::Four,
+                8.0 => crate::Marker3OutputScale::Eight,
+                _ => panic!("unexpected scale"),
+            };
+            let argb = u32::from_str_radix(
+                case["input"]["color_state"]["argb"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            let points: Vec<[f64; 2]> = case["samples"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| {
+                    [
+                        p[0].as_f64().unwrap() + 24.0 + phase / scale,
+                        p[1].as_f64().unwrap() + 16.0 + phase / scale,
+                    ]
+                })
+                .collect();
+            let pressure: Vec<f64> = case["pressures"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| p.as_f64().unwrap())
+                .collect();
+            let size = case["input"]["rt_size"].as_f64().unwrap() as f32;
+            let input = Input {
+                samples: points,
+                width: size,
+                pressures: Some(pressure),
+                tool_type_raw: 2,
+                fixed_width: false,
+            };
+            let mut stroke = marker3_stroke(&input);
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.properties.compressed = true;
+            rendering.style.color_argb = Some(argb);
+            stroke.color = Some(Color {
+                r: (argb >> 16) as u8,
+                g: (argb >> 8) as u8,
+                b: argb as u8,
+            });
+            let document = crate::Document {
+                pages: vec![crate::Page {
+                    uuid: "marker3-scale".into(),
+                    width: 128,
+                    height: 32,
+                    content_bbox: BoundingBox::default(),
+                    background_color: None,
+                    template: None,
+                    background: Default::default(),
+                    objects: vec![stroke.clone().into()],
+                }],
+                metadata: Default::default(),
+            };
+            let baseline_options = crate::RenderOptions::default();
+            let baseline = crate::render_document_svg(&document, &baseline_options)
+                .remove(0)
+                .svg;
+            let layout = crate::layout_document(&document);
+            let replay =
+                crate::render_layout_page_replay_svg(&document, &layout, 0, &baseline_options)
+                    .unwrap()
+                    .svg;
+            let options = crate::RenderOptions {
+                marker3_output_scale: Some(profile),
+                ..Default::default()
+            };
+            let candidate = crate::render_document_svg(&document, &options)
+                .remove(0)
+                .svg;
+            let mut alias = stroke;
+            alias.rendering.as_mut().unwrap().pen_name =
+                Some("com.samsung.android.sdk.pen.pen.preload.StraightMarker".into());
+            let mut alias_document = document.clone();
+            alias_document.pages[0].objects = vec![alias.into()];
+            assert_eq!(
+                candidate,
+                crate::render_document_svg(&alias_document, &options)[0].svg,
+                "alias SVG {name}"
+            );
+            #[cfg(feature = "pdf")]
+            assert_eq!(
+                crate::render_document_pdf(&document, &options, &Default::default()).unwrap(),
+                crate::render_document_pdf(&alias_document, &options, &Default::default()).unwrap(),
+                "alias PDF {name}"
+            );
+            assert_eq!(
+                replay,
+                crate::render_layout_page_replay_svg(&document, &layout, 0, &options)
+                    .unwrap()
+                    .svg,
+                "replay {name}"
+            );
+            let tree = roxmltree::Document::parse(&baseline).unwrap();
+            let path = tree
+                .descendants()
+                .find(|n| n.has_tag_name("path"))
+                .unwrap()
+                .attribute("d")
+                .unwrap();
+            let moves: Vec<_> = path.split('z').filter(|v| !v.is_empty()).collect();
+            let native_points = case["input"]["points"].as_array().unwrap();
+            assert_eq!(
+                moves.len(),
+                native_points.len(),
+                "native stream count {name}"
+            );
+            let radius = f64::from(size.trunc()) / 2.0 + 0.5;
+            let y_offset = if case["case"] == "saved1" { 80.0 } else { 48.0 };
+            for (m, p) in moves.iter().zip(native_points) {
+                let (xy, _) = m.strip_prefix('M').unwrap().split_once(' ').unwrap();
+                let (x, y) = xy.split_once(',').unwrap();
+                let x = x.parse::<f64>().unwrap() + radius;
+                let y = y.parse::<f64>().unwrap();
+                assert!(
+                    (x - (p[0].as_f64().unwrap() - 8.0 + phase / scale)).abs() < 0.00011,
+                    "x {name}"
+                );
+                assert!(
+                    (y - (p[1].as_f64().unwrap() - y_offset + phase / scale)).abs() < 0.00011,
+                    "y {name}"
+                );
+            }
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(case["frame_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut frame = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut frame)
+                .unwrap();
+            assert_eq!(frame.len(), 256 * 256 * 4);
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&frame)),
+                case["frame_sha256"].as_str().unwrap()
+            );
+            let w = (128.0 * scale) as usize;
+            let h = (32.0 * scale) as usize;
+            let compare = |svg: &str| {
+                let svg = svg.replacen(
+                    "<rect fill=\"#fcfcfc\" height=\"32\" width=\"128\" x=\"0\" y=\"0\"/>",
+                    "",
+                    1,
+                );
+                let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+                let mut pix = resvg::tiny_skia::Pixmap::new(w as u32, h as u32).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::from_scale(scale as f32, scale as f32),
+                    &mut pix.as_mut(),
+                );
+                let xoff = (128.0 - 24.0 * scale) as i32;
+                let yoff =
+                    (128.0 - if case["case"] == "saved1" { 16.0 } else { 21.0 } * scale) as i32;
+                let mut error = 0_u64;
+                let mut missing = 0usize;
+                for y in 0..h {
+                    for x in 0..w {
+                        let nx = x as i32 + xoff;
+                        let ny = y as i32 + yoff;
+                        if !(0..256).contains(&nx) || !(0..256).contains(&ny) {
+                            continue;
+                        }
+                        let ni = (ny as usize * 256 + nx as usize) * 4;
+                        let ri = (y * w + x) * 4;
+                        for c in 0..4 {
+                            error += u64::from(frame[ni + c].abs_diff(pix.data()[ri + c]));
+                        }
+                        if frame[ni + 3] != 0 && pix.data()[ri + 3] == 0 {
+                            missing += 1
+                        }
+                    }
+                }
+                (error, missing)
+            };
+            let (before, _) = compare(&baseline);
+            let (after, missing) = compare(&candidate);
+            assert!(after < before, "{name}: {after} >= {before}");
+            assert_eq!(missing, 0, "native support {name}");
+            if name == "saved3-8-80336699-1" {
+                let bytes =
+                    crate::render_document_pdf(&document, &options, &Default::default()).unwrap();
+                let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                let mut isolated_two_fill_form = false;
+                let mut opacities = Vec::new();
+                for object in pdf.objects.values() {
+                    if let Ok(dict) = object.as_dict()
+                        && dict.get(b"Type").and_then(lopdf::Object::as_name).ok()
+                            == Some(b"ExtGState")
+                        && let Ok(alpha) = dict.get(b"ca").and_then(lopdf::Object::as_float)
+                    {
+                        opacities.push(alpha);
+                    }
+                    if let Ok(stream) = object.as_stream() {
+                        assert_ne!(
+                            stream
+                                .dict
+                                .get(b"Subtype")
+                                .and_then(lopdf::Object::as_name)
+                                .ok(),
+                            Some(b"Image".as_slice())
+                        );
+                        if stream
+                            .dict
+                            .get(b"Subtype")
+                            .and_then(lopdf::Object::as_name)
+                            .ok()
+                            == Some(b"Form".as_slice())
+                        {
+                            let isolated = stream
+                                .dict
+                                .get(b"Group")
+                                .and_then(lopdf::Object::as_dict)
+                                .ok()
+                                .and_then(|d| d.get(b"I").ok())
+                                .and_then(|o| o.as_bool().ok())
+                                == Some(true);
+                            let content = stream.decompressed_content().unwrap_or_default();
+                            let fills = lopdf::content::Content::decode(&content)
+                                .ok()
+                                .map_or(0, |c| {
+                                    c.operations.iter().filter(|op| op.operator == "f").count()
+                                });
+                            isolated_two_fill_form |= isolated && fills >= 2;
+                        }
+                    }
+                }
+                assert!(
+                    isolated_two_fill_form,
+                    "two compound unions must share an isolated PDF group"
+                );
+                assert!(opacities.iter().any(|a| (*a - 0.5).abs() < 0.0001));
+                assert!(
+                    opacities
+                        .iter()
+                        .any(|a| (*a - 128.0 / 255.0).abs() < 0.0001)
+                );
+            }
+            if let Some(dir) = std::env::var_os("SDOCX_MARKER3_SCALE_EXPORT") {
+                let dir = std::path::Path::new(&dir);
+                std::fs::write(dir.join(format!("{name}-baseline.svg")), &baseline).unwrap();
+                std::fs::write(dir.join(format!("{name}-profile.svg")), &candidate).unwrap();
+                for (label, opts) in [("baseline", &baseline_options), ("profile", &options)] {
+                    std::fs::write(
+                        dir.join(format!("{name}-{label}.pdf")),
+                        crate::render_document_pdf(&document, opts, &Default::default()).unwrap(),
+                    )
+                    .unwrap();
+                }
+                if matches!(
+                    name.as_str(),
+                    "saved3-8-80336699-1"
+                        | "saved3-8-80336699-2"
+                        | "saved3-12-40be5520-1"
+                        | "saved3-12-40be5520-2"
+                ) {
+                    for (paper_name, paper) in [
+                        (
+                            "e0c0a0",
+                            Color {
+                                r: 224,
+                                g: 192,
+                                b: 160,
+                            },
+                        ),
+                        (
+                            "445566",
+                            Color {
+                                r: 68,
+                                g: 85,
+                                b: 102,
+                            },
+                        ),
+                    ] {
+                        let mut tinted = document.clone();
+                        tinted.pages[0].background_color = Some(paper);
+                        tinted.metadata.dark_mode_compatibility = Some(false);
+                        for (label, opts) in
+                            [("baseline", &baseline_options), ("profile", &options)]
+                        {
+                            let stem = format!("paper-{name}-{paper_name}-{label}");
+                            let svg = crate::render_document_svg(&tinted, opts).remove(0).svg;
+                            std::fs::write(dir.join(format!("{stem}.svg")), svg).unwrap();
+                            std::fs::write(
+                                dir.join(format!("{stem}.pdf")),
+                                crate::render_document_pdf(&tinted, opts, &Default::default())
+                                    .unwrap(),
+                            )
+                            .unwrap();
+                        }
+                    }
+                }
+            }
+        }
+        assert_eq!(native["cases"].as_object().unwrap().len(), 27);
+    }
+
+    #[test]
+    fn scale_profile_preserves_fallback_and_stamp_budget() {
+        let input = Input {
+            samples: vec![[10.0, 20.0], [5010.0, 20.0]],
+            width: 8.0,
+            pressures: Some(vec![1.0, 1.0]),
+            tool_type_raw: 2,
+            fixed_width: false,
+        };
+        let stroke = marker3_stroke(&input);
+        let doc = |stroke: Stroke| crate::Document {
+            pages: vec![crate::Page {
+                uuid: "marker3-budget".into(),
+                width: 128,
+                height: 64,
+                content_bbox: BoundingBox::default(),
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            }],
+            metadata: Default::default(),
+        };
+        let baseline = crate::RenderOptions::default();
+        let profile = crate::RenderOptions {
+            marker3_output_scale: Some(crate::Marker3OutputScale::One),
+            ..Default::default()
+        };
+        let long = doc(stroke.clone());
+        let plain = crate::render_document_svg(&long, &baseline).remove(0).svg;
+        assert!(plain.matches('M').count() > 4096);
+        assert_eq!(
+            plain,
+            crate::render_document_svg(&long, &profile).remove(0).svg
+        );
+        #[cfg(feature = "pdf")]
+        assert_eq!(
+            crate::render_document_pdf(&long, &baseline, &Default::default()).unwrap(),
+            crate::render_document_pdf(&long, &profile, &Default::default()).unwrap(),
+            "over-budget direct PDF retains canonical paint"
+        );
+        for setting in [None, Some("4;"), Some("invalid")] {
+            let mut s = stroke.clone();
+            s.points.truncate(2);
+            s.points[1].x = 30.0;
+            s.rendering.as_mut().unwrap().advanced_settings = setting.map(str::to_owned);
+            let document = doc(s);
+            assert_eq!(
+                crate::render_document_svg(&document, &baseline)[0].svg,
+                crate::render_document_svg(&document, &profile)[0].svg,
+                "setting {setting:?}"
+            );
+        }
+        let mut unsupported_tool = stroke.clone();
+        unsupported_tool.points[1].x = 30.0;
+        unsupported_tool.rendering.as_mut().unwrap().tool_type_raw = 3;
+        let document = doc(unsupported_tool);
+        assert_eq!(
+            crate::render_document_svg(&document, &baseline)[0].svg,
+            crate::render_document_svg(&document, &profile)[0].svg,
+            "tool 3"
+        );
+        let mut alias = stroke.clone();
+        alias.points[1].x = 30.0;
+        alias.rendering.as_mut().unwrap().pen_name =
+            Some("com.samsung.android.sdk.pen.pen.preload.StraightMarker".into());
+        let mut canonical = stroke.clone();
+        canonical.points[1].x = 30.0;
+        let alias_document = doc(alias);
+        let canonical_document = doc(canonical);
+        assert_ne!(
+            crate::render_document_svg(&alias_document, &baseline)[0].svg,
+            crate::render_document_svg(&alias_document, &profile)[0].svg
+        );
+        for scale in [
+            crate::Marker3OutputScale::Half,
+            crate::Marker3OutputScale::One,
+            crate::Marker3OutputScale::Two,
+            crate::Marker3OutputScale::Four,
+            crate::Marker3OutputScale::Eight,
+        ] {
+            let options = crate::RenderOptions {
+                marker3_output_scale: Some(scale),
+                ..Default::default()
+            };
+            assert_eq!(
+                crate::render_document_svg(&alias_document, &options)[0].svg,
+                crate::render_document_svg(&canonical_document, &options)[0].svg
+            );
+            #[cfg(feature = "pdf")]
+            assert_eq!(
+                crate::render_document_pdf(&alias_document, &options, &Default::default()).unwrap(),
+                crate::render_document_pdf(&canonical_document, &options, &Default::default())
+                    .unwrap()
+            );
+        }
+        #[cfg(feature = "pdf")]
+        {
+            let mut source = stroke.clone();
+            source.points[1].x = 30.0;
+            let document = doc(source);
+            let layout = crate::layout_document(&document);
+            let request =
+                super::super::PageSceneRequest::sliced(&layout.pages[0], 0, 32, false).unwrap();
+            let render = |options: &crate::RenderOptions| {
+                let mut cache = super::super::DocumentTextCache::default();
+                cache
+                    .render_layout_page_scene_requests(
+                        &document,
+                        &[request],
+                        options,
+                        &super::super::fonts::FontBook::default(),
+                        &mut |_| {},
+                    )
+                    .remove(0)
+                    .page
+                    .svg
+            };
+            assert_eq!(
+                render(&baseline),
+                render(&profile),
+                "sliced output retains canonical paint"
+            );
+        }
+        let mut zero = stroke;
+        zero.points[1].x = 30.0;
+        zero.rendering.as_mut().unwrap().style.pen_size = Some(0.4);
+        let document = doc(zero);
+        assert_eq!(
+            crate::render_document_svg(&document, &baseline)[0].svg,
+            crate::render_document_svg(&document, &profile)[0].svg
+        );
     }
 
     #[test]
@@ -747,6 +1290,157 @@ mod tests {
             let opacity: f64 = path.attribute("fill-opacity").unwrap().parse().unwrap();
             accumulated += (1.0 - accumulated) * opacity;
             assert!((accumulated - (layer + 1) as f64 / 32.0).abs() < 2e-6);
+        }
+    }
+}
+
+#[cfg(all(test, feature = "serde", feature = "pdf"))]
+mod tool_one_export_control {
+    use super::tests::{Input, marker3_stroke};
+    use crate::{BoundingBox, Color, Document, Page, RenderOptions};
+
+    #[test]
+    fn export_tool_one_profile_control() {
+        let input = Input {
+            samples: vec![
+                [25.5, 28.75],
+                [32.5, 39.75],
+                [42.5, 30.75],
+                [49.5, 41.75],
+                [55.5, 31.75],
+            ],
+            width: 8.0,
+            pressures: Some(vec![0.1, 0.9, 0.3, 0.8, 0.2]),
+            tool_type_raw: 1,
+            fixed_width: false,
+        };
+        let mut stroke = marker3_stroke(&input);
+        stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x8033cc55);
+        stroke.color = Some(Color {
+            r: 0x33,
+            g: 0xcc,
+            b: 0x55,
+        });
+        let document = Document {
+            pages: vec![Page {
+                uuid: "marker3-tool1".into(),
+                width: 128,
+                height: 128,
+                content_bbox: BoundingBox::default(),
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            }],
+            metadata: Default::default(),
+        };
+        let baseline = crate::render_document_svg(&document, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let options = RenderOptions {
+            marker3_output_scale: Some(crate::Marker3OutputScale::One),
+            ..Default::default()
+        };
+        let profile = crate::render_document_svg(&document, &options)[0]
+            .svg
+            .clone();
+        assert_ne!(baseline, profile);
+        let double = RenderOptions {
+            marker3_output_scale: Some(crate::Marker3OutputScale::Two),
+            ..Default::default()
+        };
+        assert_ne!(
+            baseline,
+            crate::render_document_svg(&document, &double)[0].svg
+        );
+        let mut straight = document.clone();
+        if let crate::PageObjectContent::Stroke(stroke) = &mut straight.pages[0].objects[0].content
+        {
+            stroke.rendering.as_mut().unwrap().pen_name =
+                Some("com.samsung.android.sdk.pen.pen.preload.StraightMarker".into());
+        } else {
+            panic!("expected stroke");
+        }
+        assert_eq!(
+            crate::render_document_svg(&straight, &RenderOptions::default())[0].svg,
+            crate::render_document_svg(&straight, &double)[0].svg
+        );
+        for (size, color) in [
+            (Some(3.99), Some(0x8033cc55)),
+            (Some(8.01), Some(0x8033cc55)),
+            (Some(8.0), None),
+        ] {
+            let mut unsupported = document.clone();
+            if let crate::PageObjectContent::Stroke(stroke) =
+                &mut unsupported.pages[0].objects[0].content
+            {
+                let style = &mut stroke.rendering.as_mut().unwrap().style;
+                style.pen_size = size;
+                style.color_argb = color;
+            } else {
+                panic!("expected stroke");
+            }
+            assert_eq!(
+                crate::render_document_svg(&unsupported, &RenderOptions::default())[0].svg,
+                crate::render_document_svg(&unsupported, &double)[0].svg
+            );
+        }
+        for scale in [
+            crate::Marker3OutputScale::Half,
+            crate::Marker3OutputScale::Four,
+            crate::Marker3OutputScale::Eight,
+        ] {
+            let outside = RenderOptions {
+                marker3_output_scale: Some(scale),
+                ..Default::default()
+            };
+            assert_eq!(
+                baseline,
+                crate::render_document_svg(&document, &outside)[0].svg
+            );
+            assert_eq!(
+                crate::render_document_pdf(
+                    &document,
+                    &RenderOptions::default(),
+                    &Default::default()
+                )
+                .unwrap(),
+                crate::render_document_pdf(&document, &outside, &Default::default()).unwrap()
+            );
+        }
+        let mut unsupported = document.clone();
+        if let crate::PageObjectContent::Stroke(stroke) =
+            &mut unsupported.pages[0].objects[0].content
+        {
+            stroke.rendering.as_mut().unwrap().advanced_settings = Some("unknown".into());
+        } else {
+            panic!("expected stroke");
+        }
+        assert_eq!(
+            crate::render_document_svg(&unsupported, &RenderOptions::default())[0].svg,
+            crate::render_document_svg(&unsupported, &options)[0].svg
+        );
+        let Some(dir) = std::env::var_os("SDOCX_MARKER3_TOOL1_EXPORT") else {
+            return;
+        };
+        for (name, scale) in [
+            ("baseline", None),
+            ("profile", Some(crate::Marker3OutputScale::One)),
+        ] {
+            let options = RenderOptions {
+                marker3_output_scale: scale,
+                ..Default::default()
+            };
+            std::fs::write(
+                std::path::Path::new(&dir).join(format!("{name}.svg")),
+                &crate::render_document_svg(&document, &options)[0].svg,
+            )
+            .unwrap();
+            std::fs::write(
+                std::path::Path::new(&dir).join(format!("{name}.pdf")),
+                crate::render_document_pdf(&document, &options, &Default::default()).unwrap(),
+            )
+            .unwrap();
         }
     }
 }
