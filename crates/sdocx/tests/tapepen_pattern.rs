@@ -72,8 +72,10 @@ fn retained_native_controls() {
         format!("{:x}", Sha256::digest(source.as_bytes())),
         "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b"
     );
-    assert_eq!(format!("{:x}", Sha256::digest(rasterize(&source, 256).unwrap())),
-        "42abf1113cfd13c27f1e0ccb29affae62221c0888f5ffcdc2425e2169b71b13d");
+    assert_eq!(
+        format!("{:x}", Sha256::digest(rasterize(&source, 256).unwrap())),
+        "42abf1113cfd13c27f1e0ccb29affae62221c0888f5ffcdc2425e2169b71b13d"
+    );
     let cases = [
         (
             source.clone(),

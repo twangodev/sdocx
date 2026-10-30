@@ -398,9 +398,10 @@ fn circle_geometry_svg(svg: &str, expected_rectangles: usize) -> String {
         assert!(attributes.iter().any(|(name, _)| name == "fill"));
         output.push_str("<circle");
         for (name, value) in attributes {
-            if (name == "shape-rendering" && value == "crispEdges") || geometry
-                .iter()
-                .any(|(geometry_name, _)| name == *geometry_name)
+            if (name == "shape-rendering" && value == "crispEdges")
+                || geometry
+                    .iter()
+                    .any(|(geometry_name, _)| name == *geometry_name)
             {
                 continue;
             }

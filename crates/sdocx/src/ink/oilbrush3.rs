@@ -133,7 +133,10 @@ where
         || stroke.timestamps.len() != count
         || stroke.tilts.len() != count
         || stroke.orientations.len() != count
-        || stroke.points.iter().any(|p| !(0.0..=1920.0).contains(&p.x) || !(0.0..=1080.0).contains(&p.y))
+        || stroke
+            .points
+            .iter()
+            .any(|p| !(0.0..=1920.0).contains(&p.x) || !(0.0..=1080.0).contains(&p.y))
     {
         return Err("OilBrush3 input channels or coordinates are outside the bounded host profile");
     }
