@@ -1,0 +1,65 @@
+{
+  "scope": "Synthetic host Mesa Drawing clear=0 with caller-injected uniform opaque full page; not device or saved-note parity",
+  "points": [
+    [
+      600.0,
+      420.0
+    ],
+    [
+      608.0,
+      429.0
+    ],
+    [
+      619.0,
+      423.0
+    ],
+    [
+      631.0,
+      436.0
+    ]
+  ],
+  "timestamps": [
+    0,
+    8,
+    19,
+    37
+  ],
+  "initial_sha256": "665324f95724c2cd95e5c4898d70ece7bc1351ebf48f2e8c91b6180c80f8066f",
+  "prefix_sha256": [
+    "a6e5d0ef445b7d5598b4fbdb20f25130155b5f0fbfe2e963e4cd71df941684a1",
+    "989cce80df554dab2269331885cb28a650c374e18d9d0adea17d9844994389d2",
+    "0edce7cc3d164aa267f610e6fad23eea797af4fbfcc1476e80b72f5a78a63a34",
+    "7f0f78a7577dab0db2dc277ddb78648c05f183c5e6f5722719b665a44e18e9e9",
+    "a8290d17e616dea3d9333196303b034ce38f78fb56446a0da412db2cbf4ac87b",
+    "8d0f7e4db871d451d42f09ea2f5d5db37dfb784d744073825aa38d45d71a95c2",
+    "1a8c57a14a0560accfefc213d3c3301a8eeee7e74c4c54128e0d5160173978d4",
+    "4dcae52d3fdb3be2919dfbffcd31cfa061d9af42c0175aeb29db923bd9d89cc0",
+    "6994dda377f499467e1af43088d15ae4c794ee1fbcd93dbf2598fff491214481",
+    "589c45576599dbe61a7b8d6375a663457ad4f701986ccab647ec8274a4378831",
+    "7a6e0196070fbbdfdaa10a197cb56ce63f6d934d0e0e48170636a81127ba01c1",
+    "7b13a04d1615c882afcb5a681c664e09e29235bb746f319000dde010d3f2638e",
+    "c6a6f9d7e79b81b70fa499da13158e63eaa2013e983b88ff59fd849c94919951",
+    "a7aabca06044d3e320b1a4b6e02660d59a722c68aff5822f3e332fa52afb8ad7",
+    "4c4b08e4816080ad5feaac5ed889ca94639e36a3103f8d84e7e40ac3af8020a9",
+    "851a80e570f16a2971c4a72db81cae958a79c69deef4b04f0ea15f0ac739b71c",
+    "49c0dd30df94340e23ea0a5d6a773e639b81bbce3b032b3f0dcbbda0b5a78ce0"
+  ],
+  "runner_sha256": "4d64a429802111757167a2878c941ff51c69f16320c5da9dc138a267276198cf",
+  "preflight_sha256": "2c9304fd6e7990cc5e8657e5698817b6405b2d428ac82aeb00c5e8b2320f179c",
+  "native_hashes": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "OilBrush3": "b6402638f43bebdb8aa95ed33617820ef923a19dbac8475ef980204cdfc419d4",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libc++": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "drawing_return": 1,
+  "queue_end_gl_error": 0
+}

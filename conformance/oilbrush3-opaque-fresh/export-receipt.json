@@ -1,0 +1,31 @@
+{
+  "scope": "Fresh curved trajectory on synthetic host-Mesa full opaque caller page, clear=0, native RGB vs public exports at 1x; not device, saved-note, or general lifecycle parity.",
+  "capture": "conformance/oilbrush3-opaque-fresh/receipt.json",
+  "mupdf_version": "1.28.2",
+  "pdfium_version": "150.0.7869.0",
+  "pdfs": {
+    "source.pdf": {
+      "sha256": "e77125ca3d0345d25f2db28e940d5aa73abcbbc71cfd8ee6ab47d79819230a4b",
+      "mupdf": {
+        "differing_channels": 0,
+        "maximum_error": 0
+      },
+      "pdfium": {
+        "differing_channels": 0,
+        "maximum_error": 0
+      }
+    },
+    "source-svg.pdf": {
+      "sha256": "6c714e05ea4fc716b31f975300277554d2695ca6c4dc464f6e11925eb01aa2a0",
+      "mupdf": {
+        "differing_channels": 0,
+        "maximum_error": 0
+      },
+      "pdfium": {
+        "differing_channels": 0,
+        "maximum_error": 0
+      }
+    }
+  },
+  "native_rgb_sha256": "5f244daa3fd8691a48aa656dfe169d1ec7bd047caa43c4da04573dba250c33fd"
+}

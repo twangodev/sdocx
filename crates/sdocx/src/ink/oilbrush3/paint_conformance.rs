@@ -2550,3 +2550,84 @@ fn oilbrush3_opaque_page_public_export() {
         .unwrap();
     }
 }
+
+#[cfg(all(feature = "render", feature = "pdf"))]
+#[test]
+fn oilbrush3_opaque_fresh_public_export() {
+    use crate::{InkRasterCanvas, InkRasterContext, InkRasterOrigin, PdfOptions};
+    let fixture: serde_json::Value = serde_json::from_str(super::tests::FIXTURE).unwrap();
+    let mut stroke = super::tests::public_stroke_from_fixture(&fixture);
+    for (point, (x, y)) in stroke.points.iter_mut().zip([
+        (600.0, 420.0),
+        (608.0, 429.0),
+        (619.0, 423.0),
+        (631.0, 436.0),
+    ]) {
+        point.x = x;
+        point.y = y;
+    }
+    let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
+    let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
+    let mut canvas = InkRasterCanvas::new(
+        InkRasterContext {
+            width: 1920,
+            height: 1080,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        },
+        [41, 83, 127, 255],
+    )
+    .unwrap();
+    canvas
+        .paint_oilbrush3_opaque_host(&stroke, &mask, &depth)
+        .unwrap();
+    let mut decoder = ZlibDecoder::new(
+        &include_bytes!("../../../../../conformance/oilbrush3-opaque-fresh/prefixes.zlib")[..],
+    );
+    let mut native = vec![0u8; V17_PIXELS * 4];
+    for _ in 0..17 {
+        decoder.read_exact(&mut native).unwrap();
+    }
+    assert_eq!(decoder.read(&mut [0]).unwrap(), 0);
+    let native_top: Vec<u8> = native
+        .chunks_exact(V17_PAGE_WIDTH * 4)
+        .rev()
+        .flatten()
+        .copied()
+        .collect();
+    assert_eq!(canvas.pixels().as_flattened(), native_top);
+    assert!(canvas.pixels().iter().any(|p| *p != [41, 83, 127, 255]));
+    let before = canvas.pixels().to_vec();
+    assert!(canvas
+        .paint_oilbrush3_opaque_host(&stroke, &mask, &depth)
+        .is_err());
+    assert_eq!(canvas.pixels(), before);
+    let svg = canvas.rendered_page(0).unwrap();
+    let tree = resvg::usvg::Tree::from_str(&svg.svg, &Default::default()).unwrap();
+    let mut pix = resvg::tiny_skia::Pixmap::new(1920, 1080).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pix.as_mut(),
+    );
+    assert_eq!(pix.data(), native_top);
+    if let Some(dir) = std::env::var_os("SDOCX_OILBRUSH3_OPAQUE_FRESH_EXPORT_DIR") {
+        let dir = std::path::Path::new(&dir);
+        let opts = PdfOptions::default();
+        std::fs::write(dir.join("source.svg"), &svg.svg).unwrap();
+        std::fs::write(dir.join("source.pdf"), canvas.to_pdf(&opts).unwrap()).unwrap();
+        std::fs::write(
+            dir.join("source-svg.pdf"),
+            crate::render_svg_pages_pdf(&[svg], &opts).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("native.rgb"),
+            native_top
+                .chunks_exact(4)
+                .flat_map(|p| p[..3].iter().copied())
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+    }
+}
