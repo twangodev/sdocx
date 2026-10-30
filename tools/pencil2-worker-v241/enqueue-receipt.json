@@ -1,0 +1,44 @@
+{
+  "scope": "Native EventLoop consumes a synthetic enqueued request in Unicorn, with host intervention; no concurrent scheduling, Matrix4, GPU paint, saved page or device behavior.",
+  "script_sha256": "eea7a5e0c43b2e0e72c5c01679112dee5f6608e95bf9aba2ece8b1d628862222",
+  "queue_probe_sha256": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+  "draw_probe_sha256": "17f74e27d9dc0e0dc4173f08901444bd0627eae7a1b6e023232ff78cb9f72982",
+  "drawing_dso_sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+  "observed": {
+    "submission_return": 1,
+    "native_entry_order": [
+      "RequestDraw",
+      "findRequest",
+      "addRequest"
+    ],
+    "requests_enqueued": 1,
+    "eventloop_entry_and_cleanup_rvas": [
+      "0x7b81c",
+      "0x7b830",
+      "0x7b848",
+      "0x7b868",
+      "0x7b880",
+      "0x7b88c"
+    ],
+    "remaining_requests": 0,
+    "empty_sentinel_links": true,
+    "distinct_clone": true,
+    "clone_point_count": 4,
+    "redraw_pen_calls": 1,
+    "addpoint_calls": 84,
+    "matrix_setter_calls": 2,
+    "matrix": [
+      1,
+      0,
+      0,
+      0,
+      -1,
+      0,
+      6,
+      183,
+      1
+    ]
+  },
+  "limitations": "Queue links are transplanted from the synthetic submission object into native singleton globals. Lock and condition operations and request destructor are host callbacks; execution stops at the loop back-edge. Bitmap, graphics, context, allocation and reference adapters are synthetic. Host runtime and transitive harness dependencies are not fully pinned.",
+  "reproduction": "python3 tools/pencil2-worker-v241/probe.py"
+}
