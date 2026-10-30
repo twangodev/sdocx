@@ -3472,7 +3472,7 @@ mod tests {
         );
         let legacy_replay = crate::prepare_stroke_for_page(&stroke, false);
         assert_eq!(format!("{default_replay:?}"), format!("{legacy_replay:?}"));
-        for scale in [0, 5, u32::MAX] {
+        for scale in [0, 9, u32::MAX] {
             let options = crate::RenderOptions {
                 inkpen_v1_output_scale: Some(scale),
                 ..Default::default()

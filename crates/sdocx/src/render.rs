@@ -343,7 +343,7 @@ pub struct RenderOptions {
     /// Opt into scale-aware V4 coverage at a tested uniform output scale (1, 2, 3, or 4).
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen_v4_output_scale: Option<u32>,
-    /// Opt into scale-aware V1 coverage at a tested uniform output scale (1, 2, 3, or 4).
+    /// Opt into scale-aware V1 coverage at a tested uniform output scale (1 through 8).
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen_v1_output_scale: Option<u32>,
     /// Explicit InkPen2 V9 paint profile. `None` preserves fallback behavior;
@@ -4694,7 +4694,7 @@ fn render_stroke(
             (if is_v4 {
                 inkpen_v4_output_scale.filter(|scale| matches!(scale, 1..=4))
             } else {
-                inkpen_v1_output_scale.filter(|scale| matches!(scale, 1..=4))
+                inkpen_v1_output_scale.filter(|scale| matches!(scale, 1..=8))
             })
             .unwrap_or(1),
         )
@@ -4940,7 +4940,7 @@ fn prepare_page_inkpen_with_version(
         .or_else(|| {
             crate::ink::prepare_inkpen_v1_for_page_with_fixed_width(
                 stroke,
-                v1_scale.is_some_and(|scale| matches!(scale, 1..=4)),
+                v1_scale.is_some_and(|scale| matches!(scale, 1..=8)),
             )
             .map(|ink| (ink, false))
         })
@@ -5624,7 +5624,7 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
         .or_else(|| {
             options
                 .inkpen_v1_output_scale
-                .filter(|scale| matches!(scale, 1..=4))
+                .filter(|scale| matches!(scale, 1..=8))
                 .and_then(|_| crate::ink::prepare_inkpen_v1_for_page_with_fixed_width(stroke, true))
                 .map(|ink| (ink, false))
         });
@@ -5642,7 +5642,7 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
             } else {
                 options
                     .inkpen_v1_output_scale
-                    .filter(|scale| matches!(scale, 1..=4))
+                    .filter(|scale| matches!(scale, 1..=8))
             })
             .unwrap_or(1),
         )
@@ -5713,7 +5713,7 @@ pub fn prepare_stroke_for_viewport_with_theme<'a>(
     if viewport.contains(&0)
         && options
             .inkpen_v1_output_scale
-            .is_some_and(|scale| matches!(scale, 1..=4))
+            .is_some_and(|scale| matches!(scale, 1..=8))
         && crate::ink::prepare_inkpen_v1_for_page_with_fixed_width(stroke, true).is_some()
     {
         return crate::ink::prepare_stroke_for_context(
