@@ -273,6 +273,14 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
     }
     for i in 1..(n - 1) {
         let current = input.points[i];
+        // GLV4 drawLine (0x2acc4..0x2ad6c) leaves all path and endpoint
+        // state untouched when displacement is below the display-scaled gate.
+        let dx = last_actual.x - current.x;
+        let dy = last_actual.y - current.y;
+        let density = pen.width.min(pen.height) as f32 / 360.;
+        if dx.mul_add(dx, dy * dy).sqrt() < (pen.size * 0.01) * density {
+            continue;
+        }
         let midpoint = last_actual.mid(current);
         let curve = Quad::new(path_start, last_actual, midpoint);
         if !curve.length.is_finite() {
@@ -306,7 +314,7 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
         path_start = midpoint;
     }
     emit(
-        input.points[n - 2],
+        last_actual,
         terminal_size,
         *input.orientations.last().unwrap(),
     )?;
@@ -713,6 +721,106 @@ mod tests {
                 case["native_stream"]["sha256"].as_str().unwrap()
             );
         }
+    }
+
+    #[test]
+    fn source_display_sizes_and_bent_paths_match_native_context_controls() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/colored-pencil-v4-source-context-native.json"
+        ))
+        .unwrap();
+        let cases = fixture["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 31);
+        let mut failures = Vec::new();
+        for case in cases {
+            let input = &case["input"];
+            let raw_size = f32_bits(&input["pen_size_f32_bits"]);
+            let pen = PenData {
+                size: f32_bits(&case["pen_data"]["size_f32_bits"]),
+                width: case["pen_data"]["width"].as_i64().unwrap() as i32,
+                height: case["pen_data"]["height"].as_i64().unwrap() as i32,
+                spacing_extra: case["pen_data"]["spacing_extra"].as_i64().unwrap() as i32,
+            };
+            assert_eq!(
+                pen.size.to_bits(),
+                raw_size.clamp(0.4, 800.).to_bits(),
+                "{}",
+                case["id"]
+            );
+            assert_eq!(
+                pen.size.to_bits(),
+                f32_bits(&case["pen_get_size_f32_bits"]).to_bits()
+            );
+            assert_eq!(
+                [pen.width, pen.height],
+                [
+                    case["screen"][0].as_i64().unwrap() as i32,
+                    case["screen"][1].as_i64().unwrap() as i32
+                ]
+            );
+            assert_eq!(case["drawing_and_selected_redraw_equal"], true);
+            let input = StrokeInput {
+                points: input["points_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|p| P {
+                        x: f32_bits(&p[0]),
+                        y: f32_bits(&p[1]),
+                    })
+                    .collect(),
+                tilts: input["tilt_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(f32_bits)
+                    .collect(),
+                orientations: input["orientation_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(f32_bits)
+                    .collect(),
+                size: raw_size,
+                curve_enabled: input["curve_enabled"].as_bool().unwrap(),
+                tool_type: input["tool_type"].as_i64().unwrap() as i32,
+            };
+            let actual = sample(&input, pen).unwrap();
+            let expected = hex_bytes(case["stream_hex"].as_str().unwrap());
+            assert_eq!(
+                expected.len(),
+                case["record_count"].as_u64().unwrap() as usize * 20
+            );
+            assert_eq!(sha256(&expected), case["stream_sha256"].as_str().unwrap());
+            let first = actual
+                .stream
+                .iter()
+                .zip(&expected)
+                .position(|(a, b)| a != b);
+            if actual.stream != expected {
+                let row = first.unwrap_or(0) / 20;
+                let floats = |bytes: &[u8]| {
+                    bytes.get(row * 20..row * 20 + 20).map(|b| {
+                        std::array::from_fn::<_, 5, _>(|i| {
+                            f32::from_le_bytes(b[i * 4..i * 4 + 4].try_into().unwrap())
+                        })
+                    })
+                };
+                failures.push((
+                    case["id"].clone(),
+                    actual.stream.len() / 20,
+                    expected.len() / 20,
+                    first,
+                    floats(&actual.stream),
+                    floats(&expected),
+                ));
+            }
+            assert_eq!(
+                actual.paths.len(),
+                case["path_sample_count"].as_u64().unwrap() as usize
+            );
+        }
+        assert!(failures.is_empty(), "{failures:?}");
     }
 
     #[test]
