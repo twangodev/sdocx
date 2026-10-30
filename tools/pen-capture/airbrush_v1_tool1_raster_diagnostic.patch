@@ -1,0 +1,18 @@
+--- a/crates/sdocx/src/render.rs
++++ b/crates/sdocx/src/render.rs
+@@ -15361,6 +15361,15 @@
+                         };
+                         println!("generic error: {error}; old reference {expected}");
+                     }
++                    if name == "candidate" {
++                        if let Some(directory) = std::env::var_os("SDOCX_AIRBRUSH_RASTER_DIR") {
++                            let png = pixmap.encode_png().unwrap();
++                            let output = std::path::Path::new(&directory)
++                                .join(format!("{path}-{tool}.png"));
++                            std::fs::OpenOptions::new().write(true).create_new(true)
++                                .open(output).unwrap().write_all(&png).unwrap();
++                        }
++                    }
+                     if let Some(directory) = std::env::var_os("SDOCX_AIRBRUSH_MATRIX_DIR") {
+                         let pdf = crate::pdf::render_scenes_pdf_with_progress(
+                             std::slice::from_ref(&scene),
