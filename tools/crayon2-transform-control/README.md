@@ -24,3 +24,40 @@ for comparison. Verify the fresh native JSON with
 this checks the source, clip matrix, texture uniforms, texture uploads, blend
 and draw evidence, and retained vector and frame bytes. The comparator checks the retained frame, vector, metrics and
 export hashes. Native texture inputs and emulation dependencies remain local.
+
+## Isolated translated stamp intervention
+
+At SVG pixel (52, 102), native record 139 alone renders RGB (60, 146, 215),
+while the public document SVG gives (62, 139, 207). The original shader's
+isolated paint draw and recompiled fragment diagnostics are retained in
+`intervention-receipt.json`. The recompiled diagnostic reports point 255 and background
+111. The candidate grid calculation in `model139.py` selects point 255 and
+background 41 at (113, 4). The expected adjacent texel (114, 3) has value 111;
+the observed value alone does not uniquely identify a texel or establish the
+original shader sample.
+Packed varying probes encode the low float bits; their high bytes are inferred
+from expected coordinate ranges. Both axes are at a texture-cell boundary.
+The interventions recompile the shader and do not establish original shader
+intermediates or a general correction.
+
+Use the environment from the document holdout, then run
+`intervention.py 139 MODE` for MODE `paint`, `point`, `background`, `xfrac`,
+`yfrac`, `xuv`, or `yuv`. Output is native capture JSON; read the lower-left
+RGBA pixel (52, 57). `model139.py` requires NumPy and the hash-gated native
+texture files described in the holdout. Its calculation is a diagnostic of
+this selected sample, not a separate production implementation.
+
+To reproduce and verify every mode (with the holdout environment already set):
+
+```sh
+work_dir=$(mktemp -d /tmp/sdocx-crayon-intervention.XXXXXX)
+for mode in paint point background xfrac yfrac xuv yuv; do
+  .venv/bin/python tools/crayon2-transform-control/intervention.py 139 "$mode" > "$work_dir/$mode.json"
+done
+.venv/bin/python tools/crayon2-transform-control/verify_intervention.py "$work_dir"
+.venv/bin/python tools/crayon2-transform-control/model139.py
+```
+
+The verifier checks the source, selected native record, native dependency and
+host library hashes, shader source hashes, uniforms, textures, blend, draw,
+frame and selected pixel against the receipt.
