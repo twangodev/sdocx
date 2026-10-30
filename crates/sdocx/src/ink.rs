@@ -2977,3 +2977,6 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod fountain_v14_composite_tests;
