@@ -1,0 +1,614 @@
+{
+  "scope": "Paired synthetic identity-matrix host-Mesa Drawing controls; native GLSL uniform calls; not saved-document or device parity",
+  "uniforms": {
+    "256": {
+      "uVertexHalfExtent": [
+        1.6800000667572021,
+        6.720000267028809
+      ],
+      "uEllipseRadii": [
+        1.5,
+        6.0
+      ],
+      "uPosOffset": [
+        0.0,
+        0.0
+      ],
+      "patternSize": [
+        64.0,
+        64.0
+      ],
+      "grainOffset": [
+        77.0,
+        59.0
+      ],
+      "uShadowMaskOffsetUV": [
+        0.0005273520946502686,
+        0.0005859434604644775
+      ]
+    },
+    "512": {
+      "uVertexHalfExtent": [
+        1.7754546403884888,
+        7.101818561553955
+      ],
+      "uEllipseRadii": [
+        1.5,
+        6.0
+      ],
+      "uPosOffset": [
+        0.0,
+        0.0
+      ],
+      "patternSize": [
+        128.0,
+        128.0
+      ],
+      "grainOffset": [
+        77.0,
+        59.0
+      ],
+      "uShadowMaskOffsetUV": [
+        0.0005273520946502686,
+        0.0005859434604644775
+      ]
+    }
+  },
+  "provenance": {
+    "256": {
+      "capture_log_sha256": "79631bd2adb07adb3e8e7975f4d1937328d2c1340f4b2b5f59515458fa8ecf8f",
+      "use_program_events": [
+        {
+          "call": "glUseProgram",
+          "caller_lr": "0x503b34c",
+          "caller_rva": "-0xfc4cb4",
+          "caller_symbol": {
+            "address": "0x503b2e4",
+            "name": "SPen::TapePenStrokeDrawableRTV1::drawStrokeMask(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)",
+            "offset": "0x64"
+          },
+          "egl_current_context": "0x12417850",
+          "phase": "native_public_queue_run_23",
+          "program": 4,
+          "sequence": 98,
+          "source": "adapter glUseProgram forwarded once to actual Mesa GLES"
+        },
+        {
+          "call": "glUseProgram",
+          "caller_lr": "0x503b8b4",
+          "caller_rva": "-0xfc474c",
+          "caller_symbol": {
+            "address": "0x503b864",
+            "name": "SPen::TapePenStrokeDrawableRTV1::drawStrokeComposite(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)",
+            "offset": "0x4c"
+          },
+          "egl_current_context": "0x12417850",
+          "phase": "native_public_queue_run_23",
+          "program": 5,
+          "sequence": 99,
+          "source": "adapter glUseProgram forwarded once to actual Mesa GLES"
+        },
+        {
+          "call": "glUseProgram",
+          "caller_lr": "0x503addc",
+          "caller_rva": "-0xfc5224",
+          "caller_symbol": {
+            "address": "0x503a89c",
+            "name": "SPen::TapePenStrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)",
+            "offset": "0x53c"
+          },
+          "egl_current_context": "0x12417850",
+          "phase": "native_public_queue_run_23",
+          "program": 8,
+          "sequence": 100,
+          "source": "adapter glUseProgram forwarded once to actual Mesa GLES"
+        }
+      ],
+      "draws": [
+        {
+          "index": 0,
+          "api": "glDrawArraysInstanced",
+          "current_program": 4,
+          "phase": "native_public_queue_run_23"
+        },
+        {
+          "index": 1,
+          "api": "glDrawArrays",
+          "current_program": 5,
+          "phase": "native_public_queue_run_23"
+        },
+        {
+          "index": 2,
+          "api": "glDrawArrays",
+          "current_program": 8,
+          "phase": "native_public_queue_run_23"
+        }
+      ],
+      "uniforms": [
+        {
+          "draw_index": 0,
+          "program": 4,
+          "location": 1,
+          "name": "uVertexHalfExtent",
+          "payload_base64": "PgrXPz4K10A=",
+          "payload_sha256": "8c3d0947c7f32bfb46588949f0d22edd6561ef586454968fd16750d622882154",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x501854e",
+            "location": 1,
+            "name_bytes_hex": "7556657274657848616c66457874656e74",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 99662,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 18,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "uVertexHalfExtent",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 4,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        },
+        {
+          "draw_index": 0,
+          "program": 4,
+          "location": 5,
+          "name": "uEllipseRadii",
+          "payload_base64": "AADAPwAAwEA=",
+          "payload_sha256": "48eec5908a0c02866a30cb4c4d1df12bcfe6aa510fafb5d1a01321fafa4e8eeb",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x5017d58",
+            "location": 5,
+            "name_bytes_hex": "75456c6c697073655261646969",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 97624,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 14,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "uEllipseRadii",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 4,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        },
+        {
+          "draw_index": 0,
+          "program": 4,
+          "location": 2,
+          "name": "uPosOffset",
+          "payload_base64": "AAAAAAAAAAA=",
+          "payload_sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x5017bd0",
+            "location": 2,
+            "name_bytes_hex": "75506f734f6666736574",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 97232,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 11,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "uPosOffset",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 4,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        },
+        {
+          "draw_index": 1,
+          "program": 5,
+          "location": 1,
+          "name": "patternSize",
+          "payload_base64": "AACAQgAAgEI=",
+          "payload_sha256": "1c3ec42e026ef9b75e4563b30da66117ef8e0b846a87d84d70becdf0f8e018a2",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x5017502",
+            "location": 1,
+            "name_bytes_hex": "7061747465726e53697a65",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 95490,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 12,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "patternSize",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 5,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        },
+        {
+          "draw_index": 1,
+          "program": 5,
+          "location": 2,
+          "name": "grainOffset",
+          "payload_base64": "AACaQgAAbEI=",
+          "payload_sha256": "87733327c6d585e370e29e781b3be7740317225552a67b45bdb0776d68af507d",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x5017fa0",
+            "location": 2,
+            "name_bytes_hex": "677261696e4f6666736574",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 98208,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 12,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "grainOffset",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 5,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        },
+        {
+          "draw_index": 1,
+          "program": 5,
+          "location": 7,
+          "name": "uShadowMaskOffsetUV",
+          "payload_base64": "AD4KOgCaGTo=",
+          "payload_sha256": "17352baf4851203c6021d7d488237e5af54cc41aaaad83899685732e4e083d85",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x5017bdb",
+            "location": 7,
+            "name_bytes_hex": "75536861646f774d61736b4f66667365745556",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 97243,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 20,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "uShadowMaskOffsetUV",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 5,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        }
+      ]
+    },
+    "512": {
+      "capture_log_sha256": "026bb206b55207e9b3e358088068762b91214f1f3e7aa826744d24a12f0cd31b",
+      "use_program_events": [
+        {
+          "call": "glUseProgram",
+          "caller_lr": "0x503b34c",
+          "caller_rva": "-0xfc4cb4",
+          "caller_symbol": {
+            "address": "0x503b2e4",
+            "name": "SPen::TapePenStrokeDrawableRTV1::drawStrokeMask(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)",
+            "offset": "0x64"
+          },
+          "egl_current_context": "0x441cefc0",
+          "phase": "native_public_queue_run_23",
+          "program": 4,
+          "sequence": 98,
+          "source": "adapter glUseProgram forwarded once to actual Mesa GLES"
+        },
+        {
+          "call": "glUseProgram",
+          "caller_lr": "0x503b8b4",
+          "caller_rva": "-0xfc474c",
+          "caller_symbol": {
+            "address": "0x503b864",
+            "name": "SPen::TapePenStrokeDrawableRTV1::drawStrokeComposite(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)",
+            "offset": "0x4c"
+          },
+          "egl_current_context": "0x441cefc0",
+          "phase": "native_public_queue_run_23",
+          "program": 5,
+          "sequence": 99,
+          "source": "adapter glUseProgram forwarded once to actual Mesa GLES"
+        },
+        {
+          "call": "glUseProgram",
+          "caller_lr": "0x503addc",
+          "caller_rva": "-0xfc5224",
+          "caller_symbol": {
+            "address": "0x503a89c",
+            "name": "SPen::TapePenStrokeDrawableRTV1::Draw(SPen::ISPSubBitmap*, SPen::Matrix4<float>&)",
+            "offset": "0x53c"
+          },
+          "egl_current_context": "0x441cefc0",
+          "phase": "native_public_queue_run_23",
+          "program": 8,
+          "sequence": 100,
+          "source": "adapter glUseProgram forwarded once to actual Mesa GLES"
+        }
+      ],
+      "draws": [
+        {
+          "index": 0,
+          "api": "glDrawArraysInstanced",
+          "current_program": 4,
+          "phase": "native_public_queue_run_23"
+        },
+        {
+          "index": 1,
+          "api": "glDrawArrays",
+          "current_program": 5,
+          "phase": "native_public_queue_run_23"
+        },
+        {
+          "index": 2,
+          "api": "glDrawArrays",
+          "current_program": 8,
+          "phase": "native_public_queue_run_23"
+        }
+      ],
+      "uniforms": [
+        {
+          "draw_index": 0,
+          "program": 4,
+          "location": 1,
+          "name": "uVertexHalfExtent",
+          "payload_base64": "GULjPxlC40A=",
+          "payload_sha256": "e9c8a11c46e807552ffdeb99c31671a5da22c8d6473d5e822d29d9599bc02788",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x501854e",
+            "location": 1,
+            "name_bytes_hex": "7556657274657848616c66457874656e74",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 99662,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 18,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "uVertexHalfExtent",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 4,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        },
+        {
+          "draw_index": 0,
+          "program": 4,
+          "location": 5,
+          "name": "uEllipseRadii",
+          "payload_base64": "AADAPwAAwEA=",
+          "payload_sha256": "48eec5908a0c02866a30cb4c4d1df12bcfe6aa510fafb5d1a01321fafa4e8eeb",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x5017d58",
+            "location": 5,
+            "name_bytes_hex": "75456c6c697073655261646969",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 97624,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 14,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "uEllipseRadii",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 4,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        },
+        {
+          "draw_index": 0,
+          "program": 4,
+          "location": 2,
+          "name": "uPosOffset",
+          "payload_base64": "AAAAAAAAAAA=",
+          "payload_sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x5017bd0",
+            "location": 2,
+            "name_bytes_hex": "75506f734f6666736574",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 97232,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 11,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "uPosOffset",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 4,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        },
+        {
+          "draw_index": 1,
+          "program": 5,
+          "location": 1,
+          "name": "patternSize",
+          "payload_base64": "AAAAQwAAAEM=",
+          "payload_sha256": "6691ea388fa58edbc37a56e725d3a7162c66ddbb23aab0dcf95a4f6d253a5545",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x5017502",
+            "location": 1,
+            "name_bytes_hex": "7061747465726e53697a65",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 95490,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 12,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "patternSize",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 5,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        },
+        {
+          "draw_index": 1,
+          "program": 5,
+          "location": 2,
+          "name": "grainOffset",
+          "payload_base64": "AACaQgAAbEI=",
+          "payload_sha256": "87733327c6d585e370e29e781b3be7740317225552a67b45bdb0776d68af507d",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x5017fa0",
+            "location": 2,
+            "name_bytes_hex": "677261696e4f6666736574",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 98208,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 12,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "grainOffset",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 5,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        },
+        {
+          "draw_index": 1,
+          "program": 5,
+          "location": 7,
+          "name": "uShadowMaskOffsetUV",
+          "payload_base64": "AD4KOgCaGTo=",
+          "payload_sha256": "17352baf4851203c6021d7d488237e5af54cc41aaaad83899685732e4e083d85",
+          "binding": {
+            "call": "glGetUniformLocation",
+            "guest_name_pointer": "0x5017bdb",
+            "location": 7,
+            "name_bytes_hex": "75536861646f774d61736b4f66667365745556",
+            "name_source_owner": {
+              "file_backed_size": 288320,
+              "kind": "readable_guest_PT_LOAD",
+              "library": "TapePen",
+              "library_sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+              "memory_size": 288320,
+              "offset": 97243,
+              "path": "/home/jding/RustroverProjects/sdocx/scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+              "segment_rva": "0x0",
+              "span_bytes": 20,
+              "zero_fill_tail": false
+            },
+            "name_utf8": "uShadowMaskOffsetUV",
+            "native_callsite": {
+              "caller_rva": "0x5b614",
+              "lr": "0x605b614",
+              "phase": "native_public_queue_run_5"
+            },
+            "program": 5,
+            "source": "actual Mesa glGetUniformLocation; guest name copied byte-exact and NUL-terminated"
+          }
+        }
+      ]
+    }
+  },
+  "interpretation": "The AA-only source approximation holds mask quad extent and pattern size fixed; both change with display in these captures. These observations do not alone establish the full native mapping or compositing.",
+  "capture_verification": "verify-identity-screen-256.py and verify-identity-screen-512.py; each checks input, native library hashes and frame bytes",
+  "replay": "python3 tools/tapepen-public-drawing/identity-screen-state.py /path/to/256.log /path/to/512.log"
+}
