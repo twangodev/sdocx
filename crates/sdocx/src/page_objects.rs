@@ -574,4 +574,92 @@ mod tests {
         page.clear_strokes();
         assert_eq!(page.strokes().count(), 0);
     }
+
+    #[cfg(feature = "render")]
+    #[test]
+    fn scene_stroke_planning_order_matches_rendered_passes_and_nested_admission() {
+        use crate::{BoundingBox, Color, Document, RenderOptions, render_document_svg};
+
+        fn object(red: u8, layer: ObjectRenderLayer) -> PageObject {
+            PageObject {
+                render_layer: layer,
+                source_offset: None,
+                content: PageObjectContent::Stroke(Stroke {
+                    points: vec![
+                        crate::Point { x: 10., y: 10. },
+                        crate::Point { x: 30., y: 10. },
+                    ],
+                    pressures: vec![0.5; 2],
+                    tilts: vec![0.; 2],
+                    orientations: vec![0.; 2],
+                    timestamps: vec![0, 1],
+                    color: Some(Color { r: red, g: 0, b: 0 }),
+                    pen_width: 2.,
+                    rendering: None,
+                    bbox: BoundingBox::default(),
+                }),
+            }
+        }
+        let container = PageObject {
+            render_layer: ObjectRenderLayer::Base,
+            source_offset: None,
+            content: PageObjectContent::Container(vec![
+                object(0x22, ObjectRenderLayer::Masking),
+                PageObject {
+                    render_layer: ObjectRenderLayer::Top,
+                    source_offset: None,
+                    content: PageObjectContent::Descendant(Box::new(PageObjectContent::Container(
+                        vec![object(0x33, ObjectRenderLayer::Top)],
+                    ))),
+                },
+            ]),
+        };
+        let page = Page {
+            uuid: "traversal".into(),
+            width: 192,
+            height: 192,
+            objects: vec![
+                object(0x44, ObjectRenderLayer::Top),
+                object(0x55, ObjectRenderLayer::Masking),
+                object(0x11, ObjectRenderLayer::Base),
+                container,
+                object(0x66, ObjectRenderLayer::Unresolved),
+            ],
+            background_color: None,
+            content_bbox: BoundingBox::default(),
+            template: None,
+            background: Default::default(),
+        };
+        let planned: Vec<_> = page
+            .composed_strokes_in_paint_order_with_context()
+            .iter()
+            .map(|(_, stroke, allowed)| (stroke.color.unwrap().r, *allowed))
+            .collect();
+        assert_eq!(
+            planned,
+            [
+                (0x11, true),
+                (0x22, true),
+                (0x33, false),
+                (0x44, true),
+                (0x55, true)
+            ]
+        );
+        let document = Document {
+            pages: vec![page],
+            metadata: Default::default(),
+        };
+        let svg = render_document_svg(&document, &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let positions: Vec<_> = planned
+            .iter()
+            .map(|(red, _)| {
+                svg.find(&format!("#{red:02x}0000"))
+                    .expect("stroke color in rendered SVG")
+            })
+            .collect();
+        assert!(positions.windows(2).all(|pair| pair[0] < pair[1]), "{svg}");
+        assert!(!svg.contains("#660000"));
+    }
 }
