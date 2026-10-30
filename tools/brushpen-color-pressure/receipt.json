@@ -1,0 +1,69 @@
+{
+  "scope": "Synthetic GLV10 serialized-derived object mutated after native attachment under Unicorn and host Mesa; no original BrushPen note, full loader, device rendering or native SVG/PDF",
+  "mutation": {
+    "pen_size": 16,
+    "point_2": "copy point_0",
+    "pressures": "repeat [0.15, 0.35, 0.65, 0.9] for 204 points",
+    "color": "0xff2379d1"
+  },
+  "frame_sha256": "554a378bc9c23ca9f710c45297616208f4ae9d41f682c33af217b4f56438f7be",
+  "stream_sha256": "c56fa6c74818d3174e2e20062086f17dcf48341b09a4af0c5429f99cfb787ab0",
+  "stream_records": 37,
+  "source_frame_sha256": "9b495ebc360c03d2b064e21bf97ce5a45d6f02290aa04410ba87316ae59874f3",
+  "source_payload_sha256": "28b0848cb3aa9dadc700bf425fd390281c8de0d222e46f7126d0bcbcd527b60f",
+  "source_table_sha256": "d28e2c2c4c9a31cf744b2ba495e8a8847f285d0aabfe3bfe6464522c12e35d73",
+  "outputs_sha256": {
+    "canvas.png": "b68ddaccf87598c0af1a88b1a669b8837badc18946ff0b88583989fc7f88ee2a",
+    "canvas.svg": "85e1a717d776cade601ed02bfe23651f9326e71f11900361ed033276dd984cd4",
+    "direct.pdf": "2d104b88a2dc205cc536ee08c3651a23373268472a58af6e1bb5f93073eecb2e",
+    "svg.pdf": "f0d3f571f770ac415f3c59e9042c869624af2e550da81ae24bba2ac18118a54f"
+  },
+  "versions": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.14.0",
+    "pdfium": "156.0.8076.0",
+    "numpy": "2.4.2",
+    "pillow": "12.1.1"
+  },
+  "comparison": {
+    "canvas_png": {
+      "alpha_l1": 0,
+      "alpha_max": 0,
+      "premultiplied_rgb_l1": 0
+    },
+    "svg_resvg": {
+      "alpha_l1": 0,
+      "alpha_max": 0,
+      "premultiplied_rgb_l1": 0
+    },
+    "direct_mupdf": {
+      "alpha_l1": 83,
+      "alpha_max": 1,
+      "premultiplied_rgb_l1": 675
+    },
+    "direct_pdfium": {
+      "alpha_l1": 0,
+      "alpha_max": 0,
+      "premultiplied_rgb_l1": 0
+    },
+    "svg_mupdf": {
+      "alpha_l1": 83,
+      "alpha_max": 1,
+      "premultiplied_rgb_l1": 675
+    },
+    "svg_pdfium": {
+      "alpha_l1": 0,
+      "alpha_max": 0,
+      "premultiplied_rgb_l1": 0
+    }
+  },
+  "source_commit": "b0b6d03408dd6094ea7dfe1cc8d364c72947848d",
+  "clean_paint_sha256": "992b83f97e3cb6528dbbe2f88f1c05888226447742aff530f2f2a8ae7c54760b",
+  "scripts_sha256": {
+    "capture.py": "68ea5cb9db768b7dfcab6a36c4f7198465e3c2a14eff7481df1672911a0712ce",
+    "compare.py": "59ad1778b451a8c41e6aa1f0d49312c240b3d0f9471f91d7cb09bf334ab7ac77",
+    "export-test.rs": "be82687ed3cdb54f332f36ddcc79e32058bc79dcf6b5ec92fa1ad334de08e5fe",
+    "replay.py": "3174a6cf65df4c3af9b6fa6093fb4732359bf4478921987579cc3be9cda5a635"
+  }
+}
