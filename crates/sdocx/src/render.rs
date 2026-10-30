@@ -4720,6 +4720,15 @@ fn render_stroke(
         crate::prepare_stroke(stroke, false)
     };
     if native_allowed
+        && paint.profile == Some("Marker3")
+        && paint
+            .dot_radii
+            .as_ref()
+            .is_some_and(|radii| !radii.is_empty() && radii.iter().all(|&radius| radius == 0.0))
+    {
+        return;
+    }
+    if native_allowed
         && replay_index.is_none()
         && let Some(profile) = legacy_marker_centerline_profile
         && let Some(points) = crate::ink::legacy_marker_mesh::prepare(

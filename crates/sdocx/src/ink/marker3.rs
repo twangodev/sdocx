@@ -80,7 +80,7 @@ fn prepare_bounded(s: &Stroke, max_stamps: usize) -> Option<Ink> {
         || s.points.is_empty()
         || s.points.len() > 100_000
         || !saved_size.is_finite()
-        || !(0.4..=800.0).contains(&saved_size)
+        || !(0.0..=800.0).contains(&saved_size)
         || s.points.iter().any(|p| {
             !p.x.is_finite() || !p.y.is_finite() || p.x.abs() > 1e7 || p.y.abs() > 1e7
         })
@@ -97,7 +97,13 @@ fn prepare_bounded(s: &Stroke, max_stamps: usize) -> Option<Ink> {
     }
 
     let size = saved_size.trunc();
-    let radius = f64::from(size.mul_add(0.5, 0.5));
+    // Captured RTV1 zero-width controls emit no coverage; intermediate sizes
+    // extrapolate from the integer-width conversion.
+    let radius = if size == 0.0 {
+        0.0
+    } else {
+        f64::from(size.mul_add(0.5, 0.5))
+    };
     let mut points = Vec::new();
     let mut sample_ends = vec![0; s.points.len().max(2)];
     let mut previous = P::from(s.points[0]);
@@ -754,6 +760,35 @@ mod tests {
         for size in [None, Some(f32::NAN), Some(-1.0), Some(801.0)] {
             stroke.rendering.as_mut().unwrap().style.pen_size = size;
             assert!(prepare(&stroke).is_none());
+        }
+    }
+
+    #[test]
+    fn zero_width_admission_keeps_existing_version_and_style_gates() {
+        let fixture = caller_fixture();
+        let case = &fixture["cases"]["marker3_linked_saved1:5:tool2:curve1"];
+        let mut stroke = caller_stroke(case);
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(0.0);
+        for tool in [2, 3] {
+            stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
+            for setting in ["", "5;"] {
+                stroke.rendering.as_mut().unwrap().advanced_settings = Some(setting.into());
+                let paint = prepare_for_page(&stroke).unwrap();
+                assert!(!paint.radii.is_empty() && paint.radii.iter().all(|radius| *radius == 0.0));
+            }
+        }
+        for change in 0..6 {
+            let mut rejected = stroke.clone();
+            let rendering = rejected.rendering.as_mut().unwrap();
+            match change {
+                0 => rendering.tool_type_raw = 1,
+                1 => rendering.advanced_settings = None,
+                2 => rendering.advanced_settings = Some("4;".into()),
+                3 => rendering.style.pen_size = Some(-0.01),
+                4 => rendering.style.pen_size = Some(f32::NAN),
+                _ => rendering.properties.eraser = true,
+            }
+            assert!(prepare_for_page(&rejected).is_none(), "gate {change}");
         }
     }
 

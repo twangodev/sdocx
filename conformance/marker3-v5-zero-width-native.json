@@ -1,0 +1,670 @@
+{
+  "schema": "sdocx.marker3-v5-zero-width-native.v1",
+  "scope": "Synthetic native Model setter ObjectStroke; Drawing-selected Marker3 V5 RTV1, host same-vector-object bridge after wrapper clears RT slots, native GLES on host Mesa transparent RGBA8. No SDK deserialization or device parity. RT SetPenData call-site is not observed in this join; separate explicit SetPenData controls are retained locally.",
+  "cases": {
+    "tool2-zero": {
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0xff336699",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3d",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          8
+        ],
+        "tool_type": 2
+      },
+      "selected_version": "5",
+      "source_size_f32_bits": "00000000",
+      "pen_size_f32_bits": "cdcccc3e",
+      "drawable_size_f32_bits": "cdcccc3e",
+      "draw_source_vector": "00000000000000002ac34c3f00000000f45de63f0000000015122c40000000000f5670400000000078fd9f40000000003a9dba40000000004e49d74000000000b001f6400000000033630b4100000000b8cb1c4100000000653a2f4100000000d86d3e4100000000f5cb4c4100000000d6af5b410000000076196b4100000000db087b4100000000febe854100000000723c8e4100000000c4fc964100000000f8ff9f41000000000000a04100000000",
+      "draw_source_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+      "same_object_bridge": true,
+      "gl_error_checks": 235,
+      "frame_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "nonzero_pixels": 0,
+      "frame_zlib_base64": "eNrtwTEBAAAAwqD1T+1tB6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AADwAAQ=="
+    },
+    "tool2-minimum": {
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0xff336699",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "cdcccc3e",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3d",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          8
+        ],
+        "tool_type": 2
+      },
+      "selected_version": "5",
+      "source_size_f32_bits": "cdcccc3e",
+      "pen_size_f32_bits": "cdcccc3e",
+      "drawable_size_f32_bits": "cdcccc3e",
+      "draw_source_vector": "00000000000000002ac34c3f00000000f45de63f0000000015122c40000000000f5670400000000078fd9f40000000003a9dba40000000004e49d74000000000b001f6400000000033630b4100000000b8cb1c4100000000653a2f4100000000d86d3e4100000000f5cb4c4100000000d6af5b410000000076196b4100000000db087b4100000000febe854100000000723c8e4100000000c4fc964100000000f8ff9f41000000000000a04100000000",
+      "draw_source_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+      "same_object_bridge": true,
+      "gl_error_checks": 235,
+      "frame_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "nonzero_pixels": 0,
+      "frame_zlib_base64": "eNrtwTEBAAAAwqD1T+1tB6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AADwAAQ=="
+    },
+    "tool2-below": {
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0xff336699",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "ffff7f3f",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3d",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          8
+        ],
+        "tool_type": 2
+      },
+      "selected_version": "5",
+      "source_size_f32_bits": "ffff7f3f",
+      "pen_size_f32_bits": "ffff7f3f",
+      "drawable_size_f32_bits": "ffff7f3f",
+      "draw_source_vector": "00000000000000002ac34c3f00000000f45de63f0000000015122c40000000000f5670400000000078fd9f40000000003a9dba40000000004e49d74000000000b001f6400000000033630b4100000000b8cb1c4100000000653a2f4100000000d86d3e4100000000f5cb4c4100000000d6af5b410000000076196b4100000000db087b4100000000febe854100000000723c8e4100000000c4fc964100000000f8ff9f41000000000000a04100000000",
+      "draw_source_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+      "same_object_bridge": true,
+      "gl_error_checks": 235,
+      "frame_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "nonzero_pixels": 0,
+      "frame_zlib_base64": "eNrtwTEBAAAAwqD1T+1tB6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AADwAAQ=="
+    },
+    "tool2-exact": {
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0xff336699",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "0000803f",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3d",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          8
+        ],
+        "tool_type": 2
+      },
+      "selected_version": "5",
+      "source_size_f32_bits": "0000803f",
+      "pen_size_f32_bits": "0000803f",
+      "drawable_size_f32_bits": "0000803f",
+      "draw_source_vector": "00000000000000002ac34c3f00000000f45de63f0000000015122c40000000000f5670400000000078fd9f40000000003a9dba40000000004e49d74000000000b001f6400000000033630b4100000000b8cb1c4100000000653a2f4100000000d86d3e4100000000f5cb4c4100000000d6af5b410000000076196b4100000000db087b4100000000febe854100000000723c8e4100000000c4fc964100000000f8ff9f41000000000000a04100000000",
+      "draw_source_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+      "same_object_bridge": true,
+      "gl_error_checks": 239,
+      "frame_sha256": "0e7a094fcb8731b36f14c265cff3fa1968475298cc80f1e01c7a644053bf4824",
+      "nonzero_pixels": 21,
+      "frame_zlib_base64": "eNrtyjEKwkAQBVBbxSwsWOgaLBIihnSaVhFRPIF6/5vo5BbCe80f5v/cjp/lujvn5vSqyv6am/Edd2Sq+0fk1P92qR6ekVU53GKTtv196jfdJf6L1e44z2WYAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/7QsF3A1r"
+    },
+    "tool3-zero": {
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0xff336699",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3d",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          8
+        ],
+        "tool_type": 3
+      },
+      "selected_version": "5",
+      "source_size_f32_bits": "00000000",
+      "pen_size_f32_bits": "cdcccc3e",
+      "drawable_size_f32_bits": "cdcccc3e",
+      "draw_source_vector": "00000000000000002ac34c3f00000000f45de63f0000000015122c40000000000f5670400000000078fd9f40000000003a9dba40000000004e49d74000000000b001f6400000000033630b4100000000b8cb1c4100000000653a2f4100000000d86d3e4100000000f5cb4c4100000000d6af5b410000000076196b4100000000db087b4100000000febe854100000000723c8e4100000000c4fc964100000000f8ff9f41000000000000a04100000000",
+      "draw_source_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+      "same_object_bridge": true,
+      "gl_error_checks": 235,
+      "frame_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "nonzero_pixels": 0,
+      "frame_zlib_base64": "eNrtwTEBAAAAwqD1T+1tB6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AADwAAQ=="
+    },
+    "tool3-minimum": {
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0xff336699",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "cdcccc3e",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3d",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          8
+        ],
+        "tool_type": 3
+      },
+      "selected_version": "5",
+      "source_size_f32_bits": "cdcccc3e",
+      "pen_size_f32_bits": "cdcccc3e",
+      "drawable_size_f32_bits": "cdcccc3e",
+      "draw_source_vector": "00000000000000002ac34c3f00000000f45de63f0000000015122c40000000000f5670400000000078fd9f40000000003a9dba40000000004e49d74000000000b001f6400000000033630b4100000000b8cb1c4100000000653a2f4100000000d86d3e4100000000f5cb4c4100000000d6af5b410000000076196b4100000000db087b4100000000febe854100000000723c8e4100000000c4fc964100000000f8ff9f41000000000000a04100000000",
+      "draw_source_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+      "same_object_bridge": true,
+      "gl_error_checks": 235,
+      "frame_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "nonzero_pixels": 0,
+      "frame_zlib_base64": "eNrtwTEBAAAAwqD1T+1tB6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AADwAAQ=="
+    },
+    "tool3-below": {
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0xff336699",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "ffff7f3f",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3d",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          8
+        ],
+        "tool_type": 3
+      },
+      "selected_version": "5",
+      "source_size_f32_bits": "ffff7f3f",
+      "pen_size_f32_bits": "ffff7f3f",
+      "drawable_size_f32_bits": "ffff7f3f",
+      "draw_source_vector": "00000000000000002ac34c3f00000000f45de63f0000000015122c40000000000f5670400000000078fd9f40000000003a9dba40000000004e49d74000000000b001f6400000000033630b4100000000b8cb1c4100000000653a2f4100000000d86d3e4100000000f5cb4c4100000000d6af5b410000000076196b4100000000db087b4100000000febe854100000000723c8e4100000000c4fc964100000000f8ff9f41000000000000a04100000000",
+      "draw_source_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+      "same_object_bridge": true,
+      "gl_error_checks": 235,
+      "frame_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "nonzero_pixels": 0,
+      "frame_zlib_base64": "eNrtwTEBAAAAwqD1T+1tB6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AADwAAQ=="
+    },
+    "tool3-exact": {
+      "input": {
+        "advanced_setting": "5;",
+        "color_argb": "0xff336699",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "pen_size_f32_bits": "0000803f",
+        "points_f32_bits": [
+          [
+            "00000000",
+            "00000000"
+          ],
+          [
+            "0000a041",
+            "00000000"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "cdcc4c3d",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          0,
+          8
+        ],
+        "tool_type": 3
+      },
+      "selected_version": "5",
+      "source_size_f32_bits": "0000803f",
+      "pen_size_f32_bits": "0000803f",
+      "drawable_size_f32_bits": "0000803f",
+      "draw_source_vector": "00000000000000002ac34c3f00000000f45de63f0000000015122c40000000000f5670400000000078fd9f40000000003a9dba40000000004e49d74000000000b001f6400000000033630b4100000000b8cb1c4100000000653a2f4100000000d86d3e4100000000f5cb4c4100000000d6af5b410000000076196b4100000000db087b4100000000febe854100000000723c8e4100000000c4fc964100000000f8ff9f41000000000000a04100000000",
+      "draw_source_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91",
+      "same_object_bridge": true,
+      "gl_error_checks": 239,
+      "frame_sha256": "0e7a094fcb8731b36f14c265cff3fa1968475298cc80f1e01c7a644053bf4824",
+      "nonzero_pixels": 21,
+      "frame_zlib_base64": "eNrtyjEKwkAQBVBbxSwsWOgaLBIihnSaVhFRPIF6/5vo5BbCe80f5v/cjp/lujvn5vSqyv6am/Edd2Sq+0fk1P92qR6ekVU53GKTtv196jfdJf6L1e44z2WYAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/7QsF3A1r"
+    }
+  },
+  "separate_rt_set_pen_data_controls": {
+    "0.9999999403953552": {
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0xff336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 0.9999999403953552
+        },
+        "matrix_f32": [
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          96.0,
+          32.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 176,
+        "native_addpoint_xy_upload_sha256": "819544e76182ca6ed6d555844a042a0233a3beb6c1286698c4cb87d21c42cfc9",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            96.0
+          ],
+          [
+            32.79985296726227,
+            96.0
+          ],
+          [
+            33.799742221832275,
+            96.0
+          ],
+          [
+            34.68860363960266,
+            96.0
+          ],
+          [
+            35.75525259971619,
+            96.0
+          ],
+          [
+            36.999691009521484,
+            96.0
+          ],
+          [
+            37.831692695617676,
+            96.0
+          ],
+          [
+            38.72769832611084,
+            96.0
+          ],
+          [
+            39.687705993652344,
+            96.0
+          ],
+          [
+            40.71171855926514,
+            96.0
+          ],
+          [
+            41.79973602294922,
+            96.0
+          ],
+          [
+            42.95175647735596,
+            96.0
+          ],
+          [
+            43.901817321777344,
+            96.0
+          ],
+          [
+            44.79979419708252,
+            96.0
+          ],
+          [
+            45.73042869567871,
+            96.0
+          ],
+          [
+            46.693716049194336,
+            96.0
+          ],
+          [
+            47.68966197967529,
+            96.0
+          ],
+          [
+            48.718257904052734,
+            96.0
+          ],
+          [
+            49.77951431274414,
+            96.0
+          ],
+          [
+            50.87342071533203,
+            96.0
+          ],
+          [
+            51.99998474121094,
+            96.0
+          ],
+          [
+            52.0,
+            96.0
+          ]
+        ],
+        "rt_size": 0.9999999403953552,
+        "saved_object_stroke_replay": false,
+        "scale": 1.0,
+        "source_case": "marker3_linked_saved1",
+        "source_point_bytes_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91"
+      },
+      "frame_sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+      "frame_zlib_base64": "eNrtwTEBAAAAwqD1T+1tB6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AADwAAQ==",
+      "nonzero_pixels": 0
+    },
+    "1": {
+      "input": {
+        "canvas": [
+          256,
+          256
+        ],
+        "color_state": {
+          "argb": "0xff336699",
+          "mode": "native PenDrawableRT::SetPenData(float,int)",
+          "size": 1.0
+        },
+        "matrix_f32": [
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1.0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          96.0,
+          32.0,
+          0,
+          1
+        ],
+        "native_addpoint_xy_upload_bytes": 176,
+        "native_addpoint_xy_upload_sha256": "819544e76182ca6ed6d555844a042a0233a3beb6c1286698c4cb87d21c42cfc9",
+        "output_texture_memory_layout": 6,
+        "output_texture_target_layout": 2,
+        "point_limit": null,
+        "point_source": "selected Marker3 V5 caller fixture saved-redraw XY callbacks, translated into RT canvas; optionally limited for isolated stamp diagnostics; injected at native RTV1 AddPoint",
+        "points": [
+          [
+            32.0,
+            96.0
+          ],
+          [
+            32.79985296726227,
+            96.0
+          ],
+          [
+            33.799742221832275,
+            96.0
+          ],
+          [
+            34.68860363960266,
+            96.0
+          ],
+          [
+            35.75525259971619,
+            96.0
+          ],
+          [
+            36.999691009521484,
+            96.0
+          ],
+          [
+            37.831692695617676,
+            96.0
+          ],
+          [
+            38.72769832611084,
+            96.0
+          ],
+          [
+            39.687705993652344,
+            96.0
+          ],
+          [
+            40.71171855926514,
+            96.0
+          ],
+          [
+            41.79973602294922,
+            96.0
+          ],
+          [
+            42.95175647735596,
+            96.0
+          ],
+          [
+            43.901817321777344,
+            96.0
+          ],
+          [
+            44.79979419708252,
+            96.0
+          ],
+          [
+            45.73042869567871,
+            96.0
+          ],
+          [
+            46.693716049194336,
+            96.0
+          ],
+          [
+            47.68966197967529,
+            96.0
+          ],
+          [
+            48.718257904052734,
+            96.0
+          ],
+          [
+            49.77951431274414,
+            96.0
+          ],
+          [
+            50.87342071533203,
+            96.0
+          ],
+          [
+            51.99998474121094,
+            96.0
+          ],
+          [
+            52.0,
+            96.0
+          ]
+        ],
+        "rt_size": 1.0,
+        "saved_object_stroke_replay": false,
+        "scale": 1.0,
+        "source_case": "marker3_linked_saved1",
+        "source_point_bytes_sha256": "74106a96b018350be3680674b714b8be4fd9835bcd33babe5411ccc2cb0c5a91"
+      },
+      "frame_sha256": "f41384175d9505045676921d11dd856bb872bb801386b5facef619ad3fcfcd5c",
+      "frame_zlib_base64": "eNrt0zEKwkAQBdC0igksWOgaLBIihnSaVhFRPIF6/5voxFMI7zV/2BmmGNiiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgJ9ZykNqx/di1Z1Sc3yWeXdJzfiKOrKq+3vk1P/OVfXwiCzz/hoz1aa/Tf11d473+XJ7iJ0uC/4/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+cD/hgbkw==",
+      "nonzero_pixels": 44
+    }
+  }
+}

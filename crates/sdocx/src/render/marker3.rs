@@ -231,6 +231,190 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn zero_width_v5_native_frames_emit_no_public_ink() {
+        use base64::Engine;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+        let native: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-v5-zero-width-native.json"
+        ))
+        .unwrap();
+        for (size, expected_visible) in [("0.9999999403953552", false), ("1", true)] {
+            let control = &native["separate_rt_set_pen_data_controls"][size];
+            assert_eq!(control["input"]["color_state"]["argb"], "0xff336699");
+            assert_eq!(
+                control["input"]["color_state"]["size"].as_f64().unwrap(),
+                size.parse::<f64>().unwrap()
+            );
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(control["frame_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut frame = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut frame)
+                .unwrap();
+            assert_eq!(frame.len(), 256 * 256 * 4);
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&frame)),
+                control["frame_sha256"].as_str().unwrap()
+            );
+            assert_eq!(frame.iter().any(|&byte| byte != 0), expected_visible);
+        }
+        let raster = |svg: &str| {
+            let tree = resvg::usvg::Tree::from_str(svg, &Default::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(128, 64).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            pixmap.data().to_vec()
+        };
+        for (key, case) in native["cases"].as_object().unwrap() {
+            let tool = case["input"]["tool_type"].as_u64().unwrap() as u16;
+            let bits = case["source_size_f32_bits"].as_str().unwrap();
+            let size = f32::from_le_bytes(std::array::from_fn(|i| {
+                u8::from_str_radix(&bits[i * 2..i * 2 + 2], 16).unwrap()
+            }));
+            let get_bits = |key: &str| {
+                let hex = case[key].as_str().unwrap();
+                f32::from_le_bytes(std::array::from_fn(|i| {
+                    u8::from_str_radix(&hex[i * 2..i * 2 + 2], 16).unwrap()
+                }))
+            };
+            let native_size = size.max(0.4);
+            assert_eq!(get_bits("pen_size_f32_bits"), native_size);
+            assert_eq!(get_bits("drawable_size_f32_bits"), native_size);
+            assert_eq!(case["selected_version"], "5");
+            assert_eq!(
+                case["input"]["pen_name"],
+                "com.samsung.android.sdk.pen.pen.preload.Marker3"
+            );
+            assert_eq!(case["input"]["advanced_setting"], "5;");
+            assert_eq!(case["input"]["stroke_type"], 0);
+            assert_eq!(case["input"]["color_argb"], "0xff336699");
+            assert_eq!(
+                case["input"]["points_f32_bits"],
+                serde_json::json!([["00000000", "00000000"], ["0000a041", "00000000"]])
+            );
+            assert_eq!(
+                case["input"]["pressure_f32_bits"],
+                serde_json::json!(["cdcc4c3d", "0000803f"])
+            );
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(case["frame_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut frame = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut frame)
+                .unwrap();
+            assert_eq!(frame.len(), 256 * 256 * 4);
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&frame)),
+                case["frame_sha256"].as_str().unwrap()
+            );
+            assert_eq!(
+                frame
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .filter(|rgba| **rgba != [0, 0, 0, 0])
+                    .count(),
+                case["nonzero_pixels"].as_u64().unwrap() as usize
+            );
+            let input = Input {
+                samples: vec![[16.0, 24.0], [36.0, 24.0]],
+                width: size,
+                pressures: Some(vec![0.05, 1.0]),
+                tool_type_raw: tool,
+                fixed_width: false,
+            };
+            let mut stroke = marker3_stroke(&input);
+            assert_eq!(case["input"]["curve_enabled"], true);
+            stroke.rendering.as_mut().unwrap().properties.compressed = true;
+            let make_document = |strokes: Vec<Stroke>| crate::Document {
+                pages: vec![crate::Page {
+                    uuid: "marker3-zero".into(),
+                    width: 128,
+                    height: 64,
+                    content_bbox: BoundingBox::default(),
+                    background_color: None,
+                    template: None,
+                    background: Default::default(),
+                    objects: strokes.into_iter().map(crate::PageObject::from).collect(),
+                }],
+                metadata: Default::default(),
+            };
+            let blank = make_document(vec![]);
+            let source = make_document(vec![stroke.clone()]);
+            let options = crate::RenderOptions::default();
+            let svg = crate::render_document_svg(&source, &options).remove(0).svg;
+            let blank_svg = crate::render_document_svg(&blank, &options).remove(0).svg;
+            let empty = size < 1.0;
+            assert_eq!(raster(&svg) == raster(&blank_svg), empty, "{key}");
+            let layout = crate::layout_document(&source);
+            let replay = crate::render_layout_page_replay_svg(&source, &layout, 0, &options)
+                .unwrap()
+                .svg;
+            assert_eq!(raster(&replay) == raster(&blank_svg), empty, "replay {key}");
+            if empty {
+                assert!(
+                    !replay.contains("data-replay-part"),
+                    "empty replay prefix {key}"
+                );
+                let mut other = stroke.clone();
+                other.points.iter_mut().for_each(|point| point.y += 16.0);
+                other.rendering.as_mut().unwrap().style.pen_size = Some(8.0);
+                let only = make_document(vec![other.clone()]);
+                let mixed = make_document(vec![stroke.clone(), other.clone()]);
+                let reversed = make_document(vec![other, stroke]);
+                if let Some(dir) = std::env::var_os("SDOCX_MARKER3_ZERO_EXPORT") {
+                    let path = std::path::Path::new(&dir);
+                    for (name, document) in
+                        [("only", &only), ("mixed", &mixed), ("reversed", &reversed)]
+                    {
+                        std::fs::write(
+                            path.join(format!("{key}-{name}.pdf")),
+                            crate::render_document_pdf(document, &options, &Default::default())
+                                .unwrap(),
+                        )
+                        .unwrap();
+                    }
+                }
+                assert_eq!(
+                    raster(&crate::render_document_svg(&only, &options).remove(0).svg),
+                    raster(&crate::render_document_svg(&mixed, &options).remove(0).svg),
+                    "mixed {key}"
+                );
+                assert_eq!(
+                    raster(&crate::render_document_svg(&only, &options).remove(0).svg),
+                    raster(
+                        &crate::render_document_svg(&reversed, &options)
+                            .remove(0)
+                            .svg
+                    ),
+                    "reversed mixed {key}"
+                );
+            }
+            if let Some(dir) = std::env::var_os("SDOCX_MARKER3_ZERO_EXPORT") {
+                let path = std::path::Path::new(&dir);
+                std::fs::write(
+                    path.join(format!("{key}.pdf")),
+                    crate::render_document_pdf(&source, &options, &Default::default()).unwrap(),
+                )
+                .unwrap();
+                std::fs::write(
+                    path.join(format!("{key}-blank.pdf")),
+                    crate::render_document_pdf(&blank, &options, &Default::default()).unwrap(),
+                )
+                .unwrap();
+            }
+        }
+        assert_eq!(native["cases"].as_object().unwrap().len(), 8);
+    }
+
     #[test]
     fn public_marker3_exports_preserve_saved_radius_and_apply_alpha_once() {
         let fixture: Fixture = serde_json::from_str(include_str!(
