@@ -1,0 +1,5 @@
+# Pencil2 Drawing regression captures
+
+These are copies of retained native capture artifacts from the corresponding `tools/pencil2-*` directories. `public-replay` contains the translated and (6, 9) target frames and receipts; `origin-offset` contains the four origin controls and their receipt. `mixed-drawing` contains the two frames and receipt for the same renderer replayed twice. `independent-drawing` contains two frames, the second geometry buffer, and its receipt for independently drawn objects. The independent test also uses the mixed receipt for the shared first-object setup.
+
+The receipts retain capture provenance and hashes. The captures use synthetic Drawing inputs, ARM64 emulation, and a host Mesa framebuffer; they are not evidence of device or saved-note parity. The mixed capture uses a queue intervention and replays the same renderer, while the independent capture uses explicit native Update and Draw calls. These are retained captures, not fresh recaptures or standalone reproductions; their capture scripts and dependencies remain in `tools`.

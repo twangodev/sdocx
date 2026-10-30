@@ -1,0 +1,175 @@
+{
+  "scope": "Synthetic Drawing handoff with callback queue intervention, ARM64 emulation and host Mesa, transparent prior; no device or saved-note claim.",
+  "source_sha256": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861",
+  "script_sha256": "f40674b858271cf20f66040d89ca778cedb4df9c54938245c83ed72e2d5c2b03",
+  "cases": [
+    {
+      "id": "bottom-1",
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        6,
+        9,
+        0,
+        1
+      ],
+      "uniform2": [
+        [
+          "glUniform2fv",
+          4,
+          1,
+          [
+            6.0,
+            9.0
+          ]
+        ]
+      ],
+      "prior_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+      "prior_nonzero_bytes": 0,
+      "readback_sha256": "44e57b9754e76dd9883c7a9944a9015f0ccb0c11e788dd71d8c5f1a889174e36",
+      "geometry_sha256": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8",
+      "nonzero_bounds": [
+        6,
+        8,
+        36,
+        19
+      ]
+    },
+    {
+      "id": "top-1",
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        6,
+        151,
+        0,
+        1
+      ],
+      "uniform2": [
+        [
+          "glUniform2fv",
+          4,
+          1,
+          [
+            6.0,
+            151.0
+          ]
+        ]
+      ],
+      "prior_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+      "prior_nonzero_bytes": 0,
+      "readback_sha256": "42f01455c8143b01800821dba5f16eb0c7035732db63852950c12fde35f10249",
+      "geometry_sha256": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8",
+      "nonzero_bounds": [
+        6,
+        140,
+        36,
+        151
+      ]
+    },
+    {
+      "id": "bottom-2",
+      "matrix": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        6,
+        9,
+        0,
+        1
+      ],
+      "uniform2": [
+        [
+          "glUniform2fv",
+          4,
+          1,
+          [
+            6.0,
+            9.0
+          ]
+        ]
+      ],
+      "prior_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+      "prior_nonzero_bytes": 0,
+      "readback_sha256": "9fd09bb50ad1346d78c6e627f0868c4124826f89036bc9d130077ddecfd59152",
+      "geometry_sha256": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8",
+      "nonzero_bounds": [
+        5,
+        6,
+        68,
+        31
+      ]
+    },
+    {
+      "id": "top-2",
+      "matrix": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        6,
+        151,
+        0,
+        1
+      ],
+      "uniform2": [
+        [
+          "glUniform2fv",
+          4,
+          1,
+          [
+            6.0,
+            151.0
+          ]
+        ]
+      ],
+      "prior_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+      "prior_nonzero_bytes": 0,
+      "readback_sha256": "aa8b552a6835f6cb0b99907144ef3a9d2cdf808aa93e90eb85e4957930c574c5",
+      "geometry_sha256": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8",
+      "nonzero_bounds": [
+        5,
+        128,
+        68,
+        153
+      ]
+    }
+  ]
+}

@@ -1029,6 +1029,15 @@ mod device_profile_tests;
 pub(crate) mod device_raster;
 
 #[cfg(all(test, feature = "serde", feature = "render"))]
+mod drawing_public_comparison;
+
+#[cfg(all(test, feature = "serde", feature = "render"))]
+mod mixed_drawing_tests;
+
+#[cfg(all(test, feature = "serde", feature = "render"))]
+mod independent_drawing_tests;
+
+#[cfg(all(test, feature = "serde", feature = "render"))]
 mod terminal_zero_tests;
 
 #[cfg(all(test, feature = "serde"))]
