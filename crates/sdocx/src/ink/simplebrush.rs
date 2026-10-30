@@ -407,7 +407,7 @@ pub(crate) fn prepare_stroke_for_scale(
     if !(3.0..=32.0).contains(&size) || stroke.pen_width.to_bits() != size.to_bits() {
         return Err("unsupported SimpleBrush size");
     }
-    let max_points = 256;
+    let max_points = if rendering.tool_type_raw == 2 { 320 } else { 256 };
     if !(2..=max_points).contains(&stroke.points.len())
         || stroke.pressures.len() != stroke.points.len()
     {

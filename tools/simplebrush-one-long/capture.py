@@ -91,12 +91,12 @@ def main():
             1,
         )
         count = int(os.environ["POINT_COUNT"])
-        if count not in (2, 4, 7, 16, 32, 33, 64, 129, 225, 256):
+        if count not in (2, 4, 7, 16, 32, 33, 64, 129, 225, 256, 320):
             raise ValueError("unsupported point count")
         points = [[25.0 + (i % 64), 35.0 + (i // 64) * 18.0 + [0, 2, 5, 7, 8, 7, 5, 2][i % 8]] for i in range(count)] if count > 128 else [[25.0 + i * (0.75 if count >= 33 else 2), 40.0 + [0, 2, 5, 7, 8, 7, 5, 2][i % 8]] for i in range(count)] if count >= 16 else [[32.0 + i * 6, 32.0 + (i % 3) * 3] for i in range(count)]
         pressures = [[0.25, 0.5, 0.75, 1.0][i % 4] for i in range(count)] if count >= 16 else [0.5] * count
         variant = os.environ.get("VARIANT")
-        if variant is not None and (variant not in ("reverse", "alternate") or count not in (32, 64, 256) or (count == 64 and variant != "reverse")):
+        if variant is not None and (variant not in ("reverse", "alternate") or count not in (32, 64, 256, 320) or (count == 64 and variant != "reverse")):
             raise ValueError("variants require 32 points, or 64 points for reverse")
         if variant == "reverse":
             points = points[::-1]

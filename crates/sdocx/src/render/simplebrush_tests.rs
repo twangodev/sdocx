@@ -195,7 +195,7 @@ fn profile_accepts_six_points_across_captured_sizes() {
         source.rendering.as_mut().unwrap().style.pen_size = Some(size);
         assert!(crate::ink::simplebrush::prepare_stroke(&source, true, 32_768).is_ok());
     }
-    for i in 6..256 {
+    for i in 6..320 {
         source.points.push(Point {
             x: 60.0 + (i as f64) * 8.0,
             y: 42.0,
@@ -2368,7 +2368,7 @@ fn long_candidate_preserves_public_one_pixel_boundaries_and_mixed_order() {
         ..Default::default()
     };
     let generic = RenderOptions::default();
-    for (tool, boundary) in [(0, 128), (2, 256), (3, 256)] {
+    for (tool, boundary) in [(0, 128), (2, 320), (3, 256)] {
         for count in [boundary, boundary + 1] {
             let mut s = stroke();
             s.points = (0..count)
@@ -2595,6 +2595,12 @@ fn one_pixel_long_native_geometry_matches_captured_streams() {
             8.0,
             true,
             &include_bytes!("../ink/simplebrush_assets/256.bin")[..],
+        ),
+        (
+            320,
+            8.0,
+            true,
+            &include_bytes!("../ink/simplebrush_assets/320.bin")[..],
         ),
     ] {
         let mut points: Vec<[f32; 2]> = (0..count)

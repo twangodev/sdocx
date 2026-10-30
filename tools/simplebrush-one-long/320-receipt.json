@@ -1,0 +1,58 @@
+{
+  "scope": "Synthetic tool-2, 320-point reverse path, size 8, fractional 1x host Drawing and Mesa; no saved-page or device claim",
+  "geometry_sha256": "6760d82a6260dfaeac1fd3903dd2715fa57f5754a0e340d9de85512732e1f865",
+  "frame_sha256": "c7af4b397b15704b0eb4672bc60bfe556df76e4b3ab2bc3b1753804126b1d822",
+  "capture_script_sha256": "200ed47e85738af02df95f97d4f066c1efcc69f6e59033aa71fc80bd98a4dd0a",
+  "svg_alpha_error": {
+    "generic": 707892,
+    "profile": 10010
+  },
+  "svg_support_intersection_union": {
+    "generic": [
+      2849,
+      5248
+    ],
+    "profile": [
+      5248,
+      5248
+    ]
+  },
+  "direct_pdf_mupdf_matched_paper_rgb_error": {
+    "generic": 779807,
+    "profile": 78058
+  },
+  "direct_pdf_pdfium_rgb_error": {
+    "generic": 774571,
+    "profile": 143015
+  },
+  "exports_sha256": {
+    "generic.svg": "998d3d05acc5cb781ba2c8ee115c553c413c506a6e77a9b140df28e465b2d7cb",
+    "one.svg": "1841990d253e318a53f7da2b88a5caf05989e52bdf38a91b607e92988960d4f0",
+    "generic.pdf": "a4d5d5c6e4bf8db6c630794259d20ca5ba92dd4c7b92cd1dc1b6bb7493088dee",
+    "one.pdf": "44474086c3446ba1fa84225e0d833151de12e38b4b6e0e022c474463ccb0bd8d",
+    "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef"
+  },
+  "reader_versions": {
+    "resvg": "0.45.1",
+    "mupdf": "1.28.2",
+    "pdfium": "150.0.7869.0"
+  },
+  "export_bytes": {
+    "generic_svg": 36528,
+    "profile_svg": 467629,
+    "generic_pdf": 3756,
+    "profile_pdf": 2265187
+  },
+  "bounds": "Native nonzero alpha bounds x=21..92, y=31..118 inclusive within 256x256 framebuffer; no painted pixels touch its edge.",
+  "replay_source_sha256": {
+    "crates/sdocx/src/ink/simplebrush.rs": "293444738eba4548886b3a69ce9a7b5b888a610abf7863842ba0ae463ad45698",
+    "crates/sdocx/src/render/simplebrush_tests.rs": "5eb618f0dfd6c26b70611c72be38f6df510667bd3bb1112618d583763de99276",
+    "tools/simplebrush-one-long/capture.py": "200ed47e85738af02df95f97d4f066c1efcc69f6e59033aa71fc80bd98a4dd0a",
+    "tools/simplebrush-one-long/compare.py": "bd7de051131232b3dfb54e50f86b27c6723d6522811af78f0b52f504ce5d35fa",
+    "tools/simplebrush-one-long/pdfium.py": "fe0c9e29be9b54164a1c9399a2d8d0681b45aae1fc439f8d16ad0b86bf3a0273",
+    "tools/simplebrush-one-long/verify-320.py": "dda84e1fb466f62cf6320deeff8769cf4d106b0584dcf25c105f0c732ff5d8e6"
+  },
+  "rustc": "rustc 1.98.0 (88d9e12ae 2026-08-18)",
+  "native_sample_count": 1184,
+  "build_provenance": "Native execution uses project-local scratch and transitive dependencies not fully pinned; replay hashes describe current source, not a complete build identity."
+}
