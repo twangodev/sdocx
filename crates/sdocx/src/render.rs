@@ -363,7 +363,7 @@ pub struct RenderOptions {
     /// Opt into saved InkPen V4 reconstruction with explicit display dimensions.
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen_profile: Option<InkPenRenderProfile>,
-    /// Opt into scale-aware V4 coverage at a tested uniform output scale (1, 2, 3, or 4).
+    /// Opt into scale-aware V4 coverage at a tested uniform output scale (1 through 8).
     #[cfg_attr(feature = "serde", serde(default))]
     pub inkpen_v4_output_scale: Option<u32>,
     /// Opt into scale-aware V1 coverage at a tested uniform output scale (1 through 8).
@@ -4736,7 +4736,7 @@ fn render_stroke(
             ink.terminal.clone(),
             replay_index.is_some(),
             (if is_v4 {
-                inkpen_v4_output_scale.filter(|scale| matches!(scale, 1..=4))
+                inkpen_v4_output_scale.filter(|scale| matches!(scale, 1..=8))
             } else {
                 inkpen_v1_output_scale.filter(|scale| matches!(scale, 1..=8))
             })
@@ -5724,7 +5724,7 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
             (if is_v4 {
                 options
                     .inkpen_v4_output_scale
-                    .filter(|scale| matches!(scale, 1..=4))
+                    .filter(|scale| matches!(scale, 1..=8))
             } else {
                 options
                     .inkpen_v1_output_scale
@@ -10118,14 +10118,14 @@ mod tests {
         let normal = render_document_svg(&source, &options)[0].svg.clone();
         assert_ne!(normal, baseline);
         assert!(normal.contains(r##"fill="#336699""##));
-        for scale in [0, 1, 5, u32::MAX] {
+        for scale in [0, 1, 9, u32::MAX] {
             let scaled = RenderOptions {
                 inkpen_v4_output_scale: Some(scale),
                 ..options.clone()
             };
             assert_eq!(render_document_svg(&source, &scaled)[0].svg, normal);
         }
-        for scale in [2, 3, 4] {
+        for scale in [2, 3, 4, 5, 6, 7, 8] {
             let scaled = RenderOptions {
                 inkpen_v4_output_scale: Some(scale),
                 ..options.clone()
@@ -10200,7 +10200,7 @@ mod tests {
             ..options.clone()
         };
         let v1_base = render_document_svg(&v1_source, &options)[0].svg.clone();
-        for scale in [2, 3, 4] {
+        for scale in [2, 3, 4, 5, 6, 7, 8] {
             let scaled = RenderOptions {
                 inkpen_v1_output_scale: Some(scale),
                 ..options.clone()
@@ -10209,7 +10209,7 @@ mod tests {
         }
         assert_ne!(render_document_svg(&v1_source, &v1_options)[0].svg, v1_base);
         assert_eq!(render_document_svg(&source, &v1_options)[0].svg, normal);
-        for scale in [0, 1, 5, u32::MAX] {
+        for scale in [0, 1, 9, u32::MAX] {
             let invalid = RenderOptions {
                 inkpen_v1_output_scale: Some(scale),
                 ..options.clone()
