@@ -1,0 +1,26 @@
+{
+  "scope": "Explicit native ObjectAsyncDrawingImpl::draw with fabricated request, attached synthetic four-point Pencil2 clone, host bitmap and graphics adapters, and deferred queue; no ordinary scheduling, ownership, Matrix4, paint, saved page, or device output established.",
+  "probe_sha256": "17f74e27d9dc0e0dc4173f08901444bd0627eae7a1b6e023232ff78cb9f72982",
+  "queue_probe_sha256": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+  "drawing_dso_sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+  "observed": {
+    "distinct_clone": true,
+    "point_count": 4,
+    "redraw_pen_calls": 1,
+    "addpoint_calls": 84,
+    "set_matrix_calls": 2,
+    "matrix": [
+      1,
+      0,
+      0,
+      0,
+      -1,
+      0,
+      6,
+      183,
+      1
+    ]
+  },
+  "reproduction": "python3 tools/pencil2-async-route/draw-attempt.py",
+  "limitations": "RefBitmap, CreateBitmap and ReleaseBitmap are host callbacks; virtual graphics and bitmap methods are synthetic stubs; transitive harness and runtime libraries are not fully pinned."
+}
