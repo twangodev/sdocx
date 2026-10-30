@@ -82,6 +82,20 @@ fn png_data_uri(plane: &[u8], width: u32, height: u32) -> Result<String, String>
 }
 
 const MAX_SVG_BYTES: usize = 32 * 1024 * 1024;
+// Every stamp has a full-viewport filter. Bound the aggregate filter area so a
+// small SVG cannot request thousands of page-sized reader intermediates.
+const MAX_FILTER_PIXELS: u64 = 32 * 1024 * 1024;
+
+fn check_filter_work(width: u32, height: u32, stamps: usize) -> Result<(), String> {
+    let pixels = u64::from(width)
+        .checked_mul(u64::from(height))
+        .and_then(|area| area.checked_mul(u64::try_from(stamps).ok()?))
+        .ok_or("material filter work limit")?;
+    if pixels > MAX_FILTER_PIXELS {
+        return Err("material filter work limit".into());
+    }
+    Ok(())
+}
 
 fn point_padding(texel_size: f32) -> Result<usize, String> {
     let needed = (1.0 / texel_size).ceil();
@@ -161,10 +175,11 @@ pub(super) fn emit_svg(
         || rgba
             .iter()
             .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
-        || !k4.is_finite()
+        || k4 != 0.0
     {
         return Err("invalid material profile".into());
     }
+    check_filter_work(projection.width, projection.height, records.len())?;
     let bg_uri = png_data_uri(background_texture, 150, 150)?;
     let WIDTH = projection.width;
     let HEIGHT = projection.height;
@@ -298,6 +313,39 @@ mod tests {
         assert_eq!(point_padding(1.0).unwrap(), 2);
         assert!(check_svg_size(MAX_SVG_BYTES).is_ok());
         assert!(check_svg_size(MAX_SVG_BYTES + 1).is_err());
+    }
+
+    #[test]
+    fn full_canvas_filter_work_is_bounded_before_encoding() {
+        assert!(check_filter_work(256, 256, 303).is_ok());
+        assert!(check_filter_work(256, 256, 512).is_ok());
+        assert!(check_filter_work(256, 256, 513).is_err());
+        assert!(check_filter_work(4096, 4096, 3).is_err());
+        assert!(check_filter_work(u32::MAX, u32::MAX, usize::MAX).is_err());
+        let projection = Projection {
+            width: 4096,
+            height: 4096,
+            matrix: [
+                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+            ],
+            bg_scale: [1.0, 1.0],
+        };
+        let record = super::super::Record {
+            lanes: [1.0, 1.0, 1.0, 0.0, 0.0, 0.0],
+        };
+        assert_eq!(
+            emit_svg(
+                &[record; 3],
+                &[0; 300],
+                &[0; 22500],
+                projection,
+                [0.0; 4],
+                None,
+                0.0
+            )
+            .unwrap_err(),
+            "material filter work limit"
+        );
     }
 
     #[test]

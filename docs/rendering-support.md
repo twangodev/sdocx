@@ -249,6 +249,14 @@ Profile admission and validation are narrower than the names above. See
 [Marker4 V7](reverse-engineering/marker4-v7.md), and
 [Marker4 V8](reverse-engineering/marker4-rendering-findings.md).
 
+The experimental `render_crayon2_host_svg` API accepts a source stroke and
+explicit `Crayon2HostMaterial` phase tables, textures and projection. Its bounded
+standalone SVG matches a retained synthetic host geometry stream but has
+nonzero paint error; paired SVG-page PDF also has reader-dependent error.
+[Reproduction and metrics](../tools/crayon2-varied-path/README.md#experimental-standalone-host-api)
+retain these limits. Normal saved-page Crayon2 rendering remains generic;
+Android, arbitrary-input and saved-note parity are unverified.
+
 A [Crayon2 saved-playback paint oracle](https://github.com/twangodev/sdocx/blob/a24179384fbe043a8b5f003ee0c7bebeb394d106/conformance/crayon2-saved-playback-paint-native.json)
 joins native source getters, 285 packed records, queued upload and host Mesa Draw,
 with clipped/interior and transparent/opaque controls. That V1 route supplies

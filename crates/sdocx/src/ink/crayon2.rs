@@ -1,10 +1,10 @@
-//! Bounded, test-only Crayon2 V2 saved-ObjectStroke geometry reconstruction.
+//! Bounded Crayon2 V2 saved-ObjectStroke geometry reconstruction.
 //!
 //! This models the captured stylus/curve V2 path through Start, DrawLine,
 //! DrawEndLine, Crayon2 drawPoint and six-f32 RTV1 AddPoint records. The RNG
 //! profile is the captured host TYPE_3 adapter, not Android runtime execution.
-//! The optional material experiment consumes explicit host inputs; it does not
-//! participate in public renderer dispatch.
+//! The opt-in material experiment consumes explicit host inputs; it does not
+//! participate in document renderer dispatch.
 #[cfg(feature = "render")]
 mod material;
 
@@ -17,6 +17,56 @@ const MAX_RNG_CALLS: usize = MAX_DRAWPOINT_INPUTS * 4;
 const MAX_RECORDS: usize = MAX_DRAWPOINT_INPUTS;
 const NATIVE_SEED_MODULUS: i32 = 100_000;
 const PHASE_MODULUS: f32 = 150.0;
+
+/// Explicit inputs for the experimental captured-host Crayon2 V2 material.
+///
+/// The phase tables, textures, projection and color must come from the same
+/// host context. The point atlas is 10×30 and the background texture 150×150,
+/// each one byte per pixel. The matrix is column-major. This profile does not
+/// establish Android or arbitrary saved-page fidelity.
+pub struct Crayon2HostMaterial<'a> {
+    pub phase_x: [u32; 50],
+    pub phase_y: [u32; 50],
+    pub point_atlas: &'a [u8],
+    pub background_texture: &'a [u8],
+    pub width: u32,
+    pub height: u32,
+    pub matrix: [f32; 16],
+    pub bg_scale: [f32; 2],
+    pub rgba: [f32; 4],
+    pub background: Option<[u8; 3]>,
+    /// The captured control uses zero; other values are rejected.
+    pub k4: f32,
+}
+
+/// Render one supported saved stroke to a standalone SVG using explicit host
+/// inputs. Unsupported stroke metadata and invalid profiles return an error.
+/// The result is experimental and does not alter normal document rendering.
+pub fn render_crayon2_host_svg(
+    stroke: &crate::Stroke,
+    material: &Crayon2HostMaterial<'_>,
+) -> Result<String, String> {
+    let profile = NativeProfile {
+        phase_x: material.phase_x,
+        phase_y: material.phase_y,
+        rng: RngProfile::CapturedHostType3,
+    };
+    let output = sample_stroke(stroke, &profile).map_err(|e| e.to_string())?;
+    material::emit_svg(
+        &output.records,
+        material.point_atlas,
+        material.background_texture,
+        material::Projection {
+            width: material.width,
+            height: material.height,
+            matrix: material.matrix,
+            bg_scale: material.bg_scale,
+        },
+        material.rgba,
+        material.background,
+        material.k4,
+    )
+}
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct SourceInput<'a> {
@@ -681,6 +731,60 @@ mod tests {
         }
     }
 
+    #[test]
+    fn public_host_material_accepts_source_and_rejects_invalid_inputs() {
+        let points = [
+            P { x: 64.0, y: 64.0 },
+            P { x: 72.0, y: 70.0 },
+            P { x: 82.0, y: 60.0 },
+        ];
+        let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
+        let profile = parse_profile(&fixture());
+        let point = [128; 300];
+        let background = [128; 150 * 150];
+        let mut material = Crayon2HostMaterial {
+            phase_x: profile.phase_x,
+            phase_y: profile.phase_y,
+            point_atlas: &point,
+            background_texture: &background,
+            width: 256,
+            height: 256,
+            matrix: [
+                0.0078125,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0078125,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.000030518509,
+                0.0,
+                -1.0,
+                -1.0,
+                0.0,
+                1.0,
+            ],
+            bg_scale: [2.2755556, 2.2755556],
+            rgba: [0.2, 0.4, 0.6, 0.5],
+            background: Some([64, 128, 192]),
+            k4: 0.0,
+        };
+        let svg = render_crayon2_host_svg(&stroke, &material).unwrap();
+        assert!(svg.starts_with("<?xml"));
+        assert!(svg.contains("<svg "));
+        material.k4 = 0.1;
+        assert!(render_crayon2_host_svg(&stroke, &material).is_err());
+        material.k4 = 0.0;
+        material.point_atlas = &point[..299];
+        assert!(render_crayon2_host_svg(&stroke, &material).is_err());
+        material.point_atlas = &point;
+        stroke.rendering.as_mut().unwrap().style.stroke_type_raw = None;
+        assert!(render_crayon2_host_svg(&stroke, &material).is_err());
+    }
+
     #[cfg(feature = "render")]
     #[test]
     #[ignore = "requires local native texture inputs and writes candidate SVG"]
@@ -691,7 +795,7 @@ mod tests {
             P { x: 82.0, y: 60.0 },
         ];
         let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
-        let output = sample_stroke(&stroke, &parse_profile(&fixture())).unwrap();
+        let profile = parse_profile(&fixture());
         let textures = std::env::var_os("SDOCX_CRAYON2_TEXTURE_DIR").expect("texture directory");
         let textures = std::path::Path::new(&textures);
         let point = std::fs::read(textures.join("g_Crayon2PointPtn.source.bin")).unwrap();
@@ -727,14 +831,21 @@ mod tests {
             ],
             bg_scale: [2.2755556106567383, 2.2755556106567383],
         };
-        let svg = material::emit_svg(
-            &output.records,
-            &point,
-            &background,
-            projection,
-            [51.0 / 255.0, 102.0 / 255.0, 153.0 / 255.0, 128.0 / 255.0],
-            Some([64, 128, 192]),
-            0.0,
+        let svg = render_crayon2_host_svg(
+            &stroke,
+            &Crayon2HostMaterial {
+                phase_x: profile.phase_x,
+                phase_y: profile.phase_y,
+                point_atlas: &point,
+                background_texture: &background,
+                width: projection.width,
+                height: projection.height,
+                matrix: projection.matrix,
+                bg_scale: projection.bg_scale,
+                rgba: [51.0 / 255.0, 102.0 / 255.0, 153.0 / 255.0, 128.0 / 255.0],
+                background: Some([64, 128, 192]),
+                k4: 0.0,
+            },
         )
         .unwrap();
         std::fs::write(

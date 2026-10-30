@@ -1,0 +1,41 @@
+{
+  "scope": "one matched synthetic host source stroke, standalone SVG and SVG-page PDF; no device or saved-note parity",
+  "metric_order": [
+    "differing_pixels",
+    "maximum_channel_error",
+    "absolute_rgb_error"
+  ],
+  "native_rgb_comparison": {
+    "resvg": [
+      174,
+      34,
+      732
+    ],
+    "mupdf": [
+      363,
+      82,
+      22346
+    ],
+    "pdfium": [
+      314,
+      75,
+      15348
+    ]
+  },
+  "versions": {
+    "resvg": "0.47.0 (Cargo.lock)",
+    "pymupdf": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "pdfium": "150.0.7869.0"
+  },
+  "sha256": {
+    "svg": "43c4461018b14519a322473333832f591e6297a1239644f055614d1e1f6abc8b",
+    "png": "03b29c5e1b52e3e60729e383d77ba81ffedb31cb81745b0ee4feef174c673467",
+    "pdf": "fab8e7d70f61a21e573f2f5bc3b4d059a2d1c564b1fbe07a9db691b27d85a7be",
+    "native_fixture": "907d4f8f09c5d959bb8c05f3a2f774d6b710e100d2ee0a66d95cb8ea01e5dc32",
+    "sampler": "21808d9ca3ba8774545f724caf255a4b7821bf2335b11b2088d49fcae443cd98",
+    "material": "38f5671515ce53dfa3342fb43dbe1623adcd7442d76e8acfa60d4b4707b8c861",
+    "exporter": "4e2483d4c5a9dbde4cf424cef935e6ebd61810097fdd812a4bf0cc24c9ea9088",
+    "comparator": "16deda1f0ab8c6ee77228a939b9198513afd979cefb3179e39f7a6b0b48ea977"
+  }
+}

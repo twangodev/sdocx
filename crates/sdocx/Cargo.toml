@@ -65,3 +65,7 @@ required-features = ["render", "serde"]
 [[example]]
 name = "saved_ink_inputs"
 required-features = ["serde"]
+
+[[example]]
+name = "crayon2_host_export"
+required-features = ["pdf"]
