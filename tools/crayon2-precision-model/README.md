@@ -105,3 +105,48 @@ With the capture environment above, regenerate stamp 100 and verify it:
 .venv/bin/python tools/crayon2-independent-control/capture-stamp.py 100 > "$work_dir/quad100.json"
 .venv/bin/python tools/crayon2-precision-model/verify_quad.py "$work_dir/quad100.json"
 ```
+
+## Fixed output-grid experiment
+
+`output_grid.py` generates an SVG containing unit vector rectangles, one for
+each covered stamp sample on the **192 by 192** output grid. The rectangle
+opacity comes from the source point/background texture planes and the candidate
+triangle-plane interpolation; overlapping rectangles are composed in stamp
+order. The Rust ignored test supplies records sampled from the independent
+stroke inputs. The generator does not read the native vector or framebuffer.
+It is a bounded diagnostic for this exact projection, color and output grid,
+not a general SVG material or a scale-independent vector representation.
+Resizing the result does not replay native sampling. Point interpolation,
+coverage and blending are candidates, and the plane's chosen order and
+float64 emulation retain the limits above.
+
+A fresh independent native capture reproduced the retained vector and frame
+hashes using `verify_native.py`. The [receipt](output-grid-receipt.json)
+records resvg, MuPDF and PDFium comparisons with that native frame for the
+public standalone SVG and public SVG-page PDF. The respective differing pixel /
+maximum channel error / total RGB error counts are 313 / 102 / 4803,
+414 / 102 / 5297, and 415 / 102 / 5274. This is lower PDF total error than
+the prior filter transport, but errors remain; the SVG has more differing
+pixels than before. This does not establish device, arbitrary source, scaled
+output, or direct `render_document_pdf` fidelity.
+
+The generator requires the ignored local directory
+`tmp/vector-parity-plan/crayon2-native-next/native-uploads` and its two files:
+`g_Crayon2PointPtn.source.bin` (SHA-256
+`673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405`)
+and `g_Crayon2BgPtn.source.bin` (SHA-256
+`2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3`).
+They are local native capture dependencies, absent from a clean checkout. The
+script verifies both hashes. Reproduce with these inputs and the readers as in
+the independent control; receipt hashes use semantic SVG, PNG, and PDF keys
+independent of the temporary filenames:
+
+```sh
+work_dir=$(mktemp -d /tmp/sdocx-crayon-grid.XXXXXX)
+export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
+export SDOCX_CRAYON2_RECORDS="$work_dir/records.bin"
+cargo test -p sdocx --features render --lib write_independent_source_records -- --ignored
+.venv/bin/python tools/crayon2-precision-model/output_grid.py "$work_dir/records.bin" "$work_dir/grid.svg"
+cargo run -p sdocx --features pdf --example crayon2_host_export -- "$work_dir/grid.svg" "$work_dir/grid.png" "$work_dir/grid.pdf"
+PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-precision-model/compare_output_grid.py "$work_dir/grid.svg" "$work_dir/grid.png" "$work_dir/grid.pdf"
+```

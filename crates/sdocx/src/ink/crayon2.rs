@@ -874,6 +874,23 @@ mod tests {
         assert_eq!(output_bytes(&output), native);
     }
 
+    #[test]
+    #[ignore = "writes source-derived records for the output-grid experiment"]
+    fn write_independent_source_records() {
+        let points = [
+            P { x: 40.0, y: 45.0 },
+            P { x: 53.0, y: 28.0 },
+            P { x: 75.0, y: 49.0 },
+        ];
+        let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
+        let output = sample_stroke(&stroke, &parse_profile(&fixture())).unwrap();
+        std::fs::write(
+            std::env::var_os("SDOCX_CRAYON2_RECORDS").expect("output records"),
+            output_bytes(&output),
+        )
+        .unwrap();
+    }
+
     #[cfg(feature = "render")]
     #[test]
     #[ignore = "requires local native texture inputs and writes candidate SVG"]
