@@ -132,6 +132,12 @@ fn unsupported_inputs_keep_generic_output() {
     s.pressures.push(0.5);
     s.points.push(Point { x: 210., y: 130. });
     s.pressures.push(0.5);
+    let mut narrow_nine = s.clone();
+    narrow_nine.pen_width = 0.49;
+    narrow_nine.rendering.as_mut().unwrap().style.pen_size = Some(0.49);
+    cases.push(narrow_nine);
+    s.points.push(Point { x: 220., y: 130. });
+    s.pressures.push(0.5);
     cases.push(s);
     let mut s = base.clone();
     s.points[1].x = 1_000_001.;
@@ -390,6 +396,40 @@ fn older_render_options_deserialize_with_two_pixel_profile_disabled() {
         .remove("montblanc_two_pixels_per_page_unit");
     let options: RenderOptions = serde_json::from_value(value).unwrap();
     assert!(!options.montblanc_two_pixels_per_page_unit);
+}
+
+#[test]
+fn nine_point_profiles_admit_bounded_sizes() {
+    let points = [
+        [1., 2.],
+        [7., 9.],
+        [13., 3.],
+        [20., 10.],
+        [27., 4.],
+        [34., 11.],
+        [41., 5.],
+        [48., 12.],
+        [55., 6.],
+    ];
+    for size in [0.5, 2.0] {
+        let mut stroke = source(&points, &[0.5; 9]);
+        stroke.pen_width = size;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+        assert!(crate::ink::montblanc::prepare(&stroke).is_some());
+        let doc = document(stroke);
+        let fallback = render_document_svg(&doc, &RenderOptions::default())[0]
+            .svg
+            .clone();
+        for profile in [
+            options(),
+            RenderOptions {
+                montblanc_two_pixels_per_page_unit: true,
+                ..Default::default()
+            },
+        ] {
+            assert_ne!(render_document_svg(&doc, &profile)[0].svg, fallback);
+        }
+    }
 }
 
 #[test]

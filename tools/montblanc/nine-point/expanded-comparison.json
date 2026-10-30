@@ -1,0 +1,218 @@
+{
+  "loop-1x-candidate": {
+    "svg": [
+      191,
+      213,
+      191,
+      213,
+      8751
+    ],
+    "mupdf": [
+      191,
+      221,
+      191,
+      221,
+      6931
+    ],
+    "pdfium": [
+      191,
+      216,
+      191,
+      216,
+      6869
+    ],
+    "svg_sha256": "32fe3cadd05e4b0d094cc65cb75ac7473e192530161db51895917c710ecdefa8",
+    "pdf_sha256": "6168fbc4c1cf9c3ad5870185628a3dcb1780678b45d605506d0cfb67f652bd43",
+    "frame_sha256": "c9f1a8102472f25ed4a41519e2b3d6ad1bd34c2928a25c5786536851792eee94",
+    "capture_sha256": "c6e6cf2bce744f42f3d52b7390ce1d29a587446aacd3bb83c8890cd35a9502c8"
+  },
+  "loop-1x-fallback": {
+    "svg": [
+      191,
+      100,
+      73,
+      218,
+      60482
+    ],
+    "mupdf": [
+      191,
+      119,
+      83,
+      227,
+      60365
+    ],
+    "pdfium": [
+      191,
+      135,
+      93,
+      233,
+      61468
+    ],
+    "svg_sha256": "64b43027753a0171b884bf28e3ac54a9679caae2e23f5c3874abaf2899fe3ed4",
+    "pdf_sha256": "f3ca5af8e8a3bc4ab2039a385ed4304713b698888ac7a7f73b9e1a0c5bb00338",
+    "frame_sha256": "c9f1a8102472f25ed4a41519e2b3d6ad1bd34c2928a25c5786536851792eee94",
+    "capture_sha256": "c6e6cf2bce744f42f3d52b7390ce1d29a587446aacd3bb83c8890cd35a9502c8"
+  },
+  "reverse-1x-candidate": {
+    "svg": [
+      269,
+      317,
+      269,
+      317,
+      12273
+    ],
+    "mupdf": [
+      269,
+      321,
+      269,
+      321,
+      9992
+    ],
+    "pdfium": [
+      269,
+      312,
+      269,
+      312,
+      9714
+    ],
+    "svg_sha256": "de9577fe94e9f0cd8ab1f2ba25389e0f25ce0d0a5e9d66b1318b559317f8a9bd",
+    "pdf_sha256": "dc5f795dfe1036c9aea4fa97b1e51905769054456847f4767e85f42b551be695",
+    "frame_sha256": "3bc90b8c2f7674943bf1f11a8cd70e1acf1db96eef821927f2c681ebf831943f",
+    "capture_sha256": "c87d0b12b3e3ce79974974f5882c1da45cea0bb8e459ab5e7b9718f52956375a"
+  },
+  "reverse-1x-fallback": {
+    "svg": [
+      269,
+      99,
+      59,
+      309,
+      89052
+    ],
+    "mupdf": [
+      269,
+      112,
+      63,
+      318,
+      88622
+    ],
+    "pdfium": [
+      269,
+      158,
+      90,
+      337,
+      88596
+    ],
+    "svg_sha256": "494b595805d461745b2f4e57bd92c52b6bd73c82da88d2f1efdb859373e2d3a8",
+    "pdf_sha256": "1077667157f3db56b60c5deca52f61fe38de5e9236c909e330198d5965b9d977",
+    "frame_sha256": "3bc90b8c2f7674943bf1f11a8cd70e1acf1db96eef821927f2c681ebf831943f",
+    "capture_sha256": "c87d0b12b3e3ce79974974f5882c1da45cea0bb8e459ab5e7b9718f52956375a"
+  },
+  "loop-2x-aware": {
+    "svg": [
+      769,
+      847,
+      769,
+      847,
+      33260
+    ],
+    "mupdf": [
+      769,
+      855,
+      769,
+      855,
+      27449
+    ],
+    "pdfium": [
+      769,
+      846,
+      769,
+      846,
+      27408
+    ],
+    "svg_sha256": "aacd0cf5be365df42866fbe51a0720fa0137ad201dbce5d3244e8c1b32b328ba",
+    "pdf_sha256": "fa7a46d96e168fbc7bd939dde4b9a84e7c9c4fd35096f8334fc3674736e5870b",
+    "frame_sha256": "601639cdf3db6c36fd601e4be9f3592b8cd7e3ce398445f378c01c989b059b82",
+    "capture_sha256": "c9bce911950c31330818a9b8353e716a88f350be70e3d0fb19b0cc33d08a17ad"
+  },
+  "loop-2x-fallback": {
+    "svg": [
+      769,
+      250,
+      181,
+      838,
+      267796
+    ],
+    "mupdf": [
+      769,
+      280,
+      194,
+      855,
+      265045
+    ],
+    "pdfium": [
+      769,
+      295,
+      207,
+      857,
+      265791
+    ],
+    "svg_sha256": "0e03712803430a26858115b16bdcab866bf140c8156ed8b81dcf3aaf15ec0a95",
+    "pdf_sha256": "a3b00e3f8b1fd5f6c5d9b308e740e382403e2ab92fee24c82b57a6cbb5d08886",
+    "frame_sha256": "601639cdf3db6c36fd601e4be9f3592b8cd7e3ce398445f378c01c989b059b82",
+    "capture_sha256": "c9bce911950c31330818a9b8353e716a88f350be70e3d0fb19b0cc33d08a17ad"
+  },
+  "reverse-2x-aware": {
+    "svg": [
+      1103,
+      1220,
+      1103,
+      1220,
+      50463
+    ],
+    "mupdf": [
+      1103,
+      1240,
+      1103,
+      1240,
+      41372
+    ],
+    "pdfium": [
+      1103,
+      1230,
+      1103,
+      1230,
+      40835
+    ],
+    "svg_sha256": "cb0e347842f1203e3bb06f42181084ab9025277fd0d265f6b65dc2955611f930",
+    "pdf_sha256": "79d9209f2bfbf2dfa15b70e358b943bb17f4324dec1a2a9f3990dbd5d09ca9a4",
+    "frame_sha256": "97ea0a24efa709d8fdd6dc0bab8172a675413605e7a8f89616dd1f3fbeb7c881",
+    "capture_sha256": "8a06b2427bc26c73748e9deab5a0185ddd11baafa856bcbbff2eb22cd230be2e"
+  },
+  "reverse-2x-fallback": {
+    "svg": [
+      1103,
+      191,
+      113,
+      1181,
+      402723
+    ],
+    "mupdf": [
+      1103,
+      246,
+      138,
+      1211,
+      400222
+    ],
+    "pdfium": [
+      1103,
+      312,
+      177,
+      1238,
+      400062
+    ],
+    "svg_sha256": "a80148eb66ee75ea014e143c65ff6b700979ca2859a7d2f5c2310f5f96651c62",
+    "pdf_sha256": "f715a417704503f978c3821a8360788d139e7887b423973e1697e97a858a5718",
+    "frame_sha256": "97ea0a24efa709d8fdd6dc0bab8172a675413605e7a8f89616dd1f3fbeb7c881",
+    "capture_sha256": "8a06b2427bc26c73748e9deab5a0185ddd11baafa856bcbbff2eb22cd230be2e"
+  }
+}

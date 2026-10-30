@@ -1,0 +1,36 @@
+{
+  "scope": "Source hashes recorded after production admission; they do not attest the isolated comparison build.",
+  "versions": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pdfium": "150.0.7869.0",
+    "pypdfium2": "5.9.0"
+  },
+  "sha256": {
+    "conformance/montblanc-nine-point-native.json": "12989358c2cccafde856142fb4e9738f3c3d0da0fb84a5fb6341af0200866bcd",
+    "crates/sdocx/src/ink/montblanc.rs": "971f723cd340078838c8bde27d8090db7104f168ae2260c09fdf4ece3a7f909d",
+    "crates/sdocx/src/ink/montblanc_many.rs": "68a0f442e2c227bbbc61a90cf4dab53262f4ef1463a673d8e86637a4028efb37",
+    "tools/montblanc/nine-point/candidate.patch": "12200c1db571a0bcddea30b4b5488e639a4d41635c3fbed33e2e92ed425625e5",
+    "tools/montblanc/nine-point/capture-expanded-1x.py": "8c78b49ec56d41608ddd1fb6b049bf458d5ccce0489c0b2a38373072228ed1e3",
+    "tools/montblanc/nine-point/capture-expanded-2x.py": "c622610ce32d46381837b757f95e4cacd306a6b389e3a579ae2ac081e98949f6",
+    "tools/montblanc/nine-point/capture.json.gz": "15881ccc12bd5e100aa1b1034036ba364bc34a6edc6890b4888dd8f3e0aae01f",
+    "tools/montblanc/nine-point/capture.py": "c445c08624380e255135ab20ed9d43e2510ac45be496b8112593cd2d5aff05e3",
+    "tools/montblanc/nine-point/compare-expanded.py": "748ca5a45ab886ef4ee04700d8456eb22488001b30fe00a84d3d0171741301b3",
+    "tools/montblanc/nine-point/compare.py": "831e093b695021ae78614aa8b603f7766f7793fb46ff9db190a403f2ae203322",
+    "tools/montblanc/nine-point/expanded-streams.json": "32972ae7d700e747ea487e557f6905291896599d32bb6530177cdc74bf6d2cc9",
+    "tools/montblanc/nine-point/expanded-test.patch": "acc4c4bf1ecd9ed69b927138258dee4a5c046a46d9d92f1afdffe8bdd6c3c4f2",
+    "tools/montblanc/nine-point/frame.rgba.zlib": "1dcca5ba3900247092cd57dfed5ed54d47b9b9e11f1c1ee522cb476be17f1c7a",
+    "tools/montblanc/nine-point/loop-1x.json.gz": "c6e6cf2bce744f42f3d52b7390ce1d29a587446aacd3bb83c8890cd35a9502c8",
+    "tools/montblanc/nine-point/loop-1x.rgba.zlib": "3ac9dfcc00ad299174372bda2d776d46caf5056add18b54b4c329302319ed245",
+    "tools/montblanc/nine-point/loop-2x.json.gz": "c9bce911950c31330818a9b8353e716a88f350be70e3d0fb19b0cc33d08a17ad",
+    "tools/montblanc/nine-point/loop-2x.rgba.zlib": "0d1c8b0c3847786dd22264ea271acb8c7b706b783f594ca3222e1cf52de1afa3",
+    "tools/montblanc/nine-point/public-expanded.rs": "f82358dfc9bc3a711cab274ab9ff232005a1fc08f700df84e3197d385e65e120",
+    "tools/montblanc/nine-point/public.rs": "e8ce74e6ea3002744da69ec15006d84a5756d9f290108fb5f20be4142005c689",
+    "tools/montblanc/nine-point/reverse-1x.json.gz": "c87d0b12b3e3ce79974974f5882c1da45cea0bb8e459ab5e7b9718f52956375a",
+    "tools/montblanc/nine-point/reverse-1x.rgba.zlib": "5547f67ac2bca3c8656ca14128e6afda42325f94fa9d0547e43db081356212c4",
+    "tools/montblanc/nine-point/reverse-2x.json.gz": "8a06b2427bc26c73748e9deab5a0185ddd11baafa856bcbbff2eb22cd230be2e",
+    "tools/montblanc/nine-point/reverse-2x.rgba.zlib": "cc8ed7ce7117130af2faec5f016278b5d046778fd0c194ae91c9c95885fbf5ea",
+    "tools/montblanc/public_fallback_compare.py": "1a108881fa0857636bc8f2698b42fc01529a0a83aa41a2d1718fb0f897fabc9a",
+    "crates/sdocx/src/ink/montblanc_nine_streams.json": "983208f5d1a9a4238f297b2b84587cf501284de8b484ed79a5d10fc4334a3631"
+  }
+}

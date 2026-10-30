@@ -1,0 +1,56 @@
+--- a/crates/sdocx/src/ink/montblanc.rs	2026-10-29 15:31:21.338502149 -0700
++++ b/crates/sdocx/src/ink/montblanc.rs	2026-10-29 19:53:18.816929820 -0700
+@@ -1010,7 +1010,7 @@
+         || !matches!(rendering.style.color_type_raw, None | Some(0))
+         || !(0.1..=2.0).contains(&size)
+         || stroke.pen_width.to_bits() != size.to_bits()
+-        || !(3..=8).contains(&stroke.points.len())
++        || !(3..=9).contains(&stroke.points.len())
+         || stroke.pressures.len() != stroke.points.len()
+         || !(stroke.timestamps.is_empty() || stroke.timestamps.len() == stroke.points.len())
+         || !stroke.tilts.is_empty()
+@@ -1052,7 +1052,7 @@
+         4 => four_point_tests::four_point(input),
+         5 => five_point_tests::five_point(input),
+         6..=7 => many_point::many_point(input),
+-        8 if size >= 0.5 => many_point::many_point(input),
++        8..=9 if size >= 0.5 => many_point::many_point(input),
+         _ => return None,
+     }
+     .ok()?;
+--- a/crates/sdocx/src/ink/montblanc_many.rs	2026-10-29 19:51:22.212340595 -0700
++++ b/crates/sdocx/src/ink/montblanc_many.rs	2026-10-29 19:51:51.072488421 -0700
+@@ -27,7 +27,7 @@
+ 
+ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
+     let n = input.points.len();
+-    if !(6..=8).contains(&n) {
++    if !(6..=9).contains(&n) {
+         return Err(Error::PointCount);
+     }
+     if input.pressure.len() != n {
+@@ -359,3 +359,24 @@
+         .is_err()
+     );
+ }
++
++#[test]
++fn nine_point_investigative_native_stream() {
++    let case: serde_json::Value = serde_json::from_str(include_str!("../../../../conformance/montblanc-nine-point-native.json")).unwrap();
++    let number = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
++    let points: Vec<[f32; 2]> = case["input"]["points"].as_array().unwrap().iter().map(|p| [number(&p[0]), number(&p[1])]).collect();
++    let pressure: Vec<f32> = case["input"]["pressure"].as_array().unwrap().iter().map(number).collect();
++    let actual = many_point(Input { points: &points, pressure: &pressure, pen_size: number(&case["input"]["pen_size"]) }).unwrap();
++    let expected = case["result"]["stream"].as_array().unwrap();
++    assert_eq!(actual.len(), expected.len());
++    for (i, (actual, expected)) in actual.iter().zip(expected).enumerate() {
++        let symbol = expected[0].as_str().unwrap();
++        let call = if symbol.contains("::AddStartPoint(") { RtCall::Start } else if symbol.contains("::AddEndPoint(") { RtCall::End } else if symbol.contains("::AddPoint(") { RtCall::Point } else { panic!("unexpected symbol {symbol}") };
++        assert_eq!(actual.call, call, "record {i}");
++        for (lane, word) in expected[1].as_array().unwrap().iter().enumerate() {
++            let s = word.as_str().unwrap();
++            let bits = u32::from_le_bytes(std::array::from_fn(|j| u8::from_str_radix(&s[j * 2..j * 2 + 2], 16).unwrap()));
++            assert_eq!(actual.lanes[lane].to_bits(), bits, "record {i} lane {lane}");
++        }
++    }
++}
