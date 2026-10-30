@@ -1,0 +1,219 @@
+{
+  "scope": "Actual Model ObjectStroke setters and native ObjectDrawing route selected Marker3 GLV5/RTV1 and native RedrawPen captured the actual drawObjectStroke AddPoint callbacks. After wrapper return, native RT vector slots +80/+88 were zero; a bounded explicit host bridge placed the identical retained std::vector object captured from those callbacks into +88. The same Drawing-selected native RTV1 then executed Init, native PenGLDataManager::GetPenCanvas and SPGraphicsFactory::CreatePenCanvas, CreatePenCanvas, native Update(false), and native Draw to a separately created native RGBA8 target. No XY points were re-fed. Mesa GLES 3.2 llvmpipe provides GL; this is not Android device GPU parity.",
+  "input": {
+    "advanced_setting": "5;",
+    "color_argb": "0x8033cc55",
+    "curve_enabled": true,
+    "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+    "orientation_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+    "pen_size_f32_bits": "00001041",
+    "points_f32_bits": [
+      [
+        "0000ca41",
+        "0000e441"
+      ],
+      [
+        "00000142",
+        "00001e42"
+      ],
+      [
+        "00002942",
+        "0000f441"
+      ],
+      [
+        "00004542",
+        "00002642"
+      ],
+      [
+        "00005d42",
+        "0000fc41"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "cdcccc3d",
+      "6666663f",
+      "9a99993e",
+      "cdcc4c3f",
+      "cdcc4c3e"
+    ],
+    "stroke_type": 0,
+    "tilt_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "timestamps_i32": [
+      0,
+      8,
+      16,
+      24,
+      32
+    ],
+    "tool_type": 1
+  },
+  "native_vector": {
+    "draw_object_stroke": {
+      "sha256": "ab67b41d7ed1e8d2b74ad96d0e14fb75b06fe3b4b95f266885d7cc2bf54a0285",
+      "vector_bytes": "0000ca410000e441cd11d141ebd4e4413c8dd94161d4e54140e8e041eab1e64143e1e84108a2e7415c86f14165a6e8413dc0f8410780e941aa4a0042ec6bea41d0820442136aeb41648f08426a5dec41ff290c420c31ed4134dd0f42ae04ee4103a9134250d8ee416d8d1742f2abef41708a1b42947ff0410fa01f423653f14148ce2342d826f2411b1528427afaf24189742c421ccef341ab4630425683f441edf63342322ff54169b737420edbf5411e883b42ea86f6410d693f42c632f741355a4342a2def741975b4742808af841336d4b425c36f941078f4f4238e2f94116c15342148efa415c035842f039fb41de555c42cce5fb4100005d420000fc41",
+      "vector_count": 32
+    },
+    "saved_redraw": {
+      "sha256": "ab67b41d7ed1e8d2b74ad96d0e14fb75b06fe3b4b95f266885d7cc2bf54a0285",
+      "vector_bytes": "0000ca410000e441cd11d141ebd4e4413c8dd94161d4e54140e8e041eab1e64143e1e84108a2e7415c86f14165a6e8413dc0f8410780e941aa4a0042ec6bea41d0820442136aeb41648f08426a5dec41ff290c420c31ed4134dd0f42ae04ee4103a9134250d8ee416d8d1742f2abef41708a1b42947ff0410fa01f423653f14148ce2342d826f2411b1528427afaf24189742c421ccef341ab4630425683f441edf63342322ff54169b737420edbf5411e883b42ea86f6410d693f42c632f741355a4342a2def741975b4742808af841336d4b425c36f941078f4f4238e2f94116c15342148efa415c035842f039fb41de555c42cce5fb4100005d420000fc41",
+      "vector_count": 32
+    }
+  },
+  "callback_count": 32,
+  "readback": {
+    "bbox": [
+      20,
+      24,
+      59,
+      35
+    ],
+    "bytes": 262144,
+    "nonzero_pixels": 377,
+    "samples": [
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          0,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          1,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          20,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          0,
+          1
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          8,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          0,
+          8
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          128,
+          128
+        ]
+      }
+    ],
+    "sha256": "959f63ed257d223695371bd4bbb8a2f33e6674be6cbdbfebe750ec7da1ae4ca9"
+  },
+  "host_gles": {
+    "egl_version": "1.5",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "shading_language": "OpenGL ES GLSL ES 3.20",
+    "vendor": "Mesa",
+    "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+  },
+  "library_hashes": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "comparison": {
+    "scope": "Synthetic native Drawing tool-1 vector re-fed to RTV1, host Mesa RGBA8, 1x; phase is recorded by the enclosing case receipt. Public SVG and direct PDF compared to native transparent frame and mathematical #fcfcfc composition; not saved-note, device, opaque native backdrop, or general transform parity.",
+    "versions": {
+      "resvg": "0.45.1",
+      "pymupdf": "1.28.2",
+      "pypdfium2": "5.9.0",
+      "pdfium": "150.0.7869.0",
+      "numpy": "2.4.2",
+      "pillow": "12.1.1"
+    },
+    "frame_sha256": "959f63ed257d223695371bd4bbb8a2f33e6674be6cbdbfebe750ec7da1ae4ca9",
+    "results": {
+      "baseline": {
+        "svg_rgba_l1": 14811,
+        "mupdf_rgb_l1": 43626,
+        "pdfium_rgb_l1": 15464,
+        "native_missing": 0
+      },
+      "profile": {
+        "svg_rgba_l1": 6689,
+        "mupdf_rgb_l1": 37360,
+        "pdfium_rgb_l1": 6347,
+        "native_missing": 0
+      }
+    }
+  }
+}

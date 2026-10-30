@@ -1,0 +1,211 @@
+{
+  "scope": "Actual Model ObjectStroke setters and native ObjectDrawing route selected Marker3 GLV5/RTV1 and native RedrawPen captured the actual drawObjectStroke AddPoint callbacks. After wrapper return, native RT vector slots +80/+88 were zero; a bounded explicit host bridge placed the identical retained std::vector object captured from those callbacks into +88. The same Drawing-selected native RTV1 then executed Init, native PenGLDataManager::GetPenCanvas and SPGraphicsFactory::CreatePenCanvas, CreatePenCanvas, native Update(false), and native Draw to a separately created native RGBA8 target. No XY points were re-fed. Mesa GLES 3.2 llvmpipe provides GL; this is not Android device GPU parity.",
+  "input": {
+    "advanced_setting": "5;",
+    "color_argb": "0x8033cc55",
+    "curve_enabled": true,
+    "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+    "orientation_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+    "pen_size_f32_bits": "00001041",
+    "points_f32_bits": [
+      [
+        "00000e42",
+        "00000f42"
+      ],
+      [
+        "0000ac42",
+        "0000ab42"
+      ],
+      [
+        "00000e42",
+        "0000ab42"
+      ],
+      [
+        "0000ac42",
+        "00000f42"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "cdcc4c3e",
+      "6666663f",
+      "cdcccc3e",
+      "0000803f"
+    ],
+    "stroke_type": 0,
+    "tilt_f32_bits": [
+      "00000000",
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "timestamps_i32": [
+      0,
+      8,
+      16,
+      24
+    ],
+    "tool_type": 1
+  },
+  "native_vector": {
+    "draw_object_stroke": {
+      "sha256": "d3a7dae21493c01ea25f1a35aab4120a03be2708a10c732852806a31284f4c60",
+      "vector_bytes": "00000e4200000f423b490f4257441042eb2413425c111442d3e31542d4c5164220281842820119429bb51a4249851b42448c1d4227511e421bac20421d652142201524422bc12442de902742aa2f284247e92942287f2a42075c2c429ae82c4220e92e42006c2f42929031425a0932425b523442a8c034427d2e3742eb913742f7243a42217d3a42c9353d424b823d42f46040426aa1404277a643427dda4342b4f64642211e47428a6f4942908d4942cff54b423e0a4c4287894e4229944e42b02a5142522b514249d95342b8cf5342549556425e815642cf5e594241405942bb355c42610c5c42191a5f42c0e55e42e60b62425bcc6142260b654236c06442d61768424ec16742f7316b42a4cf6a4289596e4236eb6d428b8e714208147142faba74424d36744240c57742084277427ab67a426e417a42a98e7d427d347d42e62680429b0d8042f3798142cd7a814279c08242d3e182427afa8342af428442044f8542e7ca85420bb586429b738742670788429f1289421a468942f3a78a4223718a4298338c4282888b428db58d4210958c42fa3a8f4204cb8d426d19914222df8e4236e792426bd18f4253a49442dfa19042c7509642575d9142af0d98420b1192422b229a42e9859242b4179c42efbb924249ee9d425bab9242b7ed9f428738924227e7a14202619142ffaea342d73a9042042ea5425fc28e42657ca642c3f38c4257a0a742243e8b429c6da842e3798942d311a942e5858742869ea94228628542b413aa4284728342c563aa42ec9e8142f89caa42f1617f4230c9aa4254517b426ce8aa42000c7742acfaaa42348b7242dfffaa42e2e26d424eeeaa429b9469422cbfaa425da065427972aa42290662423408aa42ffc55e425e80a942acd35a428691a842c97a5742a55fa74271db5442d7f0a54242fe5242194fa44245de51424f8ea2421f5d51425c99a042cd7a514242709e4202175242a5619c429ce2524209b09a4293f65342aae69842e65255428805974296f75642a20c9542a3e45842f9fb924277b05a424837914244605c42a6a78f42d3335e42460c8e42272b604227658c423e46624249b28a421a856442adf38842b9e76642522987421c6e6942385385428bda6b426e9c8342bdf46d425d288242752370428fad8042b566724207587e427cbe744274477b42c82a7742672978429dab7942defd7442f6407c42dbc47142d8ea7e425d7e6e42a0d48042612a6b42173e8242edc867426e8c8342e9b1644272bc8442fde9614208f3854271195f423030874241405c42ea738842715e594237be8942fe735642150f8b42ec80534286668c423685504288c48d42e0804d421d298f42e8734a42449490424f5e4742fe05924214404442487e93423819414227fd9442b8e93d420d4696425d313b42fc8d9742ba7e384276da98421fc635427a2b9a428e0733420a819b420643304224db9c4285782d42c9399e420fa82a42f99c9f429fd12742b304a1423af52442f870a242de122242c7e1a3428a2a1f422157a5423f3c1c4207d1a642fb471942774fa842c14d164271d2a9428f4d1342f759ab42674710420000ac4200000f42",
+      "vector_count": 143
+    },
+    "saved_redraw": {
+      "sha256": "d3a7dae21493c01ea25f1a35aab4120a03be2708a10c732852806a31284f4c60",
+      "vector_bytes": "00000e4200000f423b490f4257441042eb2413425c111442d3e31542d4c5164220281842820119429bb51a4249851b42448c1d4227511e421bac20421d652142201524422bc12442de902742aa2f284247e92942287f2a42075c2c429ae82c4220e92e42006c2f42929031425a0932425b523442a8c034427d2e3742eb913742f7243a42217d3a42c9353d424b823d42f46040426aa1404277a643427dda4342b4f64642211e47428a6f4942908d4942cff54b423e0a4c4287894e4229944e42b02a5142522b514249d95342b8cf5342549556425e815642cf5e594241405942bb355c42610c5c42191a5f42c0e55e42e60b62425bcc6142260b654236c06442d61768424ec16742f7316b42a4cf6a4289596e4236eb6d428b8e714208147142faba74424d36744240c57742084277427ab67a426e417a42a98e7d427d347d42e62680429b0d8042f3798142cd7a814279c08242d3e182427afa8342af428442044f8542e7ca85420bb586429b738742670788429f1289421a468942f3a78a4223718a4298338c4282888b428db58d4210958c42fa3a8f4204cb8d426d19914222df8e4236e792426bd18f4253a49442dfa19042c7509642575d9142af0d98420b1192422b229a42e9859242b4179c42efbb924249ee9d425bab9242b7ed9f428738924227e7a14202619142ffaea342d73a9042042ea5425fc28e42657ca642c3f38c4257a0a742243e8b429c6da842e3798942d311a942e5858742869ea94228628542b413aa4284728342c563aa42ec9e8142f89caa42f1617f4230c9aa4254517b426ce8aa42000c7742acfaaa42348b7242dfffaa42e2e26d424eeeaa429b9469422cbfaa425da065427972aa42290662423408aa42ffc55e425e80a942acd35a428691a842c97a5742a55fa74271db5442d7f0a54242fe5242194fa44245de51424f8ea2421f5d51425c99a042cd7a514242709e4202175242a5619c429ce2524209b09a4293f65342aae69842e65255428805974296f75642a20c9542a3e45842f9fb924277b05a424837914244605c42a6a78f42d3335e42460c8e42272b604227658c423e46624249b28a421a856442adf38842b9e76642522987421c6e6942385385428bda6b426e9c8342bdf46d425d288242752370428fad8042b566724207587e427cbe744274477b42c82a7742672978429dab7942defd7442f6407c42dbc47142d8ea7e425d7e6e42a0d48042612a6b42173e8242edc867426e8c8342e9b1644272bc8442fde9614208f3854271195f423030874241405c42ea738842715e594237be8942fe735642150f8b42ec80534286668c423685504288c48d42e0804d421d298f42e8734a42449490424f5e4742fe05924214404442487e93423819414227fd9442b8e93d420d4696425d313b42fc8d9742ba7e384276da98421fc635427a2b9a428e0733420a819b420643304224db9c4285782d42c9399e420fa82a42f99c9f429fd12742b304a1423af52442f870a242de122242c7e1a3428a2a1f422157a5423f3c1c4207d1a642fb471942774fa842c14d164271d2a9428f4d1342f759ab42674710420000ac4200000f42",
+      "vector_count": 143
+    }
+  },
+  "callback_count": 143,
+  "readback": {
+    "bbox": [
+      31,
+      31,
+      90,
+      89
+    ],
+    "bytes": 262144,
+    "nonzero_pixels": 1389,
+    "samples": [
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          0,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          1,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          20,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          0,
+          1
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          8,
+          0
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          0,
+          8
+        ]
+      },
+      {
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "xy": [
+          128,
+          128
+        ]
+      }
+    ],
+    "sha256": "0429866b661d8acc354268b9ff058253ddccf2fd7045283c68d4afd5498d1b02"
+  },
+  "host_gles": {
+    "egl_version": "1.5",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "shading_language": "OpenGL ES GLSL ES 3.20",
+    "vendor": "Mesa",
+    "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+  },
+  "library_hashes": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "comparison": {
+    "scope": "Synthetic native Drawing tool-1 vector re-fed to RTV1, host Mesa RGBA8, 1x; phase is recorded by the enclosing case receipt. Public SVG and direct PDF compared to native transparent frame and mathematical #fcfcfc composition; not saved-note, device, opaque native backdrop, or general transform parity.",
+    "versions": {
+      "resvg": "0.45.1",
+      "pymupdf": "1.28.2",
+      "pypdfium2": "5.9.0",
+      "pdfium": "150.0.7869.0",
+      "numpy": "2.4.2",
+      "pillow": "12.1.1"
+    },
+    "frame_sha256": "0429866b661d8acc354268b9ff058253ddccf2fd7045283c68d4afd5498d1b02",
+    "results": {
+      "baseline": {
+        "svg_rgba_l1": 54252,
+        "mupdf_rgb_l1": 71810,
+        "pdfium_rgb_l1": 55975,
+        "native_missing": 0
+      },
+      "profile": {
+        "svg_rgba_l1": 19325,
+        "mupdf_rgb_l1": 46686,
+        "pdfium_rgb_l1": 26118,
+        "native_missing": 0
+      }
+    }
+  }
+}
