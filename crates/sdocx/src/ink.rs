@@ -17,8 +17,7 @@ mod host_rgba8;
 pub(crate) mod montblanc;
 #[cfg(all(test, feature = "serde"))]
 mod oilbrush3;
-#[cfg(all(test, feature = "serde"))]
-mod pencil2;
+pub(crate) mod pencil2;
 pub(crate) mod simplebrush;
 #[cfg(test)]
 mod smudge;

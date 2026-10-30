@@ -5,7 +5,6 @@ use crate::InkRasterError;
 
 /// Preserve the captured setup order when a strip's output Y axis is reflected.
 /// Equivalent triangle permutations can choose a different nearest texel in F32.
-#[cfg(test)]
 pub(crate) fn strip_triangles(y_up: bool) -> [[usize; 3]; 2] {
     if y_up {
         [[0, 1, 2], [2, 1, 3]]
@@ -39,7 +38,6 @@ pub(crate) fn linear_coeff(pos: [(f32, f32); 3], values: [f32; 3]) -> (f32, f32,
 
 /// Axis-aligned strip setup for the captured Pencil2/ColoredPencil host paths.
 /// The caller supplies post-viewport coordinates and vertex-hoisted varyings.
-#[cfg(test)]
 pub(crate) struct AxisRect<const N: usize> {
     x: [f32; 2],
     y: [f32; 2],
@@ -48,7 +46,6 @@ pub(crate) struct AxisRect<const N: usize> {
     planes: [[(f32, f32, f32); N]; 2],
 }
 
-#[cfg(test)]
 impl<const N: usize> AxisRect<N> {
     pub(crate) fn new(
         x: [f32; 2],

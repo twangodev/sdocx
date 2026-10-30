@@ -1,0 +1,39 @@
+{
+  "base_commit": "b73af8ec",
+  "scope": "isolated Pencil2 API with captured source, frame and export control",
+  "files_sha256": {
+    "crates/sdocx/src/ink.rs": "33bf6eecb3e32a9779890035dbd4a32f46ca7fd197c28c86c82bb0dbeab7cd30",
+    "crates/sdocx/src/ink/host_raster.rs": "df44615b661bc704e07ddd92dd74b540061d68d692a0c9acb77c50b82879f9bd",
+    "crates/sdocx/src/ink/pencil2.rs": "0e2840aaa238aa1854bbff1018f5f4609533de86e8cd34290f8350e25691644d",
+    "crates/sdocx/src/ink/pencil2/source.rs": "6227c34aa827d729f83008ca3adc171003454917e6140269512a98a23d63fe31",
+    "crates/sdocx/src/ink/pencil2/device_raster.rs": "b4de1f6e94f002ae7a5c83439e532255aad77e9bbd1ce76168b0c8a19b8cedcd",
+    "crates/sdocx/src/ink/pencil2/offset_candidate.rs": "2e40dfa6e34096a1590d816c7a7bb356ae382298123abcd420750ee8ce2e0843",
+    "crates/sdocx/src/ink/pencil2/assets/fresh-source.json": "56cc4f5b4d581a7ada9957e11c7ca8011e807417bf02e53d62d1db901c02f789",
+    "crates/sdocx/src/ink/pencil2/assets/terminal-source.json": "7b4327645c33b68d78f4a1c38865c98194e1e4406e89f632557c117eda96bfaf",
+    "crates/sdocx/src/ink_raster.rs": "8f48295e6369bdc0cd909e29d01702fec2e59ca7838253969d9477c1e86e9f40",
+    "crates/sdocx/src/lib.rs": "04b05057176e158ff90d86944eeff8ee8af06a6670ed9bfb2fe78974189378d2",
+    "conformance/pencil2-v14-color-ffdd4411-native.bin": "5a1a5c3a88b3b20d67043d76be1410878cb2093f4029a67635be2be50df29483",
+    "conformance/fountain-v14-saved-scene-inputs.json": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+    "tools/pencil2-public-replay/Cargo.toml": "e0ea39b6d6f44e38bf78d1a056cbb5d01083a5a49c5b95e53fd137c343bf0287",
+    "tools/pencil2-public-replay/Cargo.lock": "1315ed2d4d0cea2fbcad2368b9e25ca9f3c9792e153e836942ac95309c9abb16",
+    "tools/pencil2-public-replay/src/bin/changed_input_compare.rs": "cbdedb2332d461164c64a06fa8e2c527ba114cece8e732f474d66eaaf68b2571",
+    "tools/pencil2-control/native-capture.py": "de7100e3efd3fa498629976cba05b04ffebece739bbf31f785be2211b28e9b72",
+    "tools/pencil2-control/native-receipt.json": "8ef1f4ce6e7e9b244d4c5fefe152ec7608bd6695d1856c0dbc61b907c3c5ac9f",
+    "tools/pencil2-control/first.rgba.zlib": "ab11d63776cd76aff35f5365b55cf7e7e11b8eb1efaf5bec5ea51735e15dfddd",
+    "tools/pencil2-control/second.rgba.zlib": "51070be1d5a951ba8dc62372a64a14a006e609d327bef3fcbe58a972bbdb9f7c",
+    "tools/pencil2-control/compare.py": "9c33c2b2c6f8aa6774fc5ba964c2b0b270963d9900f8a9b5227a997f53a965e7",
+    "tools/pencil2-control/README.md": "664ade8ba7c6e98786a2836e959f78008fd10c2c55f4752e027ff88fe8278341"
+  },
+  "validation": {
+    "pencil2_lib_tests": "18 passed with pdf,serde, including raw flip, rotation and unknown mask guards",
+    "canvas_png_resvg_mupdf_pdfium": "zero differing channels in all five",
+    "native_grain_offset_f32_bits": [
+      "4333eda0",
+      "42fb2629"
+    ],
+    "integration_tests": "4 Fountain and 3 WaterColor passed",
+    "lint": "strict library Clippy with -D warnings passed",
+    "non_pdf": "render,serde cargo check passed"
+  },
+  "limitations": "Fresh setter-built Pencil2 from transformed Fountain source; synthetic prior, intervened queue, host Mesa and ARM64 emulation. No saved Pencil2, normal queue, device or production parity. Native capture requires external local dependencies documented in README."
+}

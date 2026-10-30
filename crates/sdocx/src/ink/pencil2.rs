@@ -1,7 +1,8 @@
-//! Test-only source-derived Pencil2 GLV14 saved geometry sampler.
+//! Source-derived Pencil2 GLV14 geometry and explicit host raster paint.
 //!
-//! This covers captured RTV4 geometry records only; it does not model the GPU shader,
-//! material, texture sampling, alpha compositing, or PDF/SVG paint output.
+//! The geometry sampler covers captured RTV4 records. The device-raster child
+//! module adds a bounded shader/blend hypothesis used by the explicit pixel
+//! canvas API. Normal document dispatch remains generic.
 //!
 //! Scope is intentionally narrow: tool 2, source 0, stroke type 0, curve path,
 //! finite point channels, captured inverse-scale profiles, and native alpha state.
@@ -10,6 +11,11 @@
 use std::fmt;
 
 use super::path::{P, Quad};
+mod source;
+pub(crate) use source::prepare_stroke;
+
+const MAX_SOURCE_POINTS: usize = 16_384;
+const MAX_RECORDS: usize = 16_384;
 
 #[derive(Clone, Copy, Debug)]
 pub struct AlphaState {
@@ -50,6 +56,8 @@ pub struct SampledRecord {
 pub enum SamplerError {
     Unsupported(&'static str),
     Invalid(&'static str),
+    WorkLimit,
+    #[cfg(all(test, feature = "serde"))]
     MissingNativeState(&'static str),
 }
 
@@ -58,6 +66,8 @@ impl fmt::Display for SamplerError {
         match self {
             Self::Unsupported(s) => write!(f, "unsupported Pencil2 V14 input: {s}"),
             Self::Invalid(s) => write!(f, "invalid Pencil2 V14 input: {s}"),
+            Self::WorkLimit => write!(f, "Pencil2 V14 work limit exceeded"),
+            #[cfg(all(test, feature = "serde"))]
             Self::MissingNativeState(s) => write!(f, "missing captured Pencil2 V14 state: {s}"),
         }
     }
@@ -179,6 +189,9 @@ fn finite_input(input: &SavedInput) -> Result<(), SamplerError> {
         ));
     }
     let n = input.points.len();
+    if n > MAX_SOURCE_POINTS {
+        return Err(SamplerError::WorkLimit);
+    }
     if n < 2
         || input.pressure.len() != n
         || input.tilt.len() != n
@@ -187,11 +200,6 @@ fn finite_input(input: &SavedInput) -> Result<(), SamplerError> {
     {
         return Err(SamplerError::Invalid(
             "channel counts must match at least two points",
-        ));
-    }
-    if !matches!(input.color_argb, 0xff00_0000 | 0x8033_6699) {
-        return Err(SamplerError::Unsupported(
-            "color is outside the captured profiles",
         ));
     }
     if !input.size.is_finite()
@@ -225,6 +233,11 @@ pub fn sample_with_inverse_scale(
         return Err(SamplerError::Unsupported("uncaptured inverse scale"));
     }
     finite_input(input)?;
+    if alpha.alpha_byte != (input.color_argb >> 24) as u8 {
+        return Err(SamplerError::Unsupported(
+            "alpha state disagrees with source color",
+        ));
+    }
     let base_radius = alpha.base;
     if !base_radius.is_finite() || base_radius <= 0.0 {
         return Err(SamplerError::Invalid("finite positive base radius"));
@@ -250,6 +263,7 @@ pub fn sample_with_inverse_scale(
     };
     let mut midpoint = previous;
     let mut tile = 0u32;
+    let mut short_segment_toggle = true;
 
     for i in 1..input.points.len() {
         let current = P {
@@ -260,9 +274,13 @@ pub fn sample_with_inverse_scale(
         let dy = f32sub(current.y, previous.y);
         let squared = dx.mul_add(dx, dy * dy);
         let chord = squared.sqrt();
-        // V14 drawLine uses 5 units as the tool-2 movement gate.
         if chord < 5.0 {
-            continue;
+            short_segment_toggle = !short_segment_toggle;
+            if !short_segment_toggle {
+                continue;
+            }
+        } else {
+            short_segment_toggle = true;
         }
 
         let end = P {
@@ -301,7 +319,7 @@ pub fn sample_with_inverse_scale(
                 [mean_orientation, tilt_factor],
                 [tile, input.color_argb],
                 inverse_scale,
-            );
+            )?;
             radius = f32add(radius, radius_step);
             opacity = f32add(opacity, alpha_step);
             tile = (tile + 1) % 3;
@@ -358,7 +376,7 @@ pub fn sample_with_inverse_scale(
                 [mean_orientation, tilt_factor],
                 [tile, input.color_argb],
                 inverse_scale,
-            );
+            )?;
             radius = f32add(radius, radius_step);
             opacity = f32add(opacity, alpha_step);
             tile = (tile + 1) % 3;
@@ -372,11 +390,11 @@ pub fn sample_with_inverse_scale(
             &mut out,
             terminal,
             target_radius,
-            target_alpha,
+            opacity,
             [mean_orientation, tilt_factor],
             [tile, input.color_argb],
             inverse_scale,
-        );
+        )?;
     } else if out.is_empty() {
         emit_record(
             &mut out,
@@ -386,7 +404,7 @@ pub fn sample_with_inverse_scale(
             [mean_orientation, tilt_factor],
             [tile, input.color_argb],
             inverse_scale,
-        );
+        )?;
     }
     Ok(out)
 }
@@ -399,7 +417,10 @@ fn emit_record(
     orientation_and_draw_factor: [f32; 2],
     tile_and_color: [u32; 2],
     inverse_scale: f32,
-) {
+) -> Result<(), SamplerError> {
+    if out.len() == MAX_RECORDS {
+        return Err(SamplerError::WorkLimit);
+    }
     let [tile, color] = tile_and_color;
     let [orientation, draw_factor] = orientation_and_draw_factor;
     // The source-confirmed AddPoint writer: x/y center unchanged, extents use
@@ -433,8 +454,10 @@ fn emit_record(
     lanes[10] = alpha_by_width;
     lanes[11..14].copy_from_slice(&rgb);
     out.push(SampledRecord { lanes });
+    Ok(())
 }
 
+#[cfg(all(test, feature = "serde"))]
 fn decode_hex(s: &str) -> Result<Vec<u8>, SamplerError> {
     if !s.len().is_multiple_of(2) {
         return Err(SamplerError::Invalid("odd-length hex"));
@@ -447,6 +470,7 @@ fn decode_hex(s: &str) -> Result<Vec<u8>, SamplerError> {
         .collect()
 }
 
+#[cfg(all(test, feature = "serde"))]
 fn capture_f32(hex: &str) -> Result<f32, SamplerError> {
     let bytes = decode_hex(hex)?;
     if bytes.len() != 4 {
@@ -455,7 +479,7 @@ fn capture_f32(hex: &str) -> Result<f32, SamplerError> {
     Ok(f32::from_le_bytes(bytes.try_into().unwrap()))
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "serde"))]
 mod tests {
     use super::*;
     use serde_json::Value;
@@ -785,91 +809,7 @@ mod tests {
     // evidence: Pencil2 constructor 0x59960, GLV14 constructor 0x70928, saved
     // redraw 0x73dc0, and Pen::SetSize 0x45fdc in the pinned native DSOs.
     fn public_adapter(stroke: &crate::Stroke) -> Result<Vec<SampledRecord>, SamplerError> {
-        let rendering = stroke
-            .rendering
-            .as_ref()
-            .ok_or(SamplerError::Invalid("rendering"))?;
-        let style = &rendering.style;
-        let props = rendering.properties;
-        let size = style.pen_size.ok_or(SamplerError::Invalid("size"))?;
-        if rendering.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.Pencil2")
-            || !matches!(rendering.advanced_settings.as_deref(), Some("" | "14;"))
-            || rendering.tool_type_raw != 2
-            || !props.compressed
-            || !props.stylus_channels
-            || props.replay_only
-            || props.eraser
-            || props.fixed_width
-            || props.millisecond_timestamps
-            || props.top_layer_pen
-            || props.alpha_lock
-            || props.binary_added
-            || props.generated
-            || props.fixed_opacity
-            || props.rainbow_effect
-            || props.straighten
-            || props.reveal_mode
-            || style.size_level != Some(0)
-            || style.stroke_type_raw != Some(0)
-            || style.color_type_raw != Some(0)
-            || style.color_argb != Some(0xff000000)
-            || stroke.color != Some(crate::Color { r: 0, g: 0, b: 0 })
-            || stroke.pen_width.to_bits() != size.to_bits()
-        {
-            return Err(SamplerError::Unsupported("public stroke profile"));
-        }
-        // Pen::SetSize clamps finite sizes to [0.4, 800]. Pencil2Data's
-        // constructor clears fixed opacity, and GLV14 initializes level 1;
-        // redraw recalculates the level only when fixed opacity is enabled.
-        // The caller profile above excludes that branch and non-opaque color.
-        if !size.is_finite() {
-            return Err(SamplerError::Invalid("finite size"));
-        }
-        let alpha = AlphaState {
-            alpha_byte: (style.color_argb.unwrap() >> 24) as u8,
-            square_pressure_flag: u8::from(props.fixed_opacity),
-            base: size.clamp(0.4, 800.0),
-            size_level: 1,
-        };
-        fn exact(x: f64) -> Result<f32, SamplerError> {
-            let y = x as f32;
-            if !x.is_finite() || f64::from(y) != x {
-                return Err(SamplerError::Invalid("lossy channel"));
-            }
-            Ok(y)
-        }
-        let points = stroke
-            .points
-            .iter()
-            .map(|p| {
-                Ok(P {
-                    x: exact(p.x)?,
-                    y: exact(p.y)?,
-                })
-            })
-            .collect::<Result<Vec<_>, SamplerError>>()?;
-        let convert = |v: &[f64]| v.iter().copied().map(exact).collect::<Result<Vec<_>, _>>();
-        if stroke.timestamps.iter().any(|&t| i32::try_from(t).is_err()) {
-            return Err(SamplerError::Invalid("timestamp"));
-        }
-        sample(
-            &SavedInput {
-                advanced_version: 14,
-                tool_type: 2,
-                source: 0,
-                stroke_type: 0,
-                curve_enabled: true,
-                color_argb: 0xff000000,
-                size,
-                effective_size: alpha.base,
-                points,
-                pressure: convert(&stroke.pressures)?,
-                tilt: convert(&stroke.tilts)?,
-                orientation: convert(&stroke.orientations)?,
-                timestamps: stroke.timestamps.clone(),
-            },
-            alpha,
-        )
+        super::prepare_stroke(stroke, 1.0)
     }
 
     #[test]
@@ -923,6 +863,33 @@ mod tests {
                     },
                 }),
             };
+            if let Some(dir) = std::env::var_os("SDOCX_PENCIL2_RECORD_CAPTURE") {
+                let id = case["id"].as_str().unwrap();
+                if matches!(id, "pressure_ramp" | "channel_baseline") {
+                    let mut variant = stroke.clone();
+                    let argb = if id == "pressure_ramp" {
+                        0x80336699u32
+                    } else {
+                        0xffdd4411u32
+                    };
+                    variant.rendering.as_mut().unwrap().style.color_argb = Some(argb);
+                    variant.color = Some(crate::Color {
+                        r: (argb >> 16) as u8,
+                        g: (argb >> 8) as u8,
+                        b: argb as u8,
+                    });
+                    variant
+                        .tilts
+                        .fill(if id == "pressure_ramp" { 0.4 } else { 0.8 });
+                    let records = public_adapter(&variant).unwrap();
+                    let bytes: Vec<u8> = records
+                        .iter()
+                        .flat_map(|r| r.lanes.iter().flat_map(|f| f.to_le_bytes()))
+                        .collect();
+                    std::fs::write(std::path::Path::new(&dir).join(format!("{id}.bin")), bytes)
+                        .unwrap();
+                }
+            }
             let alpha = native_alpha_state(case).unwrap();
             assert_eq!(alpha.alpha_byte, (input.color_argb >> 24) as u8);
             assert_eq!(alpha.square_pressure_flag, 0);
@@ -1025,6 +992,17 @@ mod tests {
             bytes,
             include_bytes!("../../../../conformance/pencil2-v14-color-80336699-native.bin")
         );
+        input.color_argb = 0xffdd_4411;
+        alpha.alpha_byte = 255;
+        let bytes: Vec<_> = sample(&input, alpha)
+            .unwrap()
+            .iter()
+            .flat_map(|record| record.lanes.iter().flat_map(|value| value.to_le_bytes()))
+            .collect();
+        assert_eq!(
+            bytes,
+            include_bytes!("../../../../conformance/pencil2-v14-color-ffdd4411-native.bin")
+        );
     }
 
     #[test]
@@ -1048,11 +1026,7 @@ mod tests {
 #[cfg(test)]
 mod device_profile_tests;
 
-#[cfg(all(test, feature = "serde"))]
-mod offset_lifecycle_tests;
+pub(crate) mod device_raster;
 
-#[cfg(all(test, feature = "serde"))]
+#[cfg(any(feature = "render", all(test, feature = "serde")))]
 pub(crate) mod offset_candidate;
-
-#[cfg(test)]
-mod device_raster;

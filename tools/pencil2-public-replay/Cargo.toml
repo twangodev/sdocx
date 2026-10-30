@@ -1,0 +1,11 @@
+[package]
+name = "pencil2-public-context"
+version = "0.1.0"
+edition = "2024"
+[features]
+export-pdf = ["sdocx/pdf"]
+[dependencies]
+sdocx = {path = "../../crates/sdocx", features = ["serde"]}
+serde_json = "1"
+libm = "=0.2.16"
+[workspace]

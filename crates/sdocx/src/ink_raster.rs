@@ -1,6 +1,9 @@
 //! Explicit destination-resolution ink canvas using captured host arithmetic.
 
-use crate::ink::watercolor;
+pub use crate::ink::pencil2::offset_candidate::{
+    Pencil2V14HostGrainState, pencil2_v14_host_grain_offset,
+};
+use crate::ink::{pencil2, pencil2::device_raster, watercolor};
 use crate::{RenderedPage, Stroke};
 use base64::Engine as _;
 
@@ -33,11 +36,22 @@ impl InkRasterContext {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum InkRasterInverseScale {
+    One,
+    Half,
+}
+
 /// Selecting this profile opts into the captured host behavior.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum InkRasterProfile {
+    /// Fresh source-0 GLV14 host paint with explicit geometry inverse scale.
+    Pencil2V14 {
+        inverse_scale: InkRasterInverseScale,
+    },
     /// Captured native Drawing RTV4 paint with enhanced AA disabled.
     /// Each stamp blends directly; the native shader uses RGB and ignores
     /// the supplied color's alpha. Context and color remain explicit inputs.
@@ -168,6 +182,9 @@ impl InkRasterCanvas {
         if self.remaining_submissions == 0 {
             return Err(InkRasterError::WorkLimit);
         }
+        if let InkRasterProfile::Pencil2V14 { inverse_scale } = profile {
+            return self.paint_pencil2_with_grain_offset(stroke, inverse_scale, [0., 0.], [0., 0.]);
+        }
         let fountain = match profile {
             InkRasterProfile::FountainPenV14Host {
                 source_origin,
@@ -197,7 +214,10 @@ impl InkRasterCanvas {
         let InkRasterProfile::WaterColorHostRtv1 {
             screen_width,
             screen_height,
-        } = profile else { unreachable!("Fountain profile returned above") };
+        } = profile
+        else {
+            unreachable!("Fountain profile returned above")
+        };
         let (rows, argb) = watercolor::prepare_stroke(stroke, [screen_width, screen_height])?;
         let mut matrix = [0.; 16];
         let scale = self.context.pixels_per_unit as f32;
@@ -223,6 +243,128 @@ impl InkRasterCanvas {
         self.pixels = pixels;
         Ok(())
     }
+    /// Paint Pencil2 with a translation in framebuffer pixels, with positive X
+    /// right and positive Y up, regardless of the source coordinate origin.
+    /// Texture grain remains fixed to framebuffer coordinates. Geometry inverse
+    /// scale is independent of this translation and must be supplied by the caller.
+    /// This is a bounded host profile, not a general native drawing transform.
+    /// Source sampling has separate 16,384-point and 16,384-record limits;
+    /// it runs before the canvas paint budget and is not charged to that budget.
+    pub fn paint_pencil2_translated(
+        &mut self,
+        stroke: &Stroke,
+        inverse_scale: InkRasterInverseScale,
+        translation: [f32; 2],
+    ) -> Result<(), InkRasterError> {
+        if translation
+            .iter()
+            .any(|v| !v.is_finite() || v.abs() > 16_384.)
+        {
+            return Err(InkRasterError::InvalidContext);
+        }
+        self.paint_with_pencil_translation(
+            stroke,
+            InkRasterProfile::Pencil2V14 { inverse_scale },
+            translation,
+            [0., 0.],
+        )
+    }
+
+    /// Paint one Pencil2 submission with an explicitly captured native grain offset.
+    ///
+    /// Both translation and grain offset are in framebuffer pixels, with X right
+    /// and Y up regardless of source origin. The grain offset is subtracted from
+    /// framebuffer pixel centers before sampling; it does not move geometry. The
+    /// caller must supply the captured f32 values without rounding. This applies
+    /// only to this submission and does not infer any native model transform.
+    /// Offsets are bounded to +/-16384 pixels as a candidate resource/precision
+    /// guard, not a native limit. Other paint methods use zero grain offset.
+    /// Sampling has separate 16,384-point and 16,384-record limits and is not
+    /// charged to the canvas paint budget.
+    /// Unsupported or invalid inputs leave pixels and budgets unchanged.
+    pub fn paint_pencil2_with_grain_offset(
+        &mut self,
+        stroke: &Stroke,
+        inverse_scale: InkRasterInverseScale,
+        translation: [f32; 2],
+        grain_offset: [f32; 2],
+    ) -> Result<(), InkRasterError> {
+        self.paint_with_pencil_translation(
+            stroke,
+            InkRasterProfile::Pencil2V14 { inverse_scale },
+            translation,
+            grain_offset,
+        )
+    }
+
+    fn paint_with_pencil_translation(
+        &mut self,
+        stroke: &Stroke,
+        profile: InkRasterProfile,
+        translation: [f32; 2],
+        grain_offset: [f32; 2],
+    ) -> Result<(), InkRasterError> {
+        if translation
+            .iter()
+            .chain(grain_offset.iter())
+            .any(|v| !v.is_finite() || v.abs() > 16_384.)
+        {
+            return Err(InkRasterError::InvalidContext);
+        }
+        if self.remaining_submissions == 0 {
+            return Err(InkRasterError::WorkLimit);
+        }
+        let inverse_scale = match profile {
+            InkRasterProfile::WaterColorHostRtv1 { .. }
+            | InkRasterProfile::FountainPenV14Host { .. }
+            | InkRasterProfile::FountainPenV14DirectHost { .. } => {
+                unreachable!("family raster branch returned above")
+            }
+            InkRasterProfile::Pencil2V14 {
+                inverse_scale: InkRasterInverseScale::One,
+            } => 1.,
+            InkRasterProfile::Pencil2V14 {
+                inverse_scale: InkRasterInverseScale::Half,
+            } => 0.5,
+        };
+        let sampled =
+            pencil2::prepare_stroke(stroke, inverse_scale).map_err(|error| match error {
+                pencil2::SamplerError::Unsupported(message) => {
+                    InkRasterError::UnsupportedStroke(message)
+                }
+                pencil2::SamplerError::Invalid(message) => InkRasterError::InvalidStroke(message),
+                pencil2::SamplerError::WorkLimit => InkRasterError::WorkLimit,
+                #[cfg(all(test, feature = "serde"))]
+                pencil2::SamplerError::MissingNativeState(message) => {
+                    InkRasterError::UnsupportedStroke(message)
+                }
+            })?;
+        let records: Vec<_> = sampled.into_iter().map(|record| record.lanes).collect();
+        let mut context = device_context(self.context);
+        context.translation = translation;
+        context.grain_offset = grain_offset;
+        let plan = device_raster::prepare(&records, context).map_err(|error| match error {
+            device_raster::RasterError::Context => InkRasterError::InvalidContext,
+            device_raster::RasterError::Record => {
+                InkRasterError::InvalidStroke("unrepresentable derived stamp")
+            }
+            device_raster::RasterError::WorkLimit => InkRasterError::WorkLimit,
+            device_raster::RasterError::Allocation => InkRasterError::Allocation,
+        })?;
+        let work = plan.work();
+        let remaining = self
+            .remaining_work
+            .checked_sub(work)
+            .ok_or(InkRasterError::WorkLimit)?;
+        let pixels = plan
+            .render(Some(&self.pixels))
+            .ok_or(InkRasterError::Allocation)?;
+        self.pixels = pixels;
+        self.remaining_work = remaining;
+        self.remaining_submissions -= 1;
+        Ok(())
+    }
+
     /// Paint a sampled GLV10 stroke using caller-supplied native textures and
     /// uniforms. This conditional Mesa host model does not infer device context.
     /// Invalid inputs and exhausted work leave the canvas unchanged.
@@ -378,4 +520,14 @@ fn pixel_count(context: InkRasterContext) -> Result<usize, InkRasterError> {
         return Err(InkRasterError::InvalidContext);
     }
     Ok(count)
+}
+
+fn device_context(context: InkRasterContext) -> device_raster::Context {
+    device_raster::Context {
+        frame: [context.width, context.height],
+        scale: context.pixels_per_unit as f32,
+        translation: [0., 0.],
+        grain_offset: [0., 0.],
+        y_up: context.origin == InkRasterOrigin::BottomLeft,
+    }
 }

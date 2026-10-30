@@ -1,4 +1,4 @@
-//! Test-only fixed-resolution reconstruction of the captured host-Mesa profile.
+//! Fixed-resolution host profile used by the explicit ink raster canvas.
 //! Source fragment channels and each destination blend are quantized separately.
 //! Normal document dispatch and uncaptured Drawing contexts remain unverified.
 
@@ -108,6 +108,7 @@ pub(crate) struct RasterPlan<'a> {
     context: Context,
     stamps: Vec<ProjectedStamp>,
     pixels: usize,
+    work: usize,
 }
 
 pub(crate) enum RasterError {
@@ -154,6 +155,10 @@ impl ProjectedStamp {
 }
 
 impl RasterPlan<'_> {
+    pub(crate) fn work(&self) -> usize {
+        self.work
+    }
+
     pub(crate) fn render(self, backdrop: Option<&[[u8; 4]]>) -> Option<Vec<[u8; 4]>> {
         if backdrop.is_some_and(|image| image.len() != self.pixels) {
             return None;
@@ -247,11 +252,16 @@ pub(crate) fn prepare(
         }
         stamps.push(stamp);
     }
+    let work = samples
+        .checked_add(pixels)
+        .and_then(|n| n.checked_add(records.len()))
+        .ok_or(RasterError::WorkLimit)?;
     Ok(RasterPlan {
         records,
         context,
         stamps,
         pixels,
+        work,
     })
 }
 

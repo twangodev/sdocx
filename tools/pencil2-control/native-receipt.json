@@ -1,0 +1,71 @@
+{
+  "scope": "Fresh setter-built ObjectStroke using Fountain source channels with x + 3.25, y - 2.5, pressure * 0.75 and observed style, replacing the earlier deserialized object before Drawing selection; deferred host queue and explicit Update and Draw on ARM64 emulation and host Mesa. The first stroke is synthetic and the second is drawn over it. No original saved Pencil2, outer page loading, normal queue scheduling, device or production parity is established.",
+  "command": "python3 tools/pencil2-changed-input/capture.py",
+  "source_index": 6,
+  "source_payload_sha256": "265958d710c40d647589ecc9d7093c6f1a4a46a3bfde0ef81a1580586dbf3712",
+  "inputs_sha256": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+  "script_sha256": "de7100e3efd3fa498629976cba05b04ffebece739bbf31f785be2211b28e9b72",
+  "base_sha256": "974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7",
+  "drawing_base_sha256": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861",
+  "patch_sha256": "b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83",
+  "point_count": 87,
+  "discarded_deserialized_object_consumed": 1235,
+  "channel_sha256": {
+    "points": "604530edf29a7b6f622115e1efbd75b7ddab331d27ebe52726df34b525eb6b13",
+    "pressures": "324e7efdf5e9a55cc91fa2f30afd0a2b72f6731ae2f7180f2add94e9f6bb7df7",
+    "timestamps": "5ff73b7a5252f11091f1c633b9b0bf4a2f6a1ef37987f4c6ad70c51771f517e1",
+    "tilts": "2b9f40b499254058376f4d869900c3f8ea0b9bc97f2ea853d9d7888883b71d47",
+    "orientations": "c31c447c41ae151da6b57dc19755bedd8dd1c4fa6a8e287b98442cf79edfc73c"
+  },
+  "native_getters": {
+    "color_argb": 4294425088,
+    "curve_enabled": 1,
+    "fixed_width_bits": "00000000",
+    "fixed_width_enabled": 0,
+    "label": "second_before_draw",
+    "line_type": 0,
+    "point_count": 87,
+    "rainbow_distance": 0,
+    "rainbow_enabled": 0,
+    "rainbow_offset_bits": "00000000",
+    "shape": 0,
+    "size_bits": "6ade1141",
+    "size_level": 0,
+    "stroke_type": 0,
+    "tool_type": 2
+  },
+  "advanced_setting": "14;",
+  "drawing_return": 1,
+  "same_renderer": true,
+  "geometry_bytes": 4648,
+  "geometry_sha256": "ac5c3cf82f3458e17ec678c9f3c0eb31ea09310045545209e0745667dd914762",
+  "uniforms": [
+    [
+      "glUniform2fv",
+      4,
+      1,
+      [
+        6.0,
+        9.0
+      ]
+    ],
+    [
+      "glUniform2fv",
+      4,
+      1,
+      [
+        179.92822265625,
+        125.57453155517578
+      ]
+    ]
+  ],
+  "first_sha256": "0f0cbf122a9484d1760f1fae7f260f51552e4c6bee05a8016d032e833385e923",
+  "second_sha256": "6759da166f2094f08034bce5172ca0ac66f7489670a2d75aa6e621d6d19c631e",
+  "changed_pixels": 210,
+  "gl_error_checks": {
+    "first_draw": 0,
+    "second_update": 0,
+    "second_draw": 0
+  },
+  "limitations": "UUID callbacks are stubbed; StringID manager is synthesized from Pencil2 and 14; names. Transitive native harness and runtime libraries are not fully pinned."
+}

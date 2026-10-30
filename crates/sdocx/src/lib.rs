@@ -281,5 +281,6 @@ pub fn archive_zip_length(bytes: &[u8]) -> Result<u64> {
 #[cfg(feature = "render")]
 pub use ink_raster::{
     BrushPenPaintContext, BrushPenTexture, InkRasterCanvas, InkRasterContext, InkRasterError,
-    InkRasterOrigin, InkRasterProfile,
+    InkRasterInverseScale, InkRasterOrigin, InkRasterProfile, Pencil2V14HostGrainState,
+    pencil2_v14_host_grain_offset,
 };
