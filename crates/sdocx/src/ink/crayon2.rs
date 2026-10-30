@@ -391,8 +391,8 @@ mod tests {
     use serde_json::Value;
     use sha2::{Digest, Sha256};
 
-    const FIXTURE: &str = include_str!("../../../../conformance/crayon2-v2-native.json");
-    const BINARY: &[u8] = include_bytes!("../../../../conformance/crayon2-v2-native.bin");
+    const FIXTURE: &str = include_str!("../../tests/assets/crayon2-v2-native/fixture.json");
+    const BINARY: &[u8] = include_bytes!("../../tests/assets/crayon2-v2-native/records.bin");
 
     fn fixture() -> Value {
         serde_json::from_str(FIXTURE).expect("valid compact Crayon2 V2 fixture")
@@ -551,6 +551,31 @@ mod tests {
             );
             assert_eq!(got, expected, "{name} native stream parity");
         }
+    }
+
+    #[test]
+    fn changed_path_paint_capture_matches_source_derived_records() {
+        let points = [
+            P { x: 0.0, y: 0.0 },
+            P { x: 8.0, y: 6.0 },
+            P { x: 18.0, y: -4.0 },
+        ];
+        let pressure = [0.3, 0.6, 1.0];
+        let input = SourceInput {
+            advanced_version: 2,
+            tool_type: 2,
+            stroke_type: 0,
+            curve_enabled: true,
+            points: &points,
+            pressure: &pressure,
+            size: 10.0,
+        };
+        let output = sample(&input, &parse_profile(&fixture())).unwrap();
+        assert_eq!(output.records.len(), 303);
+        assert_eq!(
+            sha(&output_bytes(&output)),
+            "4e7d8107c77d80a2d7fa9d16816c7fa994109cd692a2c38a51d807f4b1a15ec9"
+        );
     }
 
     #[test]
