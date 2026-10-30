@@ -1199,6 +1199,36 @@ mod tests {
         std::fs::write(output.join("document.pdf"), crate::render_document_pdf(&document, &options, &Default::default()).unwrap()).unwrap();
     }
 
+    #[cfg(feature = "pdf")]
+    #[test]
+    #[ignore = "requires native textures and writes document exports"]
+    fn write_mixed_document_grid() {
+        let points = [P { x: 46., y: 37. }, P { x: 69., y: 65. }, P { x: 103., y: 48. }];
+        let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
+        stroke.color = Some(crate::Color { r: 206, g: 83, b: 139 });
+        stroke.bbox = crate::BoundingBox { x_min: 0., y_min: 0., x_max: 191., y_max: 191. };
+        assert_eq!(sha(&output_bytes(&sample_stroke(&stroke, &parse_profile(&fixture())).unwrap())), "c968ef21be4168f9ee2c2ccbc332f6f2463e866661281075187c3c387dcf03f4");
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
+        let point = std::fs::read(dir.join("g_Crayon2PointPtn.source.bin")).unwrap();
+        let background = std::fs::read(dir.join("g_Crayon2BgPtn.source.bin")).unwrap();
+        assert_eq!(sha(&point), "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405");
+        assert_eq!(sha(&background), "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3");
+        let native = parse_profile(&fixture());
+        let document = crate::Document { metadata: Default::default(), pages: vec![crate::Page {
+            uuid: "control".into(), width: 192, height: 192, content_bbox: stroke.bbox,
+            background_color: Some(crate::Color { r: 64, g: 128, b: 192 }), template: None,
+            background: Default::default(), objects: vec![stroke.into()] }] };
+        let options = crate::RenderOptions { crayon2_grid_profile: Some(crate::Crayon2DocumentGridProfile {
+            phase_x: native.phase_x.to_vec(), phase_y: native.phase_y.to_vec(), point_atlas: point,
+            background_texture: background, width: 192, height: 192,
+            clip_scale: [0.010416666977107525; 2], clip_translation: [-0.8645833134651184, -0.9479166865348816],
+            background_scale: [1.7066665887832642; 2], rgba: [206. / 255., 83. / 255., 139. / 255., 177. / 255.], max_samples: 100_000,
+        }), ..Default::default() };
+        let output = std::path::PathBuf::from(std::env::var_os("SDOCX_CRAYON2_DOCUMENT_DIR").unwrap());
+        std::fs::write(output.join("document.svg"), &crate::render_document_svg(&document, &options)[0].svg).unwrap();
+        std::fs::write(output.join("document.pdf"), crate::render_document_pdf(&document, &options, &Default::default()).unwrap()).unwrap();
+    }
+
     #[test]
     #[ignore = "requires local native texture inputs and writes fixed-grid SVG"]
     fn write_independent_rust_grid() {

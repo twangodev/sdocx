@@ -1,0 +1,19 @@
+# Crayon2 mixed-input host holdout
+
+This synthetic native Model/Drawing and Mesa GLES capture uses points (46, 37), (69, 65), (103, 48), pressures 0.3, 0.6, 1, ARGB `b1ce538b`, a 192×192 opaque target with RGB (64, 128, 192), and view translation (13, 5). The independently sampled document vector matches the native upload byte for byte; the native frame is never supplied to the renderer. The capture is host evidence and does not establish Android or saved-note parity.
+
+Against the native frame, actual document SVG rasterized by resvg differs in 360 pixels, maximum RGB channel error 2, and total absolute RGB error 517. The direct document PDF differs in 543/5/1495 in MuPDF and 541/5/1472 in PDFium. These residuals do not establish a paint correction. The receipt retains uniforms, texture allocations, blend and draw evidence, hashes and metrics; the retained frame is bottom-up RGBA8.
+
+Use the native prerequisites and environment in [the document holdout](../crayon2-document-holdout/README.md), then:
+
+```sh
+work_dir=$(mktemp -d /tmp/sdocx-crayon-mixed.XXXXXX)
+.venv/bin/python tools/crayon2-mixed-holdout/capture.py > "$work_dir/native.json"
+.venv/bin/python tools/crayon2-mixed-holdout/verify_native.py "$work_dir/native.json"
+export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
+SDOCX_CRAYON2_DOCUMENT_DIR="$work_dir" cargo test -p sdocx --features pdf,serde --lib write_mixed_document_grid -- --ignored
+cargo run -p sdocx --features pdf --example crayon2_host_export -- "$work_dir/document.svg" "$work_dir/document.png" "$work_dir/svg-page.pdf"
+PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-mixed-holdout/compare.py "$work_dir/document.svg" "$work_dir/document.png" "$work_dir/document.pdf"
+```
+
+The helper-generated SVG-page PDF is discarded; the comparison uses the direct document PDF. Native texture inputs and emulation dependencies are local, hash-gated prerequisites and are not supplied by a clean checkout.
