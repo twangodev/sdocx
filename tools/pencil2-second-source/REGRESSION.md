@@ -1,0 +1,9 @@
+# Native geometry regression
+
+The ordinary Rust test `second_source_preserves_native_geometry_except_three_known_sincos_lanes` uses the tracked `conformance/fountain-v14-saved-scene-inputs.json` (87-point Fountain source, row 1 / source index 6), remapped explicitly to the fresh Pencil2 V14 stylus profile. Its 83 records match the retained native descriptor except for exactly three one-ULP lane-8 differences. Both complete byte-stream hashes and each difference are asserted.
+
+`geometry-receipt.json` retains the original comparison provenance; `receipt.json` identifies the native capture and input hashes. `capture.py` is the original capture entry point. Native recapture also requires the separate independent-Drawing harness, proprietary native libraries, ARM64 emulation, and host Mesa; these transitive dependencies are not fully pinned here. The receipt field `geometry_test_sha256` identifies the unchanged standalone `geometry_test.rs`, not the new integrated test. The standalone `geometry_test.rs` and `geometry_test.sh` preserve the original receipt's replay procedure; the integrated Rust regression is the routine check.
+
+The fixture is a pre-Update native descriptor, not independently verified GPU upload. This verifies a remapped fresh host input, not saved Pencil2 admission, normal queue behavior, device rendering, or pixel/export equivalence.
+
+The captured export receipt is historical evidence: its `export.py` and associated export renderer are not packaged in this regression. Native recapture additionally requires `tools/pencil2-independent-drawing/capture.py`, `tools/pencil2-public-replay/drawing_native_target_translated_probe.py`, and `tools/pencil2-mixed-drawing/capture.patch`, which are not packaged here. Native recapture and historical export reproduction are not self-contained; the ordinary Rust geometry regression is self-contained.

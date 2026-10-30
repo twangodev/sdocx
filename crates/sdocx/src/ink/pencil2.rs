@@ -1039,3 +1039,6 @@ pub(crate) mod offset_candidate;
 
 #[cfg(test)]
 mod isolated_record_tests;
+
+#[cfg(all(test, feature = "serde"))]
+mod second_source_tests;

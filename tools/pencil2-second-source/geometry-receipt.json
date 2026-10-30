@@ -1,0 +1,37 @@
+{
+  "scope": "Setter-built Pencil2 V14 from the same normalized Fountain source as the full-frame and export control; ARM64 emulation and host Mesa. Native descriptor captured before Update and not independently verified as GPU upload. No original saved Pencil2, normal queue or device parity.",
+  "source_index": 6,
+  "input_sha256": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+  "native_capture_sha256": "464a4db2acf1d8f71bb451ccad0f3b8f38635e9e48f8df0fd190371831035940",
+  "geometry_test_sha256": "131bc6d3110a512f433e538f3de5cb03f8690cf90d0d1967b0b9b5542dc723c7",
+  "records": 83,
+  "native_sha256": "1119d446324f6f3a61ff231b61b73a154010304e9bf8ebd4fc9e33cddbb1c9ab",
+  "rust_sha256": "ff88eef234bde541d59b1a69edab340173eb9f84b9124af1427abafd12ce0720",
+  "different_lanes": [
+    {
+      "record": 76,
+      "lane": 8,
+      "native_bits": "3dec5b1a",
+      "rust_bits": "3dec5b19"
+    },
+    {
+      "record": 77,
+      "lane": 8,
+      "native_bits": "3dec5b1a",
+      "rust_bits": "3dec5b19"
+    },
+    {
+      "record": 78,
+      "lane": 8,
+      "native_bits": "3dec5b1a",
+      "rust_bits": "3dec5b19"
+    }
+  ],
+  "full_frame_and_export_receipt": "tools/pencil2-second-source/receipt.json",
+  "commands": [
+    "SDOCX_PENCIL2_FRESH_FRAME_DIR=/tmp/pencil2-second-fixture python3 tools/pencil2-second-source/capture.py",
+    "bash tools/pencil2-second-source/geometry_test.sh"
+  ],
+  "interpretation": "Three instances differ by one binary32 ULP in lane 8. The previously captured full opaque frame and SVG/PDF exports match, but this is not exact geometry parity or a basis to broaden admission.",
+  "native_fixture": "tools/pencil2-second-source/native-geometry.vbo"
+}

@@ -1,0 +1,141 @@
+{
+  "schema": "sdocx-pencil2-second-source-export-v1",
+  "scope": "Fresh setter-built Pencil2 from real decoded source channels normalized to the public fresh stylus profile, synthetic prior native frame, computed host grain offset and opaque 192x192 host Mesa output. The source is a Fountain stroke, and no saved Pencil2 or device parity is established.",
+  "native_capture": {
+    "scope": "Fresh setter-built ObjectStroke using decoded Fountain payload channels and observed style, replacing the earlier deserialized object before Drawing selection; deferred host queue and explicit Update and Draw on ARM64 emulation and host Mesa. The first stroke is synthetic and the second is drawn over it. No original saved Pencil2, outer page loading, normal queue scheduling, device or production parity is established.",
+    "command": "python3 tools/pencil2-second-source/capture.py",
+    "source_index": 6,
+    "source_payload_sha256": "265958d710c40d647589ecc9d7093c6f1a4a46a3bfde0ef81a1580586dbf3712",
+    "inputs_sha256": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+    "script_sha256": "464a4db2acf1d8f71bb451ccad0f3b8f38635e9e48f8df0fd190371831035940",
+    "base_sha256": "974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7",
+    "drawing_base_sha256": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861",
+    "patch_sha256": "b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83",
+    "point_count": 87,
+    "discarded_deserialized_object_consumed": 1235,
+    "channel_sha256": {
+      "points": "d47c8d428f1d2c897cb8aa80d2a02eb36aeb47e37c23f109d26fc6cb8f530384",
+      "pressures": "573d0450f9480a30538e5fba22dd2915eba7029227f2b7878d24f3e8d8358172",
+      "timestamps": "5ff73b7a5252f11091f1c633b9b0bf4a2f6a1ef37987f4c6ad70c51771f517e1",
+      "tilts": "2b9f40b499254058376f4d869900c3f8ea0b9bc97f2ea853d9d7888883b71d47",
+      "orientations": "c31c447c41ae151da6b57dc19755bedd8dd1c4fa6a8e287b98442cf79edfc73c"
+    },
+    "native_getters": {
+      "color_argb": 4294425088,
+      "curve_enabled": 1,
+      "fixed_width_bits": "00000000",
+      "fixed_width_enabled": 0,
+      "label": "second_before_draw",
+      "line_type": 0,
+      "point_count": 87,
+      "rainbow_distance": 0,
+      "rainbow_enabled": 0,
+      "rainbow_offset_bits": "00000000",
+      "shape": 0,
+      "size_bits": "6ade1141",
+      "size_level": 0,
+      "stroke_type": 0,
+      "tool_type": 2
+    },
+    "advanced_setting": "14;",
+    "drawing_return": 1,
+    "same_renderer": true,
+    "geometry_bytes": 4648,
+    "geometry_sha256": "1119d446324f6f3a61ff231b61b73a154010304e9bf8ebd4fc9e33cddbb1c9ab",
+    "uniforms": [
+      [
+        "glUniform2fv",
+        4,
+        1,
+        [
+          6.0,
+          9.0
+        ]
+      ],
+      [
+        "glUniform2fv",
+        4,
+        1,
+        [
+          176.67822265625,
+          128.07452392578125
+        ]
+      ]
+    ],
+    "first_sha256": "0f0cbf122a9484d1760f1fae7f260f51552e4c6bee05a8016d032e833385e923",
+    "second_sha256": "963f3fca1118753e17ecd46e87e08906808ab3b1af3662cb2349a43f9c18b774",
+    "changed_pixels": 252,
+    "gl_error_checks": {
+      "first_draw": 0,
+      "second_update": 0,
+      "second_draw": 0
+    },
+    "limitations": "UUID callbacks are stubbed; StringID manager is synthesized from Pencil2 and 14; names. Transitive native harness and runtime libraries are not fully pinned."
+  },
+  "source_index": 6,
+  "native_frame_sha256": "963f3fca1118753e17ecd46e87e08906808ab3b1af3662cb2349a43f9c18b774",
+  "native_offset_bits": [
+    "4330ada0",
+    "43001314"
+  ],
+  "input_sha256": {
+    "tools/pencil2-independent-drawing/capture.py": "974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7",
+    "tools/pencil2-public-replay/drawing_native_target_translated_probe.py": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861",
+    "tools/pencil2-mixed-drawing/capture.patch": "b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83",
+    "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-geometry-v12/capture_candidate.py": "996ef6db3a376619e9e5d1d05b7d5e1a940726f3feb2ef6895275a705576ee3e",
+    "tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+  },
+  "artifact_sha256": {
+    "first.rgba": "0f0cbf122a9484d1760f1fae7f260f51552e4c6bee05a8016d032e833385e923",
+    "second.rgba": "963f3fca1118753e17ecd46e87e08906808ab3b1af3662cb2349a43f9c18b774",
+    "canvas.rgba": "a17bf28990d6a4ba918d659765d928c4bf778dd5282cd5e1d1777e23ae301d61",
+    "canvas.png": "b8135b57aea601db0645ddab207f4cd609ffa21109184ae7503b96b498394617",
+    "canvas.svg": "2fb0aed83efad51c6e746669a8e5d949f9c1ff615f97cf14726c67a056a3213a",
+    "svg.png": "fd28b820e78dc339eb45647ad0958fba1aa25212635e010d06d06c77935043ca",
+    "canvas.pdf": "92d3c3fa73ec95fd6b8fcc38a94f30d5b004f9b0298ba73d0096bba536e7c415"
+  },
+  "runtime_limitations": "The listed native harness files and renderer are pinned; transitive harness dependencies, Unicorn, host GL/Mesa, and other runtime libraries are not fully pinned.",
+  "source_sha256": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+  "capture_sha256": "464a4db2acf1d8f71bb451ccad0f3b8f38635e9e48f8df0fd190371831035940",
+  "public_source_sha256": "fb1745c36216b18c5ddd35be1dcdde1b125400576e9884335a5c0673078d1c9f",
+  "script_sha256": "3421ebb7a3b6ef27f09024bd7b20dd9dcd06a54e526410baa30c95c234dfccc5",
+  "readers": {
+    "resvg": "0.45.1",
+    "mupdf": "1.28.2",
+    "pdfium": "156.0.8076.0"
+  },
+  "results": {
+    "canvas": {
+      "different_pixels": 0,
+      "different_channels": 0,
+      "max_channel_error": 0,
+      "sum_channel_error": 0
+    },
+    "png": {
+      "different_pixels": 0,
+      "different_channels": 0,
+      "max_channel_error": 0,
+      "sum_channel_error": 0
+    },
+    "svg_resvg": {
+      "different_pixels": 0,
+      "different_channels": 0,
+      "max_channel_error": 0,
+      "sum_channel_error": 0
+    },
+    "direct_pdf_mupdf": {
+      "different_pixels": 0,
+      "different_channels": 0,
+      "max_channel_error": 0,
+      "sum_channel_error": 0
+    },
+    "direct_pdf_pdfium": {
+      "different_pixels": 0,
+      "different_channels": 0,
+      "max_channel_error": 0,
+      "sum_channel_error": 0
+    }
+  },
+  "reproduction": "PYTHONPATH=/tmp/sdocx-marker3-v133-readers .venv/bin/python tools/pencil2-second-source/export.py"
+}
