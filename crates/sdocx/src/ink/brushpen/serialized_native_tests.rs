@@ -7,6 +7,8 @@ fn independent_serialized_brushpen_native() {
         include_bytes!("../../../tests/assets/brushpen-independent/payload.bin"),
         include_bytes!("../../../tests/assets/brushpen-independent/geometry.bin"),
         include_str!("../../../../../tools/brushpen-independent/receipt.json"),
+        include_bytes!("../../../../../tools/brushpen-independent/frame.bin"),
+        include_bytes!("../../../tests/assets/brushpen-independent/frame.rgba.zlib"),
         0.45,
         96,
     );
@@ -35,6 +37,8 @@ fn third_serialized_brushpen_native() {
         include_bytes!("../../../tests/assets/brushpen-third/payload.bin"),
         include_bytes!("../../../tests/assets/brushpen-third/geometry.bin"),
         include_str!("../../../../../tools/brushpen-third/receipt.json"),
+        include_bytes!("../../../../../tools/brushpen-third/frame.bin"),
+        include_bytes!("../../../tests/assets/brushpen-third/frame.rgba.zlib"),
         0.70,
         48,
     );
@@ -104,10 +108,13 @@ fn verify_capture(
     payload: &[u8],
     geometry: &[u8],
     receipt: &str,
+    captured_frame: &[u8],
+    compressed_rgba: &[u8],
     pressure: f32,
     delta: u16,
 ) {
     use sha2::{Digest, Sha256};
+    use std::io::Read;
     let receipt: serde_json::Value = serde_json::from_str(receipt).unwrap();
     let hash = |bytes: &[u8]| format!("{:x}", Sha256::digest(bytes));
     assert_eq!(
@@ -126,9 +133,25 @@ fn verify_capture(
     );
     let mut source =
         include_bytes!("../../../../../conformance/brushpen-serialized/v10-payload.bin").to_vec();
+    let base_frame = include_bytes!("../../../../../conformance/brushpen-serialized/v10-frame.bin");
+    assert_eq!(
+        hash(&source),
+        "28b0848cb3aa9dadc700bf425fd390281c8de0d222e46f7126d0bcbcd527b60f"
+    );
+    assert_eq!(
+        hash(base_frame),
+        "9b495ebc360c03d2b064e21bf97ce5a45d6f02290aa04410ba87316ae59874f3"
+    );
+    assert_eq!(&source[137..], base_frame);
     let frame = &mut source[137..];
     frame[20 + 16 + 203 * 4..20 + 16 + 204 * 4].copy_from_slice(&pressure.to_le_bytes());
     frame[20 + 16 + 4 * 40..20 + 16 + 4 * 40 + 2].copy_from_slice(&delta.to_le_bytes());
     assert_eq!(hash(frame), receipt["inputs"]["frame.bin"]);
+    assert_eq!(frame, captured_frame, "{name} captured frame");
     assert_eq!(source, payload, "{name} source-derived serialized input");
+    let mut rgba = Vec::new();
+    flate2::read::ZlibDecoder::new(compressed_rgba)
+        .read_to_end(&mut rgba)
+        .unwrap();
+    assert_eq!(hash(&rgba), receipt["frame_sha256"], "{name} native RGBA");
 }
