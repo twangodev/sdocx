@@ -1,0 +1,7 @@
+# Independent longer 2× Montblanc controls
+
+Four fresh synthetic Drawing/host Mesa captures at size 1.5 contain 12, 15, 18 and 20 points, with independently chosen arcs, crossings, zigzags and short moves. The capture adapter receives points and pressures but does not independently read them back. The durable `long_independent_native_stream` Rust test matches every captured callback and float lane bitwise. The candidate admits 12–20 points at size 1.5 through the 2× guard; these controls do not validate other sizes or all paths.
+
+For every case the candidate reduces union RGB absolute error against native host frames across SVG/resvg and direct PDF/MuPDF and PDFium. Native support is overcovered. Candidate SVG files range from 664 KB to 915 KB. This is not device, saved-note, native PDF, or lifecycle parity. Native capture dependencies are only partially pinned as in `../long-2x-sizes/README.md`.
+
+Unpack `native.tar.gz` to a fresh directory and set `MB_CAPTURE_WORK`; set `MB_EXPORT_WORK` to a separate fresh empty directory. Run `PYTHONPATH=/tmp/marker2-pdfium-python .venv/bin/python tools/montblanc/long-2x-independent/compare.py rebuild-verify`. The comparator verifies captured streams and frames, document and raster hashes, selected source hashes and metrics. For a fresh capture, run `capture` with a fresh empty `MB_EXPORT_WORK`. Temporary exports are reproducible and should be discarded. The retained `streams.json` is included in the `long_independent_native_stream` test fixture chain.

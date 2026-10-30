@@ -461,7 +461,7 @@ pub struct RenderOptions {
     #[cfg_attr(feature = "serde", serde(default))]
     pub montblanc_profile: Option<MontblancRenderProfile>,
     /// Assert a fresh drawable and two output pixels per page unit for Montblanc.
-    /// For 10–11 points, sizes 0.5–2 are admitted; other size and metadata bounds match unit scale.
+    /// For 10–11 points, sizes 0.5–2 are admitted; for 12–20 points, only size 1.5 is admitted.
     /// Combining this with a Montblanc profile, or using unsupported inputs,
     /// falls back to generic paint.
     #[cfg_attr(feature = "serde", serde(default))]
@@ -4687,7 +4687,9 @@ fn render_stroke(
             && !montblanc_two_pixels_per_page_unit)
             || (montblanc_profile.is_none() && montblanc_two_pixels_per_page_unit))
         && viewport.iter().all(|d| *d > 0)
-        && (!montblanc_two_pixels_per_page_unit || stroke.points.len() <= 11)
+        && (!montblanc_two_pixels_per_page_unit
+            || stroke.points.len() <= 11
+            || ((12..=20).contains(&stroke.points.len()) && stroke.pen_width == 1.5))
         && (!montblanc_two_pixels_per_page_unit
             || !(10..=11).contains(&stroke.points.len())
             || (0.5..=2.0).contains(&stroke.pen_width))
