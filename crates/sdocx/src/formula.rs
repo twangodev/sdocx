@@ -291,16 +291,9 @@ impl FormulaMetadata {
                 result_rect: self.latex_result_rect,
             }
         } else {
-            let bitmap_decodable = bitmap_decodable.or_else(|| {
-                #[cfg(feature = "render")]
-                {
-                    image::decode_saved_png(mime_type, data)
-                }
-                #[cfg(not(feature = "render"))]
-                {
-                    None
-                }
-            });
+            #[cfg(feature = "render")]
+            let bitmap_decodable =
+                bitmap_decodable.or_else(|| image::decode_saved_png(mime_type, data));
             if bitmap_decodable == Some(true) {
                 FormulaRenderSelection::ImageSelected {
                     resource_name: &resource.name,
