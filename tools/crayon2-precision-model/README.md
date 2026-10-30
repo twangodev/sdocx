@@ -182,3 +182,57 @@ cargo test -p sdocx --features render --lib write_independent_rust_grid -- --ign
 cargo run -p sdocx --features pdf --example crayon2_host_export -- /tmp/crayon-grid-rust.svg /tmp/crayon-grid-rust.png /tmp/crayon-grid-rust.pdf
 PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-precision-model/compare_output_grid.py /tmp/crayon-grid-rust.svg /tmp/crayon-grid-rust.png /tmp/crayon-grid-rust.pdf
 ```
+
+A controlled arithmetic comparison identifies the Rust/Python discrepancy:
+Python promotes each already-rounded binary32 texture coordinate to binary64
+for the final multiplication by the texture dimension before flooring. Rust
+performs that multiplication in binary32. Changing only those final
+multiplications in Rust reproduces the Python receipt exactly, including SVG,
+PNG and PDF hashes and all three reader metrics. The binary32 version has
+lower total RGB error but a larger worst pixel. Its worst resvg pixel is
+(75,148), where native RGB is (167,84,64) and the candidate leaves the prior
+(64,128,192); nearby pixels also differ. The captured scaled UV is binary32,
+but the precision of the texture unit's dimension multiplication is not
+established by that observation. Neither aggregate comparison alone proves
+which boundary rule the native texture unit uses; the targeted intervention
+below provides additional evidence. No production dispatch follows from this
+experiment.
+
+A subsequent isolated-stamp intervention resolves that pixel for this host
+control. Four records (442, 443, 456 and 462) cover it. Recompiled shader
+captures report identical scaled background coordinates in all four; their
+low 24 bits, with the high byte inferred from the candidate coordinate range,
+decode as x `0x3f8369d0` and y `0x3f4962fc`. The point sample is zero for the
+first three and 241 for record 462. All four report background sample 69;
+the texture has 69 at repeated texel (3,117), versus 0 at (4,117), 94 at
+(3,118), and 20 at (4,118). The binary64 final product selects (3,117), while
+binary32 rounding selects (4,117). Its record 462 alpha is 217, and the
+binary64 grid now reproduces native RGB (167,84,64) at this pixel. The
+[receipt](worst-pixel-receipt.json) retains the pixel observations and frame
+hashes; the shader was recompiled and the coordinate high bytes are inferred.
+The test-only Rust grid retains the lower-total-error binary32 candidate. This does not establish the
+native implementation's internal precision or a general rule: the aggregate
+independent-control error increases to the Python receipt above, and other
+interpolation or sampling differences remain unresolved. The public standalone
+and direct document renderers remain unchanged.
+
+To reproduce, set the native capture environment from the independent control
+above, then write the exact filenames consumed by the verifier:
+
+```sh
+work_dir=$(mktemp -d /tmp/sdocx-crayon-worst.XXXXXX)
+for index in 442 443 456 462; do
+  for mode in xsample ysample; do
+    .venv/bin/python tools/crayon2-precision-model/capture.py "$mode" "$index" > "$work_dir/$mode$index.json"
+  done
+  for mode in point background alpha; do
+    .venv/bin/python tools/crayon2-independent-control/shader-sample-index-probe.py "$mode" "$index" > "$work_dir/$mode$index.json"
+  done
+done
+.venv/bin/python tools/crayon2-precision-model/verify_worst_pixel.py "$work_dir"
+```
+
+The verifier checks pinned scripts, source vector and texture hashes, the
+selected native upload records, per-mode diagnostic shader hashes, draw calls,
+complete framebuffer hashes, pixel values and texture candidates. Capture
+outputs are large, reproducible intermediates.

@@ -1,0 +1,233 @@
+{
+  "scope": "Recompiled isolated-stamp host-Mesa intervention, top-down (75,148). Float high byte inferred from predicted coordinate range; no device or original shader intermediate claim.",
+  "coordinate_bits": {
+    "x": "3f8369d0",
+    "y": "3f4962fc"
+  },
+  "background_texture_candidates": {
+    "3,117": 69,
+    "4,117": 0,
+    "3,118": 94,
+    "4,118": 20
+  },
+  "observations": {
+    "alpha442": {
+      "pixel_rgba": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "frame_sha256": "4bc4f724b5c20ed61dff99f0aa10daabdab9ec8377b24c98c29101989f44f44b",
+      "gl_error": 0
+    },
+    "alpha443": {
+      "pixel_rgba": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "frame_sha256": "8c53ad3d543dc16420d47cbf938c1ba7e4aab7fe09e0e7cea742a65f75e478c2",
+      "gl_error": 0
+    },
+    "alpha456": {
+      "pixel_rgba": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "frame_sha256": "d589f1eb6c33ba7530558b8654a29655961f65224c5e52397618f9ce9f2fd178",
+      "gl_error": 0
+    },
+    "alpha462": {
+      "pixel_rgba": [
+        217,
+        217,
+        217,
+        255
+      ],
+      "frame_sha256": "02b67fd5c5b1d282fdd681d03784c0b0b7ecbd8de6935853e9ff14be3851fad4",
+      "gl_error": 0
+    },
+    "background442": {
+      "pixel_rgba": [
+        69,
+        69,
+        69,
+        255
+      ],
+      "frame_sha256": "b30e6fb0b68d57f7e2dda7d1ddcb6c971862760267f27e95fb2da45ba3087c56",
+      "gl_error": 0
+    },
+    "background443": {
+      "pixel_rgba": [
+        69,
+        69,
+        69,
+        255
+      ],
+      "frame_sha256": "b30e6fb0b68d57f7e2dda7d1ddcb6c971862760267f27e95fb2da45ba3087c56",
+      "gl_error": 0
+    },
+    "background456": {
+      "pixel_rgba": [
+        69,
+        69,
+        69,
+        255
+      ],
+      "frame_sha256": "4a7e93748045caa7e1bae99594c088d6c779755c7ad01a9ae6571a469a022240",
+      "gl_error": 0
+    },
+    "background462": {
+      "pixel_rgba": [
+        69,
+        69,
+        69,
+        255
+      ],
+      "frame_sha256": "1bb31667192032de2db5c03b71a8b2275b9b1c79f83fbba71ab41ea1fe7fba87",
+      "gl_error": 0
+    },
+    "point442": {
+      "pixel_rgba": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "frame_sha256": "2687039f59091de7a39dae85f9c183ebe9a53510cc7cff9aa64df97fa493ce75",
+      "gl_error": 0
+    },
+    "point443": {
+      "pixel_rgba": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "frame_sha256": "01ca713d70bfbae985c0366cbd61c9594883e6b3ef88113b70925bde2568af6d",
+      "gl_error": 0
+    },
+    "point456": {
+      "pixel_rgba": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "frame_sha256": "69f7be5a82e50428de58b6769a192fecd18134fc135617d78469548a46fa8b51",
+      "gl_error": 0
+    },
+    "point462": {
+      "pixel_rgba": [
+        241,
+        241,
+        241,
+        255
+      ],
+      "frame_sha256": "52670f46913247c1292467900ae898182ef2f25cf77720891306be78156db0cf",
+      "gl_error": 0
+    },
+    "xsample442": {
+      "pixel_rgba": [
+        131,
+        105,
+        208,
+        255
+      ],
+      "frame_sha256": "5eea129b521b1d2654e75381752e0d8abce5ffa55936e36fe5f8561bac7434b5",
+      "gl_error": 0
+    },
+    "xsample443": {
+      "pixel_rgba": [
+        131,
+        105,
+        208,
+        255
+      ],
+      "frame_sha256": "5eea129b521b1d2654e75381752e0d8abce5ffa55936e36fe5f8561bac7434b5",
+      "gl_error": 0
+    },
+    "xsample456": {
+      "pixel_rgba": [
+        131,
+        105,
+        208,
+        255
+      ],
+      "frame_sha256": "d886090a49210409f91c28d9194cacc1d57efa2723135ff9746a2e4ee773efa5",
+      "gl_error": 0
+    },
+    "xsample462": {
+      "pixel_rgba": [
+        131,
+        105,
+        208,
+        255
+      ],
+      "frame_sha256": "c9a047b93e7411857014c43471d2709dafd9675f359f87be12c1b9b9d1d4266a",
+      "gl_error": 0
+    },
+    "ysample442": {
+      "pixel_rgba": [
+        73,
+        98,
+        252,
+        255
+      ],
+      "frame_sha256": "d9a110b330d45dd69f475c26fbde94672261fe26c1738bf59a9b725f55caf8c8",
+      "gl_error": 0
+    },
+    "ysample443": {
+      "pixel_rgba": [
+        73,
+        98,
+        252,
+        255
+      ],
+      "frame_sha256": "3ebb5f356efa621baead19889332137bbe36195a5ba5f94e497dc2058b1e02dc",
+      "gl_error": 0
+    },
+    "ysample456": {
+      "pixel_rgba": [
+        73,
+        98,
+        252,
+        255
+      ],
+      "frame_sha256": "f2f36fb3bab76995908432f4f445062be87814b2c7d0f53443b3db335285cd57",
+      "gl_error": 0
+    },
+    "ysample462": {
+      "pixel_rgba": [
+        73,
+        98,
+        252,
+        255
+      ],
+      "frame_sha256": "4179bcb25724c7f514c966eff1a55cd34138b58a540ea07c8191c8fdf27b1ada",
+      "gl_error": 0
+    }
+  },
+  "input_sha256": {
+    "tools/crayon2-precision-model/capture.py": "252bfcff42aad93500b56ffcd07e6ca759343c81db35b1292349c118c808c66d",
+    "tools/crayon2-independent-control/shader-sample-index-probe.py": "7225d9c8aee99ea11086d5e94ac92979b58a08f853ae073c120ab2fefbe44db4",
+    "tools/crayon2-independent-control/capture-stamp.py": "0ec5ea84d232fdf159f1a5c35ffd9c879f8c10f3726a34911091c5b5f55722ec",
+    "tools/crayon2-independent-control/capture.py": "7c4ef0580aaa165fe4ca427a664883b00cb4bd312ccc32e39ac8e8542e5768a6",
+    "tools/crayon2-varied-path/capture.py": "a306d1524adb90f198882cb68ee53194a53938db2e35eb0e3140928634db5e4d",
+    "tools/crayon2-independent-control/native-vector.z": "683ac5d9055c60c8c7cacb5cc532140a997dbd29371aedaca5fcae844d9de13a",
+    "tmp/vector-parity-plan/crayon2-native-next/native-uploads/g_Crayon2BgPtn.source.bin": "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3",
+    "tmp/vector-parity-plan/crayon2-native-next/native-uploads/g_Crayon2PointPtn.source.bin": "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405",
+    "tools/crayon2-precision-model/verify_worst_pixel.py": "0830a351ca09b815161131c854a61ee4a698dad2bd301456d82733ce88e3fc2f"
+  },
+  "shader_sha256": {
+    "point": "fe82e86b7fa4d817da8efd2928a9be11a0f1611348b08105b9a49cf4ca66eeb6",
+    "background": "e697adb521f7131361060a212e43e84e0f7f545ffd614fff0bacf0984d6afb98",
+    "alpha": "6d97f26e7a00770731325949429bace5b5933f67c955bf12e7bc2d0c4b137a0d",
+    "xsample": "2cc97c60f8ab2e6c2efa75ab0ee86214c5dc5b97165f78b4eb0b83b9a20421bf",
+    "ysample": "44e4c3a427b484ad96336d8bcddc6d9cbf65f13be1fdfde538aac0980e7b4f17"
+  }
+}
