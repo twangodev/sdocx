@@ -1,0 +1,8 @@
+{
+  "probe_sha256": "3a756c753df807efaf67ff8c2783afbef4c313f9a8f2bfcc960b02cdaaf647ce",
+  "draw_rgba_sha256": "a0230ba18bf716851b4079facb415b265ade62b80ef28bbfcaa0b1853776672e",
+  "skip_rgba_sha256": "8123c216413f82bbaa0339c27a43d9822c2a043e20662b27c97874429b996e9a",
+  "draw_changed_bytes": 322,
+  "skip_changed_bytes": 0,
+  "scope": "Synthetic worker; native manager canvas injected through host factory; original message canvas retained; explicit Init, Run and readback framebuffer binding."
+}
