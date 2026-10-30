@@ -44,7 +44,7 @@ fn normalize_angle(mut angle: f32) -> Option<f32> {
     Some(angle)
 }
 
-fn angle_from_vector(x: f32, y: f32) -> f32 {
+pub(crate) fn angle_from_vector(x: f32, y: f32) -> f32 {
     let radians = libm::atan2f(y, x);
     let degrees = radians * RAD_TO_DEG as f32;
     let mut angle = (f64::from(degrees) / PI) as f32;

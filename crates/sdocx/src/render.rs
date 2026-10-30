@@ -402,6 +402,9 @@ pub struct RenderOptions {
     /// Combining this assertion with `simplebrush_profile` falls back to generic paint.
     #[cfg_attr(feature = "serde", serde(default))]
     pub simplebrush_two_pixels_per_page_unit: bool,
+    /// Opt into experimental rotated Arc sectors; numeric agreement with Android is unverified.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub rotated_arc_sector_approximation: bool,
     /// Opt into approximate fresh-state Montblanc paint at unit output scale.
     #[cfg_attr(feature = "serde", serde(default))]
     pub montblanc_profile: Option<MontblancRenderProfile>,
@@ -922,6 +925,7 @@ impl DocumentTextCache {
             options.airbrush_profile,
             options.simplebrush_profile,
             options.simplebrush_two_pixels_per_page_unit,
+            options.rotated_arc_sector_approximation,
             options.montblanc_profile,
             options.montblanc_two_pixels_per_page_unit,
             options.legacy_marker_centerline_profile,
@@ -1436,6 +1440,7 @@ fn render_page_contents_svg(
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
     simplebrush_two_pixels_per_page_unit: bool,
+    rotated_arc_sector_approximation: bool,
     montblanc_profile: Option<MontblancRenderProfile>,
     montblanc_two_pixels_per_page_unit: bool,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
@@ -1515,6 +1520,7 @@ fn render_page_contents_svg(
         airbrush_profile,
         simplebrush_profile,
         simplebrush_two_pixels_per_page_unit,
+        rotated_arc_sector_approximation,
         montblanc_profile,
         montblanc_two_pixels_per_page_unit,
         legacy_marker_centerline_profile,
@@ -1575,6 +1581,7 @@ struct CompositionContext<'a> {
     airbrush_profile: Option<AirBrushRenderProfile>,
     simplebrush_profile: Option<SimpleBrushRenderProfile>,
     simplebrush_two_pixels_per_page_unit: bool,
+    rotated_arc_sector_approximation: bool,
     montblanc_profile: Option<MontblancRenderProfile>,
     montblanc_two_pixels_per_page_unit: bool,
     legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
@@ -1818,7 +1825,13 @@ fn render_element(
             text_renderer,
         ),
         PageElement::Shape(shape) => {
-            if let Err(kind) = render_shape(svg, shape, theme, source_offset) {
+            if let Err(kind) = render_shape(
+                svg,
+                shape,
+                theme,
+                source_offset,
+                context.rotated_arc_sector_approximation,
+            ) {
                 svg.report_geometry_issue(GeometryDiagnostic {
                     source_offset,
                     object_uuid: shape.metadata.uuid.clone(),
@@ -1966,13 +1979,102 @@ fn native_svg_commands(
 // Native Drawing records a center-closed fill and open outline for captured
 // unrotated Arc controls. Require the reconstructed outline to match the saved
 // path exactly; unsupported styles and nonmatching geometry use the fallback.
+fn matching_rotated_arc_sector(
+    shape: &crate::NativeShape,
+    commands: &[crate::shape::NativePathCommand],
+    bounds: [f32; 4],
+) -> Option<Data> {
+    use crate::shape::NativePathCommand as C;
+    if !shape.rotation_degrees.is_finite() {
+        return None;
+    }
+    let [l, t, r, b] = bounds;
+    let cx = (l + r) * 0.5;
+    let cy = (t + b) * 0.5;
+    let mut base = crate::shape::native_path::normalize_model_path(
+        &shape.path_data,
+        bounds.map(f64::from),
+        0.,
+        false,
+        false,
+        true,
+    )
+    .ok()??
+    .commands;
+    crate::shape::native_path::rotate_model_commands(&mut base, bounds, -shape.rotation_degrees);
+    let angle = |p: [f64; 2]| {
+        let x = p[0] as f32 - cx;
+        let y = p[1] as f32 - cy;
+        if !x.is_finite() || !y.is_finite() || (x == 0. && y == 0.) {
+            None
+        } else {
+            Some(crate::shape::model_arc::angle_from_vector(x, y))
+        }
+    };
+    let first = match base.first()? {
+        C::Move(p) => *p,
+        _ => return None,
+    };
+    let last = match base.last()? {
+        C::Quadratic([_, p]) => *p,
+        _ => return None,
+    };
+    if !base[1..].iter().all(|c| matches!(c, C::Quadratic(_))) {
+        return None;
+    }
+    let mut angles = [angle(first)?, angle(last)?];
+    let mut controls = shape
+        .control_points
+        .iter()
+        .map(|p| C::Move(*p))
+        .collect::<Vec<_>>();
+    crate::shape::native_path::rotate_model_commands(
+        &mut controls,
+        bounds,
+        -shape.rotation_degrees,
+    );
+    for (i, c) in controls.iter().enumerate() {
+        let C::Move(p) = c else { return None };
+        angles[i] = angle(*p)?;
+        let mut sweep = angles[1] - angles[0];
+        if sweep < 0. {
+            sweep += 360.;
+        }
+        if sweep == 0. {
+            return None;
+        }
+        let points = crate::shape::model_arc::expand([l, t, r, b, angles[0], sweep])?;
+        if points.len() != base.len() * 2 - 1 {
+            return None;
+        }
+        // The stricter margin is heuristic and does not bound Android math drift.
+        let same = |a: f64, b: f32| {
+            let a = a as f32;
+            a.is_finite() && b.is_finite() && f64::from((a - b).abs()) < 0.000025
+        };
+        if !matches!(&base[0],C::Move(p) if same(p[0],points[0][0]) && same(p[1],points[0][1])) {
+            return None;
+        }
+        for (c, p) in base[1..].iter().zip(points[1..].as_chunks::<2>().0.iter()) {
+            if !matches!(c,C::Quadratic(q) if same(q[0][0],p[0][0])&&same(q[0][1],p[0][1])&&same(q[1][0],p[1][0])&&same(q[1][1],p[1][1]))
+            {
+                return None;
+            }
+        }
+    }
+    let mut fill = commands.to_vec();
+    fill.push(C::Line([f64::from(cx), f64::from(cy)]));
+    fill.push(C::Close);
+    native_svg_commands(fill).ok()
+}
+
 fn matching_arc_sector(
     shape: &crate::NativeShape,
     commands: &[crate::shape::NativePathCommand],
+    rotated_arc_sector_approximation: bool,
 ) -> Option<Data> {
     use crate::shape::NativePathCommand;
     if shape.shape_type != 20
-        || shape.rotation_degrees != 0.0
         || shape.horizontal_flip
         || shape.vertical_flip
         || !matches!(shape.fill, crate::ShapePaint::Solid(_))
@@ -1981,8 +2083,8 @@ fn matching_arc_sector(
         || shape.style.width <= 0.0
         || shape.style.compound != 0
         || shape.style.dash_pattern().is_err()
-        || shape.style.cap != 0
-        || shape.style.join != 0
+        || shape.style.cap > 2
+        || shape.style.join > 2
         || shape.style.begin_arrow != [0; 2]
         || shape.style.end_arrow != [0; 2]
     {
@@ -2016,6 +2118,12 @@ fn matching_arc_sector(
     let cy = (top + bottom) * 0.5;
     if !cx.is_finite() || !cy.is_finite() || shape.control_points.len() != 2 {
         return None;
+    }
+    if shape.rotation_degrees != 0.0 {
+        if !rotated_arc_sector_approximation {
+            return None;
+        }
+        return matching_rotated_arc_sector(shape, commands, bounds);
     }
     let mut angles = [0.0_f32; 2];
     for (angle, point) in angles.iter_mut().zip(&shape.control_points) {
@@ -2052,6 +2160,7 @@ fn render_shape(
     shape: &crate::NativeShape,
     theme: RenderTheme,
     source_offset: Option<usize>,
+    rotated_arc_sector_approximation: bool,
 ) -> Result<(), GeometryDiagnosticKind> {
     // Validate all path/primitive geometry before paint definitions allocate IDs.
     let mut arc_fill = None;
@@ -2102,7 +2211,11 @@ fn render_shape(
                 GeometryDiagnosticKind::UnrepresentablePath
             });
         };
-        arc_fill = matching_arc_sector(shape, &normalized.commands);
+        arc_fill = matching_arc_sector(
+            shape,
+            &normalized.commands,
+            rotated_arc_sector_approximation,
+        );
         Some(native_svg_commands(normalized.commands)?)
     };
     let bbox = shape.geometry_bbox;

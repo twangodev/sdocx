@@ -215,7 +215,11 @@ fn model_command_finite(command: &NativePathCommand) -> bool {
     }
 }
 
-fn rotate_model_commands(commands: &mut [NativePathCommand], bounds: [f32; 4], angle: f32) {
+pub(crate) fn rotate_model_commands(
+    commands: &mut [NativePathCommand],
+    bounds: [f32; 4],
+    angle: f32,
+) {
     if angle == 0.0 {
         return;
     }

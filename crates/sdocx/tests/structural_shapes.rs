@@ -2559,6 +2559,32 @@ fn native_arc_roundtrip_frame_parses() {
     assert_eq!(shape.path_data.len(), 87);
 }
 
+#[test]
+fn native_rotated_arc_roundtrip_frame_parses() {
+    let frame = include_bytes!("fixtures/native-arc-rotated-frame.bin");
+    let parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+    let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
+    assert_eq!(shape.shape_type, 20);
+    assert_eq!(shape.rotation_degrees, 37.0);
+    assert_eq!(
+        shape.control_points,
+        [
+            [131.99468994140625, 24.278106689453125],
+            [29.7802734375, 50.29405975341797]
+        ]
+    );
+    assert_eq!(
+        [
+            shape.geometry_bbox.x_min,
+            shape.geometry_bbox.y_min,
+            shape.geometry_bbox.x_max,
+            shape.geometry_bbox.y_max
+        ],
+        [10.0, 20.0, 210.0, 120.0]
+    );
+    assert_eq!(shape.path_data.len(), 219);
+}
+
 #[cfg(feature = "pdf")]
 #[test]
 fn captured_default_arc_renders_sector_fill_and_open_outline() {
@@ -2688,7 +2714,7 @@ fn arc_with_moved_control_retains_generic_path_fallback() {
 
 #[cfg(feature = "render")]
 #[test]
-fn default_arc_with_custom_outline_retains_generic_path_fallback() {
+fn default_arc_with_custom_cap_and_join_uses_separate_paths() {
     let frame = include_bytes!("fixtures/native-arc-filled-frame.bin");
     let base_len = u32::from_le_bytes(frame[..4].try_into().unwrap()) as usize;
     let base6_len = u32::from_le_bytes(frame[base_len..base_len + 4].try_into().unwrap()) as usize;
@@ -2705,7 +2731,7 @@ fn default_arc_with_custom_outline_retains_generic_path_fallback() {
     let xml = roxmltree::Document::parse(svg).unwrap();
     assert_eq!(
         xml.descendants().filter(|n| n.has_tag_name("path")).count(),
-        1
+        2
     );
 }
 
@@ -2904,14 +2930,18 @@ fn native_moved_arcs_with_solid_outlines_render_separate_paths() {
 #[cfg(feature = "render")]
 #[test]
 fn native_arc_unsupported_outline_styles_keep_fallback() {
-    for (width, dash, compound) in [
-        (0.0, 0, 0),
-        (-1.0, 0, 0),
-        (f32::NAN, 0, 0),
-        (f32::INFINITY, 0, 0),
-        (2.0, 8, 0),
-        (f32::MAX, 5, 0),
-        (2.0, 0, 1),
+    for (width, dash, compound, cap, join) in [
+        (0.0, 0, 0, 0, 0),
+        (-1.0, 0, 0, 0, 0),
+        (f32::NAN, 0, 0, 0, 0),
+        (f32::INFINITY, 0, 0, 0, 0),
+        (2.0, 8, 0, 0, 0),
+        (f32::MAX, 5, 0, 0, 0),
+        (2.0, 0, 1, 0, 0),
+        (2.0, 0, 0, 3, 0),
+        (2.0, 0, 0, 255, 0),
+        (2.0, 0, 0, 0, 3),
+        (2.0, 0, 0, 0, 255),
     ] {
         let frame = include_bytes!("fixtures/native-arc-style-wide.bin");
         let mut parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
@@ -2922,6 +2952,8 @@ fn native_arc_unsupported_outline_styles_keep_fallback() {
         shape.style.width = width;
         shape.style.dash = dash;
         shape.style.compound = compound;
+        shape.style.cap = cap;
+        shape.style.join = join;
         let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
         let xml = roxmltree::Document::parse(svg).unwrap();
         assert_eq!(
@@ -2929,7 +2961,7 @@ fn native_arc_unsupported_outline_styles_keep_fallback() {
                 .filter(|node| node.has_tag_name("path"))
                 .count(),
             1,
-            "width={width} dash={dash} compound={compound}: {svg}"
+            "width={width} dash={dash} compound={compound} cap={cap} join={join}: {svg}"
         );
     }
 }
@@ -3045,4 +3077,300 @@ fn native_dashed_arcs_export_separate_paths_and_dash() {
         }
         assert_eq!(strokes, 1);
     }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn native_arc_cap_join_and_dash_survive_svg_and_pdf() {
+    let cases: [(&[u8], i64, i64, bool); 6] = [
+        (
+            include_bytes!("fixtures/native-arc-cap-join-1-0-0.bin"),
+            1,
+            0,
+            false,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-cap-join-2-0-0.bin"),
+            2,
+            0,
+            false,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-cap-join-0-1-0.bin"),
+            0,
+            1,
+            false,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-cap-join-0-2-0.bin"),
+            0,
+            2,
+            false,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-cap-join-1-2-2.bin"),
+            1,
+            2,
+            true,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-cap-join-2-1-2.bin"),
+            2,
+            1,
+            true,
+        ),
+    ];
+    for (frame, cap, join, dashed) in cases {
+        let parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+        let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let paths: Vec<_> = xml
+            .descendants()
+            .filter(|n| n.has_tag_name("path"))
+            .collect();
+        assert_eq!(paths.len(), 2, "{svg}");
+        let outline = paths[1].parent().unwrap();
+        assert_eq!(
+            outline.attribute("stroke-linecap"),
+            Some(["butt", "round", "square"][cap as usize])
+        );
+        assert_eq!(
+            outline.attribute("stroke-linejoin"),
+            Some(["miter", "round", "bevel"][join as usize])
+        );
+        if dashed {
+            let values: Vec<f32> = outline
+                .attribute("stroke-dasharray")
+                .unwrap()
+                .split([',', ' '])
+                .filter(|v| !v.is_empty())
+                .map(|v| v.parse().unwrap())
+                .collect();
+            assert_eq!(values, [12., 6.]);
+            assert_eq!(svg_number(outline, "stroke-dashoffset"), 1.);
+        } else {
+            assert_eq!(outline.attribute("stroke-dasharray"), None);
+        }
+        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+        let bytes =
+            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let ops =
+            lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+                .unwrap();
+        let mut state = (0, 0, false);
+        let mut stack = Vec::new();
+        let mut strokes = 0;
+        for op in &ops.operations {
+            match op.operator.as_str() {
+                "q" => stack.push(state),
+                "Q" => state = stack.pop().unwrap(),
+                "J" => state.0 = op.operands[0].as_i64().unwrap(),
+                "j" => state.1 = op.operands[0].as_i64().unwrap(),
+                "d" => {
+                    let values = op.operands[0]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|v| v.as_float().unwrap())
+                        .collect::<Vec<_>>();
+                    state.2 = !values.is_empty();
+                    if state.2 {
+                        assert_eq!(values, [12., 6.]);
+                        assert_eq!(op.operands[1].as_float().unwrap(), 1.);
+                    }
+                }
+                "S" => {
+                    strokes += 1;
+                    assert_eq!(state, (cap, join, dashed));
+                }
+                _ => {}
+            }
+        }
+        assert_eq!(strokes, 1);
+    }
+}
+#[cfg(feature = "pdf")]
+#[test]
+fn rotated_sector_candidate() {
+    let default_parsed = sdocx::parse_bytes_detailed(&single(
+        7,
+        include_bytes!("fixtures/native-arc-rotated-frame.bin"),
+    ))
+    .unwrap();
+    let svg = &sdocx::render_document_svg(&default_parsed.document, &Default::default())[0].svg;
+    assert_eq!(
+        roxmltree::Document::parse(svg)
+            .unwrap()
+            .descendants()
+            .filter(|n| n.has_tag_name("path"))
+            .count(),
+        1
+    );
+    let frame = include_bytes!("fixtures/native-arc-rotated-frame.bin");
+    let parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+    let svg = &sdocx::render_document_svg(&parsed.document, &rotated_arc_options())[0].svg;
+    let xml = roxmltree::Document::parse(svg).unwrap();
+    let paths: Vec<_> = xml
+        .descendants()
+        .filter(|n| n.has_tag_name("path"))
+        .collect();
+    assert_eq!(paths.len(), 2);
+    assert!(paths[0].attribute("d").unwrap().ends_with("L110,70 z"));
+    assert!(!paths[1].attribute("d").unwrap().contains('L'));
+    let pdf = sdocx::render_document_pdf(
+        &parsed.document,
+        &rotated_arc_options(),
+        &sdocx::PdfOptions::new(std::sync::Arc::new(Default::default())),
+    )
+    .unwrap();
+    let pdf = lopdf::Document::load_mem(&pdf).unwrap();
+    let ops = lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+        .unwrap();
+    assert!(ops.operations.iter().any(|op| op.operator == "f"));
+    assert!(ops.operations.iter().any(|op| op.operator == "S"));
+    for offset in [501, 517] {
+        let mut changed = frame.to_vec();
+        let value = f64::from_le_bytes(changed[offset..offset + 8].try_into().unwrap());
+        changed[offset..offset + 8].copy_from_slice(&(value + 10.).to_le_bytes());
+        let parsed = sdocx::parse_bytes_detailed(&single(7, &changed)).unwrap();
+        let svg = &sdocx::render_document_svg(&parsed.document, &rotated_arc_options())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        assert_eq!(
+            xml.descendants().filter(|n| n.has_tag_name("path")).count(),
+            1,
+            "{offset}"
+        );
+    }
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn rotated_arc_additional_native_frames() {
+    for frame in [
+        include_bytes!("fixtures/native-arc-rotated-negative-frame.bin").as_slice(),
+        include_bytes!("fixtures/native-arc-rotated-right-angle-frame.bin").as_slice(),
+        include_bytes!("fixtures/native-arc-rotated-alternate-frame.bin").as_slice(),
+    ] {
+        let parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+        let svg = &sdocx::render_document_svg(&parsed.document, &rotated_arc_options())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let paths: Vec<_> = xml
+            .descendants()
+            .filter(|n| n.has_tag_name("path"))
+            .collect();
+        assert_eq!(paths.len(), 2);
+        assert!(paths[0].attribute("d").unwrap().ends_with("L110,70 z"));
+        assert!(!paths[1].attribute("d").unwrap().contains('L'));
+        let pdf = sdocx::render_document_pdf(
+            &parsed.document,
+            &rotated_arc_options(),
+            &sdocx::PdfOptions::new(std::sync::Arc::new(Default::default())),
+        )
+        .unwrap();
+        let pdf = lopdf::Document::load_mem(&pdf).unwrap();
+        let ops =
+            lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+                .unwrap();
+        assert!(ops.operations.iter().any(|op| op.operator == "f"));
+        assert!(ops.operations.iter().any(|op| op.operator == "S"));
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn rotated_arc_invalid_inputs_do_not_admit_sector() {
+    let frame = include_bytes!("fixtures/native-arc-rotated-frame.bin");
+    for case in 0..3 {
+        let mut parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+        let sdocx::PageObjectContent::Element(PageElement::Shape(shape)) =
+            &mut parsed.document.pages[0].objects[0].content
+        else {
+            panic!("shape")
+        };
+        match case {
+            0 => shape.control_points[0][0] = f64::NAN,
+            1 => shape.geometry_bbox.x_max = shape.geometry_bbox.x_min,
+            _ => shape.rotation_degrees = f64::INFINITY as _,
+        }
+        let svg = &sdocx::render_document_svg(&parsed.document, &rotated_arc_options())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        assert!(xml.descendants().filter(|n| n.has_tag_name("path")).count() < 2);
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn rotated_arc_scaled_heuristic_is_opt_in_and_conservative() {
+    for (frame, expected) in [
+        (
+            include_bytes!("fixtures/native-arc-scaled-0-5-frame.bin").as_slice(),
+            2,
+        ),
+        (
+            include_bytes!("fixtures/native-arc-scaled-2-frame.bin").as_slice(),
+            1,
+        ),
+    ] {
+        let parsed = sdocx::parse_bytes_detailed(&single(7, frame)).unwrap();
+        for (options, count) in [
+            (sdocx::RenderOptions::default(), 1),
+            (rotated_arc_options(), expected),
+        ] {
+            let svg = &sdocx::render_document_svg(&parsed.document, &options)[0].svg;
+            let xml = roxmltree::Document::parse(svg).unwrap();
+            assert_eq!(
+                xml.descendants().filter(|n| n.has_tag_name("path")).count(),
+                count
+            );
+        }
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn rotated_arc_near_native_comparison_boundary() {
+    let source = include_bytes!("fixtures/native-arc-rotated-frame.bin");
+    for (offset, delta, count) in [
+        (501, 0.00006, 1),
+        (501, 0.0001, 1),
+        (517, 0.0001, 2),
+        (517, 0.00015, 1),
+    ] {
+        let mut frame = source.to_vec();
+        let x = f64::from_le_bytes(frame[offset..offset + 8].try_into().unwrap());
+        frame[offset..offset + 8].copy_from_slice(&(x + delta).to_le_bytes());
+        let parsed = sdocx::parse_bytes_detailed(&single(7, &frame)).unwrap();
+        let options = rotated_arc_options();
+        let svg = &sdocx::render_document_svg(&parsed.document, &options)[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        assert_eq!(
+            xml.descendants().filter(|n| n.has_tag_name("path")).count(),
+            count,
+            "offset {offset}, delta {delta}"
+        );
+    }
+}
+
+#[cfg(feature = "render")]
+fn rotated_arc_options() -> sdocx::RenderOptions {
+    let mut options = sdocx::RenderOptions::default();
+    options.rotated_arc_sector_approximation = true;
+    options
+}
+
+#[cfg(all(feature = "render", feature = "serde"))]
+#[test]
+fn rotated_arc_opt_in_serde_legacy_and_roundtrip() {
+    let mut legacy = serde_json::to_value(sdocx::RenderOptions::default()).unwrap();
+    legacy
+        .as_object_mut()
+        .unwrap()
+        .remove("rotated_arc_sector_approximation");
+    let options: sdocx::RenderOptions = serde_json::from_value(legacy).unwrap();
+    assert!(!options.rotated_arc_sector_approximation);
+    let enabled = rotated_arc_options();
+    let roundtrip: sdocx::RenderOptions =
+        serde_json::from_value(serde_json::to_value(enabled).unwrap()).unwrap();
+    assert!(roundtrip.rotated_arc_sector_approximation);
 }
