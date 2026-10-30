@@ -1,0 +1,49 @@
+{
+  "script_sha256": "8a8893af055ba46c2b5548d0ea144e61035bd94102acabdbf5689ea8ace9a0b4",
+  "queue_probe_sha256": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+  "scope": "Synthetic one-object DrawObjectList with host adapters and three context-query interventions. Entry-point trace is limited to the two Graphics GetCanvasMatrix methods during this synchronous call; it does not establish real-page scheduling or matrix conversion.",
+  "symbols": {
+    "SPen::SPPenCanvas::GetCanvasMatrix()": "0x40ae4e8",
+    "SPen::SPPenCanvasRT::GetCanvasMatrix()": "0x40b0310"
+  },
+  "entries": [],
+  "list_observations": {
+    "set_matrix_calls": 2,
+    "addpoint_calls": 84,
+    "input_matrix": [
+      1,
+      0,
+      0,
+      0,
+      -1,
+      0,
+      6,
+      183,
+      1
+    ],
+    "observed_matrices": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        6.0,
+        183.0,
+        1.0
+      ],
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        6.0,
+        183.0,
+        1.0
+      ]
+    ]
+  }
+}
