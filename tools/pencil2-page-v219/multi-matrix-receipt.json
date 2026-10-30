@@ -1,0 +1,133 @@
+{
+  "script_sha256": "ea0a50c498c748d010d69e58539caddd29c6e743fce4c1e6f5fc386ba07f2b92",
+  "queue_probe_sha256": "1e9e1f7445548f7d23f3b194f0cf6502094519a4a0c05ef2a38950f66f47670c",
+  "scope": "Two entries pointing to the same synthetic object; synchronous queue and three context-query interventions. Caller-supplied matrices and host adapters; no GPU draw, saved page or device evidence.",
+  "cases": [
+    {
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        6,
+        183,
+        1
+      ],
+      "observations": {
+        "set_matrix_calls": 2,
+        "addpoint_calls": 168,
+        "input_matrix": [
+          1,
+          0,
+          0,
+          0,
+          -1,
+          0,
+          6,
+          183,
+          1
+        ],
+        "observed_matrices": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            0.0,
+            6.0,
+            183.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            0.0,
+            6.0,
+            183.0,
+            1.0
+          ]
+        ]
+      },
+      "event_names": [
+        "SPen::ObjectList::GetData(long) const",
+        "SPen::ObjectDrawing::drawObject(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectBase const*, SPen::Rect const*)",
+        "SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)",
+        "SPen::Pencil2StrokeDrawableGLV14::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "SPen::ObjectList::GetData(long) const",
+        "SPen::ObjectDrawing::drawObject(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectBase const*, SPen::Rect const*)",
+        "SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)",
+        "SPen::Pencil2StrokeDrawableGLV14::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ],
+      "same_object_pointer": true
+    },
+    {
+      "matrix": [
+        1.5,
+        0.25,
+        0,
+        -0.5,
+        -2,
+        0,
+        13,
+        117,
+        1
+      ],
+      "observations": {
+        "set_matrix_calls": 2,
+        "addpoint_calls": 168,
+        "input_matrix": [
+          1.5,
+          0.25,
+          0,
+          -0.5,
+          -2,
+          0,
+          13,
+          117,
+          1
+        ],
+        "observed_matrices": [
+          [
+            1.5,
+            0.25,
+            0.0,
+            -0.5,
+            -2.0,
+            0.0,
+            13.0,
+            117.0,
+            1.0
+          ],
+          [
+            1.5,
+            0.25,
+            0.0,
+            -0.5,
+            -2.0,
+            0.0,
+            13.0,
+            117.0,
+            1.0
+          ]
+        ]
+      },
+      "event_names": [
+        "SPen::ObjectList::GetData(long) const",
+        "SPen::ObjectDrawing::drawObject(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectBase const*, SPen::Rect const*)",
+        "SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)",
+        "SPen::Pencil2StrokeDrawableGLV14::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "SPen::ObjectList::GetData(long) const",
+        "SPen::ObjectDrawing::drawObject(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectBase const*, SPen::Rect const*)",
+        "SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)",
+        "SPen::Pencil2StrokeDrawableGLV14::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+      ],
+      "same_object_pointer": true
+    }
+  ]
+}
