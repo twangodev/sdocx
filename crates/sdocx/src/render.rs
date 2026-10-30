@@ -333,6 +333,17 @@ pub enum MontblancRenderProfile {
     HostUnitScale,
 }
 
+/// Assert a known uniform output scale for experimental DefaultPen edge paint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum DefaultPenOutputScale {
+    Half,
+    One,
+    Two,
+    Four,
+    Eight,
+}
+
 /// Assert the uniform output scale used for the experimental Marker3 V5 fringe.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -389,6 +400,11 @@ pub struct RenderOptions {
     /// Invalid or absent profiles preserve the existing V14 vector output.
     #[cfg_attr(feature = "serde", serde(default))]
     pub fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    /// Experimental DefaultPen edge approximation at a known uniform output scale.
+    /// The caller must assert the actual output pixels per page unit. Replay and
+    /// sliced scenes retain the canonical paint.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub defaultpen_output_scale: Option<DefaultPenOutputScale>,
     /// Experimental Marker3 V5 fringe for a caller-asserted uniform output scale.
     /// Replay and sliced scenes preserve the canonical route.
     #[cfg_attr(feature = "serde", serde(default))]
@@ -941,6 +957,7 @@ impl DocumentTextCache {
             options.fountain_v17_output_scale_profile,
             options.fountain_v16_output_scale_profile,
             options.fountain_v14_output_scale_profile,
+            options.defaultpen_output_scale,
             options.marker3_output_scale,
             options.magicpen_output_scale,
             options.magicpen_host_minimum_dot_grid,
@@ -1458,6 +1475,7 @@ fn render_page_contents_svg(
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    defaultpen_output_scale: Option<DefaultPenOutputScale>,
     marker3_output_scale: Option<Marker3OutputScale>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
@@ -1540,6 +1558,7 @@ fn render_page_contents_svg(
         fountain_v17_output_scale_profile,
         fountain_v16_output_scale_profile,
         fountain_v14_output_scale_profile,
+        defaultpen_output_scale,
         marker3_output_scale,
         magicpen_output_scale,
         magicpen_host_minimum_dot_grid,
@@ -1605,6 +1624,7 @@ struct CompositionContext<'a> {
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    defaultpen_output_scale: Option<DefaultPenOutputScale>,
     marker3_output_scale: Option<Marker3OutputScale>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
@@ -1716,6 +1736,7 @@ fn render_object(
                 context.fountain_v17_output_scale_profile,
                 context.fountain_v16_output_scale_profile,
                 context.fountain_v14_output_scale_profile,
+                context.defaultpen_output_scale,
                 context.marker3_output_scale,
                 context.magicpen_output_scale,
                 context.magicpen_host_minimum_dot_grid,
@@ -4435,6 +4456,7 @@ fn render_stroke(
     fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
     fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
     fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
+    defaultpen_output_scale: Option<DefaultPenOutputScale>,
     marker3_output_scale: Option<Marker3OutputScale>,
     magicpen_output_scale: Option<u32>,
     magicpen_host_minimum_dot_grid: bool,
@@ -4766,6 +4788,24 @@ fn render_stroke(
     } else {
         crate::prepare_stroke(stroke, false)
     };
+    if native_allowed
+        && replay_index.is_none()
+        && slice.is_none()
+        && let Some(profile) = defaultpen_output_scale
+        && paint.ordered_disk_replay.is_some()
+        && let Some(radii) = paint.dot_radii.as_mut()
+    {
+        let scale = match profile {
+            DefaultPenOutputScale::Half => 0.5,
+            DefaultPenOutputScale::One => 1.0,
+            DefaultPenOutputScale::Two => 2.0,
+            DefaultPenOutputScale::Four => 4.0,
+            DefaultPenOutputScale::Eight => 8.0,
+        };
+        for radius in radii {
+            *radius = (*radius - 0.2 / scale).max(0.0);
+        }
+    }
     if native_allowed
         && paint.profile == Some("Marker3")
         && paint
@@ -7833,6 +7873,270 @@ mod tests {
         assert!(xml.descendants().any(
             |node| node.has_tag_name("g") && node.attribute("data-replay-stroke") == Some("0")
         ));
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn defaultpen_scale_profile_matches_native_controls_and_preserves_replay() {
+        use base64::Engine;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+        assert!(RenderOptions::default().defaultpen_output_scale.is_none());
+        #[cfg(feature = "serde")]
+        {
+            let mut old = serde_json::to_value(RenderOptions::default()).unwrap();
+            old.as_object_mut()
+                .unwrap()
+                .remove("defaultpen_output_scale");
+            let options: RenderOptions = serde_json::from_value(old).unwrap();
+            assert!(options.defaultpen_output_scale.is_none());
+            for profile in [
+                super::DefaultPenOutputScale::Half,
+                super::DefaultPenOutputScale::One,
+                super::DefaultPenOutputScale::Two,
+                super::DefaultPenOutputScale::Four,
+                super::DefaultPenOutputScale::Eight,
+            ] {
+                let value = RenderOptions {
+                    defaultpen_output_scale: Some(profile),
+                    ..RenderOptions::default()
+                };
+                let encoded = serde_json::to_string(&value).unwrap();
+                let decoded: RenderOptions = serde_json::from_str(&encoded).unwrap();
+                assert_eq!(decoded.defaultpen_output_scale, Some(profile));
+            }
+        }
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/defaultpen-scale-native.json"
+        ))
+        .unwrap();
+        let mut checked = 0;
+        for (name, case) in fixture["cases"].as_object().unwrap() {
+            let input = &case["input"];
+            assert_eq!(
+                input["pen_name"],
+                "com.samsung.android.sdk.pen.pen.preload.DefaultPen"
+            );
+            let tool = input["tool_type"].as_u64().unwrap();
+            assert!((1..=4).contains(&tool));
+            assert_eq!(input["stroke_type"], 0);
+            assert_eq!(input["curve_enabled"], true);
+            assert_eq!(input["advanced_getter_pointer_nonnull"], false);
+            let argb = u32::from_str_radix(case["paint_argb"].as_str().unwrap(), 16).unwrap();
+            let f = |v: &serde_json::Value| {
+                let hex = v.as_str().unwrap();
+                f32::from_le_bytes(std::array::from_fn(|i| {
+                    u8::from_str_radix(&hex[2 * i..2 * i + 2], 16).unwrap()
+                }))
+            };
+            let color_channels = [
+                (argb >> 16) as u8,
+                (argb >> 8) as u8,
+                argb as u8,
+                (argb >> 24) as u8,
+            ];
+            for (native, expected) in case["native_uniform_color_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .zip(color_channels)
+            {
+                assert!(
+                    (f(native) - f32::from(expected) / 255.0).abs() < 0.000001,
+                    "{name} uniform color"
+                );
+            }
+            let floats = |key: &str| {
+                input[key]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| f(v) as f64)
+                    .collect::<Vec<_>>()
+            };
+            let mut stroke = marker(false, 0.0);
+            stroke.points = input["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| Point {
+                    x: f(&p[0]) as f64,
+                    y: f(&p[1]) as f64,
+                })
+                .collect();
+            stroke.pressures = floats("pressure_f32_bits");
+            stroke.tilts = floats("tilt_f32_bits");
+            stroke.orientations = floats("orientation_f32_bits");
+            stroke.timestamps = input["timestamps_i32"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_i64().unwrap())
+                .collect();
+            stroke.pen_width = f(&input["pen_size_f32_bits"]);
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.DefaultPen".into());
+            rendering.advanced_settings = None;
+            rendering.tool_type_raw = tool as u16;
+            rendering.properties.compressed = true;
+            rendering.properties.binary_added = false;
+            rendering.style.pen_size = Some(stroke.pen_width);
+            rendering.style.stroke_type_raw = Some(0);
+            rendering.style.color_type_raw = Some(0);
+            rendering.style.color_argb = Some(argb);
+            stroke.color = Some(Color {
+                r: (argb >> 16) as u8,
+                g: (argb >> 8) as u8,
+                b: argb as u8,
+            });
+            let mut page = page_with_uncolored_stroke();
+            page.width = 64;
+            page.height = 32;
+            page.objects = vec![stroke.into()];
+            let document = document(page);
+            let (scale, profile) = match name.rsplit_once('-').unwrap().1 {
+                "half" => (0.5, super::DefaultPenOutputScale::Half),
+                "1" => (1.0, super::DefaultPenOutputScale::One),
+                "2" => (2.0, super::DefaultPenOutputScale::Two),
+                "4" => (4.0, super::DefaultPenOutputScale::Four),
+                "8" => (8.0, super::DefaultPenOutputScale::Eight),
+                _ => panic!("unexpected capture scale"),
+            };
+            let mut options = RenderOptions::default();
+            let baseline = render_document_svg(&document, &options).remove(0);
+            let stream_hex = case["stream_hex"].as_str().unwrap();
+            let stream: Vec<u8> = (0..stream_hex.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&stream_hex[i..i + 2], 16).unwrap())
+                .collect();
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&stream)),
+                case["stream_sha256"].as_str().unwrap()
+            );
+            let native_values: Vec<f32> = stream
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|v| f32::from_le_bytes(*v))
+                .collect();
+            let xml = roxmltree::Document::parse(&baseline.svg).unwrap();
+            let circles: Vec<_> = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("circle"))
+                .collect();
+            assert_eq!(
+                circles.len() * 3,
+                native_values.len(),
+                "{name} stream length"
+            );
+            for (circle, native) in circles.iter().zip(native_values.as_chunks::<3>().0.iter()) {
+                for (attr, expected) in ["cx", "cy", "r"].into_iter().zip(native) {
+                    let actual = circle.attribute(attr).unwrap().parse::<f32>().unwrap();
+                    assert!(
+                        (actual - expected).abs() < 0.0001,
+                        "{name} {attr}: {actual} != {expected}"
+                    );
+                }
+            }
+            let projection: Vec<f64> = case["projection"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_f64().unwrap())
+                .collect();
+            assert_eq!(
+                projection,
+                [
+                    2.0 / 128.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    2.0 / 64.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0,
+                    0.0,
+                    -1.0,
+                    -1.0,
+                    0.0,
+                    1.0
+                ]
+            );
+            let baseline_pdf =
+                crate::render_document_pdf(&document, &options, &Default::default()).unwrap();
+            let layout = layout_document(&document);
+            let replay = render_layout_page_replay_svg(&document, &layout, 0, &options).unwrap();
+            options.defaultpen_output_scale = Some(profile);
+            let candidate = render_document_svg(&document, &options).remove(0);
+            let candidate_pdf =
+                crate::render_document_pdf(&document, &options, &Default::default()).unwrap();
+            assert_eq!(
+                replay.svg,
+                render_layout_page_replay_svg(&document, &layout, 0, &options)
+                    .unwrap()
+                    .svg
+            );
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(case["rgba_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut native = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut native)
+                .unwrap();
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&native)),
+                case["rgba_sha256"].as_str().unwrap()
+            );
+            let w = (64.0 * scale) as usize;
+            let h = (32.0 * scale) as usize;
+            let native_width = case["width"].as_u64().unwrap() as usize;
+            let native_height = case["height"].as_u64().unwrap() as usize;
+            assert_eq!(
+                (native_width, native_height),
+                ((128.0 * scale) as usize, (64.0 * scale) as usize)
+            );
+            assert_eq!(native.len(), native_width * native_height * 4);
+            let measure = |svg: &str| {
+                let tree = resvg::usvg::Tree::from_str(svg, &Default::default()).unwrap();
+                let mut pixmap = resvg::tiny_skia::Pixmap::new(w as u32, h as u32).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::from_scale(scale as f32, scale as f32),
+                    &mut pixmap.as_mut(),
+                );
+                let mut error = 0_u64;
+                for y in 0..h {
+                    for x in 0..w {
+                        let ni = (y * native_width + x) * 4;
+                        let ai = (y * w + x) * 4;
+                        let alpha = u32::from(native[ni + 3]);
+                        for c in 0..3 {
+                            let expected =
+                                (u32::from(native[ni + c]) * alpha + 252 * (255 - alpha) + 127)
+                                    / 255;
+                            error += u64::from(pixmap.data()[ai + c].abs_diff(expected as u8));
+                        }
+                    }
+                }
+                error
+            };
+            let before = measure(&baseline.svg);
+            let after = measure(&candidate.svg);
+            assert!(
+                after < before,
+                "{name}: candidate {after}, baseline {before}"
+            );
+            if let Some(dir) = std::env::var_os("SDOCX_DEFAULTPEN_SCALE_EXPORT") {
+                let dir = std::path::Path::new(&dir);
+                std::fs::write(dir.join(format!("{name}-baseline.pdf")), baseline_pdf).unwrap();
+                std::fs::write(dir.join(format!("{name}-profile.pdf")), candidate_pdf).unwrap();
+            }
+            checked += 1;
+        }
+        assert_eq!(checked, 29);
     }
 
     #[test]

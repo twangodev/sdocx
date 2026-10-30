@@ -1,0 +1,2644 @@
+{
+  "scope": "Synthetic DefaultPen Drawing and host-Mesa RGBA frames; explicit host projection and RT stream bridge. Not Android device or saved-note parity.",
+  "cases": {
+    "phase-half": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "cdcccc3e",
+        "points_f32_bits": [
+          [
+            "0000a241",
+            "0000a241"
+          ],
+          [
+            "cdccae41",
+            "0000a241"
+          ],
+          [
+            "9a99bb41",
+            "0000a241"
+          ],
+          [
+            "6666c841",
+            "0000a241"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 64,
+      "height": 32,
+      "rgba_sha256": "a6d1e9f9fa35fbc2334066505437deac0937985e0544b081c0413a3659a3efb6",
+      "rgba_zlib_base64": "eNrt0sEJgCAAQFFNoUAPEtK5RujUHO2/jAu0QPjeBh9+CAAAfMlr2fNW+4ztMS6pnfdbjutxAgAAAADAPwy3WAGH",
+      "stream_hex": "0000a2410000a2410000c03f9ff4ab410000a2410000c03f6bc1b8410000a2410000c03f",
+      "stream_sha256": "8b75c9d4daf29c2b7ddb00981de9b24a90d5fda22157f378071a6dc87b2bc5dd",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "phase-1": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "cdcccc3e",
+        "points_f32_bits": [
+          [
+            "0000a241",
+            "0000a241"
+          ],
+          [
+            "cdccae41",
+            "0000a241"
+          ],
+          [
+            "9a99bb41",
+            "0000a241"
+          ],
+          [
+            "6666c841",
+            "0000a241"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 128,
+      "height": 64,
+      "rgba_sha256": "bd5282ff2020179692f684092d1759eaf01b62da6ca81de63fcd242ac0e4d025",
+      "rgba_zlib_base64": "eNrt0b0KQWEAgGGRHIqUnPJTDPJTSnLKqM5+slilDEbLuQWb0aTkWrgnO+7je55LeN9CAQAAAAAAAAAAgNDVu9O0v95de8n2MtzsH8PN4alKOOJ5ep5k+Xuc5a/l8fZZne7fUjmqKxOG4n921OzMqq3+otKIR7X2IFEFAAAAAAAAAAAAAAAAAAAAAAAAAAAI1Q+p7w/W",
+      "stream_hex": "0000a2410000a2410000c03f9ff4ab410000a2410000c03f6bc1b8410000a2410000c03f",
+      "stream_sha256": "8b75c9d4daf29c2b7ddb00981de9b24a90d5fda22157f378071a6dc87b2bc5dd",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "phase-2": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "cdcccc3e",
+        "points_f32_bits": [
+          [
+            "0000a241",
+            "0000a241"
+          ],
+          [
+            "cdccae41",
+            "0000a241"
+          ],
+          [
+            "9a99bb41",
+            "0000a241"
+          ],
+          [
+            "6666c841",
+            "0000a241"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 256,
+      "height": 128,
+      "rgba_sha256": "455a5e9a1ba17f7758c486d2db89d9ff032fbdddcc7f1d2e27d67111fadbc539",
+      "rgba_zlib_base64": "eNrt1i9LQ2EcBeAlTRNEFBwbTvCCf8p2hygLY9ULKuyKFoMbaBFmM00QbBp0OBja/BRqNxv8IAZBkzC5bYjBJHJ5HjjhrQcOvzeTAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+yujY1Fx+JT5faHSeF7dOXsL9/meSQnX7qlhv3gXR0WN+Nb7QFKRPsv1yq/dRObgZDKe0d/k6/B6fDWNtQbokd//79n9KobrT1RakSxC1H36z/8ml+qG2IF1GshPFXGX9NPkHzG8cP5Vb1++lZvctt7x5NlPbvQ3W2vfTYdTRFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPBffQECDl9I",
+      "stream_hex": "0000a2410000a2410000c03f9ff4ab410000a2410000c03f6bc1b8410000a2410000c03f",
+      "stream_sha256": "8b75c9d4daf29c2b7ddb00981de9b24a90d5fda22157f378071a6dc87b2bc5dd",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "phase-4": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "cdcccc3e",
+        "points_f32_bits": [
+          [
+            "0000a241",
+            "0000a241"
+          ],
+          [
+            "cdccae41",
+            "0000a241"
+          ],
+          [
+            "9a99bb41",
+            "0000a241"
+          ],
+          [
+            "6666c841",
+            "0000a241"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 512,
+      "height": 256,
+      "rgba_sha256": "854441861b1a4115f1c6ebead564a48bbfb8f1c1005a4245dd503e00a6044be5",
+      "rgba_zlib_base64": "eNrt3D9LHEEYB2ALiwNPkfMu512CCHtqVuQ48U+RxNOAF6JiryIognpipXZaCSqkMoEUSZGPYJq0fhSFNGmTQOqQMMWBhCAIFiv7PPCys8NUv+ZdhpltawMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASJ5sMXrWOzp3GCqMw1zX43i2MFxv5uOprc7y4Exrbaa7OJSLJpaK1dn9XGViuT3T0SNBAHg4Oh71T0aN5kVt/fzH2NbHP6FqG+9+jaycfW29t6q/vvap78Xy+9ra+feb84MLe5eFuL4tTQB4GL2/8nr3y799/vb68Pt/87X1tz/zT6c2pQoAyRa9an6+W++/vaqrb75lSwN1yQJAMmV7o+c39/zvq8rji8fSBYBkKo3OH9137w81snRyJV0ASFv/P72WLgAkk/1/AEincO/P+T8ASBf3/wAgvd8A/v8DAOkUzgOEM4GhwjjMdT2JG4Xh6Z3Q2zvLQy9bazPdpThXmVwpVhsH4dmeyeYlCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOn2FxOVyJc=",
+      "stream_hex": "0000a2410000a2410000c03f9ff4ab410000a2410000c03f6bc1b8410000a2410000c03f",
+      "stream_sha256": "8b75c9d4daf29c2b7ddb00981de9b24a90d5fda22157f378071a6dc87b2bc5dd",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "phase-8": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "cdcccc3e",
+        "points_f32_bits": [
+          [
+            "0000a241",
+            "0000a241"
+          ],
+          [
+            "cdccae41",
+            "0000a241"
+          ],
+          [
+            "9a99bb41",
+            "0000a241"
+          ],
+          [
+            "6666c841",
+            "0000a241"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 1024,
+      "height": 512,
+      "rgba_sha256": "fd65484e7367059b5de5cd10e528351d83dc5274b2f4a641c225f8f84e16d4c0",
+      "rgba_zlib_base64": "eNrt3c1PXFUYB+CWAMLgBDpDCwxQJODMhLbMBwEREyy0atDyEWVBG4otGKNJNxYoQYPVRY120UVpF6ZL7d/hR6tNdzauu7Sr7rSprtTTprGBNgE6JAw+T/ImN/eeexb3t3pP7j13xw4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYDuL1Dbn4sm+E3Wdr8+FCsfh3Opxe/PxVN/Jh+Nem40ne6cq402Zp81bUvpcVTSRGgj3NOTfWqrPDX1c80J2rKKmPu2pAwAAwOYrr9rVtGffwKnUyPy13Myl+13vf/334xXOhWuJ/PDZRNfw56nRMz/lZy7/uWrc9MU/ksOz3+/uePXDskh1w4N1gnhztrHn7S/TYws3Vo4PlX/v8l+tgzNXwzrDzpLScmkAAABA4cXauidSI3M/Pqk3f5ZK/jtn68D0Nx3jS7fWek8YH00kD0oFAAAACqc+O7TYOfnVb4Xu/Z+lOt5Z+iWsSUgHAAAACtP7b6W+//HaP3Hudqy955iUAAAAYONi7d1HOyfP39mq/X+o9NjizbDHoLQAAABg/cJef6G33sq9/6Nq6T9+RWIAAACwfmGf/2Lo/UNlpi7cjTamD0kNAAAA1ic1PPdDsfT/oZpfmViWGgAAAKxdZbwpk5tevldM/X96bOGG5AAAAGDt4sneqWLq/R9VRXVdUnoAAACwNnWdh08XY///fF1bn/QAAABA/w8AAAA85P1/AAAA2P7s/wcAAAD/D/7/BwAAANvfnn0Dp4ql989MXbgbbUwfkhoAAACsT3nVrqbUyJnrxdD/t/QfvyIxAAAA2JhYe/fRzsnzd7b2d/+LNyO1e/PSAgAAgI2rzw4tbtXef//Eudux9p5jUgIAAIDCrAFstfcAOsaXbsXauiekAwAAAIUTvgXYjP0A0qPz11sHZ652jJ/9da33tA5OfxtNpAakAgAAAIUX9gQM/wUI/wbMTS/fW9mXh3PhWkPXkU8buoY/S43MX8vNXLq/atzJi78nj8x+t7uj/4OySHVDmDsSb8429ox9kR5d+PlJPX+YJ6wTxJMvv7uzpLRcGgAAALD5KuNNmXiyd6qu8/DpUOE4nFs5LlLbnIsn+048GHfg8EexF1+arIw1HnjavCWlZZXRRPJguKch9+Yn9dk3FmpaMiMVNXUpTx0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+8w/Pfrhq",
+      "stream_hex": "0000a2410000a2410000c03f9ff4ab410000a2410000c03f6bc1b8410000a2410000c03f",
+      "stream_sha256": "8b75c9d4daf29c2b7ddb00981de9b24a90d5fda22157f378071a6dc87b2bc5dd",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "curve-half": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000040",
+        "points_f32_bits": [
+          [
+            "00009a41",
+            "00009641"
+          ],
+          [
+            "0000b841",
+            "0000a841"
+          ],
+          [
+            "0000d041",
+            "00008041"
+          ],
+          [
+            "0000f041",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 64,
+      "height": 32,
+      "rgba_sha256": "af7666a609236b6c38796f654b9627238db5a0235eaf8fd8ef577f3353596786",
+      "rgba_zlib_base64": "eNrt0k0KRWAAQFE/pV75Ukw8KQPF1ESGMjR9o7cVS7BrcytQzlnC7UYRAAB3ZT//w3dY0+xTvLVBHCdpaMatnvajXX5nlledMwAAAAAAnusCu/YEgQ==",
+      "stream_hex": "00009a41000096410000c03fb050a641dd779c410000c03f3e80b4418a37a2410000c03fd639c34166e0a6410000c03f6e00d1410f5caa410000c03f25eddf419766ad410000c03f",
+      "stream_sha256": "b97e5c9a62d2e9b869ec719b396f4cc7288b678915a13bc85c9cccad41714a1e",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "curve-1": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000040",
+        "points_f32_bits": [
+          [
+            "00009a41",
+            "00009641"
+          ],
+          [
+            "0000b841",
+            "0000a841"
+          ],
+          [
+            "0000d041",
+            "00008041"
+          ],
+          [
+            "0000f041",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 128,
+      "height": 64,
+      "rgba_sha256": "c41585d5e3ace3c743b56e2df0b844f2431926bc141b72f03649838753838009",
+      "rgba_zlib_base64": "eNrt0tEqQwEcx/GTTHOII9oco43V1lZiW61QSi4UJoY7N0uUO+RyyZVcKVfi2gN4AClPoDyKa0V7Defzqf8LfH//IAAAAAAAAAAAgCDo6x8Iw4mZmhLJ1Dh9+u1drrl7G+UXdhRJlsp+97O3f/3k8ad6cP011WjdDE8WV1LhaKxOcmTm18/j+ma3tHXxVtw4e+39xNza8Uuu2b5Lj8XVdBRXVPr/hjKF5nh5ubPYefgubV++l1tXH/nVo+fppcN7dZIlNTiSTUfZcjRba0eF2p4iAAAAAAAAAAAAAAAAAAAAAAAAAAAkxR/QsCZE",
+      "stream_hex": "00009a41000096410000c03fb050a641dd779c410000c03f3e80b4418a37a2410000c03fd639c34166e0a6410000c03f6e00d1410f5caa410000c03f25eddf419766ad410000c03f",
+      "stream_sha256": "b97e5c9a62d2e9b869ec719b396f4cc7288b678915a13bc85c9cccad41714a1e",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "curve-2": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000040",
+        "points_f32_bits": [
+          [
+            "00009a41",
+            "00009641"
+          ],
+          [
+            "0000b841",
+            "0000a841"
+          ],
+          [
+            "0000d041",
+            "00008041"
+          ],
+          [
+            "0000f041",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 256,
+      "height": 128,
+      "rgba_sha256": "680a74c8bad8629d2cb41890ab703e814130d1383d5f588bdc0c3b4e20bf2cd2",
+      "rgba_zlib_base64": "eNrt2ctLVGEYB2BJ00FTx1uZNeboaFqpHbUCa1FKN9HQifASVOoUQReiItCCIghsI+QlaBsRrloVRIugZRfa9AcEta1d900xgTEEQrtyeh54OZzF2fzg/Z0PvowMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOBvyc4vqapo7bnSEL/0srrz6Fx2XtFqqcD/obbr9MPWY7e+z0/t3lMPwlUbe0PhlQ3SgfSW/O+n7n+QmP36swe6zjwqjm0ekhCkr1Vb4teDkZlPqR2QOhsGr71uHJp4U1LXfkRakF5yCpbHkh2QPAcEw9MfFuqB+t6xp+VB18XYnpP3ox0jd3IKymqkB+mjKNqyf37fGw9OvP29A4LR2S+/+qBv/Hlk68BUza7j9yra9l1Nfp8Vyi/LCi0rlSQsTsWxTYPJ+4AVTTvPBSPTHxc6D7Qkbn5Lfa/uTMyt7Tn/pK777OPy5t0XJAmLW2FlU3fz4cn3wejM5+SZv/nQ5LuF+uD3Sd4hSBAWvyWZS0NZobySSHv/jT/d/7L1209IDtJLbmkkyMkvjRauaeqp2jF8u75v7Fm0I3F33YHLr+Z3vyE+/iIULq+XFqS3zOzccPJZVNPWX7ltcDbSPjAVjgZxyQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/ih8YXdKo",
+      "stream_hex": "00009a41000096410000c03fb050a641dd779c410000c03f3e80b4418a37a2410000c03fd639c34166e0a6410000c03f6e00d1410f5caa410000c03f25eddf419766ad410000c03f",
+      "stream_sha256": "b97e5c9a62d2e9b869ec719b396f4cc7288b678915a13bc85c9cccad41714a1e",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "curve-4": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000040",
+        "points_f32_bits": [
+          [
+            "00009a41",
+            "00009641"
+          ],
+          [
+            "0000b841",
+            "0000a841"
+          ],
+          [
+            "0000d041",
+            "00008041"
+          ],
+          [
+            "0000f041",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 512,
+      "height": 256,
+      "rgba_sha256": "843d135f321bc1227074c1237e2fe95f4a45461ca948c91d264ea9ee801424e8",
+      "rgba_zlib_base64": "eNrt3UtsVGUUAGBohz6ZPmw79EEfdMowfSB9CYRCihRrkVYKaCsqbRWLICa+g1qCGBCj0YAJYl0gKxfG+Eh0aYxujCbKwkQXkrhzYUzUuDAmPvMvmtRirZEMfeT7kpPcmbuY5PyLc+69/z2zaBEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwMK3dFl8Q2nLtsdDhGMZAYCFKzdWszZ+3YE3mkdO/dC2/+U/Q4TjePeBN8M5GQKAhVf763oOvTNR96dGOKcHAICFJVzjT1f7JyLefc/bubHa9dGyRGckOxqTNQCYv5aWxjsm3/OfLlpHz/46cVy/68iFyg0DpzPzYnUyCADzT1nLDWMz1X7PBQBA/Z8c1Z1D55bkFlTkVTb2FMbbB70zAABz33+9//9v0Tx86vvJn2s2D5/PW97QLbsAMHeF9/4up/7/UzTcdPTz/MqmbRO/kZ6RnS/TADB3zPT+3/+N+p1jn5Zfs+NE0y3HLzaPnP4x2f/ox1WbbhvPKa5uk3UAmBs9wNT5P6mKRN9DHxTWtg+E380pqmzOr1q9PTe2Yp1VAIDZEfYDhD2BIeLdB99KVQ+wZuj57+p3H7nQfMcLP018V7t19LWwh9AqAMBs9gIrNyX7H/sk1fcD/tYX7H3u26LEhpHsq8qbwrOD0BOs2LLv1bK23iey8pclrAoApF60fNW1ie0PvHfJPKB9L/6Sqh4gPINoGjz+1dTvkzsOf1Sc7NhnVQAg9SJZ0ZKilev3hjnBdT33vhtb3XV/TefI+St5X2AimvY89XVB9ZobrQoAXHkZuYXLa7fe/fps9ACr+h7+MC2yJNsqAMCVF57RV3XsOXPJNfrgiYuprP+toy/9Fq1IdlkBAJg9YfbvsjXdj1Ss3fl0SePmQ5n5JfGqjbeeTWUPEGvquk/mAWBuySooTaby/cHi5Ma7ZBkA5p60SGZuUWL9UKL3wfcbB459GfqBstbeozWdQ+cua67grrHPMvOKa2UYAOaPSHY0VrG2/+TUun717c98E2YCzVT/y9v7npRFAJifouXJLaXN1x+u6Rx+Zfm63c+G2YNLcvJKw+e2/eN/TK37LXee+TnsN0zPyMqTPQBYWNIzcgrC/r7wv0Fto+O/h1lDjTcf+6KkofPg4vRIpgwBwMK1OC0tEvYRmvsLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATOcvQoblPA==",
+      "stream_hex": "00009a41000096410000c03fb050a641dd779c410000c03f3e80b4418a37a2410000c03fd639c34166e0a6410000c03f6e00d1410f5caa410000c03f25eddf419766ad410000c03f",
+      "stream_sha256": "b97e5c9a62d2e9b869ec719b396f4cc7288b678915a13bc85c9cccad41714a1e",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "curve-8": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000040",
+        "points_f32_bits": [
+          [
+            "00009a41",
+            "00009641"
+          ],
+          [
+            "0000b841",
+            "0000a841"
+          ],
+          [
+            "0000d041",
+            "00008041"
+          ],
+          [
+            "0000f041",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 1024,
+      "height": 512,
+      "rgba_sha256": "b4344245e6957e69b68f5572948a8d748220410934e8aa9d1f32a0c81ecda9fa",
+      "rgba_zlib_base64": "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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIDJ418Z2s06",
+      "stream_hex": "00009a41000096410000c03fb050a641dd779c410000c03f3e80b4418a37a2410000c03fd639c34166e0a6410000c03f6e00d1410f5caa410000c03f25eddf419766ad410000c03f",
+      "stream_sha256": "b97e5c9a62d2e9b869ec719b396f4cc7288b678915a13bc85c9cccad41714a1e",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "wide-half": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "0000c040",
+        "points_f32_bits": [
+          [
+            "00009441",
+            "00009241"
+          ],
+          [
+            "0000b041",
+            "0000a841"
+          ],
+          [
+            "0000d841",
+            "00008841"
+          ],
+          [
+            "00000042",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 64,
+      "height": 32,
+      "rgba_sha256": "70f5f824f74ee56bbc5d44eb502f263bcd51e82869e617d26cdaef569ad62511",
+      "rgba_zlib_base64": "eNpjYBgFo2AUjIJRMApGATbAysUnMVL9bpw28z8Iy1iGTWBiYeUcqf7Xi+54rOqVv1PNt/iAgkPiAgEFw0AmVnae4e5/TkEpbRmr8Imq3vk7dcKab8LCA4SVXFJXjqS0IKRiGonsf0WnpCUjtVxgYmHnHq0ZRsEoGAWjYBSMglEwCkbBKBgFo2AUjIJRMApGwSgY3AAA2qEnmQ==",
+      "stream_hex": "0000944100009241000060409b57a541a42a9c41000060400129bd41608ba441000060407c91d041d922a9410000604026d9e64164f4ac4100006040",
+      "stream_sha256": "f6514ed52e07193bc56b516667f0e02a39e2a385ebbd30f5a7594f71ed71fd44",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "wide-1": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "0000c040",
+        "points_f32_bits": [
+          [
+            "00009441",
+            "00009241"
+          ],
+          [
+            "0000b041",
+            "0000a841"
+          ],
+          [
+            "0000d841",
+            "00008841"
+          ],
+          [
+            "00000042",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 128,
+      "height": 64,
+      "rgba_sha256": "86ecb8b056f94c416f8455aae01e5bea980fea4e8423d996387ca236d1ee7669",
+      "rgba_zlib_base64": "eNrt1ztLQnEcxvFTallKmUdUFPWEnjAKL2QaolSTJYnaIFJSSuQSFU1JmxRRUxeiaIp6CQ1R0BuoN9DS2ho0NXYZBIeiy+bx+4HnDTzPH378BQEAAAAAAAAAAAAAAEFQa3WiqT9elsZLF7ZQqqpq7+yhlebQ0qrSyMmV66Hy6Vst3mzlTpQjBdpRvm6XLxVcOHqt378WZ2z2RJRH5vQWd5SmlMnkjS9+tX19/PN7zwO56oM0Vjq3BiYqRvdw3iD507TX+HRmKfzT/t/FHs5sq7V6Ey02NuPHre+bWrv9zxtwRHP7NKiMP4AzNnM8mN96/Mv+nsTSJe0p6x5YA4l112jx7Df720LpTVpTJoMUzFqDiYpncvnKm9m49xV2nwLFg5fa9nJy9ebzvdBUc9wHTUeXRWfujTii+UN7eHqnTS+6aAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0CzeATGEwTI=",
+      "stream_hex": "0000944100009241000060409b57a541a42a9c41000060400129bd41608ba441000060407c91d041d922a9410000604026d9e64164f4ac4100006040",
+      "stream_sha256": "f6514ed52e07193bc56b516667f0e02a39e2a385ebbd30f5a7594f71ed71fd44",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "wide-2": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "0000c040",
+        "points_f32_bits": [
+          [
+            "00009441",
+            "00009241"
+          ],
+          [
+            "0000b041",
+            "0000a841"
+          ],
+          [
+            "0000d841",
+            "00008841"
+          ],
+          [
+            "00000042",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 256,
+      "height": 128,
+      "rgba_sha256": "24db723c0d696eb7b1942bafd923b1c9a0d1a8a3262eb5157e10d16e07e1047e",
+      "rgba_zlib_base64": "eNrt211o1WUcB/BtnOnZ2dzmtrM3XedsZy9tZ3MvbtC01jab2jYNQTYNmk7nEFexuhC8kZpEN5FoSIpeWAoRgkHhhRZdddWlF/YCXnQbdBHdKIjlv5BeNESZ/s8Znw/84MD/XP0evg/P8/yff04OAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQifIi+QXxtoH9yaHpj3tmTtwMKjk4/VFF63OzwTMdgqUpVpFYmxiYOrN29tTv96vgWfAfnYKlJVpS1dw8/ubX/5f9u9U+eeTHitZnZ/JjxdW6BktDbe9LRx6U/X9WenLhh8r24dfz8pcX6R5kr4KVtemu3cd+fZj8362GkdkL5U39U2Wpvh2xeKI3Jyc3V0che5Q19u18lOz/t3r2nrjRsvXgN8F8EC2taY2V13VFokUVOgyZq7pz08HFyP/fdfL2nfrzd/f08d/q+ieOrqhpfn55cTxVVJ1aX1C2ek1uXmSZzkP4gnd7i5v/e6v7X/uLk7fTE29dq+zYMO8cEcIVLa1qSU+8/d3jngPuV42bX7sU7BOMAoQnWKOHkf+gkoO7z0aiheVGAcIR7M0bN819HtYcUN314iGjAOEpjCf7gnu/YeS/aXT+ihGAcAV3/IPzwNTIgc/+Osd/cnNAdGVNmxGAzFCa7N729LZD3z6p/Pu2ADJsT1DV0F+/YeaTzqn3fn6c2U9PLHzvrhBk6DxQ2fBMcE+otnfrQmLgldMdL7/702Lmv354z3ldhuxQ8lTHWPPYG18tRvbbth++uqK2ZUhXIXvkRZbFShJrttStmzyWvLMmaNw890X7zneuP9Q3A/s+vFWZHnpVNyH7FZSt6qjpGT9cP7TnXGrj/ov1w3vPN43OX+7c9f4v97zzG5v/srxl3bSuwdJWvLp1JFgnNLyw79O69Ts+iKcH5/ILS1fpDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAkMn+AGB/bS4=",
+      "stream_hex": "0000944100009241000060409b57a541a42a9c41000060400129bd41608ba441000060407c91d041d922a9410000604026d9e64164f4ac4100006040",
+      "stream_sha256": "f6514ed52e07193bc56b516667f0e02a39e2a385ebbd30f5a7594f71ed71fd44",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "wide-4": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "0000c040",
+        "points_f32_bits": [
+          [
+            "00009441",
+            "00009241"
+          ],
+          [
+            "0000b041",
+            "0000a841"
+          ],
+          [
+            "0000d841",
+            "00008841"
+          ],
+          [
+            "00000042",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 512,
+      "height": 256,
+      "rgba_sha256": "f162eb8c231313316fc2dc50170a2e2a6e0a5e5fb8226fbe2a76f3a8ff0b4c60",
+      "rgba_zlib_base64": "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",
+      "stream_hex": "0000944100009241000060409b57a541a42a9c41000060400129bd41608ba441000060407c91d041d922a9410000604026d9e64164f4ac4100006040",
+      "stream_sha256": "f6514ed52e07193bc56b516667f0e02a39e2a385ebbd30f5a7594f71ed71fd44",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "wide-8": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "0000c040",
+        "points_f32_bits": [
+          [
+            "00009441",
+            "00009241"
+          ],
+          [
+            "0000b041",
+            "0000a841"
+          ],
+          [
+            "0000d841",
+            "00008841"
+          ],
+          [
+            "00000042",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 1024,
+      "height": 512,
+      "rgba_sha256": "a80b0bcf4d414d6573e5d3782418fe35761840f3c5e690b33493c3e18d4cefe2",
+      "rgba_zlib_base64": "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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAz/A+/ZTSR",
+      "stream_hex": "0000944100009241000060409b57a541a42a9c41000060400129bd41608ba441000060407c91d041d922a9410000604026d9e64164f4ac4100006040",
+      "stream_sha256": "f6514ed52e07193bc56b516667f0e02a39e2a385ebbd30f5a7594f71ed71fd44",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "zero-1": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "0000a441",
+            "0000a441"
+          ],
+          [
+            "0000ac41",
+            "00009c41"
+          ],
+          [
+            "0000b841",
+            "0000b041"
+          ],
+          [
+            "0000c841",
+            "00009041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 128,
+      "height": 64,
+      "rgba_sha256": "f4a0a764e0fe8f75c11bde582f58d09c45ac2fcfa69cdf595a17f697ab58d312",
+      "rgba_zlib_base64": "eNrt0zFqwgAYhmHBSlrEDpFaEcdYQYjJ5KxQUMQTtEicnSxdvIIIrVdxdfEyDi4tHkEyewPzPEd4/+8vlQAAAAAAAAAAAG7VWt3RS2+4VKIYypXHWhgNPh6Cahg8N6JovNx3pqvDU72dqHP/8tu/zb6P6WJ3SbKfv/58e36N37+UKYb87/MNJNnvf/y5OTXTyVoVAAAAAAAAAAAAAAAAAAAAAAAAAACgqK67wBXJ",
+      "stream_hex": "0000a4410000a4410000c03f0ab2af41de28a8410000c03fc2bbba41614ea4410000c03fd4e7c14114699b410000c03f",
+      "stream_sha256": "1531dcd0bbf54af7511892ecb7ec4765ff3ac233954c9ba0aa562c1df22f3b85",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "zero-2": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "0000a441",
+            "0000a441"
+          ],
+          [
+            "0000ac41",
+            "00009c41"
+          ],
+          [
+            "0000b841",
+            "0000b041"
+          ],
+          [
+            "0000c841",
+            "00009041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 256,
+      "height": 128,
+      "rgba_sha256": "c32d9746f5c25f481a698a74d12e0768fc40f9ecdb7e6de10a2ee75e9cdd1e57",
+      "rgba_zlib_base64": "eNrt10srhGEYBmA1NUVkmskh50kU4zxhosSkZqkmJIdSThspFixloSaxnPAL/CDKD7DgJ1jI4VuMmLLnc1311Nu7vOt+e96KCgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4DeLJYfzzWP5Ql3P1I404P+o78vu9c4f36a3r9+CSXRl1qQC4RGJVtY2DuWOggnOpftodaJ9ZKP4XOp+MP0rhQeJQXi635JZuCj1u21yuRjvGl9t6J89SGY3b752P5jU4sm91CAcGgdzh+UdT29dv6a3Ll/K7wdWzx5rmrqnpQYh7v8PU9uaykkMwrv/f98Drj53gI//wL60IJxvQLAHtIznCwNr50+lzvcuHN81j86d1qdmdqUE4RetSXQkuifW452jS5FoVUwiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMBf8w6iw4Ag",
+      "stream_hex": "0000a4410000a4410000c03f0ab2af41de28a8410000c03fc2bbba41614ea4410000c03fd4e7c14114699b410000c03f",
+      "stream_sha256": "1531dcd0bbf54af7511892ecb7ec4765ff3ac233954c9ba0aa562c1df22f3b85",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "zero-4": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "0000a441",
+            "0000a441"
+          ],
+          [
+            "0000ac41",
+            "00009c41"
+          ],
+          [
+            "0000b841",
+            "0000b041"
+          ],
+          [
+            "0000c841",
+            "00009041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 512,
+      "height": 256,
+      "rgba_sha256": "905f07ac1b1e8b0df9bb34323e30bac153d1f7873e7013340e3b3dac0312bad6",
+      "rgba_zlib_base64": "eNrt3UtLVGEcB+BMy1LUzHHMZJzS8DKNeetqqYkmFZHRxTIp3WgXgojostFFlLSIoggyKOgTRF+gXbTusmoTQatA+gZdPIuBsNSGEI7T88Afhpkzm9/m976Hc1myBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg/5ZXGt9c1th7pa7v2uvag1dfRZPdF1cUlyckAwCZqaSmbTg5cOtj6+jjH79O4uj4u+Kq1mMSAoDMEqlvH208fXdqZvenpuHkxKfiqs39kgKAzJCzsiBac+DSy9m6PzXVvWefZy3NXiYxAAingoq67tL6jjPBBJ/n3PvXtY/O1/2pKYol90kXAMIlP1q1vXLX4KOZvR18F/w28/hgfZDsv/Hhb/t/eq0wImUACFf3J46MvZmtuxNHx95Gpvt+9YZtg6vWNx+OtR2//7e9n5rgf5IGgPD4075/rmkZmfyezvFNQ/e+5hZGN0gaAMKhsKK+J929fFozMvltTdPe65IGgPAoTXSeW8j+j7WdeJC9fGWRpAEg8/u/cejuVFlDz6Ws7JxcKQNAuCzU+f9459BT6QJAeKV7/d980zB4+3PB2touyQJAeM13/1+6U7H10IRUAWBxrAH+9TxA46k7X4L3/kkTABaX4HqA4JrAYNZu6bsZ3Ls/+3OBxt+v2z38LN5x+kl0Y9eFvEi8VYIAsPgF7++t7j3/4rfnAu8ceJgXiTVLCAAyU05u/uqSmh1D5S0Hxss27blcVJncLxUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgX/0EiIFVrw==",
+      "stream_hex": "0000a4410000a4410000c03f0ab2af41de28a8410000c03fc2bbba41614ea4410000c03fd4e7c14114699b410000c03f",
+      "stream_sha256": "1531dcd0bbf54af7511892ecb7ec4765ff3ac233954c9ba0aa562c1df22f3b85",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "zero-8": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "0000a441",
+            "0000a441"
+          ],
+          [
+            "0000ac41",
+            "00009c41"
+          ],
+          [
+            "0000b841",
+            "0000b041"
+          ],
+          [
+            "0000c841",
+            "00009041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 1024,
+      "height": 512,
+      "rgba_sha256": "07424e86388a4b51ea1385f14a3266659b39115a7acd0cb95a35d303ee68c8f4",
+      "rgba_zlib_base64": "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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg/+NPJZMR1w==",
+      "stream_hex": "0000a4410000a4410000c03f0ab2af41de28a8410000c03fc2bbba41614ea4410000c03fd4e7c14114699b410000c03f",
+      "stream_sha256": "1531dcd0bbf54af7511892ecb7ec4765ff3ac233954c9ba0aa562c1df22f3b85",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    },
+    "tool2red-1": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [
+          [
+            "00009c41",
+            "00009241"
+          ],
+          [
+            "0000b041",
+            "0000a041"
+          ],
+          [
+            "0000c441",
+            "00008641"
+          ],
+          [
+            "0000f041",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 2
+      },
+      "width": 128,
+      "height": 64,
+      "rgba_sha256": "e21e5d380946ac20b2827b11b629ca5c1d0dadb01a5ca86b79d35f6439eb3dba",
+      "rgba_zlib_base64": "eNrt1j8rxHEcwHFHhzjE+XOE7ui4s1iUrhTOvygii8EDoJgongBlsEgZeAQyW9iV5SaDJCWyGMSgpHBZeQK/e736fp/A+/Pp27eoCAAAAAAAAADg10o0sbETSx/MVscW1CgsmYrawYf02OdTevzrLjX6ftE5cJON1E9VFpdE1Am++Zrmxfzs/7pbTem9ocroRDgUCisVTC3h8rb71OjHfztw3ZV9OW7vO9uOpfYnqxrnFAueslBx+XI0vn6VHH6+7R55+28X8veotfdEseCaqGqYOY33X950Z1//mv/PW3CuUvB1lFZ0rdYnNnebew7POjK5XHLw8TyRyS3VxdfUKSyhnzMeaZjO/wXVAAAAAAAAAAAAAAAAAAAAAAAAAAAKyTc8+mmj",
+      "stream_hex": "00009c41000092410000204063cca6415f319841000020404ac5b54151939e41000020409f61c341945ea3410000204098a6d041b981a741000020400e86df4188b7ab4100002040",
+      "stream_sha256": "2fba3466e1257191d4cf550dfc80eceff001ff2769fa2139c5a2b7c57e134990",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.cfcfd00000000p-1",
+        "0x1.49494a0000000p-3",
+        "0x1.19191a0000000p-2",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ffe72946",
+      "native_uniform_color_f32_bits": [
+        "e8e7673f",
+        "a5a4243e",
+        "8d8c8c3e",
+        "0000803f"
+      ]
+    },
+    "tool2red-2": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [
+          [
+            "00009c41",
+            "00009241"
+          ],
+          [
+            "0000b041",
+            "0000a041"
+          ],
+          [
+            "0000c441",
+            "00008641"
+          ],
+          [
+            "0000f041",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 2
+      },
+      "width": 256,
+      "height": 128,
+      "rgba_sha256": "a50ea26d69059254e7d56e8265a837d2d22dd4641e0e5edfcea58cef451fde34",
+      "rgba_zlib_base64": "eNrt2klIlGEcBnC3sSZ1nEbHUVtGc9QxqENpGjaRaRuBbbRHh4KIICiihaygBQo8FEFQ9w5djA5R0KXwYEh16VKQSARStw7RoSCqOUjSIVo8zEy/H/zh4zs+8Px54X3z8gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACATNMaDC/uq2q89CbZ8+lNcsXn9Hf6n2Qgty0piSx/UN/x7G3Lyq8T52ki9fpQ5Zy+aFFxTEqQe0KFReHb8bZHP3d/4jxuSL3qDVVvkRbkllVl0d5fdX98XjZ1vR9s6Hxxpqqpv6c0ulZykP32R+qO/E7/f5779e3D/TVzb6RKIt1ShOy0qbxm19/0f3yeNy57NxBve3gy2nhxc3nt7uL8gilShexQVlAUuj5j/q1/2QETZyDe+vBCLHl1b2T2wY5p05dKGDJbV2nl6uFEanSydsD4pO8RD1TUHS3Myy+UMmSuBcHy9vOxlitjyRVfJnsPHI8mzksYMl9bMNx5rXbezcnsf/ptwcxAMC5dyHyB/ILi9aHqbSeiiQt344uGJmMHbCyv2SlZyC61gamzDlXOOTXS3P3hX/q/LlS9VZqQnUoLisoSxSXJY9HEuXt17cN/0v078bZBb4ghd84Ea8qqNpyONfUPNSwZ+VX3R5u7P+6LxA9LDXJPuDAQWVpS0bMxVLP9bKz58ljLj/uDJ4nU6+3hGXukBP+H+VNDC7/vgh3p88HsQLBeIgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABApvoGCFD4qw==",
+      "stream_hex": "00009c41000092410000204063cca6415f319841000020404ac5b54151939e41000020409f61c341945ea3410000204098a6d041b981a741000020400e86df4188b7ab4100002040",
+      "stream_sha256": "2fba3466e1257191d4cf550dfc80eceff001ff2769fa2139c5a2b7c57e134990",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.cfcfd00000000p-1",
+        "0x1.49494a0000000p-3",
+        "0x1.19191a0000000p-2",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ffe72946",
+      "native_uniform_color_f32_bits": [
+        "e8e7673f",
+        "a5a4243e",
+        "8d8c8c3e",
+        "0000803f"
+      ]
+    },
+    "tool2red-4": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00008040",
+        "points_f32_bits": [
+          [
+            "00009c41",
+            "00009241"
+          ],
+          [
+            "0000b041",
+            "0000a041"
+          ],
+          [
+            "0000c441",
+            "00008641"
+          ],
+          [
+            "0000f041",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 2
+      },
+      "width": 512,
+      "height": 256,
+      "rgba_sha256": "fd4b531c440e4a1f05f65db3cb39e498ee602085405cef35c94f847de8764615",
+      "rgba_zlib_base64": "eNrt3WtolXUcB/C5i5vbzubul7ObO+fs4tzcpmFetjkXlpZQXkIwDKGiKJDIElK6aFBS5AXMqJZZWoJoVCJElAlFRaVgVkg5yuxK9KLLm95UzwtBhiRuZ9s54/OBHxwOz4vD7/fi+3+e8/yfJyUFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIDhqpuYHbk+r3zlrYU1a4MKPgff6QwAjD+9ucXXPBVue/l4tPu7H5sX/nNhnYj1nHs63LY/OEanACD5hVLT89aXRDd/Eu3+dnDuD67gmODY3NT0kM4BQPJm/+aypu2Xyv3B9UJV+2ttWXkzdBAAks89xZEHLzf7z9cP/9XOcOu+FfmVq1NTJqTqJgAkvgW5xYvONPb9OdT8v7CeqJj6TEtWqF1XASCxbSlv3hWP7D9fh2qvOHpjfuXNrVl5nZPTMgp1GAASS/3E7IZ4nftfrD6Kdg3sqe54PfhvILjHQMcBYOwtDpUtHansH1wvVne8MT+n6GpdB4Cxtba4fsNo5X9QXzf2/fFeZN7p/qrpBzeVNW1bmFuyJDs1LcckAGD85v/F6mDtzKNL8ytWmQYAjI7RvP7/f3W26aq/j0Xmntpb3XlkW+W03asmh29pzsxtNSEAiL+Rvv9vOPVFQ++vG0sbtkzLCnWYFADEV7z3/8V9D0Gka6C/qv1Q8DsfKG14PHgXUbC30OQAYOiC5/8MNPb9lchrgMH1WWz+z7vCba/YTwAAQzec5/+OZQXvIQruYUxLmZBmigBwefJS0/MfKWvakYxrgKDWlUQeMkUAuHzB8/nuK4lu+jja9U0yrgFuK6y92xQBYGh6cooW7qxs3XuqofeXZMr/t6bMPt6YmdtiggAwdHUTsyNbK1r6v2zo/S1Z1gD3lkQeNjkAGL6Vk8Nr3o/MO50M+X+gZubbJgYA8TE9K2/mhtLYYydj839K9DVALDOn2cQAIH5qMybVX5dXtvz+0tijz4XbD56IdZ9LtPyflV3QZVIAMHK6cgr7dle1v5pI+T9jUv6VJgMAI6smY9KU4HrAu/VzTiVC/oczsmpMBQBGR7BfYHVB9e2by5q2H66b9cGn0e6zo539z4anHzAJABg7GRNSJ95VNGX9O/VzTo5W/q8pqL5T5wFg7DVn5rYG+/L318x4cySz/6XqjsMFaRlFOg4AiaU8PTMcPKNvSahs+Y7KaXvi9o7gaNfAolDpDToMAIkteGffsvyKm7ZWtDz/VeOC34ea/R9Gu86syK9craMAkFwK0zKKW7PyOoO9+7OzC3o2lsa2nIj1fH+p7N9X3Xnk2lDZMh0EgPFhXk7hgicrWvqP1c/5/GK5f0dR3bry9MxKnQKA8Se4p29udmFvcJ7fl1u8eGpmqE1XAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgOH6F/9fj9I=",
+      "stream_hex": "00009c41000092410000204063cca6415f319841000020404ac5b54151939e41000020409f61c341945ea3410000204098a6d041b981a741000020400e86df4188b7ab4100002040",
+      "stream_sha256": "2fba3466e1257191d4cf550dfc80eceff001ff2769fa2139c5a2b7c57e134990",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.cfcfd00000000p-1",
+        "0x1.49494a0000000p-3",
+        "0x1.19191a0000000p-2",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ffe72946",
+      "native_uniform_color_f32_bits": [
+        "e8e7673f",
+        "a5a4243e",
+        "8d8c8c3e",
+        "0000803f"
+      ]
+    },
+    "tool3green-1": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00009a41",
+            "00009441"
+          ],
+          [
+            "0000b841",
+            "0000a841"
+          ],
+          [
+            "0000d041",
+            "00008041"
+          ],
+          [
+            "0000f041",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 3
+      },
+      "width": 128,
+      "height": 64,
+      "rgba_sha256": "4688bc999a25b0c0d52df4c84e760b464681d358ff321f0c92af131830b03d95",
+      "rgba_zlib_base64": "eNrt2E8og3Ecx/GZzRam/SnbUGuzh7HNsD2b2jJpyp+05E+c3F2UGhEt5cppSZLDqKUoDhy0OKFcHFyUu4tcOHHBIys5Madn3q/6Xr7Hz6e+9fspFAAAAAAAAAAAAMDvqY1ai1Kt1JBEAXZr0lrNccdE1VjdjM5riki7IpWyRB+y9ArzYsazGr1oOx14FY/6n6pGhYRKpzaQWmEwhK3x+qW2falfaQL7fffe9c6rps3Ydeg4/pzb5yaUjb845/xbJCd/ZYK+1b/bc/e9459M3WJwT6ktLiNF+ZJueT7df9yB99tQM+5KkqJ8CcngTr7950a6ISQpT7YJ78pf+zdGq4dIUp5K7RUedyp6nm/34mH/o85jCpOkfJk6qkc8ax2X+fTfsBzJkmBh/O04Eq0bzdtdt987Dhz0PbhT7We+dOzm694560+Xuwwi6RUOjbnUZh12TjkXApnGlciJsCBm9EFz9+dbscUyWDtpn/Sl3t8N02q9ppLEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAf/AG6gontA==",
+      "stream_hex": "00009a4100009441000090404c97a9417e229c4100009040bb64b7413aa09d41000090400000c44100009441000090401c78d541ca2a8f41000090406712e341335d9d4100009040",
+      "stream_sha256": "45a46e9151823786498e3f53f8f36cd335871089fac1682cbd6f7f18a6b81bb4",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.c1c1c20000000p-3",
+        "0x1.7f7f800000000p-1",
+        "0x1.4545460000000p-2",
+        "0x1.0101020000000p-1"
+      ],
+      "paint_argb": "8038bf51",
+      "native_uniform_color_f32_bits": [
+        "e1e0603e",
+        "c0bf3f3f",
+        "a3a2a23e",
+        "8180003f"
+      ]
+    },
+    "tool3green-2": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00009a41",
+            "00009441"
+          ],
+          [
+            "0000b841",
+            "0000a841"
+          ],
+          [
+            "0000d041",
+            "00008041"
+          ],
+          [
+            "0000f041",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 3
+      },
+      "width": 256,
+      "height": 128,
+      "rgba_sha256": "cd15fa7c3dd56bdf71bf281f65da29d04bbca2cf6db491201c43344d5368c444",
+      "rgba_zlib_base64": "eNrt3E9sk3UYB3Bk7UY7ulFoB5O1nWXUbaV0m3NFRxzCZCwqY9HEA+rUIAfUKBFM9CD+iWKMwSgalClqTFSCggcTJSge1BgvGqPxZryYePCsxoSovEtmCLIIJPat2eeTPLe3PTxPvn3f/t7f+86ZAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzDbxZc3llmvat3Y80P964eHK29nbi7vTI9mJ+lRsqe7A/0OitGh1ejR369LNhfuXjOfvnN+VrJzpuIaWeDZ5eevG9rvLe7ufHfpk4P1rf1n18fifp9eK54c+D76rLh5p0l2oTS2judsKj1QOn57fgQ82/tq9Z/Xx1HBmc3BcY0dzT2ZL92OXvDP605nyPlPl7+19cV7b/IJOQ+2oT8facneUnv63/FY+2nSi/Mrwtz1vjHx/Lrk/tZbvGjgYXdCQ1nUIXyQRTZ48L+8/3zyfT120vbxP5yF8bbd0PVTN7E9dR3y46UR+Z++k9QAIT+PFyf7yq8PfVTv/05XbVtpT1xhtNgmovuD+XFjZn67s1uITJgHV17n7svfCzn/foQ0/Nvel15kGVNeq4+N/hJ3/qfuCO/teMg2YnflfeWDdN9YBYPZd/0/XTHsMgf9GsIevVvLf1JNaYyJQPWHf//t7P8Cxsd9j2USniUB1hbH/5x///19e+7VJQPVN7f/d0TsZZv6DZwNNAsJR3xLLtN+18pmw1v5juUS3KUC4gmf+O58cPFqt7Pe+OfJDen32Zp2HGvodGMlNFPcOfXrO63hHx34rv3Z264n971798+Kx/DbdhtpTF48kWq/vuKfrqcFjZ5Pn4B0/qasyN0aa6he1TXTuCtb0ZnwHwIOXvpUcbB3TZahtcxvq4gsGFm8IztX57T0vFB6tHCmezHpp/5VfFp8b+izIcmp99qbownlLTv1ccD+v9YblO5bd13egNLn2qxX71nyR2VJ8fOEVF153QWRuVGcBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgFryF/KcENw=",
+      "stream_hex": "00009a4100009441000090404c97a9417e229c4100009040bb64b7413aa09d41000090400000c44100009441000090401c78d541ca2a8f41000090406712e341335d9d4100009040",
+      "stream_sha256": "45a46e9151823786498e3f53f8f36cd335871089fac1682cbd6f7f18a6b81bb4",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.c1c1c20000000p-3",
+        "0x1.7f7f800000000p-1",
+        "0x1.4545460000000p-2",
+        "0x1.0101020000000p-1"
+      ],
+      "paint_argb": "8038bf51",
+      "native_uniform_color_f32_bits": [
+        "e1e0603e",
+        "c0bf3f3f",
+        "a3a2a23e",
+        "8180003f"
+      ]
+    },
+    "tool3green-4": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000041",
+        "points_f32_bits": [
+          [
+            "00009a41",
+            "00009441"
+          ],
+          [
+            "0000b841",
+            "0000a841"
+          ],
+          [
+            "0000d041",
+            "00008041"
+          ],
+          [
+            "0000f041",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 3
+      },
+      "width": 512,
+      "height": 256,
+      "rgba_sha256": "c583becd1b36445b63b7cb2cd3ce3d3e7acabcc3f99a3a3e3d55378608f42fe2",
+      "rgba_zlib_base64": "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",
+      "stream_hex": "00009a4100009441000090404c97a9417e229c4100009040bb64b7413aa09d41000090400000c44100009441000090401c78d541ca2a8f41000090406712e341335d9d4100009040",
+      "stream_sha256": "45a46e9151823786498e3f53f8f36cd335871089fac1682cbd6f7f18a6b81bb4",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.c1c1c20000000p-3",
+        "0x1.7f7f800000000p-1",
+        "0x1.4545460000000p-2",
+        "0x1.0101020000000p-1"
+      ],
+      "paint_argb": "8038bf51",
+      "native_uniform_color_f32_bits": [
+        "e1e0603e",
+        "c0bf3f3f",
+        "a3a2a23e",
+        "8180003f"
+      ]
+    },
+    "tool4purple-1": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00009e41",
+            "00009841"
+          ],
+          [
+            "0000b041",
+            "00008041"
+          ],
+          [
+            "0000d041",
+            "0000b041"
+          ],
+          [
+            "0000f841",
+            "00009041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 4
+      },
+      "width": 128,
+      "height": 64,
+      "rgba_sha256": "67032f4d8a78b7384a148c153ca4ee413528669112abfbef6fb89dd2386bae01",
+      "rgba_zlib_base64": "eNrt1L8rhWEUB3D3kpBEKbpEBhkQrh+DFJJfiSiUUiaDslAm7qIoGUgpFgYZxSbJoAxKUZLVQAaLUTHgDm9d/8Lr86kzPKczfc/TSUsDAAAAAAAAAPhrof3wOtF18jjbunM21bh6IJH/ITM9K6evanpxe/j+O6jVvovXeKxnLHUuKyM3r7a4fTA/u6hUauGx1HX8EOx9a+j2c33g6j14T9QndpMzlYXNHUFvrf/yLRKJRiUXvv3XxTqHR6rn11NvwUrv+fNvvQTvzcGbj+QtkFx47n+8pHe8vKCmOei1VYzPpP6BZC33nD5Nt2wcleVXN0kt/Cbjy3tzbfuXW0N3X8n9N8S6R6OR9AzJAAAAAAAAAAAAAAAAAAAAAAAAAAAAYfcDbLtuRg==",
+      "stream_hex": "00009e4100009841000000400f8ea9412a708d410000004063e3b441813a8d41000000400000c0410000984100000040d6c7c9412ac5a141000000400506d6419407a441000000402cb7e14161e39f410000004058c7ec4110bc984100000040",
+      "stream_sha256": "ca8e48ab60c823957a61324faeea4cdb0e1f2e3fcc9943a52185ab54e26bec86",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.2b2b2c0000000p-1",
+        "0x1.4141420000000p-2",
+        "0x1.a5a5a60000000p-1",
+        "0x0.0p+0"
+      ],
+      "paint_argb": "009550d2",
+      "native_uniform_color_f32_bits": [
+        "9695153f",
+        "a1a0a03e",
+        "d3d2523f",
+        "00000000"
+      ]
+    },
+    "tool4purple-2": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00009e41",
+            "00009841"
+          ],
+          [
+            "0000b041",
+            "00008041"
+          ],
+          [
+            "0000d041",
+            "0000b041"
+          ],
+          [
+            "0000f841",
+            "00009041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 4
+      },
+      "width": 256,
+      "height": 128,
+      "rgba_sha256": "76ea2643abdfd1729e0b07275bd866e451eea072b8af7d37ef2eb87d9321542f",
+      "rgba_zlib_base64": "eNrt2l1oTnEcB3Bsw6YtxrCpudis9RgzVsaGZh6bzV5IjRLSQskwuxnzMnnJa14ioVy4UFxM0S68FWpzoSxxgeZCuZKSKxeKjjy11habm2fz+dSvTp1/5+Jbv9Pv/z9n2DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgMImLGTU6OSFtanCdHJ+anpaUmSMVGPpKs+qa6guvPDhd2fH1WPmTTxdqXv4IamP+8RszU4urJQRDU0F69Ybz1Z3fIz3fsxoXXm83C8DQM3tKae2pio6vffV+pLbNv3w/NTEj9KfnTZuQv2j6pAXlCXFJ46QL0Snoz6pQ/eE/9X33OhC++27G5EWVvT0vZUx65oqchhORtZvmnmmdM6WsVtIQfVbmNJ7qT+9HqiXc1tV9DogdETcyeCfsKWl91XPt2arn3zLG5xVJG6LL9qKrjwbS/7/ngLcV2VtblmVv2ffrzHD5sz73D8G5orRhcPT/8fKnnzfPPXe7uaT19UDfD90rmDOkDYNj/q8K1R8J7gczfrDf/9f+D74tSBuiS8/zvyNlDz+umbX3Unxc4tjImmBf37K0rWsgfX+o9N6H6tD2o5KG6JWXFl5VnLF2R3ZKwZLe7gdzwP4ld970p/ebim++yE1dXCNdGPyyJ84L/+1eoDSrbveI4TGxUoOhI/gHeHVu88Wm4ludB8Nt7yP9frKi/cvOomuPSzLX7wpNKiyTFPwf+4aSzHUNwWwgDQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgmvwE7XECGA==",
+      "stream_hex": "00009e4100009841000000400f8ea9412a708d410000004063e3b441813a8d41000000400000c0410000984100000040d6c7c9412ac5a141000000400506d6419407a441000000402cb7e14161e39f410000004058c7ec4110bc984100000040",
+      "stream_sha256": "ca8e48ab60c823957a61324faeea4cdb0e1f2e3fcc9943a52185ab54e26bec86",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.2b2b2c0000000p-1",
+        "0x1.4141420000000p-2",
+        "0x1.a5a5a60000000p-1",
+        "0x0.0p+0"
+      ],
+      "paint_argb": "009550d2",
+      "native_uniform_color_f32_bits": [
+        "9695153f",
+        "a1a0a03e",
+        "d3d2523f",
+        "00000000"
+      ]
+    },
+    "tool4purple-4": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00009e41",
+            "00009841"
+          ],
+          [
+            "0000b041",
+            "00008041"
+          ],
+          [
+            "0000d041",
+            "0000b041"
+          ],
+          [
+            "0000f841",
+            "00009041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 4
+      },
+      "width": 512,
+      "height": 256,
+      "rgba_sha256": "a60748afc5b790f392132747a58736d87c42cb7e44b96112261b50c180ded0f6",
+      "rgba_zlib_base64": "eNrt3WtMllUcAHAV74KIUuIFFREFxUwNNAXloozAW02zxKnLJC1R1JaWeMnS1Fqa6bpoVra2lsXSZbOWXTQ/WcusVWtu9aW+OL/m1tbtbLGcgfIiyEv+ftvZ2MPz/vfs/D/8z/M855ynVSsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJpKx7Zd4rKSS8tuz1z5ZGXOSx8vHff80UmDFjyYkzKzfPqwyq33jd11aG3B22dW5L78aTjer9vQ0XoNAFqu0X2KZy8e++zhPTPO/Fnftq3k+LmiwQvXhHGDHgSAlmVc/zvu3VJ87JdIan9N2z3jqz9m3bRmlzEAALQco/oUzWpo7b+4laQvXq83ASD6tYvp0LF8zI7qq639oa0rfOfb/gmZWXoVAKJXbPtuidMyKjY3Ru2vaeXZO6u7tI/v3ljXGGJ179y7v3cLAHB1OrfrmpCfWrY83K83Zu2vaStyXzke5gR2ahfXraHjkpwBM8vD+oOa9xI7p566MHfUpv3ZyVPmyiAARKZnXEr6ouyn32qKun9pmzd686u94lKHRnJ9gxOz85eN3/vh5eLeNaLquUjjAsD1fN9fNnLj3mtR+y8eA9T3OUCo/ctz9n1Un7gLs556s0fnPimyCgCXVzxk0dprWftrWngXcLnrSoobmBGe9z9W9P5PkcQNaw5lFQDqFubRrZpw4GRz1P/1hYe/T65ln8BQ96dmVDy+veTE+YbE3VJ87Oe0xKw82QWA2o3oVTCjOWp/TdteeuL8lIwHNo3qWzy7KO2e1XNu3vBiVUH1N1cbd+bwh3bILgDULm/gnIrmrP9N1e6/dc8R2QWA66v+P5J/8LTsAkDtrub5/8bJ752tGPfCB+E9frTV/2Xj9x2TXQCoXUPn/z2cf/DL+I6JSf/GeO1kNNX/wkHzVsouANStIev/wm8ujhHW8kVL7d9UdPTHPvFDRsgsANQt0v1/wrnhNxfHCHv5hD19oqH+56WWLZNVALiy+u7/G84J59YWI+y929xjgFnDVz/TpnVMWxkFgPo/B6jr+z/hWPjfpff9lwrPAcK7gHWTDn13Lev+o5OPnJ048O6lbVq3iZFJAIhc+M7esJ45txUPKa8KLfwdjkUSIzk+feS2kuPnmrruVxVUfx3GJb27pg2XOQBofk09JzDsG6iXASC6xHXo0XPBLVtfb+y6v3PqqV/DN346tYuN18sAEH1ujO2X1lhzAv+u+xcqc/Z/ktW3ZI6eBYDo1j6mU5fclDuXrM574/Pd00//XlPPd0374rcr1fxVuQc+mz5s+RPh9wMSho/RmwDQsoR1eQMSMrPH9ps2Pyu5tCy1x8ic/NS5lesL/7tWYMOkd38oHDR/VWyHhBv0HAD8/4R5AplJE0pL0pdsCC0zaeKUrv/sLQwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABcX/4Czzbozw==",
+      "stream_hex": "00009e4100009841000000400f8ea9412a708d410000004063e3b441813a8d41000000400000c0410000984100000040d6c7c9412ac5a141000000400506d6419407a441000000402cb7e14161e39f410000004058c7ec4110bc984100000040",
+      "stream_sha256": "ca8e48ab60c823957a61324faeea4cdb0e1f2e3fcc9943a52185ab54e26bec86",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.2b2b2c0000000p-1",
+        "0x1.4141420000000p-2",
+        "0x1.a5a5a60000000p-1",
+        "0x0.0p+0"
+      ],
+      "paint_argb": "009550d2",
+      "native_uniform_color_f32_bits": [
+        "9695153f",
+        "a1a0a03e",
+        "d3d2523f",
+        "00000000"
+      ]
+    },
+    "zero-half": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00000000",
+        "points_f32_bits": [
+          [
+            "0000a441",
+            "0000a441"
+          ],
+          [
+            "0000ac41",
+            "00009c41"
+          ],
+          [
+            "0000b841",
+            "0000b041"
+          ],
+          [
+            "0000c841",
+            "00009041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "width": 64,
+      "height": 32,
+      "rgba_sha256": "a490e93ebeecc9ec3c8b6e56ebe6555ceb466a98e3e0bb9314b4e26711341bf3",
+      "rgba_zlib_base64": "eJztzrEJgDAQAMCAIEljYRkyQuo4huBOFtk6Ewh239xNcCkBAPBl2/NRztqjHxHa9cw67jf6AQAAAADAPwsw2wLT",
+      "stream_hex": "0000a4410000a4410000c03f0ab2af41de28a8410000c03fc2bbba41614ea4410000c03fd4e7c14114699b410000c03f",
+      "stream_sha256": "1531dcd0bbf54af7511892ecb7ec4765ff3ac233954c9ba0aa562c1df22f3b85",
+      "projection": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.03125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "native_uniform_color_hex": [
+        "0x1.99999a0000000p-3",
+        "0x1.99999a0000000p-2",
+        "0x1.3333340000000p-1",
+        "0x1.0000000000000p+0"
+      ],
+      "paint_argb": "ff336699",
+      "native_uniform_color_f32_bits": [
+        "cdcc4c3e",
+        "cdcccc3e",
+        "9a99193f",
+        "0000803f"
+      ]
+    }
+  }
+}

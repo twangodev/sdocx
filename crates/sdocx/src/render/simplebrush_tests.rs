@@ -402,6 +402,7 @@ fn stamp_budget_is_cumulative_and_rejection_is_atomic() {
             None,
             None,
             None,
+            None,
             false,
             None,
             None,
