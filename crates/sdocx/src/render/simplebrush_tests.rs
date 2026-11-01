@@ -1382,6 +1382,41 @@ fn two_pixel_native_export_fixture() {
         }
         _ => {}
     }
+    if std::env::var_os("SDOCX_SIMPLEBRUSH_NOTE29").is_some() {
+        let saved: serde_json::Value = serde_json::from_str(include_str!(
+            "../../tests/assets/fountain-v14/saved-source-29.json"
+        ))
+        .unwrap();
+        let count = if std::env::var("SDOCX_TOOL").as_deref() == Ok("1") {
+            32
+        } else {
+            57
+        };
+        source.points = saved["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .take(count)
+            .map(|p| Point {
+                x: f64::from((p["x"].as_f64().unwrap() - 96.0) as f32),
+                y: f64::from((256.0 - (p["y"].as_f64().unwrap() - 268.0)) as f32),
+            })
+            .collect();
+        source.pressures = saved["pressures"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .take(count)
+            .map(|p| f64::from(p.as_f64().unwrap() as f32))
+            .collect();
+    }
+    if std::env::var_os("SDOCX_SIMPLEBRUSH_SHORT").is_some() {
+        source.points = [32.0, 32.25, 32.5]
+            .into_iter()
+            .map(|x| Point { x, y: 224.0 })
+            .collect();
+        source.pressures = [0.1_f32, 0.9, 0.2].into_iter().map(f64::from).collect();
+    }
     let default_size = if std::env::var_os("SDOCX_REVERSE").is_some() {
         "20"
     } else {
@@ -1430,6 +1465,13 @@ fn two_pixel_native_export_fixture() {
             hex,
             native["drawing_vector"]["vector_bytes"].as_str().unwrap()
         );
+    }
+    if std::env::var_os("SDOCX_SIMPLEBRUSH_NOTE29").is_some() {
+        if let Err(error) =
+            crate::ink::simplebrush::prepare_stroke_for_scale(&source, true, 32_768, true)
+        {
+            panic!("note-derived profile rejected: {error}");
+        }
     }
     let mut second = source.clone();
     let mut doc = document(source);
@@ -2425,7 +2467,7 @@ fn long_candidate_preserves_public_one_pixel_boundaries_and_mixed_order() {
 }
 
 #[test]
-fn tool1_two_pixel_profile_matches_native_geometry_and_keeps_short_fallback() {
+fn tool1_two_pixel_profile_matches_native_geometry_and_short_movement() {
     for (count, size, reverse, native) in [
         (
             3,
@@ -2493,7 +2535,7 @@ fn tool1_two_pixel_profile_matches_native_geometry_and_keeps_short_fallback() {
         Point { x: 32.5, y: 224.0 },
     ];
     short.pressures = vec![0.5; 3];
-    assert!(crate::ink::simplebrush::prepare_stroke_for_scale(&short, true, 32_768, true).is_err());
+    assert!(crate::ink::simplebrush::prepare_stroke_for_scale(&short, true, 32_768, true).is_ok());
 }
 
 #[cfg(feature = "pdf")]

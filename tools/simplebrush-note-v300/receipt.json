@@ -1,0 +1,119 @@
+{
+  "scope": "Host Unicorn Drawing plus Mesa framebuffer; substituted Brush metadata, not a serialized Brush or device rendering. PDFium grid is unshifted relative to the fractional native matrix.",
+  "capture_script_sha256": "777c73111ac603749ffa0aab6cf3866f3621402a91d07a432328296ff6dd3592",
+  "simplebrush_library_sha256": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+  "cases": {
+    "note32": {
+      "native_frame_sha256": "12e09f0fd920605a4597734eb80c98120e579c3bbbedd9865dac1f8890091e2c",
+      "native_vector_sha256": "467234e477de9bef16d45d88952d8dc476e46022025b53379274cf75635bf040",
+      "outputs_sha256": {
+        "generic.svg": "83d1ff3917359496c26ba9d4edf0b0cd9cf5765027c212ee03ed2e1480e5ea4c",
+        "two.svg": "fd55f8a90a6328a85a90e79ecf7d9926a53fdec19d4b186f2d1e4b7720633a86",
+        "generic.pdf": "51e0336aa2db7cf81c61a081f75fc1d96e7a39b7aedc86c1bd841e326cea667c",
+        "two.pdf": "270ab5b76f5b9fcd987256ff07d5fa33ab5eb05ff2f1e9d1ac45d6f7457b660e",
+        "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef"
+      }
+    },
+    "short8": {
+      "native_frame_sha256": "aaab13ecddf6dff47fb011accd032b79a65bb190cc66b7a09e8069a84f8fdf1e",
+      "native_vector_sha256": "994c0c9bac4f501ea066ae7633a2351b4fa6642de9d0f7aff8aaa089d764c22e",
+      "outputs_sha256": {
+        "generic.svg": "8aa96592fc04d5842511af18e82a2145eef1853b5e7ddd0c47eaf31ee2977f58",
+        "two.svg": "61557954d18f00343b813c289e0f3290c721b20860c9a02f231e6c9f6abcb6f8",
+        "generic.pdf": "ecc076224a8ae183cd85cf7c96892078e9ae10638d771fde28e13280591c8705",
+        "two.pdf": "5be8b919c2ec47a35680d9b4a7da7920b4691f5a28a370f4d586c2b638554e95",
+        "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef"
+      }
+    },
+    "short12": {
+      "native_frame_sha256": "4ac9b456d9446c2c2ef3c37e8ac8554dadb78f45805c19cac1983b8c07d3e022",
+      "native_vector_sha256": "901865934af46e3b4b11ab3a7699bce2fb58d71312a71c4f1c5e7a00cbde602c",
+      "outputs_sha256": {
+        "generic.svg": "4e3febc1d40ce7c33984a375a4187fefd125006fa18cdfccd4fc1f1b6973eca0",
+        "two.svg": "b1963a7f009c34df50a7f2c7263ff2c64af7526e8e8d233efe60e816a8bf891c",
+        "generic.pdf": "8ec67c0679e99b31345bf4044143aa72fa5b71be11e66767770d07b85d3248a3",
+        "two.pdf": "fffbae17c762df70d0cac1f83e22503e50d8a501379af53bd2ed799afa94f705",
+        "paper.pdf": "7924706ad09587421ce8da7162dd824d276e9d78131e0fc4a799c9432b76a4ef"
+      }
+    }
+  },
+  "metrics": {
+    "note32": {
+      "svg_alpha_l1": [
+        69049,
+        1069
+      ],
+      "svg_support_intersection_union": [
+        [
+          37,
+          327
+        ],
+        [
+          327,
+          327
+        ]
+      ],
+      "mupdf_matched_paper_rgb_l1": [
+        75972,
+        4481
+      ],
+      "pdfium_rgb_l1": [
+        75988,
+        7574
+      ]
+    },
+    "short8": {
+      "svg_alpha_l1": [
+        24807,
+        1332
+      ],
+      "svg_support_intersection_union": [
+        [
+          40,
+          150
+        ],
+        [
+          150,
+          150
+        ]
+      ],
+      "mupdf_matched_paper_rgb_l1": [
+        27463,
+        3835
+      ],
+      "pdfium_rgb_l1": [
+        27335,
+        6679
+      ]
+    },
+    "short12": {
+      "svg_alpha_l1": [
+        53528,
+        1906
+      ],
+      "svg_support_intersection_union": [
+        [
+          78,
+          310
+        ],
+        [
+          310,
+          310
+        ]
+      ],
+      "mupdf_matched_paper_rgb_l1": [
+        59090,
+        5714
+      ],
+      "pdfium_rgb_l1": [
+        58951,
+        9593
+      ]
+    }
+  },
+  "readers": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pdfium": "156.0.8076.0"
+  }
+}

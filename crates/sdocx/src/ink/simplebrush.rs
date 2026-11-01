@@ -185,7 +185,7 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
         return Err("invalid pen size");
     }
 
-    if points.len() > 2 && matches!(tool_type, 0 | 2 | 3) {
+    if points.len() > 2 && matches!(tool_type, 0..=3) {
         let mut accepted_points = Vec::with_capacity(points.len());
         let mut accepted_pressures = Vec::with_capacity(points.len());
         accepted_points.push(points[0]);
@@ -200,7 +200,12 @@ pub(crate) fn generate(input: NativeInput<'_>) -> Result<Vec<[f32; 3]>, &'static
                         if max_samples == 0 {
                             return Err("SimpleBrush sample budget exceeded");
                         }
-                        let width = half_width(size, accepted_pressures[0]).max(1.0);
+                        let pressure = if tool_type == 1 {
+                            0.5
+                        } else {
+                            accepted_pressures[0]
+                        };
+                        let width = half_width(size, pressure).max(1.0);
                         return Ok(vec![[points[0][0], points[0][1], width * 0.5 + 0.5]]);
                     }
                     return generate_with_terminal(
@@ -248,7 +253,7 @@ fn generate_with_terminal(
     };
     let mut previous_width = half_width(size, previous_pressure).max(1.0);
     if points.len() == 2
-        && matches!(tool_type, 0 | 2 | 3)
+        && matches!(tool_type, 0..=3)
         && (points[1][0] - points[0][0]).abs() < 1.5
         && (points[1][1] - points[0][1]).abs() < 1.5
     {
@@ -557,6 +562,91 @@ mod tests {
     use super::{NativeInput, generate, reconstruct};
     use serde_json::Value;
     use sha2::{Digest, Sha256};
+
+    #[test]
+    fn note_derived_short_movements_match_native_vectors() {
+        let saved: serde_json::Value = serde_json::from_str(include_str!(
+            "../../tests/assets/fountain-v14/saved-source-29.json"
+        ))
+        .unwrap();
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-note-v300.json"
+        ))
+        .unwrap();
+        for case in receipt["cases"].as_array().unwrap() {
+            let count = case["point_count"].as_u64().unwrap() as usize;
+            let points: Vec<[f32; 2]> = saved["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .take(count)
+                .map(|p| {
+                    [
+                        (p["x"].as_f64().unwrap() - 96.0) as f32,
+                        256.0 - (256.0 - (p["y"].as_f64().unwrap() - 268.0)) as f32,
+                    ]
+                })
+                .collect();
+            let pressures: Vec<f32> = saved["pressures"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .take(count)
+                .map(|p| p.as_f64().unwrap() as f32)
+                .collect();
+            let actual = reconstruct(
+                &points,
+                &pressures,
+                8.0,
+                case["tool"].as_i64().unwrap() as i32,
+                true,
+            )
+            .unwrap();
+            let hex: String = actual
+                .iter()
+                .flatten()
+                .flat_map(|v| v.to_le_bytes())
+                .map(|b| format!("{b:02x}"))
+                .collect();
+            assert_eq!(hex, case["vector_hex"].as_str().unwrap());
+        }
+    }
+
+    #[test]
+    fn tool1_threshold_and_duplicate_terminal_match_native_vectors() {
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-note-v300.json"
+        ))
+        .unwrap();
+        for case in receipt["boundary_cases"].as_array().unwrap() {
+            let points: Vec<[f32; 2]> = case["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| [p[0].as_f64().unwrap() as f32, p[1].as_f64().unwrap() as f32])
+                .collect();
+            let pressures: Vec<f32> = case["pressures"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| p.as_f64().unwrap() as f32)
+                .collect();
+            let size = case["size"].as_f64().unwrap_or(8.0) as f32;
+            let actual = reconstruct(&points, &pressures, size, 1, true).unwrap();
+            let hex: String = actual
+                .iter()
+                .flatten()
+                .flat_map(|v| v.to_le_bytes())
+                .map(|b| format!("{b:02x}"))
+                .collect();
+            assert_eq!(
+                hex,
+                case["vector_hex"].as_str().unwrap(),
+                "{}",
+                case["name"]
+            );
+        }
+    }
 
     const FIXTURE: &str = include_str!("../../../../conformance/simplebrush-native.json");
     const ORACLE: &[u8] = include_bytes!("../../../../conformance/simplebrush-native.bin");
