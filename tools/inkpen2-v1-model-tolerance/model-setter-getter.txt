@@ -1,0 +1,50 @@
+
+scratch/apk-analysis-native/arm64-v8a/libSPenModel.so:     file format elf64-littleaarch64
+
+
+Disassembly of section .text:
+
+00000000002e240c <SPen::ObjectStroke::SetInitialToloerance(float)@@Base>:
+  2e240c:	fc1d0fe8 	str	d8, [sp, #-48]!
+  2e2410:	a9017bfd 	stp	x29, x30, [sp, #16]
+  2e2414:	a9024ff4 	stp	x20, x19, [sp, #32]
+  2e2418:	910043fd 	add	x29, sp, #0x10
+  2e241c:	f9401014 	ldr	x20, [x0, #32]
+  2e2420:	b40001b4 	cbz	x20, 2e2454 <SPen::ObjectStroke::SetInitialToloerance(float)@@Base+0x48>
+  2e2424:	1e204008 	fmov	s8, s0
+  2e2428:	f9400808 	ldr	x8, [x0, #16]
+  2e242c:	b4000108 	cbz	x8, 2e244c <SPen::ObjectStroke::SetInitialToloerance(float)@@Base+0x40>
+  2e2430:	f9401d08 	ldr	x8, [x8, #56]
+  2e2434:	b40000c8 	cbz	x8, 2e244c <SPen::ObjectStroke::SetInitialToloerance(float)@@Base+0x40>
+  2e2438:	f942b113 	ldr	x19, [x8, #1376]
+  2e243c:	aa1303e0 	mov	x0, x19
+  2e2440:	94066368 	bl	47b1e0 <std::__ndk1::recursive_mutex::lock()@plt>
+  2e2444:	aa1303e0 	mov	x0, x19
+  2e2448:	9406636a 	bl	47b1f0 <std::__ndk1::recursive_mutex::unlock()@plt>
+  2e244c:	bd016688 	str	s8, [x20, #356]
+  2e2450:	1400000e 	b	2e2488 <SPen::ObjectStroke::SetInitialToloerance(float)@@Base+0x7c>
+  2e2454:	d0fff321 	adrp	x1, 148000 <typeinfo name for std::__ndk1::__end_state<char>@@Base-0x1c51c>
+  2e2458:	913d0c21 	add	x1, x1, #0xf43
+  2e245c:	90fff342 	adrp	x2, 14a000 <typeinfo name for std::__ndk1::__end_state<char>@@Base-0x1a51c>
+  2e2460:	91037c42 	add	x2, x2, #0xdf
+  2e2464:	528000c0 	mov	w0, #0x6                   	// #6
+  2e2468:	52800103 	mov	w3, #0x8                   	// #8
+  2e246c:	5280af24 	mov	w4, #0x579                 	// #1401
+  2e2470:	940661e8 	bl	47ac10 <__android_log_print@plt>
+  2e2474:	f0fff242 	adrp	x2, 12d000 <typeinfo name for std::__ndk1::__end_state<char>@@Base-0x3751c>
+  2e2478:	91289442 	add	x2, x2, #0xa25
+  2e247c:	52800100 	mov	w0, #0x8                   	// #8
+  2e2480:	5280af21 	mov	w1, #0x579                 	// #1401
+  2e2484:	940661e7 	bl	47ac20 <SPen::Error::SetError(unsigned long, int, char const*)@plt>
+  2e2488:	f100029f 	cmp	x20, #0x0
+  2e248c:	1a9f07e0 	cset	w0, ne	// ne = any
+  2e2490:	a9424ff4 	ldp	x20, x19, [sp, #32]
+  2e2494:	a9417bfd 	ldp	x29, x30, [sp, #16]
+  2e2498:	fc4307e8 	ldr	d8, [sp], #48
+  2e249c:	d65f03c0 	ret
+
+00000000002e24a0 <SPen::ObjectStroke::GetInitialToloerance() const@@Base>:
+  2e24a0:	f9401008 	ldr	x8, [x0, #32]
+  2e24a4:	b4000068 	cbz	x8, 2e24b0 <SPen::ObjectStroke::GetInitialToloerance() const@@Base+0x10>
+  2e24a8:	bd416500 	ldr	s0, [x8, #356]
+  2e24ac:	d65f03c0 	ret

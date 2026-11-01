@@ -1131,6 +1131,53 @@ mod tests {
     }
 
     #[test]
+    fn v1_model_tolerance_note_trajectory_matches_native_records() {
+        let source: Value = serde_json::from_str(include_str!("../../tests/assets/fountain-v14/saved-source-29.json")).unwrap();
+        let receipt: Value = serde_json::from_str(include_str!("../../../../tools/inkpen2-v1-model-tolerance/receipt.json")).unwrap();
+        let points: Vec<P> = source["points"].as_array().unwrap().iter().map(|p| P {
+            x: (p["x"].as_f64().unwrap() - 96.) as f32,
+            y: (p["y"].as_f64().unwrap() - 268.) as f32,
+        }).collect();
+        let times: Vec<i32> = source["timestamps"].as_array().unwrap().iter().map(|v| v.as_i64().unwrap() as i32).collect();
+        let pressures: Vec<f32> = source["pressures"].as_array().unwrap().iter().map(number).collect();
+        let tools = vec![2; points.len()];
+        let out = super::redraw_v1_bounded(Input {
+            points: &points, times: &times, pressures: &pressures, tools: &tools,
+            rgb: [0; 3], rainbow: None, size: 9., curve_enabled: true, is_shape: false,
+            runtime: Runtime { inverse_scale: [1.; 2], spacing: 1., tolerance: 2., tool_threshold: 20., resolution_min: 1080, initial_alternation: false, initial_time: times[0] },
+        }, 10000).unwrap();
+        let actual: Vec<u8> = out.vertices.iter().flat_map(|v| v[..3].iter().flat_map(|f| f.to_le_bytes())).collect();
+        for (value, phases) in receipt["tolerances"].as_object().unwrap() {
+            for phase in ["draw_object_stroke", "saved_redraw"] {
+                assert_eq!(actual, hex_bytes(phases[phase]["hex"].as_str().unwrap()), "{value}: {phase}");
+            }
+        }
+    }
+
+    #[test]
+    fn v1_model_tolerance_second_note_trajectory_matches_native_records() {
+        let source: Value = serde_json::from_str(include_str!("../../tests/assets/fountain-v14/scene-sources.json")).unwrap();
+        let stroke = &source["strokes"].as_array().unwrap().iter().find(|v| v["index"] == 7).unwrap()["stroke"];
+        let receipt: Value = serde_json::from_str(include_str!("../../../../tools/inkpen2-v1-model-tolerance/scene7-redraw.json")).unwrap();
+        let points: Vec<P> = stroke["points"].as_array().unwrap().iter().map(|p| P {
+            x: (p["x"].as_f64().unwrap() - 148.24111938476562) as f32,
+            y: (p["y"].as_f64().unwrap() - 116.8331298828125) as f32,
+        }).collect();
+        let times: Vec<i32> = stroke["timestamps"].as_array().unwrap().iter().map(|v| v.as_i64().unwrap() as i32).collect();
+        let pressures: Vec<f32> = stroke["pressures"].as_array().unwrap().iter().map(number).collect();
+        let tools = vec![2; points.len()];
+        let out = super::redraw_v1_bounded(Input {
+            points: &points, times: &times, pressures: &pressures, tools: &tools,
+            rgb: [0; 3], rainbow: None, size: 9., curve_enabled: true, is_shape: false,
+            runtime: Runtime { inverse_scale: [1.; 2], spacing: 1., tolerance: 2., tool_threshold: 20., resolution_min: 1080, initial_alternation: false, initial_time: times[0] },
+        }, 10000).unwrap();
+        let actual: Vec<u8> = out.vertices.iter().flat_map(|v| v[..3].iter().flat_map(|f| f.to_le_bytes())).collect();
+        for phase in ["draw_object_stroke", "saved_redraw"] {
+            assert_eq!(actual, hex_bytes(receipt[phase].as_str().unwrap()), "{phase}");
+        }
+    }
+
+    #[test]
     fn null_v1_extra_controls_match_candidate_geometry() {
         let receipt: Value = serde_json::from_str(include_str!(
             "../../../../conformance/inkpen2-v1-extra-controls-native.json"

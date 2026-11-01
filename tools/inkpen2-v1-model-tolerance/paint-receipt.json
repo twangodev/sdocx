@@ -1,0 +1,118 @@
+{
+  "paint": {
+    "geometry_sha256": "f8edc7776da89129a3bd20b901d2338f921daba8f40f41128136cef499a09345",
+    "rgba_sha256": "26fa9f0445127abd9aef0f38bbba33814a53884678c04eb6455ca7228946745d",
+    "output_size": [
+      64,
+      64
+    ],
+    "nonzero_pixels": 155
+  },
+  "paint-0.5": {
+    "geometry_sha256": "f8edc7776da89129a3bd20b901d2338f921daba8f40f41128136cef499a09345",
+    "rgba_sha256": "26fa9f0445127abd9aef0f38bbba33814a53884678c04eb6455ca7228946745d",
+    "output_size": [
+      64,
+      64
+    ],
+    "nonzero_pixels": 155
+  },
+  "paint-scene7-0": {
+    "geometry_sha256": "cb3815a772d2f3cb1477a856e69376c91e569fd3273ec933e417d396b9e285db",
+    "rgba_sha256": "31afb89ca6aabe012f9daba32d802b66106974ee8573c200063b83c0b4b5eb97",
+    "output_size": [
+      64,
+      64
+    ],
+    "nonzero_pixels": 497
+  },
+  "paint-scene7-0.5": {
+    "geometry_sha256": "cb3815a772d2f3cb1477a856e69376c91e569fd3273ec933e417d396b9e285db",
+    "rgba_sha256": "31afb89ca6aabe012f9daba32d802b66106974ee8573c200063b83c0b4b5eb97",
+    "output_size": [
+      64,
+      64
+    ],
+    "nonzero_pixels": 497
+  },
+  "paint-scene7-100": {
+    "geometry_sha256": "cb3815a772d2f3cb1477a856e69376c91e569fd3273ec933e417d396b9e285db",
+    "rgba_sha256": "31afb89ca6aabe012f9daba32d802b66106974ee8573c200063b83c0b4b5eb97",
+    "output_size": [
+      64,
+      64
+    ],
+    "nonzero_pixels": 497
+  },
+  "rgb_l1_over_fcfcfc": {
+    "note29": {
+      "resvg": [
+        2032,
+        52162
+      ],
+      "mupdf": [
+        13492,
+        61664
+      ],
+      "pdfium": [
+        6043,
+        53415
+      ]
+    },
+    "scene7": {
+      "resvg": [
+        5191,
+        167171
+      ],
+      "mupdf": [
+        23177,
+        177863
+      ],
+      "pdfium": [
+        15965,
+        168960
+      ]
+    },
+    "tool3": {
+      "resvg": [
+        5143,
+        144152
+      ],
+      "mupdf": [
+        49253,
+        178507
+      ],
+      "pdfium": [
+        17261,
+        147042
+      ]
+    }
+  },
+  "paint-tool3-0": {
+    "geometry_sha256": "651ec3f50a9572b4353348d22d4e7d36d9f682d2567f2251be565df81257d907",
+    "rgba_sha256": "b750e8b6f5598ca606e64924c19db370278b9fdc70ec71bf67c9a99995d40470",
+    "output_size": [
+      128,
+      128
+    ],
+    "nonzero_pixels": 453
+  },
+  "paint-tool3-0.5": {
+    "geometry_sha256": "651ec3f50a9572b4353348d22d4e7d36d9f682d2567f2251be565df81257d907",
+    "rgba_sha256": "b750e8b6f5598ca606e64924c19db370278b9fdc70ec71bf67c9a99995d40470",
+    "output_size": [
+      128,
+      128
+    ],
+    "nonzero_pixels": 453
+  },
+  "paint-tool3-100": {
+    "geometry_sha256": "651ec3f50a9572b4353348d22d4e7d36d9f682d2567f2251be565df81257d907",
+    "rgba_sha256": "b750e8b6f5598ca606e64924c19db370278b9fdc70ec71bf67c9a99995d40470",
+    "output_size": [
+      128,
+      128
+    ],
+    "nonzero_pixels": 453
+  }
+}

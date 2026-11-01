@@ -1,0 +1,184 @@
+
+scratch/apk-analysis-native/arm64-v8a/libSPenInkPen2.so:     file format elf64-littleaarch64
+
+
+Disassembly of section .text:
+
+000000000003f00c <SPen::InkPen2StrokeDrawableGLV1::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)@@Base>:
+   3f00c:	d10403ff 	sub	sp, sp, #0x100
+   3f010:	a90a7bfd 	stp	x29, x30, [sp, #160]
+   3f014:	a90b6ffc 	stp	x28, x27, [sp, #176]
+   3f018:	a90c67fa 	stp	x26, x25, [sp, #192]
+   3f01c:	a90d5ff8 	stp	x24, x23, [sp, #208]
+   3f020:	a90e57f6 	stp	x22, x21, [sp, #224]
+   3f024:	a90f4ff4 	stp	x20, x19, [sp, #240]
+   3f028:	910283fd 	add	x29, sp, #0xa0
+   3f02c:	d53bd057 	mrs	x23, tpidr_el0
+   3f030:	aa0003f5 	mov	x21, x0
+   3f034:	2a1f03e0 	mov	w0, wzr
+   3f038:	f94016e8 	ldr	x8, [x23, #40]
+   3f03c:	f81f83a8 	stur	x8, [x29, #-8]
+   3f040:	b40011c1 	cbz	x1, 3f278 <SPen::InkPen2StrokeDrawableGLV1::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)@@Base+0x26c>
+   3f044:	aa0203f3 	mov	x19, x2
+   3f048:	b4001182 	cbz	x2, 3f278 <SPen::InkPen2StrokeDrawableGLV1::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)@@Base+0x26c>
+   3f04c:	aa0103e0 	mov	x0, x1
+   3f050:	2a0303f4 	mov	w20, w3
+   3f054:	aa0103f6 	mov	x22, x1
+   3f058:	94008fa2 	bl	62ee0 <SPen::ObjectStroke::GetPointCount() const@plt>
+   3f05c:	7100001f 	cmp	w0, #0x0
+   3f060:	5400106d 	b.le	3f26c <SPen::InkPen2StrokeDrawableGLV1::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)@@Base+0x260>
+   3f064:	2a0003fc 	mov	w28, w0
+   3f068:	aa1603e0 	mov	x0, x22
+   3f06c:	94008fa1 	bl	62ef0 <SPen::ObjectStroke::GetPoint() const@plt>
+   3f070:	aa0003f8 	mov	x24, x0
+   3f074:	aa1603e0 	mov	x0, x22
+   3f078:	94008fa2 	bl	62f00 <SPen::ObjectStroke::GetTimeStamp() const@plt>
+   3f07c:	aa0003fa 	mov	x26, x0
+   3f080:	aa1603e0 	mov	x0, x22
+   3f084:	94008fa3 	bl	62f10 <SPen::ObjectStroke::GetPressure() const@plt>
+   3f088:	f9000be0 	str	x0, [sp, #16]
+   3f08c:	aa1603e0 	mov	x0, x22
+   3f090:	94008fa4 	bl	62f20 <SPen::ObjectStroke::GetTilt() const@plt>
+   3f094:	f9000fe0 	str	x0, [sp, #24]
+   3f098:	aa1603e0 	mov	x0, x22
+   3f09c:	94008fa5 	bl	62f30 <SPen::ObjectStroke::GetOrientation() const@plt>
+   3f0a0:	fd400300 	ldr	d0, [x24]
+   3f0a4:	f94026a8 	ldr	x8, [x21, #72]
+   3f0a8:	aa1503f9 	mov	x25, x21
+   3f0ac:	d0ffff29 	adrp	x9, 25000 <typeinfo name for SPen::InkPen2@@Base-0x1a8>
+   3f0b0:	f90007e0 	str	x0, [sp, #8]
+   3f0b4:	aa1303e0 	mov	x0, x19
+   3f0b8:	4ea01c01 	mov	v1.16b, v0.16b
+   3f0bc:	f9400108 	ldr	x8, [x8]
+   3f0c0:	fd0086a0 	str	d0, [x21, #264]
+   3f0c4:	f90017f8 	str	x24, [sp, #40]
+   3f0c8:	b9011abf 	str	wzr, [x21, #280]
+   3f0cc:	6e180401 	mov	v1.d[1], v0.d[0]
+   3f0d0:	f90013fa 	str	x26, [sp, #32]
+   3f0d4:	3c8f8f21 	str	q1, [x25, #248]!
+   3f0d8:	bd405121 	ldr	s1, [x9, #80]
+   3f0dc:	bd400102 	ldr	s2, [x8]
+   3f0e0:	b9800348 	ldrsw	x8, [x26]
+   3f0e4:	b90136bf 	str	wzr, [x21, #308]
+   3f0e8:	1e211842 	fdiv	s2, s2, s1
+   3f0ec:	bd405aa1 	ldr	s1, [x21, #88]
+   3f0f0:	f9008aa8 	str	x8, [x21, #272]
+   3f0f4:	f9009ea8 	str	x8, [x21, #312]
+   3f0f8:	910492a8 	add	x8, x21, #0x124
+   3f0fc:	bd005ea1 	str	s1, [x21, #92]
+   3f100:	5e0c0401 	mov	s1, v0.s[1]
+   3f104:	f900011f 	str	xzr, [x8]
+   3f108:	9104b2a8 	add	x8, x21, #0x12c
+   3f10c:	f900011f 	str	xzr, [x8]
+   3f110:	1e204023 	fmov	s3, s1
+   3f114:	bd011ea2 	str	s2, [x21, #284]
+   3f118:	1e204002 	fmov	s2, s0
+   3f11c:	94008d5d 	bl	62690 <SPen::RectF::Set(float, float, float, float)@plt>
+   3f120:	f94026a8 	ldr	x8, [x21, #72]
+   3f124:	1e211000 	fmov	s0, #3.000000000000000000e+00
+   3f128:	12000283 	and	w3, w20, #0x1
+   3f12c:	aa1503e0 	mov	x0, x21
+   3f130:	aa1903e1 	mov	x1, x25
+   3f134:	aa1303e2 	mov	x2, x19
+   3f138:	f9400108 	ldr	x8, [x8]
+   3f13c:	bd400101 	ldr	s1, [x8]
+   3f140:	1e201820 	fdiv	s0, s1, s0
+   3f144:	94008e87 	bl	62b60 <SPen::InkPen2StrokeDrawableGLV1::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)@plt>
+   3f148:	aa1603e0 	mov	x0, x22
+   3f14c:	94008f7d 	bl	62f40 <SPen::ObjectStroke::GetToolType() const@plt>
+   3f150:	71000f9f 	cmp	w28, #0x3
+   3f154:	5100079c 	sub	w28, w28, #0x1
+   3f158:	54000223 	b.cc	3f19c <SPen::InkPen2StrokeDrawableGLV1::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)@@Base+0x190>  // b.lo, b.ul, b.last
+   3f15c:	a94223e9 	ldp	x9, x8, [sp, #32]
+   3f160:	2a0003f9 	mov	w25, w0
+   3f164:	d100079b 	sub	x27, x28, #0x1
+   3f168:	91001138 	add	x24, x9, #0x4
+   3f16c:	9100311a 	add	x26, x8, #0xc
+   3f170:	2d7f8740 	ldp	s0, s1, [x26, #-4]
+   3f174:	7100073f 	cmp	w25, #0x1
+   3f178:	b8804701 	ldrsw	x1, [x24], #4
+   3f17c:	1a9f17e3 	cset	w3, eq	// eq = none
+   3f180:	12000284 	and	w4, w20, #0x1
+   3f184:	aa1503e0 	mov	x0, x21
+   3f188:	aa1303e2 	mov	x2, x19
+   3f18c:	94008e79 	bl	62b70 <SPen::InkPen2StrokeDrawableGLV1::drawLine(float, float, long long, SPen::RectF*, bool, bool)@plt>
+   3f190:	f100077b 	subs	x27, x27, #0x1
+   3f194:	9100235a 	add	x26, x26, #0x8
+   3f198:	54fffec1 	b.ne	3f170 <SPen::InkPen2StrokeDrawableGLV1::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)@@Base+0x164>  // b.any
+   3f19c:	12800008 	mov	w8, #0xffffffff            	// #-1
+   3f1a0:	aa1603e0 	mov	x0, x22
+   3f1a4:	f9002bff 	str	xzr, [sp, #80]
+   3f1a8:	290cffff 	stp	wzr, wzr, [sp, #100]
+   3f1ac:	b9006fe8 	str	w8, [sp, #108]
+   3f1b0:	a9087fff 	stp	xzr, xzr, [sp, #128]
+   3f1b4:	b81f03bf 	stur	wzr, [x29, #-16]
+   3f1b8:	94008f62 	bl	62f40 <SPen::ObjectStroke::GetToolType() const@plt>
+   3f1bc:	a94227e8 	ldp	x8, x9, [sp, #32]
+   3f1c0:	2f00e401 	movi	d1, #0x0
+   3f1c4:	b81f43a0 	stur	w0, [x29, #-12]
+   3f1c8:	fc7c7920 	ldr	d0, [x9, x28, lsl #3]
+   3f1cc:	b8bc7901 	ldrsw	x1, [x8, x28, lsl #2]
+   3f1d0:	a940a7e8 	ldp	x8, x9, [sp, #8]
+   3f1d4:	0e617802 	fcvtl	v2.2d, v0.2s
+   3f1d8:	2f00e400 	movi	d0, #0x0
+   3f1dc:	f90027e1 	str	x1, [sp, #72]
+   3f1e0:	bc7c7923 	ldr	s3, [x9, x28, lsl #2]
+   3f1e4:	3c8703e2 	stur	q2, [sp, #112]
+   3f1e8:	bd005fe3 	str	s3, [sp, #92]
+   3f1ec:	b4000048 	cbz	x8, 3f1f4 <SPen::InkPen2StrokeDrawableGLV1::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)@@Base+0x1e8>
+   3f1f0:	bc7c7901 	ldr	s1, [x8, x28, lsl #2]
+   3f1f4:	f9400fe8 	ldr	x8, [sp, #24]
+   3f1f8:	bd005be1 	str	s1, [sp, #88]
+   3f1fc:	b4000048 	cbz	x8, 3f204 <SPen::InkPen2StrokeDrawableGLV1::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)@@Base+0x1f8>
+   3f200:	bc7c7900 	ldr	s0, [x8, x28, lsl #2]
+   3f204:	910103e0 	add	x0, sp, #0x40
+   3f208:	d10043a4 	sub	x4, x29, #0x10
+   3f20c:	910123e5 	add	x5, sp, #0x48
+   3f210:	52800022 	mov	w2, #0x1                   	// #1
+   3f214:	52800023 	mov	w3, #0x1                   	// #1
+   3f218:	2a1f03e6 	mov	w6, wzr
+   3f21c:	2a1f03e7 	mov	w7, wzr
+   3f220:	bd0063e0 	str	s0, [sp, #96]
+   3f224:	b90003ff 	str	wzr, [sp]
+   3f228:	94008ed6 	bl	62d80 <SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)@plt>
+   3f22c:	a9037fff 	stp	xzr, xzr, [sp, #48]
+   3f230:	910103e1 	add	x1, sp, #0x40
+   3f234:	9100c3e2 	add	x2, sp, #0x30
+   3f238:	12000283 	and	w3, w20, #0x1
+   3f23c:	aa1503e0 	mov	x0, x21
+   3f240:	94008e3c 	bl	62b30 <SPen::InkPen2StrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)@plt>
+   3f244:	9100c3e1 	add	x1, sp, #0x30
+   3f248:	aa1303e0 	mov	x0, x19
+   3f24c:	94008ed1 	bl	62d90 <SPen::RectF::Union(SPen::RectF const&)@plt>
+   3f250:	1e2e1000 	fmov	s0, #1.000000000000000000e+00
+   3f254:	aa1303e0 	mov	x0, x19
+   3f258:	94008ed2 	bl	62da0 <SPen::RectF::IncreaseRect(float)@plt>
+   3f25c:	910103e0 	add	x0, sp, #0x40
+   3f260:	94008ed4 	bl	62db0 <SPen::MotionEvent::~MotionEvent()@plt>
+   3f264:	52800020 	mov	w0, #0x1                   	// #1
+   3f268:	14000004 	b	3f278 <SPen::InkPen2StrokeDrawableGLV1::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)@@Base+0x26c>
+   3f26c:	528000e0 	mov	w0, #0x7                   	// #7
+   3f270:	94008e6c 	bl	62c20 <SPen::Error::SetError(unsigned long)@plt>
+   3f274:	2a1f03e0 	mov	w0, wzr
+   3f278:	f94016e8 	ldr	x8, [x23, #40]
+   3f27c:	f85f83a9 	ldur	x9, [x29, #-8]
+   3f280:	eb09011f 	cmp	x8, x9
+   3f284:	54000241 	b.ne	3f2cc <SPen::InkPen2StrokeDrawableGLV1::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)@@Base+0x2c0>  // b.any
+   3f288:	a94f4ff4 	ldp	x20, x19, [sp, #240]
+   3f28c:	a94e57f6 	ldp	x22, x21, [sp, #224]
+   3f290:	a94d5ff8 	ldp	x24, x23, [sp, #208]
+   3f294:	a94c67fa 	ldp	x26, x25, [sp, #192]
+   3f298:	a94b6ffc 	ldp	x28, x27, [sp, #176]
+   3f29c:	a94a7bfd 	ldp	x29, x30, [sp, #160]
+   3f2a0:	910403ff 	add	sp, sp, #0x100
+   3f2a4:	d65f03c0 	ret
+   3f2a8:	aa0003f3 	mov	x19, x0
+   3f2ac:	910103e0 	add	x0, sp, #0x40
+   3f2b0:	94008ec0 	bl	62db0 <SPen::MotionEvent::~MotionEvent()@plt>
+   3f2b4:	f94016e8 	ldr	x8, [x23, #40]
+   3f2b8:	f85f83a9 	ldur	x9, [x29, #-8]
+   3f2bc:	eb09011f 	cmp	x8, x9
+   3f2c0:	54000061 	b.ne	3f2cc <SPen::InkPen2StrokeDrawableGLV1::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)@@Base+0x2c0>  // b.any
+   3f2c4:	aa1303e0 	mov	x0, x19
+   3f2c8:	97ffd714 	bl	34f18 <SPen::InkPen2OutlineShader::szFragmentShader@@Base+0xc904>
+   3f2cc:	9400931d 	bl	63f40 <__stack_chk_fail@plt>

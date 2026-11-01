@@ -5817,10 +5817,17 @@ fn prepare_inkpen2_internal(
     } else {
         None
     };
-    // Binary field 13 is multiplied by a native document conversion factor.
-    // Until that factor is derived for this input route, only absent/zero is safe.
+    // The observed V1 ObjectStroke redraw does not read the Model tolerance.
+    // Native controls cover 0, 0.5 and 100; the interval between them is an
+    // inference. Other versions require zero: the document factor is unknown.
     let tolerance = rendering.style.initial_tolerance.unwrap_or(0.0);
-    if !tolerance.is_finite() || tolerance != 0.0 {
+    if !tolerance.is_finite()
+        || if v1_scale.is_some() {
+            !(0.0..=100.0).contains(&tolerance)
+        } else {
+            tolerance != 0.0
+        }
+    {
         return None;
     }
     let points: Vec<_> = stroke
@@ -20799,6 +20806,56 @@ mod tests {
             }
             assert_eq!(pixmap.pixel(50, 5).unwrap().blue(), 255);
         }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn inkpen2_v1_model_tolerance_public_exports_and_boundaries() {
+        let mut stroke: Stroke = serde_json::from_str(include_str!("../tests/assets/fountain-v14/saved-source-29.json")).unwrap();
+        for point in &mut stroke.points { point.x -= 96.; point.y -= 268.; }
+        stroke.pen_width = 9.;
+        stroke.color = Some(Color { r: 51, g: 102, b: 153 });
+        stroke.bbox = BoundingBox { x_min: 0., y_min: 0., x_max: 64., y_max: 64. };
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.metadata = None;
+        rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.InkPen2".into());
+        rendering.advanced_settings = None;
+        rendering.tool_type_raw = 2;
+        rendering.properties.generated = false;
+        rendering.properties.millisecond_timestamps = false;
+        rendering.properties.top_layer_pen = false;
+        rendering.style = StrokeStyle::default();
+        rendering.style.color_argb = Some(0xff336699);
+        rendering.style.pen_size = Some(9.);
+        rendering.style.line_type_raw = Some(0);
+        rendering.style.stroke_type_raw = Some(0);
+        let options = RenderOptions {
+            inkpen2_profile: Some(InkPen2RenderProfile { screen_width: 1920, screen_height: 1080, enhanced_antialias: false }),
+            inkpen2_v1_output_scale: Some(super::InkPen2V1OutputScale::One),
+            ..Default::default()
+        };
+        let doc = |stroke: Stroke| {
+            let mut page = page_with_uncolored_stroke();
+            page.width = 64; page.height = 64; page.objects = vec![stroke.into()];
+            document(page)
+        };
+        let export = |stroke: Stroke, options: &RenderOptions| {
+            let doc = doc(stroke);
+            (render_document_svg(&doc, options)[0].svg.clone(), crate::render_document_pdf(&doc, options, &Default::default()).unwrap())
+        };
+        let expected = export(stroke.clone(), &options);
+        assert_ne!(expected, export(stroke.clone(), &RenderOptions::default()));
+        for tolerance in [0., 0.5, 2., 100.] {
+            let mut input = stroke.clone(); input.rendering.as_mut().unwrap().style.initial_tolerance = Some(tolerance);
+            assert_eq!(export(input, &options), expected, "tolerance {tolerance}");
+        }
+        for tolerance in [f32::from_bits(0x8000_0001), f32::from_bits(100.0_f32.to_bits() + 1), f32::INFINITY, f32::NAN] {
+            let mut input = stroke.clone(); input.rendering.as_mut().unwrap().style.initial_tolerance = Some(tolerance);
+            assert_eq!(export(input.clone(), &options), export(input, &RenderOptions::default()), "tolerance {tolerance}");
+        }
+        let mut v9 = stroke; v9.rendering.as_mut().unwrap().advanced_settings = Some("9;".into());
+        v9.rendering.as_mut().unwrap().style.initial_tolerance = Some(0.5);
+        assert!(super::prepare_inkpen2_v9(&v9, options.inkpen2_profile, RenderTheme::for_canvas(false)).is_none());
     }
 
     #[cfg(feature = "pdf")]
