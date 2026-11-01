@@ -154,6 +154,17 @@ pub(super) fn collect_reuse_candidates(
     nodes.retain(|_, key| counts.get(key).copied().unwrap_or(0) >= 2);
 }
 
+pub(super) fn reuse_transform_is_safe(ctm: krilla::geom::Transform) -> bool {
+    ctm.kx() == 0.0
+        && ctm.ky() == 0.0
+        && ctm.sx().is_finite()
+        && ctm.sy().is_finite()
+        && ctm.tx().is_finite()
+        && ctm.ty().is_finite()
+        && ctm.sx() != 0.0
+        && ctm.sy() != 0.0
+}
+
 pub(super) fn render(
     group: &usvg::Group,
     surface: &mut Surface,
@@ -169,10 +180,16 @@ pub(super) fn render(
                 _ => false,
             })
     }
+    // Include caller transforms as well as SVG ancestors. Some PDF readers
+    // round rotated or sheared paths differently across a form boundary.
+    let axis_aligned = process_context.reuse_base_transform_safe
+        && reuse_transform_is_safe(group.abs_transform().to_krilla())
+        && reuse_transform_is_safe(surface.ctm());
     if let Some(key) = process_context
         .reuse_nodes
         .get(&(group as *const _ as usize))
         .cloned()
+        && axis_aligned
         && !contains_native_ink(group, process_context)
     {
         if let Some(graphic) = process_context.reusable_graphics.get(&key) {
@@ -309,14 +326,19 @@ mod reuse_tests {
         )
     }
     fn pdf(svg: &str) -> Vec<u8> {
+        pdf_transformed(svg, krilla::geom::Transform::identity())
+    }
+    fn pdf_transformed(svg: &str, transform: krilla::geom::Transform) -> Vec<u8> {
         let tree = usvg::Tree::from_str(svg, &Default::default()).unwrap();
         let mut doc = Document::new();
         let size = Size::from_wh(100., 50.).unwrap();
         let mut page = doc.start_page_with(PageSettings::new(size));
         let mut surface = page.surface();
+        surface.push_transform(&transform);
         surface
             .draw_svg(&tree, size, SvgSettings::default())
             .unwrap();
+        surface.pop();
         surface.finish();
         page.finish();
         doc.finish().unwrap()
@@ -374,6 +396,56 @@ mod reuse_tests {
             std::fs::write(format!("{dir}/shared-mask.pdf"), pdf(&mask(true))).unwrap();
             std::fs::write(format!("{dir}/flat-mask.pdf"), pdf(&mask(false))).unwrap();
         }
+    }
+    #[test]
+    fn rotated_or_sheared_ancestors_disable_reuse() {
+        let original = svg(true, false, false, "");
+        let unmarked = original.replace("sdocx-montblanc-reuse-", "ordinary-");
+        for transform in ["rotate(7 50 25)", "skewX(12)", "translate(2 3) rotate(7)"] {
+            let wrap = |input: &str| {
+                input
+                    .replace(
+                        "<rect width='100'",
+                        &format!("<g transform='{transform}'><rect width='100'"),
+                    )
+                    .replace("</svg>", "</g></svg>")
+            };
+            assert_eq!(
+                form_count(&pdf(&wrap(&original))),
+                form_count(&pdf(&wrap(&unmarked)))
+            );
+        }
+        assert!(!super::reuse_transform_is_safe(
+            krilla::geom::Transform::from_row(f32::NAN, 0.0, 0.0, 1.0, 0.0, 0.0)
+        ));
+        assert!(!super::reuse_transform_is_safe(
+            krilla::geom::Transform::from_scale(0.0, 1.0)
+        ));
+        let rotation = krilla::geom::Transform::from_rotate(7.0);
+        assert_eq!(
+            form_count(&pdf_transformed(&original, rotation)),
+            form_count(&pdf_transformed(&unmarked, rotation))
+        );
+        // Net identity across nested SVG transforms remains eligible.
+        let cancel = |input: &str| {
+            input
+                .replace(
+                    "<rect width='100'",
+                    "<g transform='rotate(90)'><g transform='rotate(-90)'><rect width='100'",
+                )
+                .replace("</svg>", "</g></g></svg>")
+        };
+        assert!(form_count(&pdf(&cancel(&original))) > form_count(&pdf(&cancel(&unmarked))));
+        // Reflection and axis-aligned scaling retain reuse.
+        let wrap = |input: &str| {
+            input
+                .replace(
+                    "<rect width='100'",
+                    "<g transform='translate(100 0) scale(-1 2)'><rect width='100'",
+                )
+                .replace("</svg>", "</g></svg>")
+        };
+        assert!(form_count(&pdf(&wrap(&original))) > form_count(&pdf(&wrap(&unmarked))));
     }
     #[test]
     fn registered_native_ink_descendant_is_never_reused_or_skipped() {

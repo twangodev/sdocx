@@ -363,6 +363,7 @@ struct ProcessContext<'a, 'h, 'o> {
     ink_ids: Option<&'h std::collections::HashSet<String>>,
     ink_hook: Option<&'h mut InkHook<'o>>,
     error: Option<SvgError>,
+    reuse_base_transform_safe: bool,
     reuse_counts: std::collections::HashMap<Vec<u32>, usize>,
     reuse_nodes: std::collections::HashMap<usize, Vec<u32>>,
     reusable_graphics: std::collections::HashMap<Vec<u32>, krilla::graphic::Graphic>,
@@ -379,6 +380,7 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
             ink_ids: None,
             ink_hook: None,
             error: None,
+            reuse_base_transform_safe: false,
             reuse_counts: Default::default(),
             reuse_nodes: Default::default(),
             reusable_graphics: Default::default(),
@@ -642,6 +644,7 @@ fn render_tree_with_text<'h, 'o>(
     {
         fc.set_cull_viewport(tree.root(), viewport);
     }
+    fc.reuse_base_transform_safe = group::reuse_transform_is_safe(surface.ctm());
     group::collect_reuse_candidates(tree.root(), &mut fc.reuse_counts, &mut fc.reuse_nodes);
     group::render(tree.root(), surface, &mut fc);
     fc.error.map_or(Ok(()), Err)

@@ -1,0 +1,131 @@
+{
+  "exports_sha256": {
+    "cancel-flat.pdf": "d317fc21a048590f7325e5a517c19ce61f9d33531570ae25340433e833716eb8",
+    "cancel-marked.pdf": "2cf7a9be0839b6222ff4e23d9755425c9356aae959bfb286b526e144e34ee720",
+    "direct.pdf": "3e1cb6d8f2b755fc34c7363effaf7e913619cb218c1b937bd906c861a910c0f6",
+    "normal-flat.pdf": "d317fc21a048590f7325e5a517c19ce61f9d33531570ae25340433e833716eb8",
+    "normal-marked.pdf": "2cf7a9be0839b6222ff4e23d9755425c9356aae959bfb286b526e144e34ee720",
+    "reflect-flat.pdf": "4986d8b8195ba5e10cca170b5cc74d0d250435604c0dc7453a1151fc9cdf9a5c",
+    "reflect-marked.pdf": "705959322960e646c6a87b2867d8b3d8303d8747c4386db11bc6e6e783900fb7",
+    "rotate-flat.pdf": "7b2dc611bcaead0698a6e45eb246aa5e5f5cf7cf665c4342cd572ce0a61e17d1",
+    "rotate-marked.pdf": "7b2dc611bcaead0698a6e45eb246aa5e5f5cf7cf665c4342cd572ce0a61e17d1",
+    "scene.svg": "9e03135c06c13fbd951b9a90601ac764af500dc77d8db3b82ad93623ac2967fd"
+  },
+  "inputs_sha256": {
+    "Cargo.lock": "5bd9bda9da7b4d02adc97ae3df5ffcea0b596e8dc02d6428c082c1093bea8153",
+    "crates/sdocx/Cargo.toml": "a5d79ce48b8741328598fdd67755a7ca4d0f9b54edcea1f90f58152b95a440ed",
+    "crates/sdocx/examples/montblanc_pdf_reuse_mixed_probe.rs": "4cbe68086d8ec718f9e2840552b8408188fde55b3f441b0e3c2d5929a3eeb213",
+    "crates/sdocx/src/pdf/svg/group.rs": "7d52ce8861f33b3f53f6d555ae4397a2115d6d8d539cd42b5919fb92748bcdff",
+    "crates/sdocx/src/pdf/svg/mod.rs": "81c0ee0c3d87b8374617cb147a7a2f991e01d1fdc1513ab0c297dbf446618aff",
+    "crates/sdocx/src/render/montblanc_candidate.rs": "4ac3b609b3c456e40b70fefc57c418232032c9005df7489000605f83a5a456db",
+    "crates/sdocx/tests/assets/legacy-marker/synthetic-serialized.sdocx": "ec4476cba55a9e92e4d5c54eb5789e0842a223e120825009fffd004a952d7de5",
+    "tools/montblanc/pdf-reuse-mixed-v305/compare.py": "0facefcaf0a70f8748ada73037d49053be010da63182987a4c9760b39fbb01ff"
+  },
+  "results": {
+    "mupdf/1x/cancel": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "mupdf/1x/direct": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "mupdf/1x/normal": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "mupdf/1x/reflect": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "mupdf/1x/rotate": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "mupdf/2x/cancel": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "mupdf/2x/direct": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "mupdf/2x/normal": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "mupdf/2x/reflect": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "mupdf/2x/rotate": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "pdfium/1x/cancel": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "pdfium/1x/direct": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "pdfium/1x/normal": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "pdfium/1x/reflect": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "pdfium/1x/rotate": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "pdfium/2x/cancel": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "pdfium/2x/direct": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "pdfium/2x/normal": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "pdfium/2x/reflect": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    },
+    "pdfium/2x/rotate": {
+      "changed_channels": 0,
+      "max_delta": 0,
+      "sum_delta": 0
+    }
+  },
+  "scope": "Synthetic parsed fixture with two offset Montblanc strokes and one interleaved ordinary object. Flat controls replace producer IDs after public SVG generation. Transforms wrap the public SVG page. Direct PDF is compared with normal flat SVG PDF. The reuse guard requires finite nonzero axis-aligned SVG entry, cumulative SVG, and current surface transforms; the Rust tests cover rotation, shear, caller transform, and registered native-ink descendant fallback. Native-ink hooks and caller surface transforms are not rasterized by this probe. No device claim.",
+  "versions": {
+    "mupdf": "1.28.2",
+    "pdfium": "156.0.8076.0"
+  }
+}

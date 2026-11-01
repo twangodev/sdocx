@@ -73,3 +73,7 @@ required-features = ["pdf"]
 [[example]]
 name = "fountain_v14_scale_probe"
 required-features = ["pdf", "serde"]
+
+[[example]]
+name = "montblanc_pdf_reuse_mixed_probe"
+required-features = ["pdf", "serde"]
