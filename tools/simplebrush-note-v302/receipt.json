@@ -1,0 +1,457 @@
+{
+  "library_sha256": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+  "scope": "Sixth setValue invocation in v301 crossing, Unicorn ARM64; Q register snapshots are before the listed instruction.",
+  "snapshots": [
+    {
+      "rva": "0x1c4f0",
+      "v16": [
+        "4227f2bf",
+        "42337afa",
+        "42337af7",
+        "4227f2be"
+      ],
+      "v5": [
+        "c0124900",
+        "40124930",
+        "00000000",
+        "00000000"
+      ],
+      "v1": [
+        "4236db6c",
+        "00000000",
+        "00000000",
+        "00000000"
+      ]
+    },
+    {
+      "rva": "0x1c548",
+      "v16": [
+        "4227f2bf",
+        "42337afa",
+        "42337af7",
+        "4227f2be"
+      ],
+      "v5": [
+        "42311487",
+        "423ca256",
+        "423ca256",
+        "42311483"
+      ],
+      "v1": [
+        "4236db6c",
+        "00000000",
+        "00000000",
+        "00000000"
+      ]
+    },
+    {
+      "rva": "0x1c550",
+      "v16": [
+        "4227f2bf",
+        "42337afa",
+        "42337af7",
+        "4227f2be"
+      ],
+      "v5": [
+        "42311487",
+        "423ca256",
+        "423ca256",
+        "42311483"
+      ],
+      "v1": [
+        "4236db6c",
+        "00000000",
+        "00000000",
+        "00000000"
+      ]
+    },
+    {
+      "rva": "0x1c558",
+      "v16": [
+        "4227f2bf",
+        "42337afa",
+        "42337af7",
+        "4227f2be"
+      ],
+      "v5": [
+        "42311487",
+        "423ca256",
+        "423ca256",
+        "42311483"
+      ],
+      "v1": [
+        "422c83a3",
+        "42380ea8",
+        "42380ea6",
+        "422c83a0"
+      ]
+    }
+  ],
+  "draw_path_7_native_start_width": "40829840",
+  "previous_reconstruction_start_width": "40829846",
+  "vector_discrepancies_before_fix": {
+    "sample_indices": [
+      24,
+      25,
+      26
+    ],
+    "radius_ulp": [
+      6,
+      4,
+      2
+    ]
+  },
+  "source": "Native capture getters and retained complete vectors: conformance/simplebrush-cross-v301.json",
+  "determinant_instructions": [
+    {
+      "rva": "0x1c45c",
+      "opcode_u32": "1e2508c6",
+      "instruction": "fmul s6, s6, s5",
+      "registers_before": {
+        "v2": [
+          "422db6dc",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v4": [
+          "422db6db",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v5": [
+          "c0124900",
+          "40124930",
+          "00000000",
+          "00000000"
+        ],
+        "v6": [
+          "c22db6db",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v18": [
+          "400278a5",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v25": [
+          "404ee126",
+          "404ee126",
+          "00000000",
+          "00000000"
+        ],
+        "v26": [
+          "c00278a5",
+          "400278a5",
+          "00000000",
+          "00000000"
+        ]
+      }
+    },
+    {
+      "rva": "0x1c460",
+      "opcode_u32": "5fa55046",
+      "instruction": "fmls s6, s2, v5.s[1]",
+      "registers_before": {
+        "v2": [
+          "422db6dc",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v4": [
+          "422db6db",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v5": [
+          "c0124900",
+          "40124930",
+          "00000000",
+          "00000000"
+        ],
+        "v6": [
+          "42c687a4",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v18": [
+          "400278a5",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v25": [
+          "404ee126",
+          "404ee126",
+          "00000000",
+          "00000000"
+        ],
+        "v26": [
+          "c00278a5",
+          "400278a5",
+          "00000000",
+          "00000000"
+        ]
+      }
+    },
+    {
+      "rva": "0x1c464",
+      "opcode_u32": "0e0404c6",
+      "instruction": "dup v6.2s, v6.s[0]",
+      "registers_before": {
+        "v2": [
+          "422db6dc",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v4": [
+          "422db6db",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v5": [
+          "c0124900",
+          "40124930",
+          "00000000",
+          "00000000"
+        ],
+        "v6": [
+          "ba04bc15",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v18": [
+          "400278a5",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v25": [
+          "404ee126",
+          "404ee126",
+          "00000000",
+          "00000000"
+        ],
+        "v26": [
+          "c00278a5",
+          "400278a5",
+          "00000000",
+          "00000000"
+        ]
+      }
+    },
+    {
+      "rva": "0x1c468",
+      "opcode_u32": "1e6040d2",
+      "instruction": "fmov d18, d6",
+      "registers_before": {
+        "v2": [
+          "422db6dc",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v4": [
+          "422db6db",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v5": [
+          "c0124900",
+          "40124930",
+          "00000000",
+          "00000000"
+        ],
+        "v6": [
+          "ba04bc15",
+          "ba04bc15",
+          "00000000",
+          "00000000"
+        ],
+        "v18": [
+          "400278a5",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v25": [
+          "404ee126",
+          "404ee126",
+          "00000000",
+          "00000000"
+        ],
+        "v26": [
+          "c00278a5",
+          "400278a5",
+          "00000000",
+          "00000000"
+        ]
+      }
+    },
+    {
+      "rva": "0x1c534",
+      "opcode_u32": "0e3acf26",
+      "instruction": "fmla v6.2s, v25.2s, v26.2s",
+      "registers_before": {
+        "v2": [
+          "422db6dc",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v4": [
+          "422db6db",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v5": [
+          "c350fab4",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v6": [
+          "ba04bc15",
+          "ba04bc15",
+          "00000000",
+          "00000000"
+        ],
+        "v18": [
+          "41272ee8",
+          "41272ee8",
+          "41272ee8",
+          "41272ee8"
+        ],
+        "v25": [
+          "404ee104",
+          "404ee104",
+          "00000000",
+          "00000000"
+        ],
+        "v26": [
+          "c002b7e9",
+          "4002b7e9",
+          "00000000",
+          "00000000"
+        ]
+      }
+    },
+    {
+      "rva": "0x1c538",
+      "opcode_u32": "4e8638c6",
+      "instruction": "zip1 v6.4s, v6.4s, v6.4s",
+      "registers_before": {
+        "v2": [
+          "422db6dc",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v4": [
+          "422db6db",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v5": [
+          "c350fab4",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "v6": [
+          "c0d349ec",
+          "40d341a0",
+          "00000000",
+          "00000000"
+        ],
+        "v18": [
+          "41272ee8",
+          "41272ee8",
+          "41272ee8",
+          "41272ee8"
+        ],
+        "v25": [
+          "404ee104",
+          "404ee104",
+          "00000000",
+          "00000000"
+        ],
+        "v26": [
+          "c002b7e9",
+          "4002b7e9",
+          "00000000",
+          "00000000"
+        ]
+      }
+    }
+  ],
+  "trace_sha256": "d876646bd06b2b902e8e9f801a31422a4336a7216335ecbba26f426efa0c7e99",
+  "trace_reproduced_identically": true,
+  "validation": {
+    "scope": "Global set_value_edges implementation; 86 SimpleBrush-filtered unit tests, including existing complete native vector captures across supported tools, sizes, and paths, plus exact public crossing and open-terminal vector assertions and paired exports. Existing capture coverage is bounded; no universal parity claim.",
+    "tests": "CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_BUILD_JOBS=2 cargo test -p sdocx --features pdf,serde --lib simplebrush",
+    "passed": 86,
+    "readers": {
+      "resvg": "0.45.1",
+      "MuPDF": "1.28.2",
+      "PDFium": "156.0.8076.0"
+    },
+    "cases": {
+      "cross": {
+        "sha256": {
+          "native.json": "1a53ffb1e808ef2306f29cd541d5266c36867d0775beeb1add50c300e410f582",
+          "generic.svg": "d6ae3593507ebcbbb7098387a6c6dbbfd6165132125fb1f8881af1ff3a56149d",
+          "two.svg": "b9d16aa05433aceeac7d07f25f5349f091f874e9a86916fff58e016f23222bb9",
+          "generic.pdf": "f5d6feac84686dc28c7ea870ae48d8a938a91ef5b84657bad4bf0a9a3f72d03f",
+          "two.pdf": "a1cd7d902165815aaa17abe8638244bc81af4b0144799019ae95e9e4845dd610"
+        },
+        "svg_alpha_l1_generic_two": [
+          646971,
+          8388
+        ],
+        "mupdf_matched_paper_rgb_l1_generic_two": [
+          710111,
+          52312
+        ],
+        "pdfium_matched_paper_rgb_l1_generic_two": [
+          714209,
+          90766
+        ]
+      },
+      "open": {
+        "sha256": {
+          "native.json": "62fa14500c48a76523cb90b92f5314512dc8ca36641314ae66ddb82b0c76b442",
+          "generic.svg": "52ef223a98d538cc913b1104b9601bd643c8db30175fcfcebc7dd2cd56f213dc",
+          "two.svg": "2dd38c850d41712ebc66ac0d51f31e347d7bdb3df85a3fe4caecbf430fce9a15",
+          "generic.pdf": "a001240a43acb6caaaaa3f85aec6a0bb69dbefa00c6547ec4cb60cad66a6ca4a",
+          "two.pdf": "8709f1e6f5ad7802c52ea9d594236f0ed0b2b56b57400034a62d8555b5608783"
+        },
+        "svg_alpha_l1_generic_two": [
+          646702,
+          8287
+        ],
+        "mupdf_matched_paper_rgb_l1_generic_two": [
+          709354,
+          52860
+        ],
+        "pdfium_matched_paper_rgb_l1_generic_two": [
+          713677,
+          90669
+        ]
+      }
+    }
+  }
+}

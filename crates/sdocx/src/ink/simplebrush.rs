@@ -24,11 +24,10 @@ fn half_width(size: f32, pressure: f32) -> f32 {
 // Source CurveStyle::setValue (SimpleBrush DSO RVA 0x1c408) computes both
 // endpoint offsets in float32. Preserve the fused multiply-add sites and the
 // scalar multiply order from that source routine.
-fn offset_edges(point: P, dx: f32, dy: f32, width: f32) -> [P; 2] {
+fn offset_edges(point: P, dx: f32, dy: f32, width: f32, determinant: f32) -> [P; 2] {
     let dx_squared = dx * dx;
     let length_squared = (-dy).mul_add(-dy, dx_squared);
     let length = length_squared.sqrt();
-    let determinant = (-point.y).mul_add(dx, point.x * dy);
     let negative_dot = (-dy).mul_add(point.y, (-point.x) * dx);
     let half_width = width * 0.5;
 
@@ -49,8 +48,11 @@ fn offset_edges(point: P, dx: f32, dy: f32, width: f32) -> [P; 2] {
 fn set_value_edges(previous: P, current: P, old_width: f32, new_width: f32) -> EdgePair {
     let dx = current.x - previous.x;
     let dy = current.y - previous.y;
-    let old_edges = offset_edges(previous, dx, dy, old_width);
-    let new_edges = offset_edges(current, dx, dy, new_width);
+    // setValue computes this line determinant once from the previous point
+    // and reuses it for both endpoint offsets (RVA 0x1c460 and 0x1c534).
+    let determinant = (-previous.y).mul_add(dx, previous.x * dy);
+    let old_edges = offset_edges(previous, dx, dy, old_width, determinant);
+    let new_edges = offset_edges(current, dx, dy, new_width, determinant);
     EdgePair([
         midpoint(old_edges[0], new_edges[0]),
         midpoint(old_edges[1], new_edges[1]),
@@ -629,7 +631,7 @@ mod tests {
     }
 
     #[test]
-    fn tool0_crossing_native_geometry_is_bounded() {
+    fn tool0_crossing_native_geometry_is_exact() {
         let receipt: Value = serde_json::from_str(include_str!(
             "../../../../conformance/simplebrush-cross-v301.json"
         ))
@@ -656,12 +658,7 @@ mod tests {
                 for lane in 0..3 {
                     let bits =
                         u32::from_le_bytes(native[lane * 4..lane * 4 + 4].try_into().unwrap());
-                    let difference = sample[lane].to_bits().abs_diff(bits);
-                    assert!(
-                        difference <= if lane == 2 { 6 } else { 0 },
-                        "{} lane {lane} difference {difference}",
-                        case["name"]
-                    );
+                    assert_eq!(sample[lane].to_bits(), bits, "{} lane {lane}", case["name"]);
                 }
             }
         }
