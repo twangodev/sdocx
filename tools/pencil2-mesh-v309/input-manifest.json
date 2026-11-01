@@ -1,0 +1,52 @@
+{
+  "crate_snapshot": {
+    "encoding": "Sorted relative path, NUL, file SHA-256, newline; crates/sdocx src tree plus Cargo.toml and build.rs.",
+    "file_count": 462,
+    "sha256": "c2e76e3888bcb82f3cc1d7545120d1de0e6ed2375f2438a96aaa10a7de9d6d4f"
+  },
+  "native_local_paths": [
+    "tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/inkpen_paint_native.py",
+    "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-geometry-v12/capture_candidate.py",
+    "tools/pencil2-independent-drawing/capture.py",
+    "tools/pencil2-mixed-drawing/capture.patch"
+  ],
+  "scope": "Default checks retained diagnostic and fixture inputs; --workspace additionally checks the clean archived crate at source_revision; --native-local checks optional local native recapture adapters. Host toolchain, drivers, native DSOs and dependencies are not fully pinned.",
+  "sha256": {
+    "Cargo.lock": "5bd9bda9da7b4d02adc97ae3df5ffcea0b596e8dc02d6428c082c1093bea8153",
+    "Cargo.toml": "0bad4ac50f469c7ab58363c76edecfed05e47e2c4dbeb1bbb3430b724b187a21",
+    "conformance/fountain-v14-saved-scene-inputs.json": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+    "tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+    "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-geometry-v12/capture_candidate.py": "996ef6db3a376619e9e5d1d05b7d5e1a940726f3feb2ef6895275a705576ee3e",
+    "tools/pencil2-independent-drawing/capture.py": "974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7",
+    "tools/pencil2-mesh-v308/pixel_probe.py": "5adebdb89b9f1e1954aee7e60bd2413a89c968bcf19591ce8b83e1a136c5d90c",
+    "tools/pencil2-mesh-v308/scene.py": "3fb9251787c81dbba0d1ce8b2728f0f0f4c2d6af38a6db607f1501c8c4333447",
+    "tools/pencil2-mesh-v309/Cargo.lock": "abf859a29657cfbe23422b6ff7024c8e460ad8bea9eed5089a49b3726beecf92",
+    "tools/pencil2-mesh-v309/Cargo.toml": "aff8cc4c1953abcf86e4698c827271c598dd9ed186072c53ab46c18eeeedf7b6",
+    "tools/pencil2-mesh-v309/capture.py": "7ff09523bcf3723cd0f7a5e185d0cb26fbb7c44d6b91c1da05c3fb6ea9045ccb",
+    "tools/pencil2-mesh-v309/check_metrics.py": "6ae3c02c86970db9de79b0321658d1ef9a94c06ca301da761a80a2866b3e1b49",
+    "tools/pencil2-mesh-v309/clean_replay.sh": "0e5ebaaa697eb42399d997209e913493e8f3832d7445412d4f1db764dbe1e56a",
+    "tools/pencil2-mesh-v309/first_probe.py": "cf11ef731373b102b52aedbf7156f16f9c8facb0a6b0f7090838a64004ea3484",
+    "tools/pencil2-mesh-v309/geometry.rs": "4fbdec947c1f32e4e87b7bd2d29d08311e745ab392e7ff0b6da3cf1dbdef1f2c",
+    "tools/pencil2-mesh-v309/geometry.sh": "9aac82b3252bae108d68ce703319502cb2d5100a6311b55751404fbdb0f71eac",
+    "tools/pencil2-mesh-v309/note-native-geometry.vbo": "7d88c4f7e2f8fa148de58e515194d59736ceda859abd6297a0de7b330cc987cf",
+    "tools/pencil2-mesh-v309/public_compare.py": "f2ebe800f37e053287005fee6074a3bb15e4e2be570466bde01bde8c087bc538",
+    "tools/pencil2-mesh-v309/scene.py": "b15972e868a58efeac7e99df6c4740d7bc33cf5f692a0041532271acecc6b1d5",
+    "tools/pencil2-mesh-v309/src/main.rs": "04cb643c65a48f510c80c623e46c70d8cdd84a29692ea33b878a4d6c1c050c09",
+    "tools/pencil2-mesh-v309/synthetic.py": "077809070c063afffb06ac586497175ba09b094ae223bcabf35415c05cdad943",
+    "tools/pencil2-mesh-v309/verify_inputs.py": "31bc006b486067696b7840e8e2a9b11faead6c9a90aa588f14915d1ee2c282b5",
+    "tools/pencil2-mixed-drawing/capture.patch": "b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83",
+    "tools/pencil2-mixed-scene-controls/blue-2-first.zlib": "c39291f64a4b7600b25179791af0745888269d24590361b72d34ff86a8abdc8a",
+    "tools/pencil2-mixed-scene-controls/blue-2-receipt.json": "be2718978c4eca6f9fc97df5e7d8565550e9c291a6d8d255b25f32dc99a5edad",
+    "tools/pencil2-mixed-scene-controls/blue-2-second.zlib": "742515f1c457bd60a6113cac8935381041945752d28b8ca824c55a07cba61c47",
+    "tools/pencil2-mixed-scene-controls/white-1-first.zlib": "21efba6f7275f8b08d621c877bea2f87532aeb6d680b7f12a19dcfcc0f0ab03c",
+    "tools/pencil2-mixed-scene-controls/white-1-receipt.json": "22a7d7db5481e6d52b299cc2cd4f237b6e8d0db1dfc9a0a43238376ef4f7bb99",
+    "tools/pencil2-mixed-scene-controls/white-1-second.vbo": "ab8c231108800d1a9437783f27d12c57e59c4d81a00538268343f662a1c64389",
+    "tools/pencil2-mixed-scene-controls/white-1-second.zlib": "38b2c1b537fcd786929c15450707dadd26198b1510071ecfa14aadaabcc32fa0",
+    "tools/pencil2-mixed-scene-controls/white-2-first.zlib": "54ae207f9c76c3129005f3a9f1896654577eb178f1afb27ec16896ddfccf505c",
+    "tools/pencil2-mixed-scene-controls/white-2-receipt.json": "9c25ee538af27d8f06359227badb75bfd6ff220afb79dc846e03b76bcf0b8218",
+    "tools/pencil2-mixed-scene-controls/white-2-second.zlib": "68dbb04d0c3284987fec93fb3580c70df57a64e009250a12c36974057b5b4ceb",
+    "tools/pencil2-public-replay/drawing_native_target_translated_probe.py": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861",
+    "tools/pencil2-worker-v259/native-geometry.vbo": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8"
+  },
+  "source_revision": "ef6a2e2ee2fff6e54af1eed0648cd23d5393e68b"
+}

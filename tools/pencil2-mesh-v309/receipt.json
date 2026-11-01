@@ -1,0 +1,208 @@
+{
+  "schema": "sdocx-pencil2-rust-source-mesh-v1",
+  "scope": "Rust-sampled two-stroke synthetic and 231-point Fountain-derived fresh Pencil2 on emulated native Drawing with host Mesa and synthetic queue; not saved Pencil2 or device evidence. Native pixel frames are comparison targets, never output inputs.",
+  "metrics_order": "RGB absolute error sum, max, different channels",
+  "readers": {
+    "pymupdf": "1.28.2",
+    "pdfium": "156.0.8076.0",
+    "resvg": "0.45.1",
+    "pillow": "12.1.1"
+  },
+  "hashes": {
+    "tools/pencil2-mesh-v309/geometry.rs": "4fbdec947c1f32e4e87b7bd2d29d08311e745ab392e7ff0b6da3cf1dbdef1f2c",
+    "tools/pencil2-mesh-v309/geometry.sh": "9aac82b3252bae108d68ce703319502cb2d5100a6311b55751404fbdb0f71eac",
+    "tools/pencil2-mesh-v309/scene.py": "b15972e868a58efeac7e99df6c4740d7bc33cf5f692a0041532271acecc6b1d5",
+    "tools/pencil2-mesh-v309/synthetic.py": "077809070c063afffb06ac586497175ba09b094ae223bcabf35415c05cdad943",
+    "tools/pencil2-mesh-v309/first_probe.py": "cf11ef731373b102b52aedbf7156f16f9c8facb0a6b0f7090838a64004ea3484",
+    "tools/pencil2-mesh-v309/public_compare.py": "f2ebe800f37e053287005fee6074a3bb15e4e2be570466bde01bde8c087bc538",
+    "tools/pencil2-mesh-v309/src/main.rs": "04cb643c65a48f510c80c623e46c70d8cdd84a29692ea33b878a4d6c1c050c09",
+    "tools/pencil2-mesh-v309/Cargo.toml": "aff8cc4c1953abcf86e4698c827271c598dd9ed186072c53ab46c18eeeedf7b6",
+    "tools/pencil2-mesh-v309/Cargo.lock": "abf859a29657cfbe23422b6ff7024c8e460ad8bea9eed5089a49b3726beecf92",
+    "tools/pencil2-mesh-v308/scene.py": "3fb9251787c81dbba0d1ce8b2728f0f0f4c2d6af38a6db607f1501c8c4333447",
+    "conformance/fountain-v14-saved-scene-inputs.json": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+    "crates/sdocx/src/ink/pencil2/assets/grain.r8": "dbe4f006debde4b765c1e5ee6966798dd8b14cdc939b149c9e22770a2c0f97f9",
+    "crates/sdocx/src/ink/pencil2/assets/point.r8": "475d71a47445657c58c944fb14a4746a248b57d33aff7bff864f30dc72d9ad6f",
+    "tools/pencil2-mesh-v309/capture.py": "7ff09523bcf3723cd0f7a5e185d0cb26fbb7c44d6b91c1da05c3fb6ea9045ccb",
+    "tools/pencil2-mesh-v309/note-native-geometry.vbo": "7d88c4f7e2f8fa148de58e515194d59736ceda859abd6297a0de7b330cc987cf",
+    "tools/pencil2-mesh-v309/input-manifest.json": "d31fc051b7a7902f40d8617084a7d2a36a36a90b2acb139b34e84ed1a5a06078",
+    "tools/pencil2-mesh-v309/clean_replay.sh": "0e5ebaaa697eb42399d997209e913493e8f3832d7445412d4f1db764dbe1e56a",
+    "tools/pencil2-mesh-v309/check_metrics.py": "6ae3c02c86970db9de79b0321658d1ef9a94c06ca301da761a80a2866b3e1b49"
+  },
+  "rust_descriptor_sha256": {
+    "synthetic0": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8",
+    "synthetic1": "ab8c231108800d1a9437783f27d12c57e59c4d81a00538268343f662a1c64389",
+    "note": "43e13df141cdf0115597aab3f30d0acf23f93096373962927cb9154bb6882103"
+  },
+  "note_native": {
+    "blue": {
+      "first_frame_sha256": "0f0cbf122a9484d1760f1fae7f260f51552e4c6bee05a8016d032e833385e923",
+      "second_frame_sha256": "c461f6d84bc92e57371a18e96c6072f560510588aa2f9adbb7fa7706f3099310",
+      "native_descriptor_sha256": "7d88c4f7e2f8fa148de58e515194d59736ceda859abd6297a0de7b330cc987cf",
+      "grain_uniform": [
+        170.24111938476562,
+        145.2706298828125
+      ]
+    },
+    "white": {
+      "first_frame_sha256": "6c8e9466ca9e473812a5d5cf87b448a359b3008d9861c2c404c223c536bba642",
+      "second_frame_sha256": "1576d32a0d7592c3cc82da4ac60791ba5fd59e44f8806239488eba69924237a5",
+      "native_descriptor_sha256": "7d88c4f7e2f8fa148de58e515194d59736ceda859abd6297a0de7b330cc987cf",
+      "grain_uniform": [
+        170.24111938476562,
+        145.2706298828125
+      ]
+    }
+  },
+  "note_full_scene": {
+    "blue": {
+      "mesh_pdf_mupdf": [
+        3525,
+        21,
+        641
+      ],
+      "mesh_pdf_pdfium": [
+        3675,
+        21,
+        694
+      ],
+      "mesh_pdf_bytes": 857117,
+      "mesh_svg_resvg": [
+        22656,
+        64,
+        819
+      ],
+      "mesh_svg_bytes": 9409616,
+      "generic_svg_resvg": [
+        29572,
+        191,
+        716
+      ],
+      "generic_pdf_mupdf": [
+        25887,
+        190,
+        719
+      ],
+      "generic_pdf_pdfium": [
+        28395,
+        191,
+        736
+      ]
+    },
+    "white": {
+      "mesh_pdf_mupdf": [
+        7696,
+        90,
+        784
+      ],
+      "mesh_pdf_pdfium": [
+        9106,
+        86,
+        958
+      ],
+      "mesh_pdf_bytes": 857101,
+      "mesh_svg_resvg": [
+        16911,
+        128,
+        610
+      ],
+      "mesh_svg_bytes": 9409613,
+      "generic_svg_resvg": [
+        54929,
+        229,
+        643
+      ],
+      "generic_pdf_mupdf": [
+        48690,
+        230,
+        661
+      ],
+      "generic_pdf_pdfium": [
+        56229,
+        229,
+        674
+      ]
+    }
+  },
+  "white_first_prefix": {
+    "mesh_pdf_mupdf": [
+      4505,
+      90,
+      301
+    ],
+    "mesh_pdf_pdfium": [
+      5012,
+      86,
+      325
+    ],
+    "mesh_svg_resvg": [
+      2773,
+      44,
+      335
+    ],
+    "pixel_center_approximation": [
+      344,
+      29,
+      139
+    ],
+    "worst_coordinate": [
+      30,
+      179
+    ],
+    "native_rgb": [
+      153,
+      178,
+      205
+    ],
+    "mupdf_rgb": [
+      243,
+      246,
+      247
+    ],
+    "pdfium_rgb": [
+      239,
+      241,
+      245
+    ]
+  },
+  "limitations": "Native runtime and transitive inputs incompletely pinned; note descriptor compared pre-Update, not independently confirmed GPU upload. SVG is constant-mean source rectangles; PDF uses corner-interpolated Type 4 soft-mask triangles; approximation and sampling unbounded. Original measurements used the then-current workspace for Rust generation and public exports; the subsequent replay used the pinned clean archive. PDF bytes may vary slightly between runs. resvg warned and skipped rectangles with widths rounded to zero in SVG serialization, plus degenerate shapes. The original measurements used dirty Rust source; archived revision replay reproduced the reported metrics; local native recapture uses untracked external adapters and temporary harness files.",
+  "source_revision": "ef6a2e2ee2fff6e54af1eed0648cd23d5393e68b",
+  "clean_revision_replay": "Three descriptor hashes, synthetic PDF error triples, and note blue/white mesh and generic SVG/PDF error triples matched original measurements; PDF byte count varied by five bytes.",
+  "synthetic_full_scene": {
+    "white-1": {
+      "mesh_pdf_mupdf": [
+        12947,
+        72,
+        1182
+      ],
+      "mesh_pdf_pdfium": [
+        14264,
+        71,
+        1239
+      ]
+    },
+    "white-2": {
+      "mesh_pdf_mupdf": [
+        43676,
+        92,
+        4230
+      ],
+      "mesh_pdf_pdfium": [
+        45620,
+        93,
+        4361
+      ]
+    },
+    "blue-2": {
+      "mesh_pdf_mupdf": [
+        43579,
+        66,
+        4341
+      ],
+      "mesh_pdf_pdfium": [
+        45357,
+        66,
+        4399
+      ]
+    }
+  }
+}
