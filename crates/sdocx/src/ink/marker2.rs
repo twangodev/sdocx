@@ -444,4 +444,38 @@ mod tests {
             }
         }
     }
+    #[test]
+    fn saved_source_29_matches_native_drawing_and_redraw() {
+        let case: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../tools/marker2-note-v306/receipt.json"
+        ))
+        .unwrap();
+        let ink = prepare(&caller_stroke(&case["input"])).unwrap();
+        let words = ink
+            .points
+            .iter()
+            .flat_map(|point| [point.x as f32, point.y as f32])
+            .flat_map(f32::to_le_bytes)
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        for phase in ["draw_object_stroke", "saved_redraw"] {
+            assert_eq!(
+                words,
+                case["phase_final_vectors"][phase]["vector_bytes"]
+                    .as_str()
+                    .unwrap(),
+                "{phase}"
+            );
+            let mut ends = vec![1];
+            ends.extend(
+                case["sample_boundaries_from_native_drawLine_returns"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter(|row| row["phase"] == phase)
+                    .map(|row| row["sample_end"].as_u64().unwrap() as usize),
+            );
+            assert_eq!(ink.sample_ends, ends, "{phase} boundaries");
+        }
+    }
 }

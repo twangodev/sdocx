@@ -1,0 +1,1333 @@
+{
+  "source_sha256": "022d75f1dcfe52bb669280062cf95ac77e3818354d1cbb6edb5cb7265898e9dd",
+  "source_description": "Fountain source 29, translated (-96,-268); all pressures, times, tilt, orientation preserved. Marker2 tool 2, size 2, empty settings, curve on and color 0x80994422 substituted.",
+  "input": {
+    "advanced_setting": "",
+    "color_argb": "0x80994422",
+    "curve_enabled": true,
+    "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+    "orientation_f32_bits": [
+      "f651b3bf",
+      "f651b3bf",
+      "f651b3bf",
+      "f651b3bf",
+      "f651b3bf",
+      "f651b3bf",
+      "f651b3bf",
+      "f651b3bf",
+      "f651b3bf",
+      "f651b3bf",
+      "f651b3bf",
+      "f651b3bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f641b9bf",
+      "f641b9bf",
+      "f641b9bf",
+      "f641b9bf",
+      "f641b9bf",
+      "f641b9bf",
+      "f641b9bf",
+      "f641b9bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf",
+      "f619b4bf"
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker2",
+    "pen_size_f32_bits": "00000040",
+    "points_f32_bits": [
+      [
+        "507f5141",
+        "601c5341"
+      ],
+      [
+        "507f5141",
+        "601c5341"
+      ],
+      [
+        "507f5141",
+        "601c5341"
+      ],
+      [
+        "507f5141",
+        "601c5341"
+      ],
+      [
+        "507f5141",
+        "601c5341"
+      ],
+      [
+        "507f5141",
+        "601c5341"
+      ],
+      [
+        "507f5141",
+        "609c5441"
+      ],
+      [
+        "50ff4f41",
+        "609c5541"
+      ],
+      [
+        "50ff4f41",
+        "601c5741"
+      ],
+      [
+        "50ff4f41",
+        "601c5841"
+      ],
+      [
+        "50ff4e41",
+        "609c5941"
+      ],
+      [
+        "50ff4e41",
+        "601c5b41"
+      ],
+      [
+        "507f4d41",
+        "601c5d41"
+      ],
+      [
+        "507f4d41",
+        "601c5f41"
+      ],
+      [
+        "507f4d41",
+        "601c5f41"
+      ],
+      [
+        "507f4c41",
+        "609c6441"
+      ],
+      [
+        "507f4c41",
+        "601c6641"
+      ],
+      [
+        "50ff4a41",
+        "601c6b41"
+      ],
+      [
+        "50ff4a41",
+        "609c6c41"
+      ],
+      [
+        "50ff4a41",
+        "609c6c41"
+      ],
+      [
+        "50ff4a41",
+        "609c7141"
+      ],
+      [
+        "50ff4941",
+        "609c7341"
+      ],
+      [
+        "50ff4941",
+        "601c7a41"
+      ],
+      [
+        "50ff4941",
+        "609c7b41"
+      ],
+      [
+        "50ff4941",
+        "609c7b41"
+      ],
+      [
+        "50ff4941",
+        "30ce8041"
+      ],
+      [
+        "50ff4941",
+        "30ce8141"
+      ],
+      [
+        "50ff4941",
+        "300e8541"
+      ],
+      [
+        "50ff4941",
+        "300e8641"
+      ],
+      [
+        "50ff4941",
+        "300e8641"
+      ],
+      [
+        "50ff4941",
+        "304e8941"
+      ],
+      [
+        "50ff4941",
+        "308e8a41"
+      ],
+      [
+        "50ff4941",
+        "30ce8d41"
+      ],
+      [
+        "50ff4941",
+        "30ce8e41"
+      ],
+      [
+        "50ff4941",
+        "30ce8e41"
+      ],
+      [
+        "50ff4941",
+        "300e9241"
+      ],
+      [
+        "50ff4941",
+        "300e9341"
+      ],
+      [
+        "507f4a41",
+        "300e9641"
+      ],
+      [
+        "50ff4a41",
+        "304e9741"
+      ],
+      [
+        "50ff4a41",
+        "304e9741"
+      ],
+      [
+        "50ff4b41",
+        "300e9a41"
+      ],
+      [
+        "507f4c41",
+        "300e9b41"
+      ],
+      [
+        "50ff4c41",
+        "30ce9d41"
+      ],
+      [
+        "507f4d41",
+        "30ce9e41"
+      ],
+      [
+        "507f4d41",
+        "30ce9e41"
+      ],
+      [
+        "507f4e41",
+        "30cea141"
+      ],
+      [
+        "50ff4e41",
+        "308ea241"
+      ],
+      [
+        "507f4f41",
+        "304ea541"
+      ],
+      [
+        "50ff4f41",
+        "300ea641"
+      ],
+      [
+        "50ff4f41",
+        "300ea641"
+      ],
+      [
+        "50ff5041",
+        "30cea841"
+      ],
+      [
+        "507f5141",
+        "308ea941"
+      ],
+      [
+        "50ff5241",
+        "308eaa41"
+      ],
+      [
+        "507f5341",
+        "304ead41"
+      ],
+      [
+        "507f5441",
+        "30cead41"
+      ],
+      [
+        "507f5441",
+        "30cead41"
+      ],
+      [
+        "507f5441",
+        "30cead41"
+      ]
+    ],
+    "pressure_f32_bits": [
+      "820d583c",
+      "820d583c",
+      "c106d03c",
+      "6003203d",
+      "6003533d",
+      "6003533d",
+      "60037f3d",
+      "b001913d",
+      "b081a03d",
+      "b081b53d",
+      "b001ce3d",
+      "b081eb3d",
+      "d840073e",
+      "d800193e",
+      "d800193e",
+      "d8c0263e",
+      "d8c0333e",
+      "d8403d3e",
+      "d8c0423e",
+      "d8c0423e",
+      "d880493e",
+      "d8004d3e",
+      "d800503e",
+      "d8c0523e",
+      "d8c0523e",
+      "d800543e",
+      "d8c0553e",
+      "d800573e",
+      "d800573e",
+      "d800573e",
+      "d840573e",
+      "d880583e",
+      "d880573e",
+      "d800583e",
+      "d800583e",
+      "d880553e",
+      "d8c0513e",
+      "d8c04b3e",
+      "d8403f3e",
+      "d8403f3e",
+      "d8c0313e",
+      "d8c01e3e",
+      "d8000a3e",
+      "b001e83d",
+      "b001e83d",
+      "b081b83d",
+      "b001873d",
+      "6003343d",
+      "c006d63c",
+      "c006d63c",
+      "800d503c",
+      "001ba83b",
+      "006ca03a",
+      "00005836",
+      "00005836",
+      "00005836",
+      "00005836"
+    ],
+    "size_input": 2.0,
+    "stroke_type": 0,
+    "tilt_f32_bits": [
+      "1840d93e",
+      "1840d93e",
+      "1840d93e",
+      "1840d93e",
+      "1840d93e",
+      "1840d93e",
+      "1840d93e",
+      "1840d93e",
+      "1840d93e",
+      "1840d93e",
+      "1840d93e",
+      "1840d93e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "18e0e03e",
+      "18e0e03e",
+      "18e0e03e",
+      "18e0e03e",
+      "18e0e03e",
+      "18e0e03e",
+      "18e0e03e",
+      "18e0e03e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e",
+      "1800e23e"
+    ],
+    "timestamps_i32": [
+      0,
+      0,
+      3,
+      4,
+      6,
+      8,
+      9,
+      11,
+      13,
+      15,
+      17,
+      19,
+      21,
+      23,
+      25,
+      25,
+      27,
+      29,
+      31,
+      33,
+      34,
+      35,
+      37,
+      40,
+      41,
+      42,
+      44,
+      46,
+      48,
+      50,
+      50,
+      52,
+      54,
+      56,
+      58,
+      58,
+      60,
+      63,
+      64,
+      66,
+      67,
+      69,
+      71,
+      73,
+      75,
+      75,
+      77,
+      79,
+      81,
+      83,
+      83,
+      85,
+      87,
+      89,
+      91,
+      91,
+      94
+    ],
+    "tool_type": 2
+  },
+  "phase_final_vectors": {
+    "draw_object_stroke": {
+      "sha256": "fe958593e34acec4de26bfecce2c89f007bc44769cffca6ac57d402b96e29ab1",
+      "vector_bytes": "507f5141601c5341af0b4e4171116241d7154b41267672416b024a41733a8141dc384a41e14289415e054b415e3c9141b8764c4136f69841e6d24e4193f6a041",
+      "vector_count": 8
+    },
+    "saved_redraw": {
+      "sha256": "fe958593e34acec4de26bfecce2c89f007bc44769cffca6ac57d402b96e29ab1",
+      "vector_bytes": "507f5141601c5341af0b4e4171116241d7154b41267672416b024a41733a8141dc384a41e14289415e054b415e3c9141b8764c4136f69841e6d24e4193f6a041",
+      "vector_count": 8
+    }
+  },
+  "sample_boundaries_from_native_drawLine_returns": [
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 8
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 8
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 8
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "draw_object_stroke",
+      "rt": "rt0",
+      "sample_end": 8
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 1
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 2
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 4
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 6
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 8
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 8
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 8
+    },
+    {
+      "gl": "0x10035a30",
+      "implementation": "SPen::Marker2StrokeDrawableGLV2::drawLine(float, float, bool)",
+      "phase": "saved_redraw",
+      "rt": "rt0",
+      "sample_end": 8
+    }
+  ],
+  "native_paint": {
+    "frame_sha256": "92c47784b03c21fdc526e755430ce886736745215faf8e0080b0af4a7762e6d8",
+    "native_vector_sha256": "fe958593e34acec4de26bfecce2c89f007bc44769cffca6ac57d402b96e29ab1",
+    "translation_f32": [
+      107.83,
+      87.17
+    ],
+    "gl_error_checks": 274,
+    "all_gl_errors_zero": true
+  },
+  "rgb_l1": {
+    "baseline": {
+      "resvg": 8004,
+      "mupdf": 8057,
+      "pdfium": 7502
+    },
+    "profile": {
+      "resvg": 1235,
+      "mupdf": 1393,
+      "pdfium": 1399
+    }
+  },
+  "limits": "Host Unicorn ARM64 and Mesa, explicit RT+88 vector materialization and AddPoint replay; setter-built converted Fountain source, not serialized Marker2 or Android device.",
+  "reader_versions": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pdfium": "156.0.8076.0"
+  },
+  "source_sha256_by_path": {
+    "tools/marker2-note-v306/capture.py": "b64e5ed8d3cdab2eb0bee27dcd4a103d0e4dbf40feb42d85270c7fc58e79e9cb",
+    "tools/marker2-note-v306/native_runner.py": "b36dc0e3c5d14159cc57fc29a040e5fecf33b51d15494d06e5a77c318aac0fac",
+    "tools/marker2-note-v306/native_manifest.json": "c57b88cb90b1d605d1259fdda2af6f896b153c5fb2f49921411752e114a773d1",
+    "tools/marker2-note-v306/compare.py": "9f14595c20ed8b3598b85c42e2c43c3feae5edabaa5b7415a8400daa1e7e99c9",
+    "tools/marker2-note-v306/export.rs": "9135c594c42dbfb65429a348d56bb06f13dbbbe33d713f2037f3d320b3a8c5c4",
+    "tools/marker2-note-v306/Cargo.toml": "fdfce92bfd50c07b9a770d02328bed298d0bf0b916122d0c779a92a31a2146f6",
+    "crates/sdocx/src/ink/marker2.rs": "9eddc180fd0aace306b22ada477a216c0b4d1ff17cbe08ace7420143c643f186",
+    "crates/sdocx/src/ink.rs": "63e267b7534a6f7f1ccc3b4671ab38c502b6741492a4b6f8d48767630348272c",
+    "crates/sdocx/src/render.rs": "8c8f68bd8726eee30df9ad3117ec35c50bf6c5847977994652f39d18bfdb27d0",
+    "crates/sdocx/src/render/marker2_scale.rs": "f3699bc04e071ff90cd316da6b3f26e28efbaeec53ea458f4b28e6a1a269176b",
+    "crates/sdocx/src/pdf.rs": "608aa25509e173dd9899c5564faca2a476c4bf5a17bbce3e78da38a9ec17f67e",
+    "Cargo.lock": "5bd9bda9da7b4d02adc97ae3df5ffcea0b596e8dc02d6428c082c1093bea8153",
+    "tools/marker2-note-v306/Cargo.lock": "464f5e43fafe36aef3493236d7fce62121d1c2277249543299843bbb9ee6f6f2"
+  },
+  "exporter_binary_sha256": "0e5c96603883fbafeb19306d4fc2918b0f86bc14b5cd7f3389bbbf99f8cd4c7b",
+  "public_export_sha256": {
+    "baseline": {
+      "svg": "f628693d0e1b8717ac03096fc0769844e36e63fd438376fbbbe7d9f214d85279",
+      "direct_pdf": "3fdfa23e118383cf016916873a7256e4aebeeac96d6592fce1bff3453b4f6944"
+    },
+    "profile": {
+      "svg": "d6b673de3c8bd919f110a0e9748390f39383491f6dd05304fcb2ca4d28aacc29",
+      "direct_pdf": "1565aa91ba97e1081984733f1392059512172331ffd85341c00d574d42cf0dab"
+    }
+  }
+}

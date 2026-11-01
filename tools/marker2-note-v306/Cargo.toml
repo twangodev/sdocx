@@ -1,0 +1,12 @@
+[package]
+name = "marker2-note-v306-export"
+version = "0.1.0"
+edition = "2024"
+publish = false
+[workspace]
+[dependencies]
+sdocx = { path = "../../crates/sdocx", features = ["render", "pdf", "serde"] }
+serde_json = "1"
+[[bin]]
+name = "marker2-note-v306-export"
+path = "export.rs"
