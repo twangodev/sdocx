@@ -497,6 +497,61 @@ fn reconstruct(
     })
 }
 
+#[cfg(test)]
+mod long_geometry_tests {
+    use super::{NativeInput, generate};
+
+    #[test]
+    fn folded_long_strokes_match_complete_native_geometry() {
+        let heights = [0, 2, 5, 7, 8, 7, 5, 2];
+        for (count, size, reverse, expected) in [
+            (
+                129,
+                20.0,
+                false,
+                &include_bytes!("../../../../conformance/simplebrush-long-audit/129-geometry.bin")
+                    [..],
+            ),
+            (
+                256,
+                8.0,
+                true,
+                &include_bytes!("../../../../conformance/simplebrush-long-audit/256-geometry.bin")
+                    [..],
+            ),
+        ] {
+            let mut points: Vec<_> = (0..count)
+                .map(|i| {
+                    [
+                        25.0 + (i % 64) as f32,
+                        35.0 + (i / 64) as f32 * 18.0 + heights[i % 8] as f32,
+                    ]
+                })
+                .collect();
+            let mut pressures: Vec<_> = (0..count).map(|i| [0.25, 0.5, 0.75, 1.0][i % 4]).collect();
+            if reverse {
+                points.reverse();
+                pressures.reverse();
+            }
+            let samples = generate(NativeInput {
+                points: &points,
+                pressures: &pressures,
+                size,
+                tool_type: 2,
+                curve_enabled: true,
+                max_samples: 32_768,
+            })
+            .unwrap();
+            let bytes: Vec<_> = samples
+                .into_iter()
+                .flatten()
+                .flat_map(f32::to_le_bytes)
+                .collect();
+            assert_eq!(bytes, expected, "{count}-point native geometry");
+        }
+    }
+}
+
 #[cfg(all(test, feature = "serde"))]
 mod tests {
     use super::{NativeInput, generate, reconstruct};

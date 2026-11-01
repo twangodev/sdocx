@@ -1,0 +1,74 @@
+{
+  "scope": "Complete native SimpleBrush geometry for two synthetic ObjectStroke setter inputs, captured with host-scheduled Drawing tasks. No device, saved-note, native page traversal, raster or PDF parity claim.",
+  "format": "Consecutive little-endian f32 triples [x, y, radius_plus_half], 12 bytes per record.",
+  "capture_script": "tools/simplebrush-long-audit/capture.py",
+  "capture_commands": [
+    "POINT_COUNT=129 PROBE_SIZE=20 python3 tools/simplebrush-long-audit/capture.py fraction12 /tmp/simplebrush-audit129/native.json",
+    "POINT_COUNT=256 PROBE_SIZE=8 VARIANT=reverse python3 tools/simplebrush-long-audit/capture.py fraction12 /tmp/simplebrush-audit256/native.json"
+  ],
+  "reproduction_limit": "Create output directories first. Native capture requires the project-local scratch libraries and helper scripts referenced by capture.py; these hashes identify the historical capture, not a clean-checkout capture recipe. Rust regression replay needs only the two retained binary fixtures.",
+  "historical_receipt_sha256": "403a173a0e4d2b48b4a830d98710088b63380ff0d60c3f73cdf94a7d822a6b0f",
+  "capture_source_sha256": {
+    "tools/simplebrush-long-audit/capture.py": "b067c65a75a918c7ba369b6ba0a7b9dd079bb1e00faa7d23ed5f6138b6c0ad35",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-source-capture.py": "86afe686345ccc650c01ad2f51d5a79728f2a0d7aec39462605c7d302205fdea",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/simplebrush-paint-capture.py": "62109356fa2120aa7d1318a6f23667558e3d4a183fc0f40d36ff3a42de94c936",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/helper-root/conformance/elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/helper-root/conformance/fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/helper-root/conformance/simplebrush_canvas_native.py": "e13429d726bc504b0f4774df112bdc403e52f533a4e86cd04f546ced86de2c01",
+    "tmp/vector-parity-plan/pen-family-audit/simplebrush-paint-mesa-v25/helper-root/conformance/simplebrush_gl_scissor.py": "a54317dcacafaadcaf87906f786608d640badb3f31e54427341091104ea9ee6d",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenSimpleBrush.so": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032"
+  },
+  "input_recipe": {
+    "points": "[25 + (i % 64), 35 + floor(i / 64) * 18 + [0,2,5,7,8,7,5,2][i % 8]] for i in 0..point_count",
+    "pressure": "[0.25,0.5,0.75,1.0][i % 4]; reverse points and pressures together for the 256-point case",
+    "curve_enabled": true,
+    "timestamps": "0..point_count",
+    "tilt": 0,
+    "orientation": 0,
+    "color_argb": "0x8044aaee",
+    "advanced_setting": null
+  },
+  "cases": {
+    "129": {
+      "size": 20,
+      "tool": 2,
+      "reverse": false,
+      "point_count": 129,
+      "matrix": [
+        2,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0.25,
+        0.5,
+        1
+      ],
+      "geometry_records": 472,
+      "geometry_sha256": "c7476bef7931a849a86812b61ea73505a15539e800c08c352a2b39642eb32ed4",
+      "native_capture_json_sha256": "af5766316f09e1c9d667e2c8ce0f769bda24380d0f14a7fef547175a97142aaf"
+    },
+    "256": {
+      "size": 8,
+      "tool": 2,
+      "reverse": true,
+      "point_count": 256,
+      "matrix": [
+        2,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0.25,
+        0.5,
+        1
+      ],
+      "geometry_records": 944,
+      "geometry_sha256": "3982e7ea072fec02f78999db3d4ef60388a4412006652f4493a767d446987848",
+      "native_capture_json_sha256": "8d4d0a36f15d68dfad7c900598a279056b6fe8571b3dc09dc55bd1a6715e279d"
+    }
+  }
+}
