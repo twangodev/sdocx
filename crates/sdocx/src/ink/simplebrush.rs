@@ -446,13 +446,16 @@ pub(crate) fn prepare_stroke_for_scale(
         .iter()
         .map(|&p| exact_float(p))
         .collect::<Result<Vec<_>, _>>()?;
+    // The 2x size-8..20 public profile has native short-terminal controls;
+    // retain the earlier conservative terminal gate for 1x and size 3.
     if rendering.tool_type_raw == 0
         && (!((4.0..=32.0).contains(&size)
             || (two_pixels_per_page_unit
                 && (points.len() == 3 || ((4..=128).contains(&points.len()) && size == 3.0))
                 && (3.0..=32.0).contains(&size)))
             || !(2..=if two_pixels_per_page_unit { 256 } else { 128 }).contains(&points.len())
-            || (points.len() > 2
+            || ((!two_pixels_per_page_unit || size < 4.0)
+                && points.len() > 2
                 && points.windows(2).last().is_some_and(|pair| {
                     (pair[1][0] - pair[0][0]).abs() < 1.5 && (pair[1][1] - pair[0][1]).abs() < 1.5
                 })
@@ -573,9 +576,18 @@ mod tests {
             "../../../../conformance/simplebrush-note-v300.json"
         ))
         .unwrap();
-        for case in receipt["cases"].as_array().unwrap() {
+        let tool0: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-note-v301.json"
+        ))
+        .unwrap();
+        for case in receipt["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .chain(tool0["cases"].as_array().unwrap())
+        {
             let count = case["point_count"].as_u64().unwrap() as usize;
-            let points: Vec<[f32; 2]> = saved["points"]
+            let mut points: Vec<[f32; 2]> = saved["points"]
                 .as_array()
                 .unwrap()
                 .iter()
@@ -587,17 +599,21 @@ mod tests {
                     ]
                 })
                 .collect();
-            let pressures: Vec<f32> = saved["pressures"]
+            let mut pressures: Vec<f32> = saved["pressures"]
                 .as_array()
                 .unwrap()
                 .iter()
                 .take(count)
                 .map(|p| p.as_f64().unwrap() as f32)
                 .collect();
+            if case["reverse"].as_bool().unwrap_or(false) {
+                points.reverse();
+                pressures.reverse();
+            }
             let actual = reconstruct(
                 &points,
                 &pressures,
-                8.0,
+                case["size"].as_f64().unwrap_or(8.0) as f32,
                 case["tool"].as_i64().unwrap() as i32,
                 true,
             )
@@ -609,6 +625,45 @@ mod tests {
                 .map(|b| format!("{b:02x}"))
                 .collect();
             assert_eq!(hex, case["vector_hex"].as_str().unwrap());
+        }
+    }
+
+    #[test]
+    fn tool0_crossing_native_geometry_is_bounded() {
+        let receipt: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-cross-v301.json"
+        ))
+        .unwrap();
+        let value =
+            |v: &Value| f32::from_le_bytes(decode_hex(v.as_str().unwrap()).try_into().unwrap());
+        for case in receipt["cases"].as_array().unwrap() {
+            let points: Vec<[f32; 2]> = case["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| [value(&p[0]), value(&p[1])])
+                .collect();
+            let pressures: Vec<f32> = case["pressure_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(value)
+                .collect();
+            let actual = reconstruct(&points, &pressures, 8.0, 0, true).unwrap();
+            let expected = decode_hex(case["vector_hex"].as_str().unwrap());
+            assert_eq!(actual.len() * 12, expected.len());
+            for (sample, native) in actual.iter().zip(expected.chunks_exact(12)) {
+                for lane in 0..3 {
+                    let bits =
+                        u32::from_le_bytes(native[lane * 4..lane * 4 + 4].try_into().unwrap());
+                    let difference = sample[lane].to_bits().abs_diff(bits);
+                    assert!(
+                        difference <= if lane == 2 { 6 } else { 0 },
+                        "{} lane {lane} difference {difference}",
+                        case["name"]
+                    );
+                }
+            }
         }
     }
 

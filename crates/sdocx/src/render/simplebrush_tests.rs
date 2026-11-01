@@ -1268,17 +1268,23 @@ fn tool0_long_two_pixel_profile_boundaries() {
     };
     assert!(
         crate::ink::simplebrush::prepare_stroke_for_scale(&short_terminal, true, 32_768, true)
+            .is_ok()
+    );
+    assert!(
+        crate::ink::simplebrush::prepare_stroke_for_scale(&short_terminal, true, 32_768, false)
+            .is_err()
+    );
+    let mut size3_terminal = short_terminal.clone();
+    size3_terminal.pen_width = 3.0;
+    size3_terminal.rendering.as_mut().unwrap().style.pen_size = Some(3.0);
+    assert!(
+        crate::ink::simplebrush::prepare_stroke_for_scale(&size3_terminal, true, 32_768, true)
             .is_err()
     );
     let short_doc = document(short_terminal);
-    assert_eq!(
+    assert_ne!(
         render_document_svg(&short_doc, &two)[0].svg,
         render_document_svg(&short_doc, &generic)[0].svg
-    );
-    #[cfg(feature = "pdf")]
-    assert_eq!(
-        crate::render_document_pdf(&short_doc, &two, &Default::default()).unwrap(),
-        crate::render_document_pdf(&short_doc, &generic, &Default::default()).unwrap()
     );
     for i in 64..257 {
         source.points.push(Point {
@@ -1409,6 +1415,27 @@ fn two_pixel_native_export_fixture() {
             .take(count)
             .map(|p| f64::from(p.as_f64().unwrap() as f32))
             .collect();
+        if std::env::var_os("SDOCX_REVERSE_NOTE").is_some() {
+            source.points.reverse();
+            source.pressures.reverse();
+        }
+        if std::env::var_os("SDOCX_CROSS_NOTE").is_some() {
+            let corners = [[32.0, 32.0], [64.0, 64.0], [32.0, 64.0], [64.0, 32.0]];
+            source.points = (0..57)
+                .map(|i| {
+                    let a = corners[(i / 14) % 4];
+                    let b = corners[(i / 14 + 1) % 4];
+                    let t = (i % 14) as f64 / 14.0;
+                    Point {
+                        x: f64::from((a[0] + (b[0] - a[0]) * t) as f32),
+                        y: f64::from((256.0 - (a[1] + (b[1] - a[1]) * t)) as f32),
+                    }
+                })
+                .collect();
+            if std::env::var_os("SDOCX_CROSS_OPEN").is_none() {
+                source.points[56] = source.points[55];
+            }
+        }
     }
     if std::env::var_os("SDOCX_SIMPLEBRUSH_SHORT").is_some() {
         source.points = [32.0, 32.25, 32.5]
@@ -1429,9 +1456,21 @@ fn two_pixel_native_export_fixture() {
     source.pen_width = size;
     source.rendering.as_mut().unwrap().style.pen_size = Some(size);
     source.color = Some(Color {
-        r: 0x44,
-        g: 0xaa,
-        b: 0xee,
+        r: if std::env::var_os("SDOCX_ALT_COLOR").is_some() {
+            0xe0
+        } else {
+            0x44
+        },
+        g: if std::env::var_os("SDOCX_ALT_COLOR").is_some() {
+            0x40
+        } else {
+            0xaa
+        },
+        b: if std::env::var_os("SDOCX_ALT_COLOR").is_some() {
+            0x20
+        } else {
+            0xee
+        },
     });
     source.rendering.as_mut().unwrap().tool_type_raw = std::env::var("SDOCX_TOOL")
         .unwrap_or("2".into())

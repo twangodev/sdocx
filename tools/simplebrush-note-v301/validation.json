@@ -1,0 +1,78 @@
+{
+  "validation_base": "fb71988f709bb77fec8b546b22078eaec8e1c1f7",
+  "scope": "clean HEAD plus only the committed SimpleBrush files",
+  "tests": {
+    "command": "cargo test -p sdocx --features pdf,serde --lib simplebrush",
+    "passed": 86
+  },
+  "versions": {
+    "resvg": "0.45.1",
+    "MuPDF": "1.28.2",
+    "PDFium": "150.0.7869.0"
+  },
+  "controls": [
+    {
+      "name": "base",
+      "fresh_native_frame_sha256": "ce0970dfa1fe3eea9fd686c733eec571bc3d3bbe5d2f453e8c780206456a7d68",
+      "native_vector_sha256": "1f2927f67d219fdb33d7195e33e49c643445473e33d53fbd560db6f1e4493a30",
+      "native_matches_retained": true,
+      "public_exact_vector_assertion": true,
+      "svg_alpha_l1": [
+        60268,
+        998
+      ],
+      "mupdf_matched_paper_rgb_l1": [
+        66680,
+        4946
+      ],
+      "pdfium_matched_paper_rgb_l1": [
+        66434,
+        7016
+      ]
+    },
+    {
+      "name": "reverse",
+      "fresh_native_frame_sha256": "105d7414d9d0864ebc1121ac4a80ff20e7c05a3c2ed76bfbe409ba7e8653b039",
+      "native_vector_sha256": "d53c51258fe1bb820766d6db317f86d2e5d33b61ffcbe0efb733d11a9ad601fc",
+      "native_matches_retained": true,
+      "public_exact_vector_assertion": true,
+      "svg_alpha_l1": [
+        59187,
+        846
+      ],
+      "mupdf_matched_paper_rgb_l1": [
+        65358,
+        4945
+      ],
+      "pdfium_matched_paper_rgb_l1": [
+        65082,
+        7485
+      ]
+    },
+    {
+      "name": "size20",
+      "fresh_native_frame_sha256": "ad8daf575335204b8b8f746672262a84ed45f10af6fcc3d879dea070d56402a5",
+      "native_vector_sha256": "61d8574b5b4fa4ff3ac6e103575edab185c5641d3c7a26092bcc2ed69e6b3466",
+      "native_matches_retained": true,
+      "public_exact_vector_assertion": true,
+      "svg_alpha_l1": [
+        176558,
+        2090
+      ],
+      "mupdf_matched_paper_rgb_l1": [
+        193417,
+        9305
+      ],
+      "pdfium_matched_paper_rgb_l1": [
+        193314,
+        12812
+      ]
+    }
+  ],
+  "limitations": [
+    "Host Unicorn/Mesa captures; not device or saved Brush/page parity.",
+    "Crossing has three radius differences up to 6 ULP, also seen for the previously admitted open terminal.",
+    "Native getter timestamps and zero stylus channels differ from public empty channels.",
+    "PDFium uses an unshifted raster grid."
+  ]
+}
