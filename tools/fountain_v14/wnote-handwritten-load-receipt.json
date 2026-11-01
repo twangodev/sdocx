@@ -1,0 +1,50 @@
+{
+  "schema": "sdocx-original-handwritten-wnote-host-success-v1",
+  "scope": "Original archive WNote/WPage host execution, bounded virtual cache, no manifest translation; all object types and ordered UUID hashes compared against Rust.",
+  "archive_sha256": "77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3",
+  "wdoc_sha256": "1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6",
+  "apk_sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667",
+  "apk_version": "4.4.45.37",
+  "note_mode": 0,
+  "construct_arguments": {
+    "page_width": 1848,
+    "mode": 0,
+    "flag": false
+  },
+  "wdoc_initializers_run": 39,
+  "construct_instructions_approx": 104000000,
+  "native_results": {
+    "WNote::Construct": "0x1",
+    "WNote::GetPageCount": "0x1",
+    "WPage::LoadObject": "0x1",
+    "WPage::GetObjectCount": "0xad1"
+  },
+  "rust_stored_stroke_count": 2769,
+  "limitations": [
+    "Host-shimmed native execution; no device parity or handwritten drawing claim."
+  ],
+  "script_sha256": "e2a8157b3569e16c9400d77814fde6e7cda00c7f427c12813736731c6099cee3",
+  "identity": {
+    "count": 2769,
+    "distinct": 2769,
+    "ordered_uuid_hashes_sha256": "963f09365784936859772c332222fd69d25cd71011f2c950349f57c25cc4d567"
+  },
+  "native_all_object_types": 1,
+  "rust_ordered_uuid_hashes_sha256": "963f09365784936859772c332222fd69d25cd71011f2c950349f57c25cc4d567",
+  "rust_input_example_sha256": "e4494fc13e18c131e6eaec55c04108fe7fa1d0ed1b8a8ceefb4edbc20b02525c",
+  "post_archive_sha256_matches": true,
+  "independent_partial_extraction_control": {
+    "receipt": "wnote-open-5m-receipt.json",
+    "sha256": "9b0fd9755d8fc641524c493792e94aa0d81a72b7194d25ef2634197caa3669a1",
+    "scope": "Earlier separate five-million-instruction probe compared six cached member hashes to ZIP members; not an assertion performed in the complete replay."
+  },
+  "runner": "PYTHONPATH=scratch/apk-analysis-runtime/python SDOCX_NOTE_TYPE=2 /usr/bin/python3.13 tools/fountain_v14/wnote_open_probe.py",
+  "per_invoke_instruction_ceiling": 500000000,
+  "dependency_sha256": {
+    "note_open_probe.py": "eb358c7276f4de5fbcd42a3d26c3b3c031d50da59b517afcde7c5936e2e98ce9",
+    "state_probe_capture.py": "052d3d7f3677e56788c119df22ce38f31dfc50ddc9bb367c4c39198b2aad4695"
+  },
+  "rust_baseline_runner": "CARGO_TARGET_DIR=/tmp/sdocx-agent-target /usr/bin/python3.13 tools/fountain_v14/wnote_handwritten_rust_identity.py",
+  "rust_baseline_adapter_sha256": "9eb81c78c4f279d34de50d826491d8b9d6198183649584491eaf0125dd189d39",
+  "implementation_sha256": "42a8ad513aeeb9549c089eec7950a66adf66d48faabdda775fa0dbce60223960"
+}

@@ -1,0 +1,189 @@
+{
+  "scope": "Exploratory unchanged handwritten.sdocx via WNote::Construct wrapper, Unicorn ARM64 and bounded host I/O. No manifest translation. Five million native instruction cap; PageDoc/WPage completion not established.",
+  "apk_version": "Samsung Notes 4.4.45.37",
+  "apk_sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667",
+  "wdoc_sha256": "1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6",
+  "archive_sha256": "77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3",
+  "static_initializers_run": 39,
+  "instruction_limit": 5000000,
+  "observations": [
+    {
+      "step": "WNote::WNote",
+      "result": "0xb110238"
+    },
+    {
+      "step": "bounded stat",
+      "size": 1907066,
+      "mode": 33060
+    },
+    {
+      "step": "bounded stat",
+      "size": 1907066,
+      "mode": 33060
+    },
+    {
+      "step": "bounded stat",
+      "size": 131,
+      "mode": 33060
+    },
+    {
+      "step": "bounded stat",
+      "size": 453791,
+      "mode": 33060
+    },
+    {
+      "step": "bounded stat",
+      "size": 4487877,
+      "mode": 33060
+    },
+    {
+      "step": "WNote::Construct",
+      "error_type": "RuntimeError",
+      "error": "SPen::WNote::Construct(SPen::String const*, SPen::String const*, int, int, bool) did not return: PC=0x72e6368"
+    }
+  ],
+  "terminal_pcs": [
+    "0x72e6340",
+    "0x72e6344",
+    "0x72e6348",
+    "0x72e634c",
+    "0x72e6350",
+    "0x72e6354",
+    "0x72e6358",
+    "0x72e635c",
+    "0x72e6360",
+    "0x72e6364"
+  ],
+  "media_reads": [
+    {
+      "step": "cache fread",
+      "offset": 128,
+      "size": 3,
+      "count": 1,
+      "actual": 3
+    },
+    {
+      "step": "cache fread",
+      "offset": 127,
+      "size": 4,
+      "count": 1,
+      "actual": 4
+    },
+    {
+      "step": "cache fread",
+      "offset": 0,
+      "size": 4,
+      "count": 1,
+      "actual": 4
+    },
+    {
+      "step": "cache fread",
+      "offset": 4,
+      "size": 2,
+      "count": 1,
+      "actual": 2
+    },
+    {
+      "step": "cache fread",
+      "offset": 6,
+      "size": 4,
+      "count": 1,
+      "actual": 4
+    },
+    {
+      "step": "cache fread",
+      "offset": 10,
+      "size": 4,
+      "count": 1,
+      "actual": 4
+    },
+    {
+      "step": "cache fread",
+      "offset": 14,
+      "size": 2,
+      "count": 1,
+      "actual": 2
+    },
+    {
+      "step": "cache fread",
+      "offset": 16,
+      "size": 36,
+      "count": 1,
+      "actual": 36
+    },
+    {
+      "step": "cache fread",
+      "offset": 52,
+      "size": 64,
+      "count": 1,
+      "actual": 64
+    },
+    {
+      "step": "cache fread",
+      "offset": 116,
+      "size": 2,
+      "count": 1,
+      "actual": 2
+    },
+    {
+      "step": "cache fread",
+      "offset": 118,
+      "size": 8,
+      "count": 1,
+      "actual": 8
+    },
+    {
+      "step": "cache fread",
+      "offset": 126,
+      "size": 1,
+      "count": 1,
+      "actual": 1
+    }
+  ],
+  "page_read_count": 205,
+  "last_sequential_page_read": {
+    "step": "cache fread",
+    "offset": 64840,
+    "size": 1623,
+    "count": 1,
+    "actual": 1623
+  },
+  "unmodified_cached_members": [
+    {
+      "size": 140,
+      "cache_sha256": "3a731a4e4ab1acc767c99e6c6f593fa8fb8edda226dbd833c35f842cdb67361a",
+      "original_sha256": "3a731a4e4ab1acc767c99e6c6f593fa8fb8edda226dbd833c35f842cdb67361a",
+      "matches_original": true
+    },
+    {
+      "size": 4487877,
+      "cache_sha256": "c7c834e0eeb751966517f354dc55ea056b5eb2453a5b9e16b7be08ca7b3a9591",
+      "original_sha256": "c7c834e0eeb751966517f354dc55ea056b5eb2453a5b9e16b7be08ca7b3a9591",
+      "matches_original": true
+    },
+    {
+      "size": 131,
+      "cache_sha256": "289c83e051d99bc075bf5869b1dfce9901b282dad176d9d43c4b0bbbc37a7a53",
+      "original_sha256": "289c83e051d99bc075bf5869b1dfce9901b282dad176d9d43c4b0bbbc37a7a53",
+      "matches_original": true
+    },
+    {
+      "size": 453791,
+      "cache_sha256": "64327fdf9a1940d1fdd7bfa7ec48c1ddbb2bb262d2653ff7de6f16b1555f660c",
+      "original_sha256": "64327fdf9a1940d1fdd7bfa7ec48c1ddbb2bb262d2653ff7de6f16b1555f660c",
+      "matches_original": true
+    },
+    {
+      "size": 1741,
+      "cache_sha256": "f48cfc56d7008b3cdceb6a7944d761f39c3007151611096323c59478eabf5eb9",
+      "original_sha256": "f48cfc56d7008b3cdceb6a7944d761f39c3007151611096323c59478eabf5eb9",
+      "matches_original": true
+    },
+    {
+      "size": 144,
+      "cache_sha256": "7dfdd2f6522bd819ef7eb34ad27ff5f4cd0953280be4b0d9a84353a0fc82b6eb",
+      "original_sha256": "7dfdd2f6522bd819ef7eb34ad27ff5f4cd0953280be4b0d9a84353a0fc82b6eb",
+      "matches_original": true
+    }
+  ]
+}
