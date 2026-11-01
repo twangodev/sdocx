@@ -1,0 +1,25 @@
+# Montblanc endPen history-distance control
+
+The production sampler follows the native endPen branch at a 15-unit distance between the last two accepted historical moves. The ARM64 trace for `libSPenMontblancFountainPen.so` SHA-256 `4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350` has the distance comparison at RVA `0x1d8b8..0x1d8e0`; target alpha and interpolation at `0x1dbd4..0x1dd1c`; and conditional history replay at `0x1dd20`. `drawPoint` at `0x1f334..0x1f3a4` compares its final interpolated alpha with the saved alpha: unequal values call `AddStartPoint` with negated tangent, otherwise `AddEndPoint`. These are observations of the shipped ARM64 library under the retained host adapter, not device evidence.
+
+`native.json` contains complete callback streams, compressed float vectors and 1x/2x frames for three independent trajectories downsampled from Fountain source strokes 3, 6 and 7. `inputs.json` records source indices and translations; the points and pressures came from those notes but the Montblanc tool, size, color, timestamps and tilt/orientation are controlled. `sweep-native.json` changes path scale, width and pressure; `long-native.json` exercises a nine-point synthetic path with three large interior chords. `threshold-native.json` contains synthetic adjacent binary32 values around 15. All use native Drawing through Unicorn and host Mesa, not a serialized Montblanc note or device output. The capture adapter now accepts a native empty vector and checks that each nonempty vector joins its actual GPU upload and draw; this is necessary for paths ending in a second start cap. The existing renderer admission, 256-record guard, 32,768-patch budget, and generic fallback remain.
+
+`capture.py` runs the native adapter using `SDOCX_CAPTURE_ROOT`, `MB_CASE` as a JSON input, `MB_SCALE=2` for 2x, and `--case baseline --output NEW_FILE`. It requires the local ARM64 inputs and runtime detailed by `../extended-paint/README.md`; the full environment is not pinned. Its stderr contains the complete callback stream and captured vectors. Native frames and vectors are retained compressed; generated PDFs and rasters are not.
+
+For the retained frame comparisons, prepare a new capture directory, then run the exporter with a separate empty output directory and new receipt path. Set the project Cargo environment in AGENTS.md. The exporter builds isolated copies from the current checkout and obtains the baseline sampler from revision `eadd984b147fa4cacdc297ee5a8c5f6e829b9647` (override with `MB_BASELINE_REVISION`); compare its recorded source hashes before interpreting results. It requires resvg, PyMuPDF and pypdfium2. For example:
+
+```sh
+python3 tools/montblanc/note-short-v310/prepare_captures.py /tmp/mb-captures
+mkdir /tmp/mb-exports
+MB_CLEAN_ROOT="$PWD" MB_CAPTURE_WORK=/tmp/mb-captures MB_EXPORT_WORK=/tmp/mb-exports \
+MB_RECEIPT_OUTPUT=/tmp/mb-receipt.json PYTHONPATH=/tmp/marker2-pdfium-python \
+.venv/bin/python tools/montblanc/note-short-v310/final_export_compare.py build
+```
+
+For the sweep and long controls, pass `sweep-native.json` or `long-native.json` as the second argument to `prepare_captures.py` and set `MB_NATIVE_FILE` to the same name for the exporter. The receipts report union RGB error on the host frame composited over #fcfcfc. Output error is nonzero and the approximation overcovers; the measurements do not establish Android, other transforms, saved-page lifecycle, native PDF, or general reader parity. The baseline preserves the existing 2.5 width admission; only the sampler differs between baseline and candidate.
+
+`final-note-receipt.json`, `final-grid-receipt.json`, and `final-long-receipt.json` identify the final production source hash used for the three comparison sets. For the three note-derived paths, union RGB errors at 1x fell from 24,523–51,472 to 3,339–4,135 across SVG, MuPDF and PDFium; at 2x they fell from 139,681–195,788 to 15,839–18,833. Four grid-aligned scale/width/pressure controls and the multi-chord long path also reduced error in all three readers. The 2x viewport may clip the source geometry. Exact metric definitions and per-case hashes are in the receipts.
+
+For `threshold-native.json`, fresh native `ObjectStroke` getter readback records the full point, pressure, timestamp, tilt and orientation arrays. The relevant coordinate words are `416fffff`, `41700000`, and `41700001`. The native callback counts are 36, 26, and 26, respectively; the Rust regression checks every method and all six float words against these streams. The controls are synthetic and do not establish behavior on a device.
+
+Independent commit validation used a clean HEAD snapshot plus this sampler change: all 42 Montblanc tests passed. A fresh below-15 native capture reproduced all 36 complete callback records. Direct SVG/resvg and PDF/MuPDF/PDFium exports were rebuilt against the unchanged HEAD dispatch for the note, grid, and long controls; the three final receipts record that comparison. Arbitrary 6–24-point trajectories remain extrapolations.

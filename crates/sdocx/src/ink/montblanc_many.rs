@@ -82,7 +82,7 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
         let prior = accepted[pair - 1];
         let next = accepted[pair];
         let distance = p(next).sub(p(prior)).len();
-        if !distance.is_finite() || !(4.2..15.0).contains(&distance) {
+        if !distance.is_finite() || distance < 4.2 {
             return Err(Error::InvalidInput);
         }
         let finish = control.mid(p(next));
@@ -119,7 +119,7 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     }
     let last = *accepted.last().unwrap();
     let distance = p(last).sub(p(accepted[accepted.len() - 2])).len();
-    if !distance.is_finite() || distance >= 15.0 {
+    if !distance.is_finite() {
         return Err(Error::InvalidInput);
     }
     let curve = if accepted.len() % 2 == 1 {
@@ -147,7 +147,21 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
         return Err(Error::InvalidInput);
     }
     let count = repeat_count(curve.length(), repeat_width)?;
-    let end = end_alpha(alpha, alpha, Some(distance), count as u32);
+    // endPen compares the two latest accepted move positions against 15.
+    // At or above that boundary it interpolates alpha and skips replay.
+    let use_end_fade = distance >= 15.0;
+    let end_distance = p(n - 1).sub(control).len();
+    let (factor, _, _) = redraw_alpha_candidate(alpha, input.pressure[n - 1], end_distance);
+    let seed = (input.pressure[n - 1] * 0.5).mul_add(170.0, 170.0).trunc();
+    let candidate = (-(1.0 - factor)).mul_add(0.5, 1.0) * seed;
+    let candidate = candidate.trunc() as i32;
+    let end_target = if (candidate - alpha).abs() >= 11 {
+        alpha + if candidate > alpha { 10 } else { -10 }
+    } else {
+        candidate
+    }
+    .clamp(60, 255);
+    let end = end_alpha(alpha, end_target, Some(distance), count as u32);
     segments.push((
         curve,
         count,
@@ -168,6 +182,9 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
         for (seg_index, (q, count, initial_width, target_width, alpha_start, alpha_step, redraw)) in
             segments.iter().enumerate()
         {
+            if replay && use_end_fade {
+                break;
+            }
             if replay && seg_index < accepted.len().saturating_sub(7) / 2 {
                 continue;
             }
@@ -182,16 +199,27 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
             let mut distance = 0.0_f32;
             for index in 0..*count {
                 let position = q.at(distance);
-                let tangent = q.normalized_tangent(distance);
+                let mut tangent = q.normalized_tangent(distance);
                 let call = if !replay && seg_index == 0 && index == 0 {
                     RtCall::Start
                 } else if !replay && !redraw && index + 1 == *count {
-                    RtCall::End
+                    if use_end_fade
+                        && ((*count as f32)
+                            .mul_add(*alpha_step, *alpha_start as f32)
+                            .trunc() as i32
+                            != alpha)
+                    {
+                        tangent.x = -tangent.x;
+                        tangent.y = -tangent.y;
+                        RtCall::Start
+                    } else {
+                        RtCall::End
+                    }
                 } else {
                     RtCall::Point
                 };
                 let opacity = if call == RtCall::Point {
-                    ((index + usize::from(*redraw)) as f32)
+                    ((index + usize::from(*redraw || use_end_fade)) as f32)
                         .mul_add(*alpha_step, *alpha_start as f32)
                         .trunc()
                         / 255.0
@@ -536,6 +564,17 @@ fn long_independent_native_stream() {
 #[test]
 fn note_derived_wide_streams_match_native() {
     for fixture in [
+        include_str!("../../../../tools/montblanc/note-derived-v302/note3-6/native.json"),
+        include_str!("../../../../tools/montblanc/note-short-v310/note6-stream.json"),
+        include_str!("../../../../tools/montblanc/note-short-v310/note7-stream.json"),
+        include_str!("../../../../tools/montblanc/note-short-v310/wide-stream.json"),
+        include_str!("../../../../tools/montblanc/note-short-v310/wider-stream.json"),
+        include_str!("../../../../tools/montblanc/note-short-v310/thin-stream.json"),
+        include_str!("../../../../tools/montblanc/note-short-v310/pressure-stream.json"),
+        include_str!("../../../../tools/montblanc/note-short-v310/threshold-below-stream.json"),
+        include_str!("../../../../tools/montblanc/note-short-v310/threshold-equal-stream.json"),
+        include_str!("../../../../tools/montblanc/note-short-v310/threshold-above-stream.json"),
+        include_str!("../../../../tools/montblanc/note-short-v310/long-stream.json"),
         include_str!("../../../../tools/montblanc/note-derived-v302/note3/native.json"),
         include_str!("../../../../tools/montblanc/note-derived-v302/note3-12/native.json"),
         include_str!("../../../../tools/montblanc/note-derived-v302/note3-9/native.json"),
@@ -585,31 +624,4 @@ fn note_derived_wide_streams_match_native() {
             }
         }
     }
-}
-
-#[test]
-fn note_derived_short_wide_path_falls_back() {
-    let fixture = include_str!("../../../../tools/montblanc/note-derived-v302/note3-6/native.json");
-    let data: serde_json::Value = serde_json::from_str(fixture).unwrap();
-    let num = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
-    let points: Vec<[f32; 2]> = data["input"]["points"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|p| [num(&p[0]), num(&p[1])])
-        .collect();
-    let pressure: Vec<f32> = data["input"]["pressure"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(num)
-        .collect();
-    assert!(matches!(
-        many_point(Input {
-            points: &points,
-            pressure: &pressure,
-            pen_size: num(&data["input"]["pen_size"])
-        }),
-        Err(Error::InvalidInput)
-    ));
 }
