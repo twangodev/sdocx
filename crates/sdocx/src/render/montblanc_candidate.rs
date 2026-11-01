@@ -250,8 +250,14 @@ pub(super) fn render(
         let id = scene.definition::<()>().id_text();
         group = group
             .add(Definitions::new().add(patch_group(Group::new(), &patches[..best.1]).id(&id)));
-        let first = format!("sdocx-montblanc-reuse-{}", scene.definition::<()>().id_text());
-        let second = format!("sdocx-montblanc-reuse-{}", scene.definition::<()>().id_text());
+        let first = format!(
+            "sdocx-montblanc-reuse-{}",
+            scene.definition::<()>().id_text()
+        );
+        let second = format!(
+            "sdocx-montblanc-reuse-{}",
+            scene.definition::<()>().id_text()
+        );
         group = group.add(Group::new().id(&first).add(Use::href(&id)));
         group = group.add(patch_group(Group::new(), &patches[best.1..best.0]));
         group = group.add(Group::new().id(&second).add(Use::href(&id)));
@@ -356,9 +362,18 @@ fn repeated_prefix_matches_unshared_transformed_svg_and_native_pdf() {
     };
     let form_count = |bytes: &[u8]| {
         let document = lopdf::Document::load_mem(bytes).unwrap();
-        document.objects.values().filter_map(|object| object.as_stream().ok()).filter(|stream| {
-            stream.dict.get(b"Subtype").and_then(|object| object.as_name()).is_ok_and(|name| name == b"Form")
-        }).count()
+        document
+            .objects
+            .values()
+            .filter_map(|object| object.as_stream().ok())
+            .filter(|stream| {
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .and_then(|object| object.as_name())
+                    .is_ok_and(|name| name == b"Form")
+            })
+            .count()
     };
     assert!(form_count(&pdf(&grouped)) > form_count(&pdf(&separate)));
     let raster = |svg: String| {
