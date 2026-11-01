@@ -5,12 +5,197 @@ use usvg::{BlendMode, Node, Opacity};
 use super::util::{UsvgTransformExt, convert_blend_mode};
 use super::{ProcessContext, SvgError, clip_path, filter, image, mask, path};
 
+// Only producer-marked, effect-free solid path blocks are eligible. The key is
+// made from the resolved path data and fill, never from the SVG identifier.
+fn reuse_key(group: &usvg::Group, budget: usize) -> Option<Vec<u32>> {
+    fn paths(
+        group: &usvg::Group,
+        key: &mut Vec<u32>,
+        count: &mut usize,
+        depth: usize,
+        budget: usize,
+        visited: &mut usize,
+    ) -> Option<()> {
+        *visited += 1;
+        if depth > 8 || key.len() > budget || *count > 32768 || *visited > 32768 {
+            return None;
+        }
+        if !group.transform().is_identity()
+            || group.opacity() != Opacity::ONE
+            || group.blend_mode() != BlendMode::Normal
+            || group.isolate()
+            || group.clip_path().is_some()
+            || group.mask().is_some()
+            || !group.filters().is_empty()
+        {
+            return None;
+        }
+        for child in group.children() {
+            *visited += 1;
+            if *visited > 32768 {
+                return None;
+            }
+            match child {
+                Node::Group(g) => paths(g, key, count, depth + 1, budget, visited)?,
+                Node::Path(p) if p.is_visible() && p.stroke().is_none() => {
+                    let fill = p.fill()?;
+                    let usvg::Paint::Color(color) = fill.paint() else {
+                        return None;
+                    };
+                    key.extend([
+                        0,
+                        u32::from(color.red),
+                        u32::from(color.green),
+                        u32::from(color.blue),
+                        fill.opacity().get().to_bits(),
+                        match fill.rule() {
+                            usvg::FillRule::NonZero => 0,
+                            usvg::FillRule::EvenOdd => 1,
+                        },
+                    ]);
+                    for segment in p.data().segments() {
+                        if key.len() + 8 > budget {
+                            return None;
+                        }
+                        use tiny_skia::PathSegment::*;
+                        let (op, points): (u32, &[tiny_skia::Point]) = match &segment {
+                            MoveTo(p) => (1, std::slice::from_ref(p)),
+                            LineTo(p) => (2, std::slice::from_ref(p)),
+                            QuadTo(..) | CubicTo(..) | Close => (0, &[]),
+                        };
+                        if op != 0 {
+                            key.push(op);
+                            for p in points {
+                                key.extend([p.x.to_bits(), p.y.to_bits()]);
+                            }
+                        } else {
+                            match segment {
+                                QuadTo(a, b) => key.extend([
+                                    3,
+                                    a.x.to_bits(),
+                                    a.y.to_bits(),
+                                    b.x.to_bits(),
+                                    b.y.to_bits(),
+                                ]),
+                                CubicTo(a, b, c) => key.extend([
+                                    4,
+                                    a.x.to_bits(),
+                                    a.y.to_bits(),
+                                    b.x.to_bits(),
+                                    b.y.to_bits(),
+                                    c.x.to_bits(),
+                                    c.y.to_bits(),
+                                ]),
+                                Close => key.push(5),
+                                _ => unreachable!(),
+                            }
+                        }
+                    }
+                    key.push(6);
+                    *count += 1;
+                }
+                _ => return None,
+            }
+        }
+        Some(())
+    }
+    if !group.id().starts_with("sdocx-montblanc-reuse-") {
+        return None;
+    }
+    let mut key = Vec::new();
+    let mut count = 0;
+    paths(group, &mut key, &mut count, 0, budget, &mut 0)?;
+    (count >= 32 && key.len() <= budget).then_some(key)
+}
+
+pub(super) fn collect_reuse_candidates(
+    root: &usvg::Group,
+    counts: &mut std::collections::HashMap<Vec<u32>, usize>,
+    nodes: &mut std::collections::HashMap<usize, Vec<u32>>,
+) {
+    // Markers may come from arbitrary SVG input. Limit all fingerprint work
+    // and storage, and fall back to normal rendering when a limit is reached.
+    let mut work = vec![root];
+    let mut remaining = 2_000_000usize;
+    let mut visited = 0usize;
+    let mut markers = 0usize;
+    while let Some(group) = work.pop() {
+        visited += 1;
+        if visited > 100_000 {
+            break;
+        }
+        if group.id().starts_with("sdocx-montblanc-reuse-") {
+            markers += 1;
+            if markers > 128 || remaining == 0 {
+                break;
+            }
+            if let Some(key) = reuse_key(group, remaining) {
+                remaining -= key.len();
+                *counts.entry(key.clone()).or_default() += 1;
+                nodes.insert(group as *const _ as usize, key);
+            } else {
+                // Failed fingerprints can have consumed the whole allowance.
+                // Stop scanning rather than repeatedly processing hostile input.
+                break;
+            }
+        }
+        let slots = 100_000usize.saturating_sub(visited + work.len());
+        work.extend(
+            group
+                .children()
+                .iter()
+                .filter_map(|child| match child {
+                    Node::Group(g) => Some(g.as_ref()),
+                    _ => None,
+                })
+                .take(slots),
+        );
+    }
+    nodes.retain(|_, key| counts.get(key).copied().unwrap_or(0) >= 2);
+}
+
 pub(super) fn render(
     group: &usvg::Group,
     surface: &mut Surface,
     process_context: &mut ProcessContext,
 ) {
     if process_context.error.is_some() {
+        return;
+    }
+    fn contains_native_ink(group: &usvg::Group, context: &ProcessContext) -> bool {
+        context.has_native_ink(group)
+            || group.children().iter().any(|child| match child {
+                Node::Group(child) => contains_native_ink(child, context),
+                _ => false,
+            })
+    }
+    if let Some(key) = process_context
+        .reuse_nodes
+        .get(&(group as *const _ as usize))
+        .cloned()
+        && !contains_native_ink(group, process_context)
+    {
+        if let Some(graphic) = process_context.reusable_graphics.get(&key) {
+            surface.push_blend_mode(convert_blend_mode(&BlendMode::Normal));
+            surface.draw_graphic(graphic.clone());
+            surface.pop();
+            return;
+        }
+        let viewport = process_context.cull_viewport.take();
+        let mut builder = surface.stream_builder();
+        {
+            let mut sub = builder.surface();
+            for child in group.children() {
+                render_node(child, &mut sub, process_context);
+            }
+            sub.finish();
+        }
+        process_context.cull_viewport = viewport;
+        let graphic = krilla::graphic::Graphic::new(builder.finish(), false);
+        surface.push_blend_mode(convert_blend_mode(&BlendMode::Normal));
+        surface.draw_graphic(graphic.clone());
+        surface.pop();
+        process_context.reusable_graphics.insert(key, graphic);
         return;
     }
     let native_ink = process_context.has_native_ink(group);
@@ -90,5 +275,164 @@ pub(super) fn render_node(
             }
         }
         Node::Text(t) => process_context.render_text(t, surface),
+    }
+}
+
+#[cfg(test)]
+mod reuse_tests {
+    use crate::pdf::svg::{SurfaceExt, SvgSettings};
+    use krilla::{Document, geom::Size, page::PageSettings};
+
+    fn svg(marked: bool, distinct: bool, one: bool, internal: &str) -> String {
+        let paths: String = (0..40)
+            .map(|i| format!("<path d='M {i} 1 l 3 0 l 0 3 z' fill-opacity='.3'/>"))
+            .collect();
+        let marker = |i| {
+            if marked {
+                format!("sdocx-montblanc-reuse-{i}")
+            } else {
+                format!("ordinary-{i}")
+            }
+        };
+        let fill = if distinct { "blue" } else { "red" };
+        let second = if one {
+            String::new()
+        } else {
+            format!(
+                "<g transform='translate(2 8)' opacity='.7' clip-path='url(#c)' fill='{fill}'><g id='{}' {internal}>{paths}</g></g>",
+                marker(2)
+            )
+        };
+        format!(
+            "<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><defs><clipPath id='c'><rect x='0' y='0' width='35' height='40'/></clipPath></defs><rect width='100' height='50' fill='white'/><g fill='red' opacity='.7' clip-path='url(#c)' transform='translate(2 8)'><g id='{}'>{paths}</g></g><path d='M0 30h80v2H0z' fill='green'/>{second}<path d='M0 33h80v2H0z' fill='black'/></svg>",
+            marker(1)
+        )
+    }
+    fn pdf(svg: &str) -> Vec<u8> {
+        let tree = usvg::Tree::from_str(svg, &Default::default()).unwrap();
+        let mut doc = Document::new();
+        let size = Size::from_wh(100., 50.).unwrap();
+        let mut page = doc.start_page_with(PageSettings::new(size));
+        let mut surface = page.surface();
+        surface
+            .draw_svg(&tree, size, SvgSettings::default())
+            .unwrap();
+        surface.finish();
+        page.finish();
+        doc.finish().unwrap()
+    }
+    fn form_count(bytes: &[u8]) -> usize {
+        let pdf = lopdf::Document::load_mem(bytes).unwrap();
+        pdf.objects
+            .values()
+            .filter_map(|o| o.as_stream().ok())
+            .filter(|s| {
+                s.dict
+                    .get(b"Subtype")
+                    .and_then(|o| o.as_name())
+                    .is_ok_and(|n| n == b"Form")
+            })
+            .count()
+    }
+    #[test]
+    fn marked_blocks_require_matching_resolved_content_and_preserve_mixed_order() {
+        let shared = pdf(&svg(true, false, false, ""));
+        let flat = pdf(&svg(false, false, false, ""));
+        assert!(form_count(&shared) > form_count(&flat));
+        let duplicate_ids = svg(true, false, false, "")
+            .replace("sdocx-montblanc-reuse-2", "sdocx-montblanc-reuse-1");
+        assert_eq!(form_count(&pdf(&duplicate_ids)), form_count(&shared));
+        assert_eq!(
+            form_count(&pdf(&svg(true, true, false, ""))),
+            form_count(&pdf(&svg(false, true, false, "")))
+        );
+        assert_eq!(
+            form_count(&pdf(&svg(true, false, true, ""))),
+            form_count(&pdf(&svg(false, false, true, "")))
+        );
+        assert_eq!(
+            form_count(&pdf(&svg(true, false, false, "opacity='.8'"))),
+            form_count(&pdf(&svg(false, false, false, "opacity='.8'")))
+        );
+        if let Ok(dir) = std::env::var("SDOCX_REUSE_TEST_OUTPUT") {
+            std::fs::write(format!("{dir}/shared.pdf"), shared).unwrap();
+            std::fs::write(format!("{dir}/flat.pdf"), flat).unwrap();
+            let make = |marked| {
+                svg(marked, false, false, "")
+                    .replacen("translate(2 8)", "translate(80 8)", 1)
+                    .replace(
+                        "<rect width='100'",
+                        "<g style='mix-blend-mode:multiply'><rect width='100'",
+                    )
+                    .replace("</svg>", "</g></svg>")
+            };
+            std::fs::write(format!("{dir}/shared-offscreen.pdf"), pdf(&make(true))).unwrap();
+            std::fs::write(format!("{dir}/flat-offscreen.pdf"), pdf(&make(false))).unwrap();
+            let mask = |marked| {
+                svg(marked, false, false, "").replace("</defs>", "<mask id='m'><rect width='100' height='50' fill='white' opacity='.6'/></mask></defs>").replace("<rect width='100' height='50' fill='white'/>", "<g mask='url(#m)' style='mix-blend-mode:multiply'><rect width='100' height='50' fill='white'/>").replace("</svg>", "</g></svg>")
+            };
+            std::fs::write(format!("{dir}/shared-mask.pdf"), pdf(&mask(true))).unwrap();
+            std::fs::write(format!("{dir}/flat-mask.pdf"), pdf(&mask(false))).unwrap();
+        }
+    }
+    #[test]
+    fn registered_native_ink_descendant_is_never_reused_or_skipped() {
+        let paths: String = (0..40)
+            .map(|i| format!("<path d='M {i} 1 l 3 0 l 0 3 z'/>"))
+            .collect();
+        let xml = format!(
+            "<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><g id='sdocx-montblanc-reuse-a'><g id='native'>{paths}</g></g><g id='sdocx-montblanc-reuse-b'>{paths}</g></svg>"
+        );
+        let tree = usvg::Tree::from_str(&xml, &Default::default()).unwrap();
+        let mut doc = Document::new();
+        let size = Size::from_wh(100., 50.).unwrap();
+        let mut page = doc.start_page_with(PageSettings::new(size));
+        let mut surface = page.surface();
+        let ids = std::collections::HashSet::from(["native".to_string()]);
+        let mut text_hook = |_: &usvg::Text, _: &mut krilla::surface::Surface<'_>| Ok(false);
+        let mut ink_hook = |_: &usvg::Group, _: &mut krilla::surface::Surface<'_>| {
+            Err("native hook invoked".to_string())
+        };
+        let result = surface.draw_svg_with_text_and_ink(
+            &tree,
+            size,
+            SvgSettings::default(),
+            &mut text_hook,
+            &ids,
+            &mut ink_hook,
+        );
+        assert!(
+            matches!(result, Err(crate::pdf::svg::SvgError::Ink(message)) if message == "native hook invoked")
+        );
+        surface.finish();
+        page.finish();
+    }
+    #[test]
+    fn hostile_reuse_markers_are_bounded() {
+        let paths: String = (0..40)
+            .map(|i| format!("<path d='M {i} 1 l 3 0 l 0 3 z'/>"))
+            .collect();
+        let nested = format!("{}{}{}", "<g>".repeat(12), paths, "</g>".repeat(12));
+        let xml = format!(
+            "<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><g id='sdocx-montblanc-reuse-x'>{nested}</g></svg>"
+        );
+        let tree = usvg::Tree::from_str(&xml, &Default::default()).unwrap();
+        let usvg::Node::Group(group) = tree.node_by_id("sdocx-montblanc-reuse-x").unwrap() else {
+            panic!("expected group")
+        };
+        let mut retained_depth = 0;
+        let mut current = group.as_ref();
+        while let [usvg::Node::Group(child)] = current.children() {
+            retained_depth += 1;
+            current = child;
+        }
+        assert!(retained_depth > 8, "fixture must retain nested groups");
+        assert!(super::reuse_key(group, 2_000_000).is_none());
+        let simple =
+            usvg::Tree::from_str(&svg(true, false, false, ""), &Default::default()).unwrap();
+        let usvg::Node::Group(group) = simple.node_by_id("sdocx-montblanc-reuse-1").unwrap() else {
+            panic!("expected group")
+        };
+        assert!(super::reuse_key(group, 16).is_none());
     }
 }

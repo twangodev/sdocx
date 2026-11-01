@@ -1,0 +1,82 @@
+{
+  "scope": "Host public SVG and direct PDF for four retained synthetic native controls at 1x/2x; equality is against the ordered-prefix-sharing receipt. No device or speed claim.",
+  "semantic_limits": "Only marked groups with matching resolved solid-fill path data and paint, no internal transform, clip, mask, blend, filter, stroke, or isolation; bounded scan and fingerprint budgets; native ink hooks excluded; other content falls back.",
+  "readers": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pdfium": "156.0.8076.0"
+  },
+  "cases": {
+    "note3/zigzag-2.5-1": {
+      "pdf_bytes_before": 137677,
+      "pdf_bytes_after": 137677,
+      "svg_rgb_sha256": "5d57cceebde98c2f0c3c7afe2fa56487b0fe0c646a0a63ad77ea2f19d12aac17",
+      "mupdf_rgb_sha256": "2b9b716103adaa87950f0b9dcb23cddea2e8fb0d8d8407860fb5f63d60428f8c",
+      "pdfium_rgb_sha256": "a2100a9bc0b7033f9ca9cd1d059f4cd8daa9427cfd5c0f40b010459ad06aaf8b"
+    },
+    "note3/zigzag-2.5-2": {
+      "pdf_bytes_before": 119327,
+      "pdf_bytes_after": 119327,
+      "svg_rgb_sha256": "47cf8cf8cd7dbcc42198f69f9702e89ee3ea58f3fea70fd1f46250f8efd8933c",
+      "mupdf_rgb_sha256": "0470045c3e1e8d447fcf4a542eedb36460c961400248d477f45fefcd0239d4e3",
+      "pdfium_rgb_sha256": "3cc815ec098c20abf4831a97f41318c0df1da76d8491a773618820e9cafdcf90"
+    },
+    "note3-9/zigzag-2.5-1": {
+      "pdf_bytes_before": 146435,
+      "pdf_bytes_after": 121568,
+      "svg_rgb_sha256": "e5fb3a1c5041ed475ec515a18e188cf17991d75a2cf95e92f60aba78f549d729",
+      "mupdf_rgb_sha256": "fbc44f4e7e0df7a8d27100123189ceb7a8c333a60b36fa05d197ab00208e0814",
+      "pdfium_rgb_sha256": "fa54a7bc63120bb5d9cc003efaad9b240170e6210c1e150063e849e2ab6fe73d"
+    },
+    "note3-9/zigzag-2.5-2": {
+      "pdf_bytes_before": 122042,
+      "pdf_bytes_after": 96864,
+      "svg_rgb_sha256": "d182e2a2329a07e8e3d5caddf35d49685b04a52737a45c772419f94ab2362d19",
+      "mupdf_rgb_sha256": "ce6de6acf4de50630b65a8a94e27eba4570fc9652b9349ac8e2810bb675cf98f",
+      "pdfium_rgb_sha256": "07cde238196a28874d3eb5e77fa71613ceca5004c09830cc1c6e371b4335dfce"
+    },
+    "note3-12/zigzag-2.5-1": {
+      "pdf_bytes_before": 184155,
+      "pdf_bytes_after": 143901,
+      "svg_rgb_sha256": "39cbfbaae1f1458e97e0d6a4363ea45f50ccf7802bb88d9c9b64e385eadfffeb",
+      "mupdf_rgb_sha256": "66120c1b8071dc4241d5bd72735afef418ad5c4d58d9113bb4902fc15de2add1",
+      "pdfium_rgb_sha256": "2b90ace01a71b27415e9480141bd42dccea5687e0220dcba3fbd999eeba56739"
+    },
+    "note3-12/zigzag-2.5-2": {
+      "pdf_bytes_before": 160142,
+      "pdf_bytes_after": 119427,
+      "svg_rgb_sha256": "6b5e18500fc6030af5ba397ce28162e91f0dda723b739c21c28d258c31c77ed2",
+      "mupdf_rgb_sha256": "0b113e49930fa1bfb34ea46bccd2b3d0c55a943fda310ece892b51dce45ba982",
+      "pdfium_rgb_sha256": "9d85c79b8f6e0cfccd7a2fffdbbb844fd0db25f9721f4087e23b9e6bc00f8ee4"
+    },
+    "note6/zigzag-2.5-1": {
+      "pdf_bytes_before": 154244,
+      "pdf_bytes_after": 123381,
+      "svg_rgb_sha256": "2c618c6af46d3bc67d1044e91ad16ebb2c2fd8268f6707d29f4548659189afa7",
+      "mupdf_rgb_sha256": "ac705c2bb601e86c60bf47d3d9b3d3be6321284ad300db616d9f36f51e9d1f1b",
+      "pdfium_rgb_sha256": "431e5d9e4ae8334375388df2ad839313021cba85f7cde3029ae19c0daa8b6b65"
+    },
+    "note6/zigzag-2.5-2": {
+      "pdf_bytes_before": 134919,
+      "pdf_bytes_after": 103683,
+      "svg_rgb_sha256": "7b52695705937f3ab2db9498f3b2886fb56dc044c077cdeb126a208033ec6a48",
+      "mupdf_rgb_sha256": "7df0aa519d79cb3a0a21503707abbd4d76b402d185fc85a203879dc4b38daf21",
+      "pdfium_rgb_sha256": "af2a99e8664493b3c73f18619166bb938bafb4eeacebed690de9d275c7663243"
+    }
+  },
+  "tests": [
+    "cargo test -p sdocx --features pdf,serde reuse_tests --lib (SDOCX_REUSE_TEST_OUTPUT=/tmp)",
+    "PYTHONPATH=/path/to/readers .venv/bin/python tools/montblanc/compare-pdf-reuse.py /tmp",
+    "cargo test -p sdocx --features pdf,serde montblanc_candidate --lib",
+    "cargo test -p sdocx --features pdf,serde pdf::svg --lib"
+  ],
+  "source_sha256": {
+    "crates/sdocx/src/pdf/svg/group.rs": "73406e412609e94bc142b37de8bbe85d6445c5a5147478b78930b545789c5e11",
+    "crates/sdocx/src/pdf/svg/mod.rs": "6bdcae63ea43a009f15aae8c8a25bf0554278443e4a2558e356f4464f2c5891c",
+    "crates/sdocx/src/render/montblanc_candidate.rs": "4ac3b609b3c456e40b70fefc57c418232032c9005df7489000605f83a5a456db",
+    "tools/montblanc/compare-pdf-reuse.py": "e3b14dd0d9a9e7929e4d805556e64f99eb20991ab6bfd3bb494da56d855d3659"
+  },
+  "mixed_page": "Mixed, offscreen-first, and soft-mask plus multiply fixtures match flat output at 1x/2x in MuPDF and PDFium.",
+  "build_environment": "CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_BUILD_JOBS=2",
+  "public_reproduction": "For each case note3, note3-9, note3-12, note6, run its run.py build with MB_CLEAN_ROOT pointing at this checkout, MB_CAPTURE_WORK at that case/captures, fresh MB_EXPORT_WORK and MB_RECEIPT_OUTPUT, PYTHONPATH pointing at reader dependencies, and the recorded build environment; see note-derived-v302/README.md."
+}

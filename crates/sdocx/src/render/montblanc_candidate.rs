@@ -250,9 +250,11 @@ pub(super) fn render(
         let id = scene.definition::<()>().id_text();
         group = group
             .add(Definitions::new().add(patch_group(Group::new(), &patches[..best.1]).id(&id)));
-        group = group.add(Use::href(&id));
+        let first = format!("sdocx-montblanc-reuse-{}", scene.definition::<()>().id_text());
+        let second = format!("sdocx-montblanc-reuse-{}", scene.definition::<()>().id_text());
+        group = group.add(Group::new().id(&first).add(Use::href(&id)));
         group = group.add(patch_group(Group::new(), &patches[best.1..best.0]));
-        group = group.add(Use::href(&id));
+        group = group.add(Group::new().id(&second).add(Use::href(&id)));
         group = group.add(patch_group(Group::new(), &patches[best.0 + best.1..]));
     } else {
         group = patch_group(group, &patches);
@@ -352,7 +354,13 @@ fn repeated_prefix_matches_unshared_transformed_svg_and_native_pdf() {
     let pdf = |scene: &super::RenderedScene| {
         crate::pdf::render_native_scene_pdf_for_test(scene, &crate::PdfOptions::default()).unwrap()
     };
-    assert_eq!(pdf(&grouped), pdf(&separate));
+    let form_count = |bytes: &[u8]| {
+        let document = lopdf::Document::load_mem(bytes).unwrap();
+        document.objects.values().filter_map(|object| object.as_stream().ok()).filter(|stream| {
+            stream.dict.get(b"Subtype").and_then(|object| object.as_name()).is_ok_and(|name| name == b"Form")
+        }).count()
+    };
+    assert!(form_count(&pdf(&grouped)) > form_count(&pdf(&separate)));
     let raster = |svg: String| {
         let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
         let mut pixels = resvg::tiny_skia::Pixmap::new(32, 32).unwrap();
