@@ -2340,19 +2340,41 @@ fn oilbrush3_source_model_public_canvas_export() {
     let native = decode_v17_expected(prefixes[14], V17_PREFIX_SHA256[14]);
     assert_eq!(compare_frame(&pixels, &native).diff_pixels, 0);
     let mut production = InkRasterCanvas::new(
-        InkRasterContext { width: 1920, height: 1080, pixels_per_unit: 1, origin: InkRasterOrigin::TopLeft },
+        InkRasterContext {
+            width: 1920,
+            height: 1080,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        },
         [0; 4],
-    ).unwrap();
-    production.paint_oilbrush3_cold_host(&stroke, &mask, &depth).unwrap();
-    let expected: Vec<[u8; 4]> = pixels.as_chunks::<V17_PAGE_WIDTH>().0.iter().rev().flat_map(|row| row.iter().map(|pixel| pixel.0)).collect();
+    )
+    .unwrap();
+    production
+        .paint_oilbrush3_cold_host(&stroke, &mask, &depth)
+        .unwrap();
+    let expected: Vec<[u8; 4]> = pixels
+        .as_chunks::<V17_PAGE_WIDTH>()
+        .0
+        .iter()
+        .rev()
+        .flat_map(|row| row.iter().map(|pixel| pixel.0))
+        .collect();
     assert_eq!(production.pixels(), expected);
     let before = production.pixels().to_vec();
-    assert!(production.paint_oilbrush3_cold_host(&stroke, &mask, &depth).is_err());
+    assert!(
+        production
+            .paint_oilbrush3_cold_host(&stroke, &mask, &depth)
+            .is_err()
+    );
     assert_eq!(production.pixels(), before);
-    let white: Vec<[u8; 4]> = production.pixels().iter().map(|p| {
-        let channel = |c: usize| (u16::from(p[c]) + u16::from(255 - p[3])).min(255) as u8;
-        [channel(0), channel(1), channel(2), 255]
-    }).collect();
+    let white: Vec<[u8; 4]> = production
+        .pixels()
+        .iter()
+        .map(|p| {
+            let channel = |c: usize| (u16::from(p[c]) + u16::from(255 - p[3])).min(255) as u8;
+            [channel(0), channel(1), channel(2), 255]
+        })
+        .collect();
     let canvas = InkRasterCanvas::from_pixels(
         InkRasterContext {
             width: V17_PAGE_WIDTH as u32,
@@ -2406,9 +2428,15 @@ fn oilbrush3_public_canvas_rejections_preserve_pixels_and_budget() {
     let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
     let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
     let mut canvas = InkRasterCanvas::new(
-        InkRasterContext { width: 1920, height: 1080, pixels_per_unit: 1, origin: InkRasterOrigin::TopLeft },
+        InkRasterContext {
+            width: 1920,
+            height: 1080,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        },
         [0; 4],
-    ).unwrap();
+    )
+    .unwrap();
     let mut malformed = stroke.clone();
     malformed.pressures.pop();
     let mut oversized = stroke.clone();
@@ -2421,8 +2449,19 @@ fn oilbrush3_public_canvas_rejections_preserve_pixels_and_budget() {
     nonfinite.points[0].y = f64::NAN;
     let mut long = stroke.clone();
     long.points[1].x = 1900.0;
-    for rejected in [&malformed, &oversized, &oversized_channel, &out_of_page, &nonfinite, &long] {
-        assert!(canvas.paint_oilbrush3_cold_host(rejected, &mask, &depth).is_err());
+    for rejected in [
+        &malformed,
+        &oversized,
+        &oversized_channel,
+        &out_of_page,
+        &nonfinite,
+        &long,
+    ] {
+        assert!(
+            canvas
+                .paint_oilbrush3_cold_host(rejected, &mask, &depth)
+                .is_err()
+        );
         assert!(canvas.pixels().iter().all(|pixel| *pixel == [0; 4]));
     }
     let mut wrong_mask = mask.clone();
@@ -2430,11 +2469,21 @@ fn oilbrush3_public_canvas_rejections_preserve_pixels_and_budget() {
     let mut wrong_depth = depth.clone();
     wrong_depth[0] ^= 1;
     for _ in 0..31 {
-        assert!(canvas.paint_oilbrush3_cold_host(&stroke, &wrong_mask, &depth).is_err());
+        assert!(
+            canvas
+                .paint_oilbrush3_cold_host(&stroke, &wrong_mask, &depth)
+                .is_err()
+        );
     }
-    assert!(canvas.paint_oilbrush3_cold_host(&stroke, &mask, &wrong_depth).is_err());
+    assert!(
+        canvas
+            .paint_oilbrush3_cold_host(&stroke, &mask, &wrong_depth)
+            .is_err()
+    );
     assert!(canvas.pixels().iter().all(|pixel| *pixel == [0; 4]));
-    canvas.paint_oilbrush3_cold_host(&stroke, &mask, &depth).unwrap();
+    canvas
+        .paint_oilbrush3_cold_host(&stroke, &mask, &depth)
+        .unwrap();
     assert!(canvas.pixels().iter().any(|pixel| *pixel != [0; 4]));
 }
 
@@ -2445,36 +2494,94 @@ fn oilbrush3_fresh_trajectory_public_export() {
     let fixture: serde_json::Value = serde_json::from_str(super::tests::FIXTURE).unwrap();
     let mut stroke = super::tests::public_stroke_from_fixture(&fixture);
     stroke.points = [(600., 420.), (608., 429.), (619., 423.), (631., 436.)]
-        .into_iter().map(|(x, y)| Point { x, y }).collect();
+        .into_iter()
+        .map(|(x, y)| Point { x, y })
+        .collect();
     let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
     let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
-    let mut canvas = InkRasterCanvas::new(InkRasterContext {
-        width: 1920, height: 1080, pixels_per_unit: 1, origin: InkRasterOrigin::TopLeft,
-    }, [0; 4]).unwrap();
-    canvas.paint_oilbrush3_cold_host(&stroke, &mask, &depth).unwrap();
-    let native = decode_zlib(include_bytes!("../../../../../conformance/oilbrush3-fresh-trajectory/frame.rgba.zlib"), V17_PIXELS * 4, "90f7dd672ca5b9c48840e74299cbf159ea05279f68c57aa69586a690535ea94d");
-    let expected: Vec<u8> = native.as_chunks::<{V17_PAGE_WIDTH * 4}>().0.iter().rev().flatten().copied().collect();
+    let mut canvas = InkRasterCanvas::new(
+        InkRasterContext {
+            width: 1920,
+            height: 1080,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        },
+        [0; 4],
+    )
+    .unwrap();
+    canvas
+        .paint_oilbrush3_cold_host(&stroke, &mask, &depth)
+        .unwrap();
+    let native = decode_zlib(
+        include_bytes!("../../../../../conformance/oilbrush3-fresh-trajectory/frame.rgba.zlib"),
+        V17_PIXELS * 4,
+        "90f7dd672ca5b9c48840e74299cbf159ea05279f68c57aa69586a690535ea94d",
+    );
+    let expected: Vec<u8> = native
+        .as_chunks::<{ V17_PAGE_WIDTH * 4 }>()
+        .0
+        .iter()
+        .rev()
+        .flatten()
+        .copied()
+        .collect();
     let actual = canvas.pixels().as_flattened();
-    let differing = actual.as_chunks::<4>().0.iter().zip(expected.as_chunks::<4>().0.iter()).filter(|(a,b)| a != b).count();
+    let differing = actual
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(expected.as_chunks::<4>().0.iter())
+        .filter(|(a, b)| a != b)
+        .count();
     assert_eq!(differing, 0, "native frame differs in {differing} pixels");
-    let white: Vec<[u8; 4]> = canvas.pixels().iter().map(|p| {
-        let channel = |c: usize| (u16::from(p[c]) + u16::from(255 - p[3])).min(255) as u8;
-        [channel(0), channel(1), channel(2), 255]
-    }).collect();
-    let canvas = InkRasterCanvas::from_pixels(InkRasterContext {
-        width: 1920, height: 1080, pixels_per_unit: 1, origin: InkRasterOrigin::TopLeft,
-    }, white).unwrap();
+    let white: Vec<[u8; 4]> = canvas
+        .pixels()
+        .iter()
+        .map(|p| {
+            let channel = |c: usize| (u16::from(p[c]) + u16::from(255 - p[3])).min(255) as u8;
+            [channel(0), channel(1), channel(2), 255]
+        })
+        .collect();
+    let canvas = InkRasterCanvas::from_pixels(
+        InkRasterContext {
+            width: 1920,
+            height: 1080,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        },
+        white,
+    )
+    .unwrap();
     let svg = canvas.rendered_page(0).unwrap();
     let tree = resvg::usvg::Tree::from_str(&svg.svg, &Default::default()).unwrap();
     let mut pix = resvg::tiny_skia::Pixmap::new(1920, 1080).unwrap();
-    resvg::render(&tree, resvg::tiny_skia::Transform::identity(), &mut pix.as_mut());
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pix.as_mut(),
+    );
     assert_eq!(pix.data(), canvas.pixels().as_flattened());
     if let Some(dir) = std::env::var_os("SDOCX_OILBRUSH3_FRESH_EXPORT_DIR") {
         let dir = std::path::Path::new(&dir);
         std::fs::write(dir.join("source-svg.rgba"), pix.data()).unwrap();
-        std::fs::write(dir.join("source.pdf"), canvas.to_pdf(&PdfOptions::default()).unwrap()).unwrap();
-        std::fs::write(dir.join("source-svg.pdf"), crate::render_svg_pages_pdf(&[svg], &PdfOptions::default()).unwrap()).unwrap();
-        let white_rgb: Vec<u8> = expected.as_chunks::<4>().0.iter().flat_map(|p| (0..3).map(move |c| (u16::from(p[c]) + u16::from(255-p[3])).min(255) as u8)).collect();
+        std::fs::write(
+            dir.join("source.pdf"),
+            canvas.to_pdf(&PdfOptions::default()).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("source-svg.pdf"),
+            crate::render_svg_pages_pdf(&[svg], &PdfOptions::default()).unwrap(),
+        )
+        .unwrap();
+        let white_rgb: Vec<u8> = expected
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .flat_map(|p| {
+                (0..3).map(move |c| (u16::from(p[c]) + u16::from(255 - p[3])).min(255) as u8)
+            })
+            .collect();
         std::fs::write(dir.join("native.rgb"), white_rgb).unwrap();
     }
 }
@@ -2509,7 +2616,9 @@ fn oilbrush3_opaque_page_public_export() {
     }
     assert_eq!(decoder.read(&mut [0]).unwrap(), 0);
     let native_top: Vec<u8> = native
-        .as_chunks::<{V17_PAGE_WIDTH * 4}>().0.iter()
+        .as_chunks::<{ V17_PAGE_WIDTH * 4 }>()
+        .0
+        .iter()
         .rev()
         .flatten()
         .copied()
@@ -2517,9 +2626,11 @@ fn oilbrush3_opaque_page_public_export() {
     assert_eq!(canvas.pixels().as_flattened(), native_top);
     assert!(canvas.pixels().iter().any(|p| *p != [41, 83, 127, 255]));
     let before = canvas.pixels().to_vec();
-    assert!(canvas
-        .paint_oilbrush3_opaque_host(&stroke, &mask, &depth)
-        .is_err());
+    assert!(
+        canvas
+            .paint_oilbrush3_opaque_host(&stroke, &mask, &depth)
+            .is_err()
+    );
     assert_eq!(canvas.pixels(), before);
     let svg = canvas.rendered_page(0).unwrap();
     let tree = resvg::usvg::Tree::from_str(&svg.svg, &Default::default()).unwrap();
@@ -2543,7 +2654,9 @@ fn oilbrush3_opaque_page_public_export() {
         std::fs::write(
             dir.join("native.rgb"),
             native_top
-                .as_chunks::<4>().0.iter()
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .flat_map(|p| p[..3].iter().copied())
                 .collect::<Vec<_>>(),
         )
@@ -2590,7 +2703,9 @@ fn oilbrush3_opaque_fresh_public_export() {
     }
     assert_eq!(decoder.read(&mut [0]).unwrap(), 0);
     let native_top: Vec<u8> = native
-        .as_chunks::<{V17_PAGE_WIDTH * 4}>().0.iter()
+        .as_chunks::<{ V17_PAGE_WIDTH * 4 }>()
+        .0
+        .iter()
         .rev()
         .flatten()
         .copied()
@@ -2598,9 +2713,11 @@ fn oilbrush3_opaque_fresh_public_export() {
     assert_eq!(canvas.pixels().as_flattened(), native_top);
     assert!(canvas.pixels().iter().any(|p| *p != [41, 83, 127, 255]));
     let before = canvas.pixels().to_vec();
-    assert!(canvas
-        .paint_oilbrush3_opaque_host(&stroke, &mask, &depth)
-        .is_err());
+    assert!(
+        canvas
+            .paint_oilbrush3_opaque_host(&stroke, &mask, &depth)
+            .is_err()
+    );
     assert_eq!(canvas.pixels(), before);
     let svg = canvas.rendered_page(0).unwrap();
     let tree = resvg::usvg::Tree::from_str(&svg.svg, &Default::default()).unwrap();
@@ -2624,7 +2741,9 @@ fn oilbrush3_opaque_fresh_public_export() {
         std::fs::write(
             dir.join("native.rgb"),
             native_top
-                .as_chunks::<4>().0.iter()
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .flat_map(|p| p[..3].iter().copied())
                 .collect::<Vec<_>>(),
         )

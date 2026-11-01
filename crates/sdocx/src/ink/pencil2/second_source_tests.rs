@@ -61,7 +61,9 @@ fn second_source_preserves_native_geometry_except_three_known_sincos_lanes() {
     );
     assert_eq!(bytes.len(), native.len());
     let differences: Vec<_> = native
-        .as_chunks::<4>().0.iter()
+        .as_chunks::<4>()
+        .0
+        .iter()
         .zip(bytes.as_chunks::<4>().0.iter())
         .enumerate()
         .filter_map(|(i, (a, b))| {

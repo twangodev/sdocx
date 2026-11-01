@@ -71,7 +71,10 @@ pub(crate) struct GridFragment {
     pub alpha: f32,
 }
 
-pub(super) fn sample(records: &[Record], g: &Grid<'_>) -> Result<(Vec<GridFragment>, u64), &'static str> {
+pub(super) fn sample(
+    records: &[Record],
+    g: &Grid<'_>,
+) -> Result<(Vec<GridFragment>, u64), &'static str> {
     if g.width == 0
         || g.height == 0
         || g.width > 4096
@@ -189,7 +192,12 @@ pub(super) fn sample(records: &[Record], g: &Grid<'_>) -> Result<(Vec<GridFragme
                     * 5.)
                     .min(1.);
                 if alpha > 0. {
-                    fragments.push(GridFragment { x: px, y: g.height - 1 - py, rgb: [rgb[0], rgb[1], rgb[2]], alpha });
+                    fragments.push(GridFragment {
+                        x: px,
+                        y: g.height - 1 - py,
+                        rgb: [rgb[0], rgb[1], rgb[2]],
+                        alpha,
+                    });
                 }
             }
         }
@@ -202,7 +210,12 @@ pub(super) fn fragments(records: &[Record], g: &Grid<'_>) -> Result<String, &'st
     let (fragments, _) = sample(records, g)?;
     let mut svg = String::new();
     for fragment in fragments {
-        let GridFragment { x, y, rgb: [r, g, b], alpha } = fragment;
+        let GridFragment {
+            x,
+            y,
+            rgb: [r, g, b],
+            alpha,
+        } = fragment;
         writeln!(svg, "<rect x=\"{x}\" y=\"{y}\" width=\"1\" height=\"1\" fill=\"#{r:02x}{g:02x}{b:02x}\" fill-opacity=\"{alpha:.9}\"/>").unwrap();
     }
     Ok(svg)
@@ -291,7 +304,16 @@ fn normalized_repeat_precedes_texel_scaling() {
     assert_eq!(repeat_texture_index(-f32::MIN_POSITIVE), Ok(149));
     assert_eq!(repeat_texture_index(0.), Ok(0));
     assert_eq!(repeat_texture_index(2.25), Ok(37));
-    for value in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, f32::MAX, -f32::MAX] {
-        assert_eq!(repeat_texture_index(value), Err("invalid texture coordinate"));
+    for value in [
+        f32::NAN,
+        f32::INFINITY,
+        f32::NEG_INFINITY,
+        f32::MAX,
+        -f32::MAX,
+    ] {
+        assert_eq!(
+            repeat_texture_index(value),
+            Err("invalid texture coordinate")
+        );
     }
 }

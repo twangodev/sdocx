@@ -395,11 +395,27 @@ pub struct Crayon2DocumentGridProfile {
 }
 impl PartialEq for Crayon2DocumentGridProfile {
     fn eq(&self, other: &Self) -> bool {
-        self.phase_x == other.phase_x && self.phase_y == other.phase_y
-            && self.point_atlas == other.point_atlas && self.background_texture == other.background_texture
-            && self.width == other.width && self.height == other.height && self.max_samples == other.max_samples
-            && self.clip_scale.iter().chain(&self.clip_translation).chain(&self.background_scale).chain(&self.rgba)
-                .map(|x| x.to_bits()).eq(other.clip_scale.iter().chain(&other.clip_translation).chain(&other.background_scale).chain(&other.rgba).map(|x| x.to_bits()))
+        self.phase_x == other.phase_x
+            && self.phase_y == other.phase_y
+            && self.point_atlas == other.point_atlas
+            && self.background_texture == other.background_texture
+            && self.width == other.width
+            && self.height == other.height
+            && self.max_samples == other.max_samples
+            && self
+                .clip_scale
+                .iter()
+                .chain(&self.clip_translation)
+                .chain(&self.background_scale)
+                .chain(&self.rgba)
+                .map(|x| x.to_bits())
+                .eq(other
+                    .clip_scale
+                    .iter()
+                    .chain(&other.clip_translation)
+                    .chain(&other.background_scale)
+                    .chain(&other.rgba)
+                    .map(|x| x.to_bits()))
     }
 }
 impl Eq for Crayon2DocumentGridProfile {}
@@ -1662,7 +1678,9 @@ fn render_page_contents_svg(
         magicpen_output_scale,
         magicpen_host_minimum_dot_grid,
         crayon2_grid_profile,
-        crayon2_grid_remaining: Cell::new(crayon2_grid_profile.map_or(0, |p| p.max_samples.min(100_000))),
+        crayon2_grid_remaining: Cell::new(
+            crayon2_grid_profile.map_or(0, |p| p.max_samples.min(100_000)),
+        ),
         old_pencil_svg_profile,
         #[cfg(feature = "pdf")]
         old_pencil_pdf_profile,
@@ -1820,27 +1838,58 @@ fn render_object(
         native_allowed && !matches!(object.content, PageObjectContent::Descendant(_));
     match object.content.leaf() {
         PageObjectContent::Stroke(stroke) => {
-            if native_allowed && !context.replay && context.slice.is_none()
+            if native_allowed
+                && !context.replay
+                && context.slice.is_none()
                 && let Some(profile) = context.crayon2_grid_profile
                 && [context.page.width, context.page.height] == [profile.width, profile.height]
-                && stroke.color.is_some_and(|color| { let effective = context.theme.foreground_color(color); [effective.r, effective.g, effective.b] == [profile.rgba[0], profile.rgba[1], profile.rgba[2]].map(|v| (v * 255.).round() as u8) })
-                && let (Ok(phase_x), Ok(phase_y)) = (profile.phase_x.as_slice().try_into(), profile.phase_y.as_slice().try_into())
+                && stroke.color.is_some_and(|color| {
+                    let effective = context.theme.foreground_color(color);
+                    [effective.r, effective.g, effective.b]
+                        == [profile.rgba[0], profile.rgba[1], profile.rgba[2]]
+                            .map(|v| (v * 255.).round() as u8)
+                })
+                && let (Ok(phase_x), Ok(phase_y)) = (
+                    profile.phase_x.as_slice().try_into(),
+                    profile.phase_y.as_slice().try_into(),
+                )
             {
                 let grid = crate::Crayon2HostGrid {
-                    phase_x, phase_y, point_atlas: &profile.point_atlas,
-                    background_texture: &profile.background_texture, width: profile.width,
-                    height: profile.height, clip_scale: profile.clip_scale,
-                    clip_translation: profile.clip_translation, background_scale: profile.background_scale,
-                    rgba: profile.rgba, background: None, max_samples: context.crayon2_grid_remaining.get(),
+                    phase_x,
+                    phase_y,
+                    point_atlas: &profile.point_atlas,
+                    background_texture: &profile.background_texture,
+                    width: profile.width,
+                    height: profile.height,
+                    clip_scale: profile.clip_scale,
+                    clip_translation: profile.clip_translation,
+                    background_scale: profile.background_scale,
+                    rgba: profile.rgba,
+                    background: None,
+                    max_samples: context.crayon2_grid_remaining.get(),
                 };
-                if let Ok((fragments, used)) = crate::ink::crayon2::sample_host_grid(stroke, &grid) {
+                if let Ok((fragments, used)) = crate::ink::crayon2::sample_host_grid(stroke, &grid)
+                {
                     for fragment in fragments {
-                        let color = format!("#{:02x}{:02x}{:02x}", fragment.rgb[0], fragment.rgb[1], fragment.rgb[2]);
-                        let bounds = BoundingBox { x_min: f64::from(fragment.x), y_min: f64::from(fragment.y),
-                            x_max: f64::from(fragment.x + 1), y_max: f64::from(fragment.y + 1) };
-                        svg.push(rectangle(bounds, 0., 5).fill(Paint::from_hex(&color)).fill_opacity(f64::from(fragment.alpha)));
+                        let color = format!(
+                            "#{:02x}{:02x}{:02x}",
+                            fragment.rgb[0], fragment.rgb[1], fragment.rgb[2]
+                        );
+                        let bounds = BoundingBox {
+                            x_min: f64::from(fragment.x),
+                            y_min: f64::from(fragment.y),
+                            x_max: f64::from(fragment.x + 1),
+                            y_max: f64::from(fragment.y + 1),
+                        };
+                        svg.push(
+                            rectangle(bounds, 0., 5)
+                                .fill(Paint::from_hex(&color))
+                                .fill_opacity(f64::from(fragment.alpha)),
+                        );
                     }
-                    context.crayon2_grid_remaining.set(context.crayon2_grid_remaining.get() - used);
+                    context
+                        .crayon2_grid_remaining
+                        .set(context.crayon2_grid_remaining.get() - used);
                     *stroke_index += 1;
                     progress.advance(1);
                     return;

@@ -110,15 +110,27 @@ pub fn render_crayon2_host_grid_svg(
     let mut fragment_svg = String::new();
     use std::fmt::Write;
     for fragment in fragments {
-        let grid_test::GridFragment { x, y, rgb: [r, g, b], alpha } = fragment;
+        let grid_test::GridFragment {
+            x,
+            y,
+            rgb: [r, g, b],
+            alpha,
+        } = fragment;
         writeln!(fragment_svg, "<rect x=\"{x}\" y=\"{y}\" width=\"1\" height=\"1\" fill=\"#{r:02x}{g:02x}{b:02x}\" fill-opacity=\"{alpha:.9}\"/>").unwrap();
     }
-    let background = context.background.map(|c| format!(
-        "<rect width=\"{}\" height=\"{}\" fill=\"#{:02x}{:02x}{:02x}\"/>\n",
-        context.width, context.height, c[0], c[1], c[2]
-    )).unwrap_or_default();
-    Ok(format!("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"0 0 {} {}\" shape-rendering=\"crispEdges\">{}{}</svg>",
-        context.width, context.height, context.width, context.height, background, fragment_svg))
+    let background = context
+        .background
+        .map(|c| {
+            format!(
+                "<rect width=\"{}\" height=\"{}\" fill=\"#{:02x}{:02x}{:02x}\"/>\n",
+                context.width, context.height, c[0], c[1], c[2]
+            )
+        })
+        .unwrap_or_default();
+    Ok(format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"0 0 {} {}\" shape-rendering=\"crispEdges\">{}{}</svg>",
+        context.width, context.height, context.width, context.height, background, fragment_svg
+    ))
 }
 
 pub(crate) use grid_test::GridFragment;
@@ -127,14 +139,26 @@ pub(crate) fn sample_host_grid(
     stroke: &crate::Stroke,
     context: &Crayon2HostGrid<'_>,
 ) -> Result<(Vec<GridFragment>, u64), String> {
-    let rendering = stroke.rendering.as_ref().ok_or("missing rendering metadata")?;
+    let rendering = stroke
+        .rendering
+        .as_ref()
+        .ok_or("missing rendering metadata")?;
     let p = &rendering.properties;
     let style = &rendering.style;
-    if p.eraser || p.fixed_width || p.alpha_lock || p.fixed_opacity || p.rainbow_effect
-        || p.straighten || p.reveal_mode || p.replay_only
+    if p.eraser
+        || p.fixed_width
+        || p.alpha_lock
+        || p.fixed_opacity
+        || p.rainbow_effect
+        || p.straighten
+        || p.reveal_mode
+        || p.replay_only
         || style.line_type_raw.is_some_and(|v| v != 0)
         || style.color_type_raw.is_some_and(|v| v != 0)
-        || style.gradient_colors_argb.as_ref().is_some_and(|v| !v.is_empty())
+        || style
+            .gradient_colors_argb
+            .as_ref()
+            .is_some_and(|v| !v.is_empty())
     {
         return Err("unsupported Crayon2 paint or geometry flags".into());
     }
@@ -145,14 +169,18 @@ pub(crate) fn sample_host_grid(
     };
     let output = sample_stroke(stroke, &profile).map_err(|e| e.to_string())?;
     let grid = grid_test::Grid {
-        width: context.width, height: context.height,
-        clip_scale: context.clip_scale, clip_translation: context.clip_translation,
-        background_scale: context.background_scale, rgba: context.rgba,
-        point: context.point_atlas, background: context.background_texture,
+        width: context.width,
+        height: context.height,
+        clip_scale: context.clip_scale,
+        clip_translation: context.clip_translation,
+        background_scale: context.background_scale,
+        rgba: context.rgba,
+        point: context.point_atlas,
+        background: context.background_texture,
         max_samples: context.max_samples,
     };
     grid_test::sample(&output.records, &grid).map_err(str::to_owned)
- }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct SourceInput<'a> {
@@ -965,41 +993,88 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     fn document_grid_composes_and_rejects_invalid_context() {
-        let points = [P { x: 64., y: 64. }, P { x: 72., y: 70. }, P { x: 82., y: 60. }];
+        let points = [
+            P { x: 64., y: 64. },
+            P { x: 72., y: 70. },
+            P { x: 82., y: 60. },
+        ];
         let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
-        stroke.bbox = crate::BoundingBox { x_min: 50., y_min: 50., x_max: 100., y_max: 100. };
+        stroke.bbox = crate::BoundingBox {
+            x_min: 50.,
+            y_min: 50.,
+            x_max: 100.,
+            y_max: 100.,
+        };
         let native = parse_profile(&fixture());
         let document = crate::Document {
             metadata: Default::default(),
-            pages: vec![crate::Page { uuid: "grid".into(), width: 256, height: 256,
-                content_bbox: stroke.bbox, background_color: None, template: None,
-                background: Default::default(), objects: vec![stroke.into()] }],
+            pages: vec![crate::Page {
+                uuid: "grid".into(),
+                width: 256,
+                height: 256,
+                content_bbox: stroke.bbox,
+                background_color: None,
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            }],
         };
         let profile = crate::Crayon2DocumentGridProfile {
-            phase_x: native.phase_x.to_vec(), phase_y: native.phase_y.to_vec(),
-            point_atlas: vec![128; 300], background_texture: vec![128; 22500],
-            width: 256, height: 256, clip_scale: [0.0078125; 2], clip_translation: [-1.; 2],
-            background_scale: [2.2755556; 2], rgba: [0.2, 0.4, 0.6, 0.5], max_samples: 100_000,
+            phase_x: native.phase_x.to_vec(),
+            phase_y: native.phase_y.to_vec(),
+            point_atlas: vec![128; 300],
+            background_texture: vec![128; 22500],
+            width: 256,
+            height: 256,
+            clip_scale: [0.0078125; 2],
+            clip_translation: [-1.; 2],
+            background_scale: [2.2755556; 2],
+            rgba: [0.2, 0.4, 0.6, 0.5],
+            max_samples: 100_000,
         };
         let mut options = crate::RenderOptions::default();
-        let fallback = crate::render_document_svg(&document, &options)[0].svg.clone();
+        let fallback = crate::render_document_svg(&document, &options)[0]
+            .svg
+            .clone();
         options.crayon2_grid_profile = Some(profile);
-        let candidate = crate::render_document_svg(&document, &options)[0].svg.clone();
+        let candidate = crate::render_document_svg(&document, &options)[0]
+            .svg
+            .clone();
         assert_ne!(candidate, fallback);
-        assert_ne!(crate::render_document_pdf(&document, &options, &Default::default()).unwrap(),
-            crate::render_document_pdf(&document, &Default::default(), &Default::default()).unwrap());
+        assert_ne!(
+            crate::render_document_pdf(&document, &options, &Default::default()).unwrap(),
+            crate::render_document_pdf(&document, &Default::default(), &Default::default())
+                .unwrap()
+        );
         let configured = options.crayon2_grid_profile.as_ref().unwrap();
-        let crate::PageObjectContent::Stroke(ref source) = document.pages[0].objects[0].content else { unreachable!() };
-        let grid = Crayon2HostGrid { phase_x: native.phase_x, phase_y: native.phase_y,
-            point_atlas: &configured.point_atlas, background_texture: &configured.background_texture,
-            width: configured.width, height: configured.height, clip_scale: configured.clip_scale,
-            clip_translation: configured.clip_translation, background_scale: configured.background_scale,
-            rgba: configured.rgba, background: None, max_samples: 100_000 };
+        let crate::PageObjectContent::Stroke(ref source) = document.pages[0].objects[0].content
+        else {
+            unreachable!()
+        };
+        let grid = Crayon2HostGrid {
+            phase_x: native.phase_x,
+            phase_y: native.phase_y,
+            point_atlas: &configured.point_atlas,
+            background_texture: &configured.background_texture,
+            width: configured.width,
+            height: configured.height,
+            clip_scale: configured.clip_scale,
+            clip_translation: configured.clip_translation,
+            background_scale: configured.background_scale,
+            rgba: configured.rgba,
+            background: None,
+            max_samples: 100_000,
+        };
         let (fragments, visits) = sample_host_grid(source, &grid).unwrap();
         let first = fragments.first().unwrap();
         assert!(candidate.contains(&format!("fill-opacity=\"{}\"", f64::from(first.alpha))));
-        let body = |svg: &str| svg.lines().skip(2).take_while(|line| *line != "</svg>")
-            .collect::<Vec<_>>().join("\n");
+        let body = |svg: &str| {
+            svg.lines()
+                .skip(2)
+                .take_while(|line| *line != "</svg>")
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
         let mut two = document.clone();
         let second = two.pages[0].objects[0].clone();
         two.pages[0].objects.push(second);
@@ -1007,54 +1082,93 @@ mod tests {
         options.crayon2_grid_profile.as_mut().unwrap().max_samples = visits;
         let limited = crate::render_document_svg(&two, &options)[0].svg.clone();
         assert_ne!(limited, full);
-        assert_eq!(body(&limited), format!("{}\n{}", body(&candidate), body(&fallback)),
-            "the first stroke must use grid paint and the second must fall back");
+        assert_eq!(
+            body(&limited),
+            format!("{}\n{}", body(&candidate), body(&fallback)),
+            "the first stroke must use grid paint and the second must fall back"
+        );
         let mut two_pages = two.clone();
         two_pages.pages.push(two.pages[0].clone());
         let pages = crate::render_document_svg(&two_pages, &options);
         assert_eq!(pages[0].svg, pages[1].svg);
         options.crayon2_grid_profile.as_mut().unwrap().max_samples = 100_000;
         let mut different_color = document.clone();
-        let crate::PageObjectContent::Stroke(ref mut different) = different_color.pages[0].objects[0].content else { unreachable!() };
+        let crate::PageObjectContent::Stroke(ref mut different) =
+            different_color.pages[0].objects[0].content
+        else {
+            unreachable!()
+        };
         different.color = Some(crate::Color { r: 255, g: 0, b: 0 });
-        assert_eq!(crate::render_document_svg(&different_color, &options)[0].svg,
-            crate::render_document_svg(&different_color, &Default::default())[0].svg);
-        let red = crate::render_document_svg(&different_color, &options)[0].svg.clone();
+        assert_eq!(
+            crate::render_document_svg(&different_color, &options)[0].svg,
+            crate::render_document_svg(&different_color, &Default::default())[0].svg
+        );
+        let red = crate::render_document_svg(&different_color, &options)[0]
+            .svg
+            .clone();
         let mut mixed = document.clone();
-        mixed.pages[0].objects.insert(0, different_color.pages[0].objects[0].clone());
+        mixed.pages[0]
+            .objects
+            .insert(0, different_color.pages[0].objects[0].clone());
         let mixed_svg = crate::render_document_svg(&mixed, &options)[0].svg.clone();
-        assert_eq!(body(&mixed_svg), format!("{}\n{}", body(&red), body(&candidate)),
-            "fallback paint must precede grid paint in object order");
+        assert_eq!(
+            body(&mixed_svg),
+            format!("{}\n{}", body(&red), body(&candidate)),
+            "fallback paint must precede grid paint in object order"
+        );
         mixed.pages[0].objects.reverse();
         let reversed = crate::render_document_svg(&mixed, &options)[0].svg.clone();
-        assert_eq!(body(&reversed), format!("{}\n{}", body(&candidate), body(&red)),
-            "grid paint must precede fallback paint in object order");
+        assert_eq!(
+            body(&reversed),
+            format!("{}\n{}", body(&candidate), body(&red)),
+            "grid paint must precede fallback paint in object order"
+        );
         let mut dark_doc = document.clone();
         dark_doc.pages[0].background_color = Some(crate::Color { r: 0, g: 0, b: 0 });
-        let crate::PageObjectContent::Stroke(ref mut dark_stroke) = dark_doc.pages[0].objects[0].content else { unreachable!() };
+        let crate::PageObjectContent::Stroke(ref mut dark_stroke) =
+            dark_doc.pages[0].objects[0].content
+        else {
+            unreachable!()
+        };
         dark_stroke.color = Some(crate::Color { r: 0, g: 0, b: 0 });
         options.crayon2_grid_profile.as_mut().unwrap().rgba = [0., 0., 0., 0.5];
-        assert_eq!(crate::render_document_svg(&dark_doc, &options)[0].svg,
-            crate::render_document_svg(&dark_doc, &Default::default())[0].svg);
+        assert_eq!(
+            crate::render_document_svg(&dark_doc, &options)[0].svg,
+            crate::render_document_svg(&dark_doc, &Default::default())[0].svg
+        );
         options.crayon2_grid_profile.as_mut().unwrap().rgba = [0.2, 0.4, 0.6, 0.5];
         options.crayon2_grid_profile.as_mut().unwrap().max_samples = 0;
-        assert_eq!(crate::render_document_svg(&document, &options)[0].svg, fallback);
+        assert_eq!(
+            crate::render_document_svg(&document, &options)[0].svg,
+            fallback
+        );
     }
 
     #[test]
     #[allow(clippy::type_complexity)]
     fn grid_source_rejects_unsupported_flags() {
-        let points = [P { x: 64.0, y: 64.0 }, P { x: 72.0, y: 70.0 }, P { x: 82.0, y: 60.0 }];
+        let points = [
+            P { x: 64.0, y: 64.0 },
+            P { x: 72.0, y: 70.0 },
+            P { x: 82.0, y: 60.0 },
+        ];
         let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
         let profile = parse_profile(&fixture());
         let point = [128; 300];
         let background = [128; 22500];
         let grid = Crayon2HostGrid {
-            phase_x: profile.phase_x, phase_y: profile.phase_y,
-            point_atlas: &point, background_texture: &background,
-            width: 256, height: 256, clip_scale: [0.0078125; 2], clip_translation: [-1.; 2],
-            background_scale: [2.2755556; 2], rgba: [0.2, 0.4, 0.6, 0.5],
-            background: None, max_samples: 100_000,
+            phase_x: profile.phase_x,
+            phase_y: profile.phase_y,
+            point_atlas: &point,
+            background_texture: &background,
+            width: 256,
+            height: 256,
+            clip_scale: [0.0078125; 2],
+            clip_translation: [-1.; 2],
+            background_scale: [2.2755556; 2],
+            rgba: [0.2, 0.4, 0.6, 0.5],
+            background: None,
+            max_samples: 100_000,
         };
         assert!(render_crayon2_host_grid_svg(&stroke, &grid).is_ok());
         let cases: &[(&str, fn(&mut crate::StrokeRendering))] = &[
@@ -1068,12 +1182,17 @@ mod tests {
             ("replay only", |r| r.properties.replay_only = true),
             ("line type", |r| r.style.line_type_raw = Some(1)),
             ("color type", |r| r.style.color_type_raw = Some(1)),
-            ("gradient", |r| r.style.gradient_colors_argb = Some(vec![0xff123456])),
+            ("gradient", |r| {
+                r.style.gradient_colors_argb = Some(vec![0xff123456])
+            }),
         ];
         for (name, mutate) in cases {
             let mut candidate = stroke.clone();
             mutate(candidate.rendering.as_mut().unwrap());
-            assert!(render_crayon2_host_grid_svg(&candidate, &grid).is_err(), "{name}");
+            assert!(
+                render_crayon2_host_grid_svg(&candidate, &grid).is_err(),
+                "{name}"
+            );
         }
         let mut neutral = stroke.clone();
         let style = &mut neutral.rendering.as_mut().unwrap().style;
@@ -1088,29 +1207,81 @@ mod tests {
     #[ignore = "requires native textures and writes document exports"]
     #[allow(clippy::excessive_precision)]
     fn write_independent_document_grid() {
-        let points = [P { x: 40., y: 45. }, P { x: 53., y: 28. }, P { x: 75., y: 49. }];
+        let points = [
+            P { x: 40., y: 45. },
+            P { x: 53., y: 28. },
+            P { x: 75., y: 49. },
+        ];
         let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
-        stroke.color = Some(crate::Color { r: 184, g: 76, b: 41 });
-        stroke.bbox = crate::BoundingBox { x_min: 20., y_min: 10., x_max: 100., y_max: 80. };
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
+        stroke.color = Some(crate::Color {
+            r: 184,
+            g: 76,
+            b: 41,
+        });
+        stroke.bbox = crate::BoundingBox {
+            x_min: 20.,
+            y_min: 10.,
+            x_max: 100.,
+            y_max: 80.,
+        };
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
         let point = std::fs::read(dir.join("g_Crayon2PointPtn.source.bin")).unwrap();
         let background = std::fs::read(dir.join("g_Crayon2BgPtn.source.bin")).unwrap();
-        assert_eq!(sha(&point), "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405");
-        assert_eq!(sha(&background), "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3");
+        assert_eq!(
+            sha(&point),
+            "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405"
+        );
+        assert_eq!(
+            sha(&background),
+            "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3"
+        );
         let native = parse_profile(&fixture());
-        let document = crate::Document { metadata: Default::default(), pages: vec![crate::Page {
-            uuid: "control".into(), width: 192, height: 192, content_bbox: stroke.bbox,
-            background_color: Some(crate::Color { r: 64, g: 128, b: 192 }), template: None,
-            background: Default::default(), objects: vec![stroke.into()] }] };
-        let options = crate::RenderOptions { crayon2_grid_profile: Some(crate::Crayon2DocumentGridProfile {
-            phase_x: native.phase_x.to_vec(), phase_y: native.phase_y.to_vec(), point_atlas: point,
-            background_texture: background, width: 192, height: 192,
-            clip_scale: [0.010416666977107525; 2], clip_translation: [-1.; 2],
-            background_scale: [1.7066665887832642; 2], rgba: [184. / 255., 76. / 255., 41. / 255., 170. / 255.], max_samples: 100_000,
-        }), ..Default::default() };
-        let output = std::path::PathBuf::from(std::env::var_os("SDOCX_CRAYON2_DOCUMENT_DIR").unwrap());
-        std::fs::write(output.join("document.svg"), &crate::render_document_svg(&document, &options)[0].svg).unwrap();
-        std::fs::write(output.join("document.pdf"), crate::render_document_pdf(&document, &options, &Default::default()).unwrap()).unwrap();
+        let document = crate::Document {
+            metadata: Default::default(),
+            pages: vec![crate::Page {
+                uuid: "control".into(),
+                width: 192,
+                height: 192,
+                content_bbox: stroke.bbox,
+                background_color: Some(crate::Color {
+                    r: 64,
+                    g: 128,
+                    b: 192,
+                }),
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            }],
+        };
+        let options = crate::RenderOptions {
+            crayon2_grid_profile: Some(crate::Crayon2DocumentGridProfile {
+                phase_x: native.phase_x.to_vec(),
+                phase_y: native.phase_y.to_vec(),
+                point_atlas: point,
+                background_texture: background,
+                width: 192,
+                height: 192,
+                clip_scale: [0.010416666977107525; 2],
+                clip_translation: [-1.; 2],
+                background_scale: [1.7066665887832642; 2],
+                rgba: [184. / 255., 76. / 255., 41. / 255., 170. / 255.],
+                max_samples: 100_000,
+            }),
+            ..Default::default()
+        };
+        let output =
+            std::path::PathBuf::from(std::env::var_os("SDOCX_CRAYON2_DOCUMENT_DIR").unwrap());
+        std::fs::write(
+            output.join("document.svg"),
+            &crate::render_document_svg(&document, &options)[0].svg,
+        )
+        .unwrap();
+        std::fs::write(
+            output.join("document.pdf"),
+            crate::render_document_pdf(&document, &options, &Default::default()).unwrap(),
+        )
+        .unwrap();
     }
 
     #[cfg(feature = "pdf")]
@@ -1118,30 +1289,87 @@ mod tests {
     #[ignore = "requires native textures and writes document exports"]
     #[allow(clippy::excessive_precision)]
     fn write_fresh_document_grid() {
-        let points = [P { x: 33., y: 58. }, P { x: 57., y: 39. }, P { x: 82., y: 72. }];
+        let points = [
+            P { x: 33., y: 58. },
+            P { x: 57., y: 39. },
+            P { x: 82., y: 72. },
+        ];
         let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
-        stroke.color = Some(crate::Color { r: 60, g: 146, b: 215 });
-        stroke.bbox = crate::BoundingBox { x_min: 0., y_min: 0., x_max: 159., y_max: 159. };
-        assert_eq!(sha(&output_bytes(&sample_stroke(&stroke, &parse_profile(&fixture())).unwrap())), "15509eda1113e0bfd007455ba4767b1cba2a22391487f94c75e4121d98ac5f8f");
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
+        stroke.color = Some(crate::Color {
+            r: 60,
+            g: 146,
+            b: 215,
+        });
+        stroke.bbox = crate::BoundingBox {
+            x_min: 0.,
+            y_min: 0.,
+            x_max: 159.,
+            y_max: 159.,
+        };
+        assert_eq!(
+            sha(&output_bytes(
+                &sample_stroke(&stroke, &parse_profile(&fixture())).unwrap()
+            )),
+            "15509eda1113e0bfd007455ba4767b1cba2a22391487f94c75e4121d98ac5f8f"
+        );
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
         let point = std::fs::read(dir.join("g_Crayon2PointPtn.source.bin")).unwrap();
         let background = std::fs::read(dir.join("g_Crayon2BgPtn.source.bin")).unwrap();
-        assert_eq!(sha(&point), "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405");
-        assert_eq!(sha(&background), "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3");
+        assert_eq!(
+            sha(&point),
+            "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405"
+        );
+        assert_eq!(
+            sha(&background),
+            "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3"
+        );
         let native = parse_profile(&fixture());
-        let document = crate::Document { metadata: Default::default(), pages: vec![crate::Page {
-            uuid: "control".into(), width: 160, height: 160, content_bbox: stroke.bbox,
-            background_color: Some(crate::Color { r: 64, g: 128, b: 192 }), template: None,
-            background: Default::default(), objects: vec![stroke.into()] }] };
-        let options = crate::RenderOptions { crayon2_grid_profile: Some(crate::Crayon2DocumentGridProfile {
-            phase_x: native.phase_x.to_vec(), phase_y: native.phase_y.to_vec(), point_atlas: point,
-            background_texture: background, width: 160, height: 160,
-            clip_scale: [0.012500000186264515; 2], clip_translation: [-1.; 2],
-            background_scale: [1.4222222566604614; 2], rgba: [60. / 255., 146. / 255., 215. / 255., 194. / 255.], max_samples: 100_000,
-        }), ..Default::default() };
-        let output = std::path::PathBuf::from(std::env::var_os("SDOCX_CRAYON2_DOCUMENT_DIR").unwrap());
-        std::fs::write(output.join("document.svg"), &crate::render_document_svg(&document, &options)[0].svg).unwrap();
-        std::fs::write(output.join("document.pdf"), crate::render_document_pdf(&document, &options, &Default::default()).unwrap()).unwrap();
+        let document = crate::Document {
+            metadata: Default::default(),
+            pages: vec![crate::Page {
+                uuid: "control".into(),
+                width: 160,
+                height: 160,
+                content_bbox: stroke.bbox,
+                background_color: Some(crate::Color {
+                    r: 64,
+                    g: 128,
+                    b: 192,
+                }),
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            }],
+        };
+        let options = crate::RenderOptions {
+            crayon2_grid_profile: Some(crate::Crayon2DocumentGridProfile {
+                phase_x: native.phase_x.to_vec(),
+                phase_y: native.phase_y.to_vec(),
+                point_atlas: point,
+                background_texture: background,
+                width: 160,
+                height: 160,
+                clip_scale: [0.012500000186264515; 2],
+                clip_translation: [-1.; 2],
+                background_scale: [1.4222222566604614; 2],
+                rgba: [60. / 255., 146. / 255., 215. / 255., 194. / 255.],
+                max_samples: 100_000,
+            }),
+            ..Default::default()
+        };
+        let output =
+            std::path::PathBuf::from(std::env::var_os("SDOCX_CRAYON2_DOCUMENT_DIR").unwrap());
+        std::fs::write(
+            output.join("document.svg"),
+            &crate::render_document_svg(&document, &options)[0].svg,
+        )
+        .unwrap();
+        std::fs::write(
+            output.join("document.pdf"),
+            crate::render_document_pdf(&document, &options, &Default::default()).unwrap(),
+        )
+        .unwrap();
     }
 
     #[cfg(feature = "pdf")]
@@ -1149,30 +1377,87 @@ mod tests {
     #[ignore = "requires native textures and writes document exports"]
     #[allow(clippy::excessive_precision)]
     fn write_translated_document_grid() {
-        let points = [P { x: 33., y: 58. }, P { x: 57., y: 39. }, P { x: 82., y: 72. }];
+        let points = [
+            P { x: 33., y: 58. },
+            P { x: 57., y: 39. },
+            P { x: 82., y: 72. },
+        ];
         let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
-        stroke.color = Some(crate::Color { r: 60, g: 146, b: 215 });
-        stroke.bbox = crate::BoundingBox { x_min: 0., y_min: 0., x_max: 159., y_max: 159. };
-        assert_eq!(sha(&output_bytes(&sample_stroke(&stroke, &parse_profile(&fixture())).unwrap())), "15509eda1113e0bfd007455ba4767b1cba2a22391487f94c75e4121d98ac5f8f");
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
+        stroke.color = Some(crate::Color {
+            r: 60,
+            g: 146,
+            b: 215,
+        });
+        stroke.bbox = crate::BoundingBox {
+            x_min: 0.,
+            y_min: 0.,
+            x_max: 159.,
+            y_max: 159.,
+        };
+        assert_eq!(
+            sha(&output_bytes(
+                &sample_stroke(&stroke, &parse_profile(&fixture())).unwrap()
+            )),
+            "15509eda1113e0bfd007455ba4767b1cba2a22391487f94c75e4121d98ac5f8f"
+        );
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
         let point = std::fs::read(dir.join("g_Crayon2PointPtn.source.bin")).unwrap();
         let background = std::fs::read(dir.join("g_Crayon2BgPtn.source.bin")).unwrap();
-        assert_eq!(sha(&point), "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405");
-        assert_eq!(sha(&background), "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3");
+        assert_eq!(
+            sha(&point),
+            "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405"
+        );
+        assert_eq!(
+            sha(&background),
+            "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3"
+        );
         let native = parse_profile(&fixture());
-        let document = crate::Document { metadata: Default::default(), pages: vec![crate::Page {
-            uuid: "control".into(), width: 160, height: 160, content_bbox: stroke.bbox,
-            background_color: Some(crate::Color { r: 64, g: 128, b: 192 }), template: None,
-            background: Default::default(), objects: vec![stroke.into()] }] };
-        let options = crate::RenderOptions { crayon2_grid_profile: Some(crate::Crayon2DocumentGridProfile {
-            phase_x: native.phase_x.to_vec(), phase_y: native.phase_y.to_vec(), point_atlas: point,
-            background_texture: background, width: 160, height: 160,
-            clip_scale: [0.012500000186264515; 2], clip_translation: [-0.8375, -0.8875],
-            background_scale: [1.4222222566604614; 2], rgba: [60. / 255., 146. / 255., 215. / 255., 194. / 255.], max_samples: 100_000,
-        }), ..Default::default() };
-        let output = std::path::PathBuf::from(std::env::var_os("SDOCX_CRAYON2_DOCUMENT_DIR").unwrap());
-        std::fs::write(output.join("document.svg"), &crate::render_document_svg(&document, &options)[0].svg).unwrap();
-        std::fs::write(output.join("document.pdf"), crate::render_document_pdf(&document, &options, &Default::default()).unwrap()).unwrap();
+        let document = crate::Document {
+            metadata: Default::default(),
+            pages: vec![crate::Page {
+                uuid: "control".into(),
+                width: 160,
+                height: 160,
+                content_bbox: stroke.bbox,
+                background_color: Some(crate::Color {
+                    r: 64,
+                    g: 128,
+                    b: 192,
+                }),
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            }],
+        };
+        let options = crate::RenderOptions {
+            crayon2_grid_profile: Some(crate::Crayon2DocumentGridProfile {
+                phase_x: native.phase_x.to_vec(),
+                phase_y: native.phase_y.to_vec(),
+                point_atlas: point,
+                background_texture: background,
+                width: 160,
+                height: 160,
+                clip_scale: [0.012500000186264515; 2],
+                clip_translation: [-0.8375, -0.8875],
+                background_scale: [1.4222222566604614; 2],
+                rgba: [60. / 255., 146. / 255., 215. / 255., 194. / 255.],
+                max_samples: 100_000,
+            }),
+            ..Default::default()
+        };
+        let output =
+            std::path::PathBuf::from(std::env::var_os("SDOCX_CRAYON2_DOCUMENT_DIR").unwrap());
+        std::fs::write(
+            output.join("document.svg"),
+            &crate::render_document_svg(&document, &options)[0].svg,
+        )
+        .unwrap();
+        std::fs::write(
+            output.join("document.pdf"),
+            crate::render_document_pdf(&document, &options, &Default::default()).unwrap(),
+        )
+        .unwrap();
     }
 
     #[cfg(feature = "pdf")]
@@ -1180,30 +1465,87 @@ mod tests {
     #[ignore = "requires native textures and writes document exports"]
     #[allow(clippy::excessive_precision)]
     fn write_varied_document_grid() {
-        let points = [P { x: 33., y: 58. }, P { x: 57., y: 39. }, P { x: 82., y: 72. }];
+        let points = [
+            P { x: 33., y: 58. },
+            P { x: 57., y: 39. },
+            P { x: 82., y: 72. },
+        ];
         let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
-        stroke.color = Some(crate::Color { r: 123, g: 210, b: 71 });
-        stroke.bbox = crate::BoundingBox { x_min: 0., y_min: 0., x_max: 191., y_max: 191. };
-        assert_eq!(sha(&output_bytes(&sample_stroke(&stroke, &parse_profile(&fixture())).unwrap())), "15509eda1113e0bfd007455ba4767b1cba2a22391487f94c75e4121d98ac5f8f");
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
+        stroke.color = Some(crate::Color {
+            r: 123,
+            g: 210,
+            b: 71,
+        });
+        stroke.bbox = crate::BoundingBox {
+            x_min: 0.,
+            y_min: 0.,
+            x_max: 191.,
+            y_max: 191.,
+        };
+        assert_eq!(
+            sha(&output_bytes(
+                &sample_stroke(&stroke, &parse_profile(&fixture())).unwrap()
+            )),
+            "15509eda1113e0bfd007455ba4767b1cba2a22391487f94c75e4121d98ac5f8f"
+        );
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
         let point = std::fs::read(dir.join("g_Crayon2PointPtn.source.bin")).unwrap();
         let background = std::fs::read(dir.join("g_Crayon2BgPtn.source.bin")).unwrap();
-        assert_eq!(sha(&point), "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405");
-        assert_eq!(sha(&background), "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3");
+        assert_eq!(
+            sha(&point),
+            "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405"
+        );
+        assert_eq!(
+            sha(&background),
+            "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3"
+        );
         let native = parse_profile(&fixture());
-        let document = crate::Document { metadata: Default::default(), pages: vec![crate::Page {
-            uuid: "control".into(), width: 192, height: 192, content_bbox: stroke.bbox,
-            background_color: Some(crate::Color { r: 64, g: 128, b: 192 }), template: None,
-            background: Default::default(), objects: vec![stroke.into()] }] };
-        let options = crate::RenderOptions { crayon2_grid_profile: Some(crate::Crayon2DocumentGridProfile {
-            phase_x: native.phase_x.to_vec(), phase_y: native.phase_y.to_vec(), point_atlas: point,
-            background_texture: background, width: 192, height: 192,
-            clip_scale: [0.010416666977107525; 2], clip_translation: [-0.9270833134651184, -0.78125],
-            background_scale: [1.7066665887832642; 2], rgba: [123. / 255., 210. / 255., 71. / 255., 153. / 255.], max_samples: 100_000,
-        }), ..Default::default() };
-        let output = std::path::PathBuf::from(std::env::var_os("SDOCX_CRAYON2_DOCUMENT_DIR").unwrap());
-        std::fs::write(output.join("document.svg"), &crate::render_document_svg(&document, &options)[0].svg).unwrap();
-        std::fs::write(output.join("document.pdf"), crate::render_document_pdf(&document, &options, &Default::default()).unwrap()).unwrap();
+        let document = crate::Document {
+            metadata: Default::default(),
+            pages: vec![crate::Page {
+                uuid: "control".into(),
+                width: 192,
+                height: 192,
+                content_bbox: stroke.bbox,
+                background_color: Some(crate::Color {
+                    r: 64,
+                    g: 128,
+                    b: 192,
+                }),
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            }],
+        };
+        let options = crate::RenderOptions {
+            crayon2_grid_profile: Some(crate::Crayon2DocumentGridProfile {
+                phase_x: native.phase_x.to_vec(),
+                phase_y: native.phase_y.to_vec(),
+                point_atlas: point,
+                background_texture: background,
+                width: 192,
+                height: 192,
+                clip_scale: [0.010416666977107525; 2],
+                clip_translation: [-0.9270833134651184, -0.78125],
+                background_scale: [1.7066665887832642; 2],
+                rgba: [123. / 255., 210. / 255., 71. / 255., 153. / 255.],
+                max_samples: 100_000,
+            }),
+            ..Default::default()
+        };
+        let output =
+            std::path::PathBuf::from(std::env::var_os("SDOCX_CRAYON2_DOCUMENT_DIR").unwrap());
+        std::fs::write(
+            output.join("document.svg"),
+            &crate::render_document_svg(&document, &options)[0].svg,
+        )
+        .unwrap();
+        std::fs::write(
+            output.join("document.pdf"),
+            crate::render_document_pdf(&document, &options, &Default::default()).unwrap(),
+        )
+        .unwrap();
     }
 
     #[cfg(feature = "pdf")]
@@ -1211,74 +1553,183 @@ mod tests {
     #[ignore = "requires native textures and writes document exports"]
     #[allow(clippy::excessive_precision)]
     fn write_mixed_document_grid() {
-        let points = [P { x: 46., y: 37. }, P { x: 69., y: 65. }, P { x: 103., y: 48. }];
+        let points = [
+            P { x: 46., y: 37. },
+            P { x: 69., y: 65. },
+            P { x: 103., y: 48. },
+        ];
         let mut stroke = matched_stroke(&points, &[0.3, 0.6, 1.]);
-        stroke.color = Some(crate::Color { r: 206, g: 83, b: 139 });
-        stroke.bbox = crate::BoundingBox { x_min: 0., y_min: 0., x_max: 191., y_max: 191. };
-        assert_eq!(sha(&output_bytes(&sample_stroke(&stroke, &parse_profile(&fixture())).unwrap())), "c968ef21be4168f9ee2c2ccbc332f6f2463e866661281075187c3c387dcf03f4");
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
+        stroke.color = Some(crate::Color {
+            r: 206,
+            g: 83,
+            b: 139,
+        });
+        stroke.bbox = crate::BoundingBox {
+            x_min: 0.,
+            y_min: 0.,
+            x_max: 191.,
+            y_max: 191.,
+        };
+        assert_eq!(
+            sha(&output_bytes(
+                &sample_stroke(&stroke, &parse_profile(&fixture())).unwrap()
+            )),
+            "c968ef21be4168f9ee2c2ccbc332f6f2463e866661281075187c3c387dcf03f4"
+        );
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
         let point = std::fs::read(dir.join("g_Crayon2PointPtn.source.bin")).unwrap();
         let background = std::fs::read(dir.join("g_Crayon2BgPtn.source.bin")).unwrap();
-        assert_eq!(sha(&point), "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405");
-        assert_eq!(sha(&background), "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3");
+        assert_eq!(
+            sha(&point),
+            "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405"
+        );
+        assert_eq!(
+            sha(&background),
+            "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3"
+        );
         let native = parse_profile(&fixture());
-        let document = crate::Document { metadata: Default::default(), pages: vec![crate::Page {
-            uuid: "control".into(), width: 192, height: 192, content_bbox: stroke.bbox,
-            background_color: Some(crate::Color { r: 64, g: 128, b: 192 }), template: None,
-            background: Default::default(), objects: vec![stroke.into()] }] };
-        let options = crate::RenderOptions { crayon2_grid_profile: Some(crate::Crayon2DocumentGridProfile {
-            phase_x: native.phase_x.to_vec(), phase_y: native.phase_y.to_vec(), point_atlas: point,
-            background_texture: background, width: 192, height: 192,
-            clip_scale: [0.010416666977107525; 2], clip_translation: [-0.8645833134651184, -0.9479166865348816],
-            background_scale: [1.7066665887832642; 2], rgba: [206. / 255., 83. / 255., 139. / 255., 177. / 255.], max_samples: 100_000,
-        }), ..Default::default() };
-        let output = std::path::PathBuf::from(std::env::var_os("SDOCX_CRAYON2_DOCUMENT_DIR").unwrap());
-        std::fs::write(output.join("document.svg"), &crate::render_document_svg(&document, &options)[0].svg).unwrap();
-        std::fs::write(output.join("document.pdf"), crate::render_document_pdf(&document, &options, &Default::default()).unwrap()).unwrap();
+        let document = crate::Document {
+            metadata: Default::default(),
+            pages: vec![crate::Page {
+                uuid: "control".into(),
+                width: 192,
+                height: 192,
+                content_bbox: stroke.bbox,
+                background_color: Some(crate::Color {
+                    r: 64,
+                    g: 128,
+                    b: 192,
+                }),
+                template: None,
+                background: Default::default(),
+                objects: vec![stroke.into()],
+            }],
+        };
+        let options = crate::RenderOptions {
+            crayon2_grid_profile: Some(crate::Crayon2DocumentGridProfile {
+                phase_x: native.phase_x.to_vec(),
+                phase_y: native.phase_y.to_vec(),
+                point_atlas: point,
+                background_texture: background,
+                width: 192,
+                height: 192,
+                clip_scale: [0.010416666977107525; 2],
+                clip_translation: [-0.8645833134651184, -0.9479166865348816],
+                background_scale: [1.7066665887832642; 2],
+                rgba: [206. / 255., 83. / 255., 139. / 255., 177. / 255.],
+                max_samples: 100_000,
+            }),
+            ..Default::default()
+        };
+        let output =
+            std::path::PathBuf::from(std::env::var_os("SDOCX_CRAYON2_DOCUMENT_DIR").unwrap());
+        std::fs::write(
+            output.join("document.svg"),
+            &crate::render_document_svg(&document, &options)[0].svg,
+        )
+        .unwrap();
+        std::fs::write(
+            output.join("document.pdf"),
+            crate::render_document_pdf(&document, &options, &Default::default()).unwrap(),
+        )
+        .unwrap();
     }
 
     #[test]
     #[ignore = "requires local native texture inputs and writes fixed-grid SVG"]
     #[allow(clippy::excessive_precision)]
     fn write_independent_rust_grid() {
-        let points = [P { x: 40.0, y: 45.0 }, P { x: 53.0, y: 28.0 }, P { x: 75.0, y: 49.0 }];
+        let points = [
+            P { x: 40.0, y: 45.0 },
+            P { x: 53.0, y: 28.0 },
+            P { x: 75.0, y: 49.0 },
+        ];
         let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
         let point = std::fs::read(dir.join("g_Crayon2PointPtn.source.bin")).unwrap();
         let background = std::fs::read(dir.join("g_Crayon2BgPtn.source.bin")).unwrap();
-        assert_eq!(sha(&point), "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405");
-        assert_eq!(sha(&background), "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3");
+        assert_eq!(
+            sha(&point),
+            "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405"
+        );
+        assert_eq!(
+            sha(&background),
+            "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3"
+        );
         let profile = parse_profile(&fixture());
-        let svg = render_crayon2_host_grid_svg(&stroke, &Crayon2HostGrid {
-            phase_x: profile.phase_x, phase_y: profile.phase_y,
-            point_atlas: &point, background_texture: &background,
-            width: 192, height: 192, clip_scale: [0.010416666977107525; 2], clip_translation: [-1.; 2],
-            background_scale: [1.7066665887832642; 2], rgba: [184. / 255., 76. / 255., 41. / 255., 170. / 255.],
-            background: Some([64, 128, 192]), max_samples: 1_000_000,
-        }).unwrap();
-        std::fs::write(std::env::var_os("SDOCX_CRAYON2_GRID_SVG").expect("output SVG"), svg).unwrap();
+        let svg = render_crayon2_host_grid_svg(
+            &stroke,
+            &Crayon2HostGrid {
+                phase_x: profile.phase_x,
+                phase_y: profile.phase_y,
+                point_atlas: &point,
+                background_texture: &background,
+                width: 192,
+                height: 192,
+                clip_scale: [0.010416666977107525; 2],
+                clip_translation: [-1.; 2],
+                background_scale: [1.7066665887832642; 2],
+                rgba: [184. / 255., 76. / 255., 41. / 255., 170. / 255.],
+                background: Some([64, 128, 192]),
+                max_samples: 1_000_000,
+            },
+        )
+        .unwrap();
+        std::fs::write(
+            std::env::var_os("SDOCX_CRAYON2_GRID_SVG").expect("output SVG"),
+            svg,
+        )
+        .unwrap();
     }
 
     #[test]
     #[ignore = "requires local native texture inputs and writes fixed-grid SVG"]
     #[allow(clippy::excessive_precision)]
     fn write_matched_rust_grid() {
-        let points = [P { x: 64.0, y: 64.0 }, P { x: 72.0, y: 70.0 }, P { x: 82.0, y: 60.0 }];
+        let points = [
+            P { x: 64.0, y: 64.0 },
+            P { x: 72.0, y: 70.0 },
+            P { x: 82.0, y: 60.0 },
+        ];
         let stroke = matched_stroke(&points, &[0.3, 0.6, 1.0]);
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tmp/vector-parity-plan/crayon2-native-next/native-uploads");
         let point = std::fs::read(dir.join("g_Crayon2PointPtn.source.bin")).unwrap();
         let background = std::fs::read(dir.join("g_Crayon2BgPtn.source.bin")).unwrap();
-        assert_eq!(sha(&point), "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405");
-        assert_eq!(sha(&background), "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3");
+        assert_eq!(
+            sha(&point),
+            "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405"
+        );
+        assert_eq!(
+            sha(&background),
+            "2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3"
+        );
         let profile = parse_profile(&fixture());
-        let svg = render_crayon2_host_grid_svg(&stroke, &Crayon2HostGrid {
-            phase_x: profile.phase_x, phase_y: profile.phase_y,
-            point_atlas: &point, background_texture: &background,
-            width: 256, height: 256, clip_scale: [0.0078125; 2], clip_translation: [-1.; 2],
-            background_scale: [2.2755556106567383; 2], rgba: [51. / 255., 102. / 255., 153. / 255., 128. / 255.],
-            background: Some([64, 128, 192]), max_samples: 1_000_000,
-        }).unwrap();
-        std::fs::write(std::env::var_os("SDOCX_CRAYON2_GRID_SVG").expect("output SVG"), svg).unwrap();
+        let svg = render_crayon2_host_grid_svg(
+            &stroke,
+            &Crayon2HostGrid {
+                phase_x: profile.phase_x,
+                phase_y: profile.phase_y,
+                point_atlas: &point,
+                background_texture: &background,
+                width: 256,
+                height: 256,
+                clip_scale: [0.0078125; 2],
+                clip_translation: [-1.; 2],
+                background_scale: [2.2755556106567383; 2],
+                rgba: [51. / 255., 102. / 255., 153. / 255., 128. / 255.],
+                background: Some([64, 128, 192]),
+                max_samples: 1_000_000,
+            },
+        )
+        .unwrap();
+        std::fs::write(
+            std::env::var_os("SDOCX_CRAYON2_GRID_SVG").expect("output SVG"),
+            svg,
+        )
+        .unwrap();
     }
 
     #[test]

@@ -848,7 +848,9 @@ mod tests {
             assert_eq!(hex.len() % 2, 0, "source {id} hex length");
             let bytes: Vec<u8> = hex
                 .as_bytes()
-                .as_chunks::<2>().0.iter()
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|x| u8::from_str_radix(std::str::from_utf8(x).unwrap(), 16).unwrap())
                 .collect();
             assert_eq!(bytes.len() % 36, 0, "source {id} record length");

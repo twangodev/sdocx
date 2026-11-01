@@ -170,11 +170,15 @@ mod tests {
             let hex = case["geometry_hex"].as_str().unwrap();
             let bytes: Vec<_> = hex
                 .as_bytes()
-                .as_chunks::<2>().0.iter()
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|v| u8::from_str_radix(std::str::from_utf8(v).unwrap(), 16).unwrap())
                 .collect();
             let records: Vec<_> = bytes
-                .as_chunks::<12>().0.iter()
+                .as_chunks::<12>()
+                .0
+                .iter()
                 .map(|v| {
                     let f = |i| f32::from_le_bytes(v[i..i + 4].try_into().unwrap());
                     [f(0) + 32., f(4) + 32., f(8), f(8), 0., 1., 0., 0., 0.]
@@ -218,7 +222,9 @@ mod tests {
                 expected[y as usize * 64 + x as usize] = a;
             }
             let error: u64 = rgba
-                .as_chunks::<4>().0.iter()
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .zip(&expected)
                 .map(|(p, &a)| u64::from(p[3].abs_diff(a)))
                 .sum();

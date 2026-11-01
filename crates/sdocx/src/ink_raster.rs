@@ -251,16 +251,29 @@ impl InkRasterCanvas {
     /// native upload order. Their content and the stroke metadata must match the
     /// bounded capture profile. This opts into host arithmetic and does not infer
     /// saved-note or device context. Rejection leaves the canvas unchanged.
-    pub fn paint_oilbrush3_cold_host(&mut self, stroke: &Stroke, mask: &[u8], depth: &[u8]) -> Result<(), InkRasterError> {
-        if self.context != (InkRasterContext { width: 1920, height: 1080, pixels_per_unit: 1, origin: InkRasterOrigin::TopLeft })
-            || self.pixels.iter().any(|p| *p != [0; 4]) {
+    pub fn paint_oilbrush3_cold_host(
+        &mut self,
+        stroke: &Stroke,
+        mask: &[u8],
+        depth: &[u8],
+    ) -> Result<(), InkRasterError> {
+        if self.context
+            != (InkRasterContext {
+                width: 1920,
+                height: 1080,
+                pixels_per_unit: 1,
+                origin: InkRasterOrigin::TopLeft,
+            })
+            || self.pixels.iter().any(|p| *p != [0; 4])
+        {
             return Err(InkRasterError::InvalidContext);
         }
         let work = 1920 * 1080 + 128 * 1024;
         if self.remaining_submissions == 0 || self.remaining_work < work {
             return Err(InkRasterError::WorkLimit);
         }
-        let pixels = crate::ink::oilbrush3::paint::paint_source(stroke, mask, depth).map_err(InkRasterError::UnsupportedStroke)?;
+        let pixels = crate::ink::oilbrush3::paint::paint_source(stroke, mask, depth)
+            .map_err(InkRasterError::UnsupportedStroke)?;
         self.pixels = pixels;
         self.remaining_work -= work;
         self.remaining_submissions -= 1;

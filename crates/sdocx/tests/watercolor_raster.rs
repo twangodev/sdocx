@@ -375,7 +375,9 @@ fn watercolor_continuation_matches_native_pixel_handoff_and_pencil_precision_lim
                 std::array::from_fn(|c| pixel[c + 2].as_u64().unwrap() as u8);
         }
         let bottom_origin: Vec<u8> = prior
-            .as_chunks::<192>().0.iter()
+            .as_chunks::<192>()
+            .0
+            .iter()
             .rev()
             .flatten()
             .flatten()

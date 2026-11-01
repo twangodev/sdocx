@@ -75,15 +75,13 @@ fn compare() {
             0,
             [6., 9.],
             [6., 9.],
-            include_bytes!("test_assets/drawing/independent-drawing/first.zlib")
-                .as_slice(),
+            include_bytes!("test_assets/drawing/independent-drawing/first.zlib").as_slice(),
         ),
         (
             1,
             [12., 12.],
             [12., 13.999_998],
-            include_bytes!("test_assets/drawing/independent-drawing/second.zlib")
-                .as_slice(),
+            include_bytes!("test_assets/drawing/independent-drawing/second.zlib").as_slice(),
         ),
     ] {
         let mut current = s.clone();
@@ -210,6 +208,12 @@ fn worker_v259_geometry_probe() {
         rendering: Some(rendering),
     };
     let records = prepare_stroke(&s, 1.).unwrap();
-    let data: Vec<u8> = records.iter().flat_map(|r| r.lanes.iter().flat_map(|v| v.to_le_bytes())).collect();
-    assert_eq!(data, include_bytes!("../../../../../tools/pencil2-worker-v259/native-geometry.vbo"));
+    let data: Vec<u8> = records
+        .iter()
+        .flat_map(|r| r.lanes.iter().flat_map(|v| v.to_le_bytes()))
+        .collect();
+    assert_eq!(
+        data,
+        include_bytes!("../../../../../tools/pencil2-worker-v259/native-geometry.vbo")
+    );
 }

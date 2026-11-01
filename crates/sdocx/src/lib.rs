@@ -73,9 +73,10 @@ pub use formula::{
 };
 #[cfg(feature = "render")]
 pub use ink::{
-    CoverageMesh, CoverageTriangle, CoverageVertex, Crayon2HostGrid, Crayon2HostMaterial, InkSupport, OrderedDiskReplay,
-    PEN_PROFILES, PenProfile, PreparedInkPen2V9, PreparedStroke, RectStamp, prepare_stroke,
-    render_crayon2_host_grid_svg, render_crayon2_host_svg, sample_brushpen_glv10_host,
+    CoverageMesh, CoverageTriangle, CoverageVertex, Crayon2HostGrid, Crayon2HostMaterial,
+    InkSupport, OrderedDiskReplay, PEN_PROFILES, PenProfile, PreparedInkPen2V9, PreparedStroke,
+    RectStamp, prepare_stroke, render_crayon2_host_grid_svg, render_crayon2_host_svg,
+    sample_brushpen_glv10_host,
 };
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;
@@ -112,15 +113,15 @@ pub use progress::{Progress, ProgressStage};
 #[cfg(feature = "render")]
 pub use render::{
     AirBrushRenderProfile, BackgroundDiagnostic, ChineseBrushFwidthOutputProfile,
-    ChineseBrushRenderProfile, Crayon2DocumentGridProfile, DefaultPenOutputScale, DocumentTextCache,
-    FountainV14OutputScaleProfile, FountainV16OutputScaleProfile, FountainV17OutputScaleProfile,
-    FountainV17RainbowRenderProfile, GeometryDiagnostic, GeometryDiagnosticKind,
-    InkPen2HalfGridViewport, InkPen2RenderProfile, InkPen2V1OutputScale, InkPenRenderProfile, LegacyMarkerCenterlineProfile,
-    Marker3OutputScale, MontblancRenderProfile, ObjectDiagnostic, ObjectDiagnosticKind,
-    PaintDiagnostic, PaintDiagnosticKind, PaintRole, Pencil3PaperSampler, Pencil3RenderProfile,
-    PointMarkerTarget, RenderColorMode, RenderOptions, RenderTheme, RenderedPage,
-    SimpleBrushRenderProfile, StrokePaint, TextDiagnostic, TextDiagnosticKind, fonts,
-    prepare_stroke_for_page, prepare_stroke_for_page_with_theme,
+    ChineseBrushRenderProfile, Crayon2DocumentGridProfile, DefaultPenOutputScale,
+    DocumentTextCache, FountainV14OutputScaleProfile, FountainV16OutputScaleProfile,
+    FountainV17OutputScaleProfile, FountainV17RainbowRenderProfile, GeometryDiagnostic,
+    GeometryDiagnosticKind, InkPen2HalfGridViewport, InkPen2RenderProfile, InkPen2V1OutputScale,
+    InkPenRenderProfile, LegacyMarkerCenterlineProfile, Marker3OutputScale, MontblancRenderProfile,
+    ObjectDiagnostic, ObjectDiagnosticKind, PaintDiagnostic, PaintDiagnosticKind, PaintRole,
+    Pencil3PaperSampler, Pencil3RenderProfile, PointMarkerTarget, RenderColorMode, RenderOptions,
+    RenderTheme, RenderedPage, SimpleBrushRenderProfile, StrokePaint, TextDiagnostic,
+    TextDiagnosticKind, fonts, prepare_stroke_for_page, prepare_stroke_for_page_with_theme,
     prepare_stroke_for_viewport_with_theme, render_document_svg, render_document_svg_with_fonts,
     render_layout_page_replay_svg, render_layout_page_replay_svg_with_fonts,
     render_layout_page_svg, render_layout_page_svg_with_fonts, render_page_svg, stroke_paint,
@@ -282,7 +283,7 @@ pub fn archive_zip_length(bytes: &[u8]) -> Result<u64> {
 
 #[cfg(feature = "render")]
 pub use ink_raster::{
-    BrushPenPaintContext, BrushPenTexture, FountainV14Prepared, FountainV14Scene, InkRasterCanvas, InkRasterContext,
-    InkRasterDepthContext, InkRasterError, InkRasterInverseScale, InkRasterOrigin,
-    InkRasterProfile, Pencil2V14HostGrainState, pencil2_v14_host_grain_offset,
+    BrushPenPaintContext, BrushPenTexture, FountainV14Prepared, FountainV14Scene, InkRasterCanvas,
+    InkRasterContext, InkRasterDepthContext, InkRasterError, InkRasterInverseScale,
+    InkRasterOrigin, InkRasterProfile, Pencil2V14HostGrainState, pencil2_v14_host_grain_offset,
 };
