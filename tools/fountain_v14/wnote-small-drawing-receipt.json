@@ -1,0 +1,57 @@
+{
+  "schema": "sdocx-original-wnote-small-fountain-drawing-v1",
+  "archive_sha256": "8299abbf763e8e3e5af746815d13dfdf45443da27b0eb79192c328571905cdd2",
+  "script_sha256": "eb08b9bae6933bfc4c06903cd3524a95162f8c025260955eee996369a17845a3",
+  "wdoc_sha256": "1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6",
+  "scope": "Original saved page 0 object 0, WNote/WPage host loading and native ObjectDrawing with native RTV5 AddPoint. Host-selected crop, baseline framebuffer, bounded virtual cache, host zlib and GL/texture adapters; not a device or full-page parity claim.",
+  "results": {
+    "construct": 1,
+    "pages": 2,
+    "page0_object_count": 41,
+    "object_type": 1,
+    "point_count": 121,
+    "uuid_sha256": "3d1819b137be66c5d3955b112bceb22a8f46c48d7d3960e43118c15b478c40c5",
+    "color_argb": 4278387459,
+    "pen_size_bits": 1091690090,
+    "matrix": [
+      1,
+      0,
+      0,
+      0,
+      -1,
+      0,
+      -80,
+      401,
+      1
+    ],
+    "framebuffer_dimensions": [
+      128,
+      256
+    ],
+    "initial_frame_sha256": "8646cc31146f6ece0d4b7c15f717088fa58a9e89534510b8f75da877b128b6ad",
+    "final_frame_sha256": "e7b4fb6f401d07430aaae786739fd314f0f7d4cf1cd4ff496abf6484a1bdbaf3",
+    "changed_bytes": 1498,
+    "gl_draws": 1,
+    "gl_error": 0,
+    "post_archive_sha256_matches": true,
+    "rtv5_addpoint_entries": 59,
+    "draw": {
+      "mode": 5,
+      "first": 0,
+      "count": 4,
+      "instances": 59,
+      "target_matches_framebuffer": true
+    }
+  },
+  "rust_source_comparison": "Separately observed Rust saved_ink_inputs UUID hash, color, size bits and point count match native page object 0.",
+  "host_interventions": [
+    "Synthetic archive/cache I/O, zlib, CPU feature fallback and bounded shader cache.",
+    "Original shader CRC and instanced GL forwarding callbacks restored after page loading; native RTV5 AddPoint used.",
+    "Texture tag pinned to observed native FountainPen;0;RED_UINT8; and handled by host texture adapter."
+  ],
+  "limitations": [
+    "No public SVG or direct PDF comparison was performed.",
+    "This V5 object does not establish Fountain V14 or full page parity."
+  ],
+  "rust_input_example_sha256": "e4494fc13e18c131e6eaec55c04108fe7fa1d0ed1b8a8ceefb4edbc20b02525c"
+}
