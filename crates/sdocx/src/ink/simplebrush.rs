@@ -654,7 +654,7 @@ mod tests {
             let actual = reconstruct(&points, &pressures, 8.0, 0, true).unwrap();
             let expected = decode_hex(case["vector_hex"].as_str().unwrap());
             assert_eq!(actual.len() * 12, expected.len());
-            for (sample, native) in actual.iter().zip(expected.chunks_exact(12)) {
+            for (sample, native) in actual.iter().zip(expected.as_chunks::<12>().0) {
                 for lane in 0..3 {
                     let bits =
                         u32::from_le_bytes(native[lane * 4..lane * 4 + 4].try_into().unwrap());

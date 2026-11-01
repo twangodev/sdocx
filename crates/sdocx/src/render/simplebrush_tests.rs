@@ -1505,12 +1505,11 @@ fn two_pixel_native_export_fixture() {
             native["drawing_vector"]["vector_bytes"].as_str().unwrap()
         );
     }
-    if std::env::var_os("SDOCX_SIMPLEBRUSH_NOTE29").is_some() {
-        if let Err(error) =
+    if std::env::var_os("SDOCX_SIMPLEBRUSH_NOTE29").is_some()
+        && let Err(error) =
             crate::ink::simplebrush::prepare_stroke_for_scale(&source, true, 32_768, true)
-        {
-            panic!("note-derived profile rejected: {error}");
-        }
+    {
+        panic!("note-derived profile rejected: {error}");
     }
     let mut second = source.clone();
     let mut doc = document(source);
