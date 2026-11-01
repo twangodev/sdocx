@@ -45,7 +45,7 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     {
         return Err(Error::InvalidInput);
     }
-    if input.pen_size > 2.0 {
+    if input.pen_size > 2.5 {
         return Err(Error::UnsupportedWidthBranch);
     }
     // Bound intermediate coordinate arithmetic before constructing adaptive curves.
@@ -531,4 +531,85 @@ fn long_independent_native_stream() {
             }
         }
     }
+}
+
+#[test]
+fn note_derived_wide_streams_match_native() {
+    for fixture in [
+        include_str!("../../../../tools/montblanc/note-derived-v302/note3/native.json"),
+        include_str!("../../../../tools/montblanc/note-derived-v302/note3-12/native.json"),
+        include_str!("../../../../tools/montblanc/note-derived-v302/note3-9/native.json"),
+        include_str!("../../../../tools/montblanc/note-derived-v302/note6/native.json"),
+    ] {
+        let data: serde_json::Value = serde_json::from_str(fixture).unwrap();
+        let num = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
+        let points: Vec<[f32; 2]> = data["input"]["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| [num(&p[0]), num(&p[1])])
+            .collect();
+        let pressure: Vec<f32> = data["input"]["pressure"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(num)
+            .collect();
+        let actual = many_point(Input {
+            points: &points,
+            pressure: &pressure,
+            pen_size: num(&data["input"]["pen_size"]),
+        })
+        .unwrap();
+        let expected = data["stream"].as_array().unwrap();
+        assert_eq!(actual.len(), expected.len());
+        for (i, (a, e)) in actual.iter().zip(expected).enumerate() {
+            let method = e[0].as_str().unwrap();
+            let call = match method
+                .strip_prefix("SPen::MontblancFountainPenStrokeDrawableRTV1::")
+                .and_then(|s| s.strip_suffix("(SPen::Vector3<float>, SPen::Vector2<float>, float)"))
+                .unwrap()
+            {
+                "AddStartPoint" => RtCall::Start,
+                "AddEndPoint" => RtCall::End,
+                "AddPoint" => RtCall::Point,
+                _ => panic!("unexpected method {method}"),
+            };
+            assert_eq!(a.call, call, "call {i}");
+            for (lane, word) in e[1].as_array().unwrap().iter().enumerate() {
+                let word = word.as_str().unwrap();
+                let bits = u32::from_le_bytes(std::array::from_fn(|j| {
+                    u8::from_str_radix(&word[j * 2..j * 2 + 2], 16).unwrap()
+                }));
+                assert_eq!(a.lanes[lane].to_bits(), bits, "record {i} lane {lane}");
+            }
+        }
+    }
+}
+
+#[test]
+fn note_derived_short_wide_path_falls_back() {
+    let fixture = include_str!("../../../../tools/montblanc/note-derived-v302/note3-6/native.json");
+    let data: serde_json::Value = serde_json::from_str(fixture).unwrap();
+    let num = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
+    let points: Vec<[f32; 2]> = data["input"]["points"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| [num(&p[0]), num(&p[1])])
+        .collect();
+    let pressure: Vec<f32> = data["input"]["pressure"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(num)
+        .collect();
+    assert!(matches!(
+        many_point(Input {
+            points: &points,
+            pressure: &pressure,
+            pen_size: num(&data["input"]["pen_size"])
+        }),
+        Err(Error::InvalidInput)
+    ));
 }

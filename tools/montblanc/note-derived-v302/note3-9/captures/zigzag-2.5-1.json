@@ -1,0 +1,1611 @@
+{
+  "case": "baseline",
+  "draw_calls": [
+    {
+      "call": "glDrawArrays",
+      "state": {
+        "activeTexture": 33984,
+        "framebuffer": 1,
+        "program": 3,
+        "texture2d": 0,
+        "vao": 0
+      },
+      "values": [
+        4,
+        0,
+        204
+      ]
+    },
+    {
+      "call": "glDrawArrays",
+      "state": {
+        "activeTexture": 33984,
+        "framebuffer": 1,
+        "program": 4,
+        "texture2d": 0,
+        "vao": 0
+      },
+      "values": [
+        4,
+        0,
+        6
+      ]
+    },
+    {
+      "call": "glDrawArrays",
+      "state": {
+        "activeTexture": 33984,
+        "framebuffer": 1,
+        "program": 5,
+        "texture2d": 0,
+        "vao": 0
+      },
+      "values": [
+        4,
+        0,
+        6
+      ]
+    }
+  ],
+  "draw_provenance": [
+    {
+      "actual_program": 3,
+      "attributes": [
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": true,
+          "index": 0,
+          "latest_buffer_upload": {
+            "data_sha256": "cb11d38e5ab0d8d439620a23c17d49344f3ebdc78e7ca963e372d3d790ccfffc",
+            "matches_native_add_vector": true,
+            "size": 4080,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 0,
+          "size": 4,
+          "stride": 20,
+          "type": 5126
+        },
+        {
+          "buffer": 1,
+          "divisor": 0,
+          "enabled": true,
+          "index": 1,
+          "latest_buffer_upload": {
+            "data_sha256": "cb11d38e5ab0d8d439620a23c17d49344f3ebdc78e7ca963e372d3d790ccfffc",
+            "matches_native_add_vector": true,
+            "size": 4080,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 16,
+          "size": 1,
+          "stride": 20,
+          "type": 5126
+        }
+      ],
+      "draw_index": 0,
+      "framebuffer": 1,
+      "mode_count": [
+        4,
+        0,
+        204
+      ],
+      "vao": 0
+    },
+    {
+      "actual_program": 4,
+      "attributes": [
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": true,
+          "index": 0,
+          "latest_buffer_upload": {
+            "data_sha256": "81c085a0aa4bb4c075541466f446a53636d82485a0cceb38165d201bd87562dc",
+            "matches_native_add_vector": true,
+            "size": 120,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 0,
+          "size": 4,
+          "stride": 20,
+          "type": 5126
+        },
+        {
+          "buffer": 2,
+          "divisor": 0,
+          "enabled": true,
+          "index": 1,
+          "latest_buffer_upload": {
+            "data_sha256": "81c085a0aa4bb4c075541466f446a53636d82485a0cceb38165d201bd87562dc",
+            "matches_native_add_vector": true,
+            "size": 120,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 16,
+          "size": 1,
+          "stride": 20,
+          "type": 5126
+        }
+      ],
+      "draw_index": 1,
+      "framebuffer": 1,
+      "mode_count": [
+        4,
+        0,
+        6
+      ],
+      "vao": 0
+    },
+    {
+      "actual_program": 5,
+      "attributes": [
+        {
+          "buffer": 3,
+          "divisor": 0,
+          "enabled": true,
+          "index": 0,
+          "latest_buffer_upload": {
+            "data_sha256": "446fa6f2a5b5c19a72d91d222e0712dd07c135bb349912c7e6cf620887ec9c60",
+            "matches_native_add_vector": true,
+            "size": 120,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 0,
+          "size": 4,
+          "stride": 20,
+          "type": 5126
+        },
+        {
+          "buffer": 3,
+          "divisor": 0,
+          "enabled": true,
+          "index": 1,
+          "latest_buffer_upload": {
+            "data_sha256": "446fa6f2a5b5c19a72d91d222e0712dd07c135bb349912c7e6cf620887ec9c60",
+            "matches_native_add_vector": true,
+            "size": 120,
+            "usage": 35048
+          },
+          "normalized": false,
+          "pointer_offset": 16,
+          "size": 1,
+          "stride": 20,
+          "type": 5126
+        }
+      ],
+      "draw_index": 2,
+      "framebuffer": 1,
+      "mode_count": [
+        4,
+        0,
+        6
+      ],
+      "vao": 0
+    }
+  ],
+  "execution_boundary": "Adapted variable-point synthetic Drawing/ObjectStroke/RTV1 Add* source producer executes. Init, SetBuffer, SendDataToGPU, Update and Draw are native method calls. SetBuffer/SendDataToGPU are explicit controlled API sequencing, not observed natural Drawing-worker calls. Style argb is host-controlled. Renderer/Graphics/GL lifecycle is native; EGL/GLES and queue/context support are host adapters. Pixels are host Mesa output, not device parity.",
+  "gl_error_checks": [
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetString"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenBuffers"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetString"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenBuffers"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetString"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenBuffers"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetIntegerv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glLinkProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramBinary"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetIntegerv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glLinkProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramBinary"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glShaderSource"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCompileShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetShaderiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCreateProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glAttachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetIntegerv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindAttribLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glLinkProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDetachShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDeleteShader"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramBinary"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetProgramiv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetActiveUniform"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetUniformLocation"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenTextures"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenSamplers"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindTexture"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glSamplerParameteri"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glTexImage2D"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glPixelStorei"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindTexture"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glFenceSync"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glFlush"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGenFramebuffers"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindTexture"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindFramebuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glFramebufferTexture2D"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCheckFramebufferStatus"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBufferData"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDisable"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDisable"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBlendEquationSeparate"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBlendFuncSeparate"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnable"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glColorMask"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindFramebuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glCheckFramebufferStatus"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glViewport"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUseProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniformMatrix4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniform4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDrawArrays"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUseProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniformMatrix4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniform4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDrawArrays"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUseProgram"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniformMatrix4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glUniform4fv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glEnableVertexAttribArray"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glVertexAttribPointer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glDrawArrays"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glBindBuffer"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glGetIntegerv"
+    },
+    {
+      "after": 0,
+      "before": 0,
+      "call": "glInvalidateFramebuffer"
+    }
+  ],
+  "gl_name_generation": {
+    "framebuffer_rows": [
+      {
+        "call": "glGenFramebuffers",
+        "count": 1,
+        "ids": [
+          1
+        ],
+        "output_ptr": 537849652
+      }
+    ],
+    "setup_evidence": {
+      "binds": [
+        {
+          "call": "glBindFramebuffer",
+          "id": 1,
+          "target": 36160
+        }
+      ],
+      "color_attachments": [
+        {
+          "args": [
+            36160,
+            36064,
+            3553,
+            1,
+            0
+          ],
+          "call": "glFramebufferTexture2D",
+          "framebuffer": 1
+        }
+      ],
+      "complete_checks": [
+        {
+          "call": "glCheckFramebufferStatus",
+          "framebuffer": 1,
+          "status": 36053,
+          "target": 36160
+        }
+      ],
+      "rgba8_allocations": [
+        {
+          "boundTexture": 1,
+          "call": "glTexImage2D",
+          "format": 6408,
+          "hasPixels": false,
+          "height": 256,
+          "internalFormat": 32856,
+          "pixelBytes": 0,
+          "pixelsSha256": null,
+          "target": 3553,
+          "type": 5121,
+          "width": 256
+        }
+      ]
+    },
+    "texture_rows": [
+      {
+        "call": "glGenTextures",
+        "count": 1,
+        "ids": [
+          1
+        ],
+        "output_ptr": 537848740
+      }
+    ]
+  },
+  "host_gl_paths": {
+    "libEGL.so.1": "/usr/lib/x86_64-linux-gnu/libEGL.so.1.1.0",
+    "libGLESv2.so.2": "/usr/lib/x86_64-linux-gnu/libGLESv2.so.2.1.0"
+  },
+  "host_gl_sha256": {
+    "libEGL.so.1": "f4b60a4618fbf760f395f64dfd53320446ba1011151a80e411742b3232b194e6",
+    "libGLESv2.so.2": "a705c66de30ca4e883120c70acae0f1011d7c3f97605eef331e03493beae3812"
+  },
+  "host_gles": {
+    "egl_version": "1.5",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "shading_language": "OpenGL ES GLSL ES 3.20",
+    "vendor": "Mesa",
+    "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+  },
+  "input_pins": {
+    "base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "libcxx": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+    "marker3_adapter": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+    "montblanc": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350",
+    "pencommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "runner": "a8647b96fa001dbe387de8c231ed4895d2f7b5ef619240835c17867366f8c0c8"
+  },
+  "matrix_f32": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    128.0,
+    128.0,
+    0,
+    1
+  ],
+  "native_add_vectors": [
+    {
+      "byte_count": 4080,
+      "field": 200,
+      "float_count": 1020,
+      "object": "0x10013bc0",
+      "sha256": "cb11d38e5ab0d8d439620a23c17d49344f3ebdc78e7ca963e372d3d790ccfffc"
+    },
+    {
+      "byte_count": 120,
+      "field": 208,
+      "float_count": 30,
+      "object": "0x10013be0",
+      "sha256": "81c085a0aa4bb4c075541466f446a53636d82485a0cceb38165d201bd87562dc"
+    },
+    {
+      "byte_count": 120,
+      "field": 216,
+      "float_count": 30,
+      "object": "0x10013c00",
+      "sha256": "446fa6f2a5b5c19a72d91d222e0712dd07c135bb349912c7e6cf620887ec9c60"
+    }
+  ],
+  "native_method_sequence": [
+    "Init",
+    "CreatePenCanvas",
+    "SPSubBitmapRT(stack bool=true,RGBA8,RGBA)",
+    "SPSubBitmapRT::CreateFrameBuffer()",
+    "PenDrawableRT::SetPenData",
+    "SetBuffer(Add vectors)",
+    "SendDataToGPU(same Add vectors)",
+    "Update(false)",
+    "Draw",
+    "RGBA8 readback"
+  ],
+  "native_resource_slots_after_init": {
+    "248": "0x10016380",
+    "256": "0x10016dd0",
+    "264": "0x10017810",
+    "272": "0x10018280",
+    "280": "0x1001b4d0",
+    "288": "0x1001e5a0"
+  },
+  "native_resource_slots_before_init": {
+    "248": "0x0",
+    "256": "0x0",
+    "264": "0x0",
+    "272": "0x0",
+    "280": "0x0",
+    "288": "0x0"
+  },
+  "native_rt_receiver": "0x10013500",
+  "native_subbitmap_receiver": "0x10016140",
+  "native_vector_draw_joins": [
+    "446fa6f2a5b5c19a72d91d222e0712dd07c135bb349912c7e6cf620887ec9c60",
+    "81c085a0aa4bb4c075541466f446a53636d82485a0cceb38165d201bd87562dc",
+    "cb11d38e5ab0d8d439620a23c17d49344f3ebdc78e7ca963e372d3d790ccfffc"
+  ],
+  "pixel_statistics": {
+    "byte_count": 262144,
+    "channel_max": [
+      163,
+      65,
+      39,
+      255
+    ],
+    "channel_min": [
+      1,
+      0,
+      0,
+      2
+    ],
+    "dimensions": [
+      256,
+      256
+    ],
+    "nontransparent_pixels": 191,
+    "nontransparent_rgba_sha256": "2dde602036a1001ef56a4cca9c5484c4551010561e0e65e431a765f628bfe015",
+    "unique_rgba_count": 167
+  },
+  "post_readback": {
+    "gl_error_after": 0,
+    "gl_error_before": 0,
+    "rgba8_zlib_base64": "eNrt21mIVXUcB/DZnGZxGZwZHe/MPffcO+OojTrLndW9hMqKkjR7CB+EpMXIJJdyH3dntNSKMgSLHoqYoKAEizT3jTBT0kwrC4Ogh4KgiKDukXoL6nVmPh/4c7mH8/SF8//9zu/+b1YWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/LeS/LwRUoD+p23YoDkL6mJvtJQPvE8a0L/MTpWtXzSu8p25NcN2SQP6l/ljRry6ujF++OmG+AFpQP8yr3b4K53N8dPrW8JPRg0pnPj3PGB4unzgzOmxksfuCIY+OTtVvmFG5rOhtPjOquKCupzsrFzJQe+3sG5Ez4bm8OwLk2u+724PP19aH9+/sSU8uzodHN/cmrzQ1Za8tLUtvNjdmry8qSU8v6Ix/vHjdZVv3Z8q21BZnH+zBKH3mjty2I6NLclzuyeP/GnP1Npfd0+p/nnnhOpr29qqr3S1pS5t60hefq4jeW17R/LKltbkxc0t4aedzYmTyxuDA0vqq/YtGlf57q2xkofzc7ILpQm9yz1h6fLOpvDUjo7Uty9Nqv7xxYnVP+yckPpuZ0fNte3tyS+3d1Rf3TUhdT1z7VpXW3hpa2t4obMlcWZVU3BkaX3V/kw/cHDx+Kp9T9TFesJBBWmJQu9RkJczcP6Y2N6V6fDoxtbws67W8NKOTL1/rr36m23tya8ye8DV5ydUX3+2I/V1d1vyiy2t4fn16cSZznTi5Np0cGJ1OnEs865wdEVj4tBT9VXvT68seVSq0HuUFuQlHhxZvn3h2MqexeOq3lsS1fOxsZ7G8kH3jh9aPGNSxeC5twclC+8OSpc9NLpiT1TvoxnBuubEmeWZ+r8mnTi+rCH+4cqm4FDUE2T2gEfMCKF3ycvJyv8/92VnZeXUDC7sWDA29mZU/zvTwak1TcHxzDvB0ej7qqb4kagXyM3OzpMq9F1twwbPydT+D9amE6fWNoc39oFMH3B4dVNwZGZYttIeAH1bWcGAxLzaipc7M3vAqnT8WNQDRL8TRjPCheNib0sI+raC3JyBKxqDg9FcMOr/b8wFmxLHnmmIfzS+tPg2CUHfFp0BeCBVvnVtOji+pjk40ZkOTm9sCc9tyqzoP0YSgr7tptycohvnApqCw1takxe625OX90yp/WXv1NrfhhcOqJEQ9G2FuTmDZqXK1kVnBzLP/e+v3zLqz2iNKSmaJh3o+yqK8mv/ee6j9dq0UX84Iwz9R6wof/SsZNm6u4KhS4bk51VIBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIB/8xc2avr/",
+    "sha256": "9874d4d871064accb3fae9c80c04aa8d63aeda8e86e5d02357baeaf3886a2c6c"
+  },
+  "pre_readback": {
+    "gl_error_after": 0,
+    "gl_error_before": 0,
+    "rgba8_zlib_base64": "eNrtwTEBAAAAwqD1T+1tB6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AADwAAQ==",
+    "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90"
+  },
+  "queue_events": [
+    {
+      "run": "0xb01fb50",
+      "task": "0x10013b60",
+      "task_prefix": "4062030b0000000000000000000000000035011000000000a4a40401000000000000000000000000010000000000000000000000000000000000000000000000",
+      "vtable": "0xb036240"
+    },
+    {
+      "run": "0xb01fb78",
+      "task": "0x10013b90",
+      "task_prefix": "7062030b000000000000000000000000003501100000000058a5040100000000000000000000000000002040000000ff00000000000000000000000000000000",
+      "vtable": "0xb036270"
+    }
+  ],
+  "runtime_interface_audit": {
+    "adapter_attributes": [
+      "callbacks",
+      "extra_bases",
+      "get_string",
+      "gl_calls",
+      "gl_get_integer",
+      "gl_state",
+      "gles",
+      "u"
+    ],
+    "p_attributes": [
+      "alloc",
+      "callbacks",
+      "get",
+      "put",
+      "queue_trace",
+      "syms",
+      "u",
+      "x"
+    ],
+    "runpy_keys": [
+      "R",
+      "RUNTIME_INPUTS",
+      "UC_HOOK_CODE",
+      "_adapter",
+      "_renderer_base",
+      "at",
+      "call",
+      "fn",
+      "ip",
+      "p",
+      "queue",
+      "qvt",
+      "records",
+      "rt"
+    ]
+  },
+  "schema": "montblanc-rtv1-controlled-native-mesa-paint.v2",
+  "shader_source_diagnostics": [
+    {
+      "shader": 1,
+      "sources": [
+        {
+          "sha256": "ebeb330c026a5171772b4c8930a3462614e84cc58f4689348bb56bc1c3848f95",
+          "text": "precision highp float;\nattribute vec4 position;\nattribute float transparency;\nuniform mat4 ProjectionMatrix;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvoid main(void)\n{\n    gl_Position = ProjectionMatrix * vec4(position.xy, 0.0, 1.0);\n    fragCoord = vec2(position.z, position.w);\n    inputAlpha = transparency;\n}\n",
+          "utf8_bytes": 322
+        }
+      ]
+    },
+    {
+      "shader": 2,
+      "sources": [
+        {
+          "sha256": "1a5388b49c1e5805cf7d13c47befb937afb495fddca07bbf1dafd121df6cc31e",
+          "text": "#extension GL_OES_standard_derivatives : enable\nprecision mediump float;\nuniform vec4 inputColor;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvec2 center = vec2(0.5, 0.5);\nconst float radius = 0.5;\nconst float gradLength = 0.4;\nconst float alphaRange = 0.93;\nvoid main(void)\n{\n    float distY = abs(center.y - fragCoord.y);\n    float gradAlpha = clamp(1.0 - alphaRange / gradLength * (gradLength - (radius - distY)), 0.0, 1.0);\n    float dist = distance(center, fragCoord);\n    float circleAlpha = (radius - dist) / abs(radius - dist);\n    float distX = abs(center.x - fragCoord.x);\n    float smoothAlpha = 1.0 - smoothstep(radius - fwidth(dist), radius, distX);\n    float alpha = inputAlpha * gradAlpha * circleAlpha * smoothAlpha;\n    gl_FragColor = vec4(inputColor.xyz, 1.0) * alpha;\n}\n",
+          "utf8_bytes": 795
+        }
+      ]
+    },
+    {
+      "shader": 1,
+      "sources": [
+        {
+          "sha256": "ebeb330c026a5171772b4c8930a3462614e84cc58f4689348bb56bc1c3848f95",
+          "text": "precision highp float;\nattribute vec4 position;\nattribute float transparency;\nuniform mat4 ProjectionMatrix;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvoid main(void)\n{\n    gl_Position = ProjectionMatrix * vec4(position.xy, 0.0, 1.0);\n    fragCoord = vec2(position.z, position.w);\n    inputAlpha = transparency;\n}\n",
+          "utf8_bytes": 322
+        }
+      ]
+    },
+    {
+      "shader": 2,
+      "sources": [
+        {
+          "sha256": "1104e3a64bdf0523a78e168ed060b2b2f437e2e718f3b2b29b5aac2605dcc7f5",
+          "text": "#extension GL_OES_standard_derivatives : enable\nprecision mediump float;\nuniform vec4 inputColor;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvec2 center = vec2(0.5, 0.5);\nconst float radius = 0.5;\nvoid main(void)\n{\n    float dist = distance(center, fragCoord);\n    float circleAlpha = 1.0 - smoothstep(radius - fwidth(dist), radius, dist);\n    float alpha = inputAlpha * fragCoord.y * circleAlpha;\n    gl_FragColor = vec4(inputColor.xyz, 1.0) * alpha;\n}\n",
+          "utf8_bytes": 461
+        }
+      ]
+    },
+    {
+      "shader": 1,
+      "sources": [
+        {
+          "sha256": "ebeb330c026a5171772b4c8930a3462614e84cc58f4689348bb56bc1c3848f95",
+          "text": "precision highp float;\nattribute vec4 position;\nattribute float transparency;\nuniform mat4 ProjectionMatrix;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvoid main(void)\n{\n    gl_Position = ProjectionMatrix * vec4(position.xy, 0.0, 1.0);\n    fragCoord = vec2(position.z, position.w);\n    inputAlpha = transparency;\n}\n",
+          "utf8_bytes": 322
+        }
+      ]
+    },
+    {
+      "shader": 2,
+      "sources": [
+        {
+          "sha256": "36bf559021bac6df64234d140254e759c68e5bd20ab090de9f0d387fdfbaaf64",
+          "text": "#extension GL_OES_standard_derivatives : enable\nprecision mediump float;\nuniform vec4 inputColor;\nvarying vec2 fragCoord;\nvarying float inputAlpha;\nvec2 center = vec2(0.5, 0.5);\nconst float radius = 0.5;\nvoid main(void)\n{\n    float dist = distance(center, fragCoord);\n    float circleAlpha = 1.0 - smoothstep(radius - fwidth(dist), radius, dist);\n    float gradAlpha = clamp(2.0 * (1.0 - fragCoord.y), 0.0, 1.0);\n    float alpha = inputAlpha * gradAlpha * circleAlpha;\n    gl_FragColor = vec4(inputColor.xyz, 1.0) * alpha;\n}\n",
+          "utf8_bytes": 525
+        }
+      ]
+    }
+  ],
+  "style": {
+    "argb": "0xffa34127",
+    "mode": "host-controlled native SetPenData input",
+    "observed_calls": [
+      {
+        "argb": "0xffa34127",
+        "receiver": "0x10013500",
+        "size_s0_bits": "00002040"
+      }
+    ],
+    "size": 2.5
+  },
+  "target": {
+    "completeness": 36053,
+    "constructor_stack_args_sp_plus_0_8_16": [
+      1,
+      6,
+      2
+    ],
+    "constructor_texture_object": "0x100216e0",
+    "create_framebuffer_api": "SPSubBitmapRT::CreateFrameBuffer() -> vtable CreateFrameBufferRT(false)",
+    "descriptor_render_target_bool": true,
+    "framebuffer": 1,
+    "framebuffer_object_after_create": "0x10021930",
+    "framebuffer_object_after_ctor": "0x0",
+    "native_color_attach_success_byte": 1,
+    "native_offscreen_framebuffer_id": 1,
+    "read_attachment": 1,
+    "renderer_offscreen_target": "0x10021960",
+    "size": [
+      256,
+      256
+    ],
+    "texture": 1,
+    "texture_memory_layout": 6,
+    "texture_target_layout": 2
+  },
+  "uniform_diagnostics": [
+    {
+      "call": "glUniformMatrix4fv",
+      "location": 0,
+      "program_at_call": 3,
+      "values": [
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "call": "glUniform4fv",
+      "location": 1,
+      "program_at_call": 3,
+      "values": [
+        0.6392157077789307,
+        0.2549019753932953,
+        0.15294118225574493,
+        1.0
+      ]
+    },
+    {
+      "call": "glUniformMatrix4fv",
+      "location": 0,
+      "program_at_call": 4,
+      "values": [
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "call": "glUniform4fv",
+      "location": 1,
+      "program_at_call": 4,
+      "values": [
+        0.6392157077789307,
+        0.2549019753932953,
+        0.15294118225574493,
+        1.0
+      ]
+    },
+    {
+      "call": "glUniformMatrix4fv",
+      "location": 0,
+      "program_at_call": 5,
+      "values": [
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0078125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "call": "glUniform4fv",
+      "location": 1,
+      "program_at_call": 5,
+      "values": [
+        0.6392157077789307,
+        0.2549019753932953,
+        0.15294118225574493,
+        1.0
+      ]
+    }
+  ],
+  "vbo_uploads": [
+    {
+      "boundBuffer": 1,
+      "call": "glBufferData",
+      "dataHex": null,
+      "dataSha256": null,
+      "size": 0,
+      "target": 34962,
+      "usage": 35048
+    },
+    {
+      "boundBuffer": 2,
+      "call": "glBufferData",
+      "dataHex": null,
+      "dataSha256": null,
+      "size": 0,
+      "target": 34962,
+      "usage": 35048
+    },
+    {
+      "boundBuffer": 3,
+      "call": "glBufferData",
+      "dataHex": null,
+      "dataSha256": null,
+      "size": 0,
+      "target": 34962,
+      "usage": 35048
+    },
+    {
+      "boundBuffer": 1,
+      "call": "glBufferData",
+      "dataHex": "a5c955c1b90aa8c0000000000000803fb9b8b83edb3518c1bc42b0c00000803f0000803fb9b8b83ee9d458c13fa201c10000000000000000b9b8b83ee9d458c13fa201c10000000000000000b9b8b83e1f411bc141be05c10000803f00000000b9b8b83edb3518c1bc42b0c00000803f0000803fb9b8b83e900255c1a24c77c0000000000000803fb9b8b83e1f2312c1b7ed8cc00000803f0000803fb9b8b83e73995bc1b7a8e1c00000000000000000b9b8b83e73995bc1b7a8e1c00000000000000000b9b8b83e02ba18c11df0f2c00000803f00000000b9b8b83e1f2312c1b7ed8cc00000803f0000803fb9b8b83e2b3e51c16ebb1ac0000000000000803fbbbaba3e3aeb09c184925bc00000803f0000803fbbbaba3e2ee85dc150cfbcc00000000000000000bbbaba3e2ee85dc150cfbcc00000000000000000bbbaba3e3d9516c1db3addc00000803f00000000bbbaba3e3aeb09c184925bc00000803f0000803fbbbaba3e2e8646c1784351bf000000000000803fbbbaba3e8ee8fbc0c8bc2fc00000803f0000803fbbbaba3e771e5fc161d98dc00000000000000000bbbaba3e771e5fc161d98dc00000000000000000bbbaba3e908c16c1568fcbc00000803f00000000bbbaba3e8ee8fbc0c8bc2fc00000803f0000803fbbbaba3ee5832bc1ca4f343f000000000000803fbbbaba3e453bdec059b53fc00000803f0000803fbbbaba3e2f835bc1edcf16c00000000000000000bbbaba3e2f835bc1edcf16c00000000000000000bbbaba3eed1c1fc19dccc1c00000803f00000000bbbaba3e453bdec059b53fc00000803f0000803fbbbaba3e11c6efc0e3f9663f000000000000803fbdbcbc3e3abad7c0571796c00000803f0000803fbdbcbc3ecd8241c1ce64913e0000000000000000bdbcbc3ecd8241c1ce64913e0000000000000000bdbcbc3ee27c35c147e0a9c00000803f00000000bdbcbc3e3abad7c0571796c00000803f0000803fbdbcbc3ef0429bc0755406bf000000000000803fbdbcbc3ec06ae2c0891ec3c00000803f0000803fbdbcbc3e20ef17c12605aa3f0000000000000000bdbcbc3e20ef17c12605aa3f0000000000000000bdbcbc3e08833bc1b1d287c00000803f00000000bdbcbc3ec06ae2c0891ec3c00000803f0000803fbdbcbc3eefcb79c06f4be3be000000000000803fbfbebe3e3f9da9c020edc8c00000803f0000803fbfbebe3ed23f0cc17475383f0000000000000000bfbebe3ed23f0cc17475383f0000000000000000bfbebe3e759b22c1baa9a3c00000803f00000000bfbebe3e3f9da9c020edc8c00000803f0000803fbfbebe3ece8235c05d819cbe000000000000803fc1c0c03e0f345fc083a5c8c00000803f0000803fc1c0c03e42cff9c056e3723e0000000000000000c1c0c03e42cff9c056e3723e0000000000000000c1c0c03ef25307c15346b7c00000803f00000000c1c0c03e0f345fc083a5c8c00000803f0000803fc1c0c03edb83dabfdcefe9bd000000000000803fc3c2c23e470fe0bf77a6c3c00000803f0000803fc3c2c23ee49fd6c03c02a0bd0000000000000000c3c2c23ee49fd6c03c02a0bd0000000000000000c3c2c23ebf02d8c0c07ec2c00000803f00000000c3c2c23e470fe0bf77a6c3c00000803f0000803fc3c2c23e5ba820bf5055df3d000000000000803fc5c4c43ee6c95fbe5410bcc00000803f0000803fc5c4c43ec2b5b3c0485e6dbe0000000000000000c5c4c43ec2b5b3c0485e6dbe0000000000000000c5c4c43e079fa6c09bf8c6c00000803f00000000c5c4c43ee6c95fbe5410bcc00000803f0000803fc5c4c43e459f0e3faed9ca3e000000000000803fc7c6c63ecff0ad3f8d99b1c00000803f0000803fc7c6c63ebabc8cc0923f8bbe0000000000000000c7c6c63ebabc8cc0923f8bbe0000000000000000c7c6c63edd2866c021fbc6c00000803f00000000c7c6c63ecff0ad3f8d99b1c00000803f0000803fc7c6c63e5481ec3f694d413f000000000000803f9594143f47543f401754a4c00000803f0000803f9594143f47e643c0342549be00000000000000009594143f47e643c0342549be00000000000000009594143f54a5f5bfeec6c2c00000803f000000009594143f47543f401754a4c00000803f0000803f9594143f2cec3b40780cb93f000000000000803f9594143f58699e40ec9886c00000803f0000803f9594143f2005e3bf8c486ebe00000000000000009594143f2005e3bf8c486ebe00000000000000009594143f5f3f763e4e4ebcc00000803f000000009594143f58699e40ec9886c00000803f0000803f9594143f01048040ba1e1140000000000000803f9594143fe3a1d740da9044c00000803f0000803f9594143fd3a7e5be206a68bc00000000000000009594143fd3a7e5be206a68bc00000000000000009594143fca861240ff4babc00000803f000000009594143fe3a1d740da9044c00000803f0000803f9594143f1024a1400b734b40000000000000803f9594143f142605410cacebbf0000803f0000803f9594143fec2c5a3fb481e13e00000000000000009594143fec2c5a3fb481e13e00000000000000009594143fb66d84406d8c92c00000803f000000009594143f142605410cacebbf0000803f0000803f9594143fe18cc240ae138640000000000000803f9594143ffd6d1c41b82109bf0000803f0000803f9594143ff0110940bdf18d3f00000000000000009594143ff0110940bdf18d3f00000000000000009594143f11d8ba40ed7667c00000803f000000009594143ffd6d1c41b82109bf0000803f0000803f9594143f0a1ae4401703a940000000000000803f9594143f80fd3141f85c4e3f0000803f0000803f9594143f4d82594022c9f93f00000000000000009594143f4d82594022c9f93f00000000000000009594143f1ea2ec405e8a21c00000803f000000009594143f80fd3141f85c4e3f0000803f0000803f9594143f133b02418a8ccc40000000000000803f9594143f79784541fd0507400000803f0000803f9594143f8743924017f7384000000000000000009594143f8743924017f7384000000000000000009594143f295f0c410138b2bf0000803f000000009594143f79784541fd0507400000803f0000803f9594143f6cd212410f5af240000000000000803f9594143f4f6c58418f3a5c400000803f0000803f9594143f3272b74025b37c4000000000000000009594143f3272b74025b37c4000000000000000009594143ffc52214182663cbe0000803f000000009594143f4f6c58418f3a5c400000803f0000803f9594143f8ed52341f4fb0c41000000000000803f9594143f02046b41c82399400000803f0000803f9594143fad4fdc402855a34000000000000000009594143fad4fdc402855a34000000000000000009594143f4a56354120048a3f0000803f000000009594143f02046b41c82399400000803f0000803f9594143f6cf454c1deccd7c0000000000000803fb9b8b83ec5f61cc1bcd3d9c00000803f0000803fb9b8b83ebbad55c1c2e413c10000000000000000b9b8b83ebbad55c1c2e413c10000000000000000b9b8b83e14b01dc131e814c10000803f00000000b9b8b83ec5f61cc1bcd3d9c00000803f0000803fb9b8b83ea5c955c1b90aa8c0000000000000803fb9b8b83edb3518c1bc42b0c00000803f0000803fb9b8b83ee9d458c13fa201c10000000000000000b9b8b83ee9d458c13fa201c10000000000000000b9b8b83e1f411bc141be05c10000803f00000000b9b8b83edb3518c1bc42b0c00000803f0000803fb9b8b83e900255c1a24c77c0000000000000803fb9b8b83e1f2312c1b7ed8cc00000803f0000803fb9b8b83e73995bc1b7a8e1c00000000000000000b9b8b83e73995bc1b7a8e1c00000000000000000b9b8b83e02ba18c11df0f2c00000803f00000000b9b8b83e1f2312c1b7ed8cc00000803f0000803fb9b8b83e2b3e51c16ebb1ac0000000000000803fbbbaba3e3aeb09c184925bc00000803f0000803fbbbaba3e2ee85dc150cfbcc00000000000000000bbbaba3e2ee85dc150cfbcc00000000000000000bbbaba3e3d9516c1db3addc00000803f00000000bbbaba3e3aeb09c184925bc00000803f0000803fbbbaba3e2e8646c1784351bf000000000000803fbbbaba3e8ee8fbc0c8bc2fc00000803f0000803fbbbaba3e771e5fc161d98dc00000000000000000bbbaba3e771e5fc161d98dc00000000000000000bbbaba3e908c16c1568fcbc00000803f00000000bbbaba3e8ee8fbc0c8bc2fc00000803f0000803fbbbaba3ee5832bc1ca4f343f000000000000803fbbbaba3e453bdec059b53fc00000803f0000803fbbbaba3e2f835bc1edcf16c00000000000000000bbbaba3e2f835bc1edcf16c00000000000000000bbbaba3eed1c1fc19dccc1c00000803f00000000bbbaba3e453bdec059b53fc00000803f0000803fbbbaba3e11c6efc0e3f9663f000000000000803fbdbcbc3e3abad7c0571796c00000803f0000803fbdbcbc3ecd8241c1ce64913e0000000000000000bdbcbc3ecd8241c1ce64913e0000000000000000bdbcbc3ee27c35c147e0a9c00000803f00000000bdbcbc3e3abad7c0571796c00000803f0000803fbdbcbc3ef0429bc0755406bf000000000000803fbdbcbc3ec06ae2c0891ec3c00000803f0000803fbdbcbc3e20ef17c12605aa3f0000000000000000bdbcbc3e20ef17c12605aa3f0000000000000000bdbcbc3e08833bc1b1d287c00000803f00000000bdbcbc3ec06ae2c0891ec3c00000803f0000803fbdbcbc3eefcb79c06f4be3be000000000000803fbfbebe3e3f9da9c020edc8c00000803f0000803fbfbebe3ed23f0cc17475383f0000000000000000bfbebe3ed23f0cc17475383f0000000000000000bfbebe3e759b22c1baa9a3c00000803f00000000bfbebe3e3f9da9c020edc8c00000803f0000803fbfbebe3ece8235c05d819cbe000000000000803fc1c0c03e0f345fc083a5c8c00000803f0000803fc1c0c03e42cff9c056e3723e0000000000000000c1c0c03e42cff9c056e3723e0000000000000000c1c0c03ef25307c15346b7c00000803f00000000c1c0c03e0f345fc083a5c8c00000803f0000803fc1c0c03edb83dabfdcefe9bd000000000000803fc3c2c23e470fe0bf77a6c3c00000803f0000803fc3c2c23ee49fd6c03c02a0bd0000000000000000c3c2c23ee49fd6c03c02a0bd0000000000000000c3c2c23ebf02d8c0c07ec2c00000803f00000000c3c2c23e470fe0bf77a6c3c00000803f0000803fc3c2c23e5ba820bf5055df3d000000000000803fc5c4c43ee6c95fbe5410bcc00000803f0000803fc5c4c43ec2b5b3c0485e6dbe0000000000000000c5c4c43ec2b5b3c0485e6dbe0000000000000000c5c4c43e079fa6c09bf8c6c00000803f00000000c5c4c43ee6c95fbe5410bcc00000803f0000803fc5c4c43e459f0e3faed9ca3e000000000000803fc7c6c63ecff0ad3f8d99b1c00000803f0000803fc7c6c63ebabc8cc0923f8bbe0000000000000000c7c6c63ebabc8cc0923f8bbe0000000000000000c7c6c63edd2866c021fbc6c00000803f00000000c7c6c63ecff0ad3f8d99b1c00000803f0000803fc7c6c63e",
+      "dataSha256": "cb11d38e5ab0d8d439620a23c17d49344f3ebdc78e7ca963e372d3d790ccfffc",
+      "size": 4080,
+      "target": 34962,
+      "usage": 35048
+    },
+    {
+      "boundBuffer": 2,
+      "call": "glBufferData",
+      "dataHex": "5ccf54c18acdc7c000000000000000000000803fb5d11cc168d4c9c00000803f000000000000803fcbd255c16ce41bc1000000000000803f0000803fcbd255c16ce41bc1000000000000803f0000803f24d51dc1dbe71cc10000803f0000803f0000803fb5d11cc168d4c9c00000803f000000000000803f",
+      "dataSha256": "81c085a0aa4bb4c075541466f446a53636d82485a0cceb38165d201bd87562dc",
+      "size": 120,
+      "target": 34962,
+      "usage": 35048
+    },
+    {
+      "boundBuffer": 3,
+      "call": "glBufferData",
+      "dataHex": "79943a41ee73274100000000000000000000803f8e558141431cd0400000803f000000000000803f5a5df64099babe40000000000000803f0000803f5a5df64099babe40000000000000803f0000803f4f45434100bcff3f0000803f0000803f0000803f8e558141431cd0400000803f000000000000803f",
+      "dataSha256": "446fa6f2a5b5c19a72d91d222e0712dd07c135bb349912c7e6cf620887ec9c60",
+      "size": 120,
+      "target": 34962,
+      "usage": 35048
+    }
+  ]
+}

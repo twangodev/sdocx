@@ -1008,7 +1008,7 @@ pub(crate) fn prepare(stroke: &crate::Stroke) -> Option<([Vec<[f32; 5]>; 3], cra
         || !p.binary_added
         || !matches!(rendering.style.stroke_type_raw, None | Some(0))
         || !matches!(rendering.style.color_type_raw, None | Some(0))
-        || !(0.1..=2.0).contains(&size)
+        || !(0.1..=2.5).contains(&size)
         || stroke.pen_width.to_bits() != size.to_bits()
         || !(3..=24).contains(&stroke.points.len())
         || stroke.pressures.len() != stroke.points.len()

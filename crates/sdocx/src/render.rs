@@ -4871,10 +4871,10 @@ fn render_stroke(
         && (!montblanc_two_pixels_per_page_unit
             || stroke.points.len() <= 11
             || ((12..=24).contains(&stroke.points.len())
-                && (0.5..=2.0).contains(&stroke.pen_width)))
+                && (0.5..=2.5).contains(&stroke.pen_width)))
         && (!montblanc_two_pixels_per_page_unit
             || !(10..=11).contains(&stroke.points.len())
-            || (0.5..=2.0).contains(&stroke.pen_width))
+            || (0.5..=2.5).contains(&stroke.pen_width))
         && let Some((buffers, color)) = crate::ink::montblanc::prepare(stroke)
         && montblanc_candidate::render(
             svg,

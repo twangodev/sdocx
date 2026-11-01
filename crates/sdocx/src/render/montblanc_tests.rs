@@ -460,12 +460,12 @@ fn long_profiles_are_limited_to_supported_sizes() {
     ];
     for n in [10, 11] {
         let mut stroke = source(&points[..n], &vec![0.5; n]);
-        for size in [0.49, 0.5, 1.0, 1.5, 2.0, 2.01] {
+        for size in [0.49, 0.5, 1.0, 1.5, 2.0, 2.01, 2.5, 2.51] {
             stroke.pen_width = size;
             stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
             assert_eq!(
                 crate::ink::montblanc::prepare(&stroke).is_some(),
-                (0.5..=2.0).contains(&size)
+                (0.5..=2.5).contains(&size)
             );
             let doc = document(stroke.clone());
             let generic = render_document_svg(&doc, &RenderOptions::default())[0]
@@ -473,7 +473,7 @@ fn long_profiles_are_limited_to_supported_sizes() {
                 .clone();
             assert_eq!(
                 render_document_svg(&doc, &options())[0].svg != generic,
-                (0.5..=2.0).contains(&size)
+                (0.5..=2.5).contains(&size)
             );
         }
         stroke.pen_width = 1.5;
@@ -494,7 +494,15 @@ fn long_profiles_are_limited_to_supported_sizes() {
             ..Default::default()
         };
         assert_eq!(render_document_svg(&doc, &conflict)[0].svg, generic);
-        for size in [0.49, 0.5, 1.0, 2.0, 2.01] {
+        let mut wide = source(&points[..n], &vec![0.5; n]);
+        wide.pen_width = 2.5;
+        wide.rendering.as_mut().unwrap().style.pen_size = Some(2.5);
+        let wide = document(wide);
+        assert_eq!(
+            render_document_svg(&wide, &conflict)[0].svg,
+            render_document_svg(&wide, &RenderOptions::default())[0].svg
+        );
+        for size in [0.49, 0.5, 1.0, 2.0, 2.01, 2.5, 2.51] {
             let mut rejected = source(&points[..n], &vec![0.5; n]);
             rejected.pen_width = size;
             rejected.rendering.as_mut().unwrap().style.pen_size = Some(size);
@@ -502,7 +510,7 @@ fn long_profiles_are_limited_to_supported_sizes() {
             assert_eq!(
                 render_document_svg(&rejected, &two)[0].svg
                     != render_document_svg(&rejected, &RenderOptions::default())[0].svg,
-                (0.5..=2.0).contains(&size)
+                (0.5..=2.5).contains(&size)
             );
         }
     }
@@ -514,7 +522,7 @@ fn longer_profiles_have_size_and_scale_boundaries() {
         .map(|i| [(i * 6) as f32, if i % 2 == 0 { 0. } else { 3. }])
         .collect();
     for n in [12, 20, 21, 24, 25] {
-        for size in [0.49, 0.5, 1.0, 1.5, 2.0, 2.01] {
+        for size in [0.49, 0.5, 1.0, 1.5, 2.0, 2.01, 2.5, 2.51] {
             let mut stroke = source(&points[..n], &vec![0.5; n]);
             stroke.pen_width = size;
             stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
@@ -524,7 +532,7 @@ fn longer_profiles_have_size_and_scale_boundaries() {
                 .clone();
             assert_eq!(
                 render_document_svg(&doc, &options())[0].svg != generic,
-                n <= 24 && (0.5..=2.0).contains(&size)
+                n <= 24 && (0.5..=2.5).contains(&size)
             );
             let two = RenderOptions {
                 montblanc_two_pixels_per_page_unit: true,
@@ -532,7 +540,7 @@ fn longer_profiles_have_size_and_scale_boundaries() {
             };
             assert_eq!(
                 render_document_svg(&doc, &two)[0].svg != generic,
-                n <= 24 && (0.5..=2.0).contains(&size)
+                n <= 24 && (0.5..=2.5).contains(&size)
             );
         }
     }
