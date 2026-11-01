@@ -1,0 +1,129 @@
+{
+  "schema": "sdocx-pencil2-full-scene-captured-geometry-mesh-control-v1",
+  "scope": "Two synthetic Pencil2 strokes, native ARM64 emulation host Mesa synthetic queue. Captured source geometry drives diagnostic PDF; generic SVG and PDF use source inputs. No device, saved-note, production, or source-generated mesh parity claim.",
+  "metrics_order": "sum absolute RGB channel error, maximum channel error, differing channels",
+  "readers": {
+    "pymupdf": "1.28.2",
+    "pdfium": "156.0.8076.0",
+    "resvg": "0.45.1"
+  },
+  "setup": "192x192 page; white or RGB(64,128,191) backdrop; native scale 1 or 2 with translations (6,9),(12,12), captured grain offsets; public scale 2 uses 96x96 page, halved translations, rasterized at 2x. Native native geometry and generic reconstructed geometry differ.",
+  "limitations": "PDF Type 4 soft masks, unbounded corner interpolation, ordered per-stamp compositing, 16-bit positions, 8-bit values; retained source descriptors rather than Rust generation; generic results use mutable checkout. Native captures only as comparison targets, never source pixels.",
+  "files": {
+    "tools/pencil2-mesh-v308/scene.py": "3fb9251787c81dbba0d1ce8b2728f0f0f4c2d6af38a6db607f1501c8c4333447",
+    "tools/pencil2-mesh-v308/src/main.rs": "684d7cc7ac3fd3fa73f9dc674e79a7cda8b31dbe7e2f5d0e0ca7d11b96f457a3",
+    "tools/pencil2-mesh-v308/public_compare.py": "bfd6890217072fcc46f5f84febc7be848c3d29b85cffe3ad1aa4b0d79bfd5191",
+    "tools/pencil2-worker-v259/native-geometry.vbo": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8",
+    "tools/pencil2-mixed-scene-controls/white-1-second.vbo": "ab8c231108800d1a9437783f27d12c57e59c4d81a00538268343f662a1c64389"
+  },
+  "cases": {
+    "white-1": {
+      "native_second_rgba_sha256": "21b3371d766104b5f6107cda1f74987ab2ca618deae59d00476874873840fb39",
+      "mesh_mupdf": [
+        12947,
+        72,
+        1182
+      ],
+      "mesh_pdfium": [
+        14264,
+        71,
+        1239
+      ],
+      "triangles": 360670,
+      "mesh_pdf_bytes": 1688899,
+      "generic_svg_resvg": [
+        50427,
+        204,
+        1048
+      ],
+      "generic_pdf_mupdf": [
+        50304,
+        204,
+        1045
+      ],
+      "generic_pdf_pdfium": [
+        54482,
+        204,
+        1053
+      ],
+      "generic_svg_bytes": 845,
+      "generic_pdf_bytes": 1850
+    },
+    "white-2": {
+      "native_second_rgba_sha256": "2d0e15b8f199f48a4fd32f3a538d20f858d09ab5eda731e7e511579b5f6020ac",
+      "mesh_mupdf": [
+        43676,
+        92,
+        4230
+      ],
+      "mesh_pdfium": [
+        45620,
+        93,
+        4361
+      ],
+      "triangles": 360672,
+      "mesh_pdf_bytes": 1715588,
+      "generic_svg_resvg": [
+        212057,
+        204,
+        3857
+      ],
+      "generic_pdf_mupdf": [
+        209505,
+        204,
+        3856
+      ],
+      "generic_pdf_pdfium": [
+        211927,
+        204,
+        3864
+      ],
+      "generic_svg_bytes": 826,
+      "generic_pdf_bytes": 1850
+    },
+    "blue-2": {
+      "native_second_rgba_sha256": "e757137fc3cc95fba39804bf66bc60953460e485a178b49c42196db1a4462389",
+      "mesh_mupdf": [
+        43579,
+        66,
+        4341
+      ],
+      "mesh_pdfium": [
+        45357,
+        66,
+        4399
+      ],
+      "triangles": 360672,
+      "mesh_pdf_bytes": 1715609,
+      "generic_svg_resvg": [
+        159126,
+        140,
+        4309
+      ],
+      "generic_pdf_mupdf": [
+        157492,
+        140,
+        4304
+      ],
+      "generic_pdf_pdfium": [
+        158472,
+        140,
+        4303
+      ],
+      "generic_svg_bytes": 826,
+      "generic_pdf_bytes": 1863
+    }
+  },
+  "validation": {
+    "source_head": "b15cdb7871bfbccb89e0046fd11a86dfc462981c",
+    "isolation": "Clean git archive plus tools/pencil2-mesh-v308 only; existing external readers and shared Cargo target",
+    "checks": [
+      "all files SHA-256 matched",
+      "scene.py --full: all three cases metrics and PDF sizes matched",
+      "pixel_probe.py: all three cases matched",
+      "cargo build --offline --locked --features export-pdf succeeded",
+      "public_compare.py: all three cases and three readers matched"
+    ],
+    "native_recapture": false
+  }
+}
