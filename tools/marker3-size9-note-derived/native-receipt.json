@@ -1,0 +1,38 @@
+{
+  "1": {
+    "rgba_sha256": "753f365a12c5758f78192f61776ac462260fa38f6d426fbf202378362f0a4248",
+    "native_vector_sha256": "e32dc3540c0b57490c676eb2ed65c8ed410559fa1ee2144e5e01f92db8e71f60",
+    "callback_count": 10,
+    "frame_bytes": 262144
+  },
+  "2": {
+    "rgba_sha256": "9ab62173e4c51ac73363ddbfab02127db75cb36da392195e1a20df24ec75252b",
+    "native_vector_sha256": "e32dc3540c0b57490c676eb2ed65c8ed410559fa1ee2144e5e01f92db8e71f60",
+    "callback_count": 10,
+    "frame_bytes": 262144
+  },
+  "4": {
+    "rgba_sha256": "20f739839a96465aecb63595e01502ecd80d136bd8b6d7111acc734a09b80ec8",
+    "native_vector_sha256": "e32dc3540c0b57490c676eb2ed65c8ed410559fa1ee2144e5e01f92db8e71f60",
+    "callback_count": 10,
+    "frame_bytes": 262144
+  },
+  "draw_point_input_xy_f32_le_hex": [
+    "507f5141601c5341",
+    "33104d41fa246241",
+    "b5e54a417fb27141",
+    "50ff494164058141",
+    "50ff494197e78841",
+    "69ff4941120c9141",
+    "8a984b41d0f49841",
+    "72544e416be3a041",
+    "633c51410dd8a841",
+    "507f544130cead41"
+  ],
+  "environment": {
+    "egl": "1.5",
+    "vendor": "Mesa",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "gles": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+  }
+}

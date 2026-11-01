@@ -6,7 +6,6 @@ use crate::{Point, Stroke};
 const PEN: &str = "com.samsung.android.sdk.pen.pen.preload.Marker3";
 const STRAIGHT_PEN: &str = "com.samsung.android.sdk.pen.pen.preload.StraightMarker";
 const SPACING: f32 = 1.0;
-const REJECT_BELOW: f32 = 2.0;
 const ALTERNATE_BELOW: f32 = 20.0;
 const MAX_PAGE_STAMPS: usize = 65_536;
 
@@ -67,6 +66,8 @@ fn prepare_bounded(s: &Stroke, max_stamps: usize) -> Option<Ink> {
     // Drawing forwards ObjectStroke::GetPenSize, not the decoder's
     // presentation width. Admit only the captured saved-size range here.
     let saved_size = r.style.pen_size?;
+    // Saved ObjectStroke redraw loads this field, defaulting omitted metadata to zero.
+    let reject_below = r.style.initial_tolerance.unwrap_or(0.0);
     if !matches!(r.pen_name.as_deref(), Some(PEN | STRAIGHT_PEN))
         // Drawing admits null settings to Marker3 V1; this V5 sampler is only
         // valid for the observed empty and explicit `5;` settings.
@@ -77,6 +78,8 @@ fn prepare_bounded(s: &Stroke, max_stamps: usize) -> Option<Ink> {
         || !matches!(r.tool_type_raw, 1..=3)
         || s.points.is_empty()
         || s.points.len() > 100_000
+        || !reject_below.is_finite()
+        || reject_below < 0.0
         || !saved_size.is_finite()
         || !(0.0..=800.0).contains(&saved_size)
         || s.points.iter().any(|p| {
@@ -119,7 +122,7 @@ fn prepare_bounded(s: &Stroke, max_stamps: usize) -> Option<Ink> {
         let next = P::from(*point);
         let last = i + 1 == s.points.len();
         let distance = next.sub(previous).len();
-        let draw = if distance < REJECT_BELOW {
+        let draw = if distance < reject_below {
             false
         } else if last {
             // The captured endPen route samples the terminal segment even
@@ -242,6 +245,7 @@ mod tests {
                 style: StrokeStyle {
                     color_argb: Some(0xff33_6699),
                     pen_size: Some(input.width),
+                    initial_tolerance: Some(2.0),
                     ..StrokeStyle::default()
                 },
             }),
@@ -266,6 +270,74 @@ mod tests {
         rendering.properties.compressed = true;
         rendering.properties.top_layer_pen = false;
         stroke
+    }
+
+    #[test]
+    fn saved_tolerance_controls_rejection_and_invalid_values_fall_back() {
+        let input = Input {
+            samples: vec![[0.0, 0.0], [2.0, 0.0], [4.0, 0.0]],
+            width: 8.0,
+            tool_type_raw: 2,
+            is_shape: false,
+            fixed_width: false,
+            wrapper_flag: false,
+        };
+        let mut source = stroke(&input);
+        let at_threshold = prepare(&source).unwrap();
+        source.rendering.as_mut().unwrap().style.initial_tolerance = Some(2.0001);
+        let above_threshold = prepare(&source).unwrap();
+        assert!(at_threshold.sample_ends[1] > above_threshold.sample_ends[1]);
+        for tolerance in [-1.0, f32::NAN, f32::INFINITY] {
+            source.rendering.as_mut().unwrap().style.initial_tolerance = Some(tolerance);
+            assert!(prepare_for_page(&source).is_none());
+        }
+    }
+
+    #[test]
+    fn model_tolerance_boundary_vectors_match_native_bits() {
+        for (tool, fixture) in [
+            (
+                1,
+                include_str!("../../../../conformance/marker3-tolerance-boundary-tool1.json"),
+            ),
+            (
+                2,
+                include_str!("../../../../conformance/marker3-tolerance-boundary-tool2.json"),
+            ),
+        ] {
+            let cases: serde_json::Value = serde_json::from_str(fixture).unwrap();
+            for name in ["zero", "one", "below_two", "two", "above_two"] {
+                let case = &cases[name];
+                let input = Input {
+                    samples: vec![[0.0, 0.0], [2.0, 0.0], [4.0, 0.0]],
+                    width: 9.0,
+                    tool_type_raw: tool,
+                    is_shape: false,
+                    fixed_width: false,
+                    wrapper_flag: false,
+                };
+                let mut source = stroke(&input);
+                source.rendering.as_mut().unwrap().style.initial_tolerance =
+                    Some(case["tolerance"].as_f64().unwrap() as f32);
+                let ink = prepare_for_page(&source).unwrap();
+                let actual: String = ink
+                    .points
+                    .iter()
+                    .flat_map(|p| [p.x as f32, p.y as f32])
+                    .flat_map(f32::to_le_bytes)
+                    .map(|b| format!("{b:02x}"))
+                    .collect();
+                for phase in ["draw_object_stroke", "saved_redraw"] {
+                    assert_eq!(
+                        actual,
+                        case["phase_final_vectors"][phase]["vector_bytes"]
+                            .as_str()
+                            .unwrap(),
+                        "{tool} {name} {phase}"
+                    );
+                }
+            }
+        }
     }
 
     #[test]
@@ -616,6 +688,16 @@ mod tests {
             rejected.rendering.as_mut().unwrap().advanced_settings = None;
             assert!(prepare_for_page(&rejected).is_none());
         }
+    }
+
+    #[test]
+    fn size_nine_note_derived_native_vector() {
+        let case: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-size9-note-derived-native.json"
+        ))
+        .unwrap();
+        let stroke = caller_stroke(&case);
+        assert_caller_xy_matches(&prepare_for_page(&stroke).unwrap(), &case);
     }
 
     #[test]

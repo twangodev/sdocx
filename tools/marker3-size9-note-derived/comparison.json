@@ -1,0 +1,62 @@
+{
+  "note1": {
+    "generic": {
+      "svg_rgba_l1": 36970,
+      "mupdf_rgb_l1": 61398,
+      "pdfium_rgb_l1": 29336,
+      "native_missing": 139
+    },
+    "baseline": {
+      "svg_rgba_l1": 7341,
+      "mupdf_rgb_l1": 38732,
+      "pdfium_rgb_l1": 7262,
+      "native_missing": 0
+    },
+    "profile": {
+      "svg_rgba_l1": 3053,
+      "mupdf_rgb_l1": 35003,
+      "pdfium_rgb_l1": 2637,
+      "native_missing": 0
+    }
+  },
+  "note2": {
+    "generic": {
+      "svg_rgba_l1": 166083,
+      "mupdf_rgb_l1": 260327,
+      "pdfium_rgb_l1": 131863,
+      "native_missing": 584
+    },
+    "baseline": {
+      "svg_rgba_l1": 14697,
+      "mupdf_rgb_l1": 143576,
+      "pdfium_rgb_l1": 14838,
+      "native_missing": 0
+    },
+    "profile": {
+      "svg_rgba_l1": 6614,
+      "mupdf_rgb_l1": 136546,
+      "pdfium_rgb_l1": 7203,
+      "native_missing": 0
+    }
+  },
+  "note4": {
+    "generic": {
+      "svg_rgba_l1": 705645,
+      "mupdf_rgb_l1": 681258,
+      "pdfium_rgb_l1": 560462,
+      "native_missing": 2366
+    },
+    "baseline": {
+      "svg_rgba_l1": 30418,
+      "mupdf_rgb_l1": 157783,
+      "pdfium_rgb_l1": 33024,
+      "native_missing": 6
+    },
+    "profile": {
+      "svg_rgba_l1": 16160,
+      "mupdf_rgb_l1": 144905,
+      "pdfium_rgb_l1": 19266,
+      "native_missing": 6
+    }
+  }
+}

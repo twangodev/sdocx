@@ -1,0 +1,297 @@
+{
+  "zero": {
+    "tolerance": 0.0,
+    "input": {
+      "advanced_setting": "5;",
+      "color_argb": "0x80336699",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+      "pen_size_f32_bits": "00001041",
+      "points_f32_bits": [
+        [
+          "00000000",
+          "00000000"
+        ],
+        [
+          "00000040",
+          "00000000"
+        ],
+        [
+          "00008040",
+          "00000000"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000803f",
+        "0000803f",
+        "0000803f"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        1,
+        2
+      ],
+      "tool_type": 1
+    },
+    "phase_final_vectors": {
+      "draw_object_stroke": {
+        "sha256": "037e97cedbbbd9a2cf06bcac993218ba307b4294226b9ca7730ece2459fb7499",
+        "vector_bytes": "0000000000000000f4fb7f3f00000000678ce33f0000000086c6314000000000f4ff7f40000000000000804000000000",
+        "vector_count": 6
+      },
+      "saved_redraw": {
+        "sha256": "037e97cedbbbd9a2cf06bcac993218ba307b4294226b9ca7730ece2459fb7499",
+        "vector_bytes": "0000000000000000f4fb7f3f00000000678ce33f0000000086c6314000000000f4ff7f40000000000000804000000000",
+        "vector_count": 6
+      }
+    }
+  },
+  "one": {
+    "tolerance": 1.0,
+    "input": {
+      "advanced_setting": "5;",
+      "color_argb": "0x80336699",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+      "pen_size_f32_bits": "00001041",
+      "points_f32_bits": [
+        [
+          "00000000",
+          "00000000"
+        ],
+        [
+          "00000040",
+          "00000000"
+        ],
+        [
+          "00008040",
+          "00000000"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000803f",
+        "0000803f",
+        "0000803f"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        1,
+        2
+      ],
+      "tool_type": 1
+    },
+    "phase_final_vectors": {
+      "draw_object_stroke": {
+        "sha256": "037e97cedbbbd9a2cf06bcac993218ba307b4294226b9ca7730ece2459fb7499",
+        "vector_bytes": "0000000000000000f4fb7f3f00000000678ce33f0000000086c6314000000000f4ff7f40000000000000804000000000",
+        "vector_count": 6
+      },
+      "saved_redraw": {
+        "sha256": "037e97cedbbbd9a2cf06bcac993218ba307b4294226b9ca7730ece2459fb7499",
+        "vector_bytes": "0000000000000000f4fb7f3f00000000678ce33f0000000086c6314000000000f4ff7f40000000000000804000000000",
+        "vector_count": 6
+      }
+    }
+  },
+  "below_two": {
+    "tolerance": 1.9999998807907104,
+    "input": {
+      "advanced_setting": "5;",
+      "color_argb": "0x80336699",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+      "pen_size_f32_bits": "00001041",
+      "points_f32_bits": [
+        [
+          "00000000",
+          "00000000"
+        ],
+        [
+          "00000040",
+          "00000000"
+        ],
+        [
+          "00008040",
+          "00000000"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000803f",
+        "0000803f",
+        "0000803f"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        1,
+        2
+      ],
+      "tool_type": 1
+    },
+    "phase_final_vectors": {
+      "draw_object_stroke": {
+        "sha256": "037e97cedbbbd9a2cf06bcac993218ba307b4294226b9ca7730ece2459fb7499",
+        "vector_bytes": "0000000000000000f4fb7f3f00000000678ce33f0000000086c6314000000000f4ff7f40000000000000804000000000",
+        "vector_count": 6
+      },
+      "saved_redraw": {
+        "sha256": "037e97cedbbbd9a2cf06bcac993218ba307b4294226b9ca7730ece2459fb7499",
+        "vector_bytes": "0000000000000000f4fb7f3f00000000678ce33f0000000086c6314000000000f4ff7f40000000000000804000000000",
+        "vector_count": 6
+      }
+    }
+  },
+  "two": {
+    "tolerance": 2.0,
+    "input": {
+      "advanced_setting": "5;",
+      "color_argb": "0x80336699",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+      "pen_size_f32_bits": "00001041",
+      "points_f32_bits": [
+        [
+          "00000000",
+          "00000000"
+        ],
+        [
+          "00000040",
+          "00000000"
+        ],
+        [
+          "00008040",
+          "00000000"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000803f",
+        "0000803f",
+        "0000803f"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        1,
+        2
+      ],
+      "tool_type": 1
+    },
+    "phase_final_vectors": {
+      "draw_object_stroke": {
+        "sha256": "037e97cedbbbd9a2cf06bcac993218ba307b4294226b9ca7730ece2459fb7499",
+        "vector_bytes": "0000000000000000f4fb7f3f00000000678ce33f0000000086c6314000000000f4ff7f40000000000000804000000000",
+        "vector_count": 6
+      },
+      "saved_redraw": {
+        "sha256": "037e97cedbbbd9a2cf06bcac993218ba307b4294226b9ca7730ece2459fb7499",
+        "vector_bytes": "0000000000000000f4fb7f3f00000000678ce33f0000000086c6314000000000f4ff7f40000000000000804000000000",
+        "vector_count": 6
+      }
+    }
+  },
+  "above_two": {
+    "tolerance": 2.000000238418579,
+    "input": {
+      "advanced_setting": "5;",
+      "color_argb": "0x80336699",
+      "curve_enabled": true,
+      "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+      "orientation_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+      "pen_size_f32_bits": "00001041",
+      "points_f32_bits": [
+        [
+          "00000000",
+          "00000000"
+        ],
+        [
+          "00000040",
+          "00000000"
+        ],
+        [
+          "00008040",
+          "00000000"
+        ]
+      ],
+      "pressure_f32_bits": [
+        "0000803f",
+        "0000803f",
+        "0000803f"
+      ],
+      "stroke_type": 0,
+      "tilt_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "timestamps_i32": [
+        0,
+        1,
+        2
+      ],
+      "tool_type": 1
+    },
+    "phase_final_vectors": {
+      "draw_object_stroke": {
+        "sha256": "037e97cedbbbd9a2cf06bcac993218ba307b4294226b9ca7730ece2459fb7499",
+        "vector_bytes": "0000000000000000f4fb7f3f00000000678ce33f0000000086c6314000000000f4ff7f40000000000000804000000000",
+        "vector_count": 6
+      },
+      "saved_redraw": {
+        "sha256": "037e97cedbbbd9a2cf06bcac993218ba307b4294226b9ca7730ece2459fb7499",
+        "vector_bytes": "0000000000000000f4fb7f3f00000000678ce33f0000000086c6314000000000f4ff7f40000000000000804000000000",
+        "vector_count": 6
+      }
+    }
+  }
+}
