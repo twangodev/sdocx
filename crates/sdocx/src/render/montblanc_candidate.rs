@@ -194,7 +194,7 @@ pub(super) fn render(
     remaining: &std::cell::Cell<usize>,
     scale: f64,
 ) -> bool {
-    use super::vector::{Data, Group, Paint, Path, Styled};
+    use super::vector::{Data, Definitions, Group, Paint, Path, Styled, Use};
     let Some(count) = buffers
         .iter()
         .map(|b| b.len() / 3)
@@ -213,13 +213,49 @@ pub(super) fn render(
     {
         return false;
     }
-    let mut group = Group::new().fill(Paint::from_hex(color));
-    for (p, alpha) in patches {
-        let mut data = Data::new().move_to((p[0][0], p[0][1]));
-        for point in &p[1..] {
-            data = data.line_to((point[0], point[1]));
+    // Reuse a repeated prefix only when the full patch sequence is exactly
+    // equal. Keep both invocations in their original source-over positions.
+    // The Z algorithm bounds detection to linear time even on repeated input.
+    let mut z = vec![0; patches.len()];
+    let (mut left, mut right) = (0, 0);
+    let mut best = (0, 0);
+    for i in 1..patches.len() {
+        if i < right {
+            z[i] = z[i - left].min(right - i);
         }
-        group = group.add(Path::new().data(data.close()).fill_opacity(alpha));
+        while i + z[i] < patches.len() && patches[z[i]] == patches[i + z[i]] {
+            z[i] += 1;
+        }
+        if i + z[i] > right {
+            left = i;
+            right = i + z[i];
+        }
+        let length = z[i].min(i);
+        if length > best.1 {
+            best = (i, length);
+        }
+    }
+    let patch_group = |mut group: Group, items: &[(Vec<[f64; 2]>, f64)]| {
+        for (p, alpha) in items {
+            let mut data = Data::new().move_to((p[0][0], p[0][1]));
+            for point in &p[1..] {
+                data = data.line_to((point[0], point[1]));
+            }
+            group = group.add(Path::new().data(data.close()).fill_opacity(*alpha));
+        }
+        group
+    };
+    let mut group = Group::new().fill(Paint::from_hex(color));
+    if best.1 >= 32 {
+        let id = scene.definition::<()>().id_text();
+        group = group
+            .add(Definitions::new().add(patch_group(Group::new(), &patches[..best.1]).id(&id)));
+        group = group.add(Use::href(&id));
+        group = group.add(patch_group(Group::new(), &patches[best.1..best.0]));
+        group = group.add(Use::href(&id));
+        group = group.add(patch_group(Group::new(), &patches[best.0 + best.1..]));
+    } else {
+        group = patch_group(group, &patches);
     }
     scene.push(group);
     remaining.set(remaining.get() - count);
@@ -234,37 +270,56 @@ fn shared_fill_preserves_individual_patch_opacity() {
         [8., 0., 0.7, 0.3, 0.8],
         [0., 8., 0.3, 0.7, 0.8],
     ];
-    let buffers = [triangle.clone(), triangle, vec![]];
+    let shifted = triangle
+        .iter()
+        .map(|v| [v[0] + 2.0, v[1], v[2], v[3], v[4]])
+        .collect::<Vec<_>>();
+    let buffers = [
+        [triangle.clone(), shifted, triangle].concat(),
+        vec![],
+        vec![],
+    ];
     let expected = pieces(&buffers, 8, 1.0).len();
     let mut scene = Scene::new(Svg::new().width(16).height(16));
-    let budget = std::cell::Cell::new(128);
+    let budget = std::cell::Cell::new(192);
     assert!(render(&mut scene, &buffers, "#336699", &budget, 1.0));
     let svg = scene.finish();
     assert_eq!(budget.get(), 0);
     assert_eq!(svg.matches("fill=\"#336699\"").count(), 1);
-    assert_eq!(svg.matches("<path").count(), expected);
-    assert_eq!(svg.matches("fill-opacity=").count(), expected);
+    assert_eq!(svg.matches("<path").count(), expected * 2 / 3);
+    assert_eq!(svg.matches("<use").count(), 2);
+    assert_eq!(svg.matches("fill-opacity=").count(), expected * 2 / 3);
 }
 
 #[cfg(feature = "pdf")]
 #[test]
-fn inherited_fill_matches_separate_overlapping_patches_under_transform() {
+fn repeated_prefix_matches_unshared_transformed_svg_and_native_pdf() {
     use super::vector::{Data, Paint, Path, Scene, Styled, Svg};
     let triangle = vec![
         [1., -1., 0.3, 0.3, 0.8],
         [9., -1., 0.7, 0.3, 0.8],
         [1., -9., 0.3, 0.7, 0.8],
     ];
-    let buffers = [triangle.clone(), triangle, vec![]];
+    let shifted = triangle
+        .iter()
+        .map(|v| [v[0] + 2.0, v[1], v[2], v[3], v[4]])
+        .collect::<Vec<_>>();
+    let buffers = [
+        [triangle.clone(), shifted, triangle].concat(),
+        vec![],
+        vec![],
+    ];
     let mut grouped = Scene::new(Svg::new().width(32).height(32));
+    grouped.retain_text();
     assert!(render(
         &mut grouped,
         &buffers,
         "#336699",
-        &std::cell::Cell::new(128),
+        &std::cell::Cell::new(192),
         1.0
     ));
     let mut separate = Scene::new(Svg::new().width(32).height(32));
+    separate.retain_text();
     for (points, alpha) in pieces(&buffers, 8, 1.0) {
         let mut data = Data::new().move_to((points[0][0], points[0][1]));
         for point in &points[1..] {
@@ -277,10 +332,28 @@ fn inherited_fill_matches_separate_overlapping_patches_under_transform() {
                 .fill_opacity(alpha),
         );
     }
-    let raster = |svg: String| {
-        let svg = svg
+    let retained = |mut scene: Scene| {
+        let text = scene.take_native_text();
+        let ink = scene.take_native_ink();
+        let text_error = scene.take_native_text_error();
+        let svg = scene
+            .finish()
             .replacen('>', "><g transform=\"translate(5 4) scale(1.4)\">", 1)
             .replace("</svg>", "</g></svg>");
+        super::RenderedScene {
+            page: super::RenderedPage::new(0, 32, 32, svg),
+            text,
+            ink,
+            text_error,
+        }
+    };
+    let grouped = retained(grouped);
+    let separate = retained(separate);
+    let pdf = |scene: &super::RenderedScene| {
+        crate::pdf::render_native_scene_pdf_for_test(scene, &crate::PdfOptions::default()).unwrap()
+    };
+    assert_eq!(pdf(&grouped), pdf(&separate));
+    let raster = |svg: String| {
         let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
         let mut pixels = resvg::tiny_skia::Pixmap::new(32, 32).unwrap();
         resvg::render(
@@ -290,7 +363,7 @@ fn inherited_fill_matches_separate_overlapping_patches_under_transform() {
         );
         pixels.data().to_vec()
     };
-    assert_eq!(raster(grouped.finish()), raster(separate.finish()));
+    assert_eq!(raster(grouped.page.svg), raster(separate.page.svg));
 }
 
 #[cfg(feature = "pdf")]
