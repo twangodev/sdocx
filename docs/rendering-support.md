@@ -855,6 +855,8 @@ group-opacity contract.
 | Document PDF | Shared scene plus retained selected fonts/glyphs/XY, vector masks/shadings/clips and selectable logical source with authoritative outer PDF text replacements; embedded image resolver/constructor rejections become export errors | Inherits rendering gaps; source images remain images; deferred image decoding and universal PDF accessibility are not certified. |
 | Arbitrary SVG to PDF | Compatibility conversion through the SVG importer | Can reshape text and rasterize imported filter effects; lacks the document exporter's private retained-glyph guarantee. |
 
+Arbitrary SVG radial gradients with `repeat` or `reflect` are not preserved in PDF: the converter passes the spread method to Krilla 0.8.2, whose radial shading ignores it and uses `/Extend [true true]` (padding). Exploratory synthetic controls compared resvg output with the same SVG inputs converted through the public SVG-to-PDF route and rendered by MuPDF and PDFium; both PDF readers showed mismatches. These controls do not establish native parity. This is separate from the saved Fountain pad-gradient soft-mask loss.
+
 The [conformance guide](../conformance/README.md) records fixture identities,
 independent native capture boundaries and real-document reference coverage.
 The locked corpus contains four document/PDF pairs, not an exhaustive feature
