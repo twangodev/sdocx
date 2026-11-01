@@ -1,0 +1,174 @@
+{
+  "schema": "sdocx-native-note-open-type2-failure-v2",
+  "scope": "Real handwritten.sdocx, SDK read-only mode 0, explicit diagnostic NoteType 2; native Model and minizip with host zlib bridge, exact-path read-only archive and bounded memory-only cache. LSE capability flag forced off to select native LL/SC fallback. PageDoc was not reached.",
+  "runner": "PYTHONPATH=scratch/apk-analysis-runtime/python SDOCX_NOTE_TYPE=2 /usr/bin/python3.13 tools/fountain_v14/note_open_probe.py",
+  "host_zlib_version": "1.3.1",
+  "atomic_capability_before": 1,
+  "inputs": {
+    "archive_sha256": "77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3",
+    "native_note_type": 2,
+    "sdk_mode": 0,
+    "model_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "spen_zlib_sha256": "7796339a9c41c3218bef47c17bc1573c544bc431a8d312da390dce40c64adcd7"
+  },
+  "dependency_sha256": {
+    "tools/fountain_v14/note_open_probe.py": "eb358c7276f4de5fbcd42a3d26c3b3c031d50da59b517afcde7c5936e2e98ce9",
+    "tools/fountain_v14/state_probe_capture.py": "052d3d7f3677e56788c119df22ce38f31dfc50ddc9bb367c4c39198b2aad4695",
+    "tools/fountain_v14/drawing_capture.py": "969fef6e967a41c888aa1121783da525bda435082533733b8807c425eda5358a",
+    "tmp/vector-parity-plan/pen-family-audit/colored-pencil-v4-mesa-paint-v20-public-color-controls/capture_candidate.py": "0ffc0a80181faaba1c31a1b4c7e3592bcc66e63d90bc59431961d060a158dd68",
+    "tmp/conformance-cleanup/native-capture-a241793/conformance/fountain_persisted_drawing_native.py": "9e0ef723a936b697c65b2ed0c476123287430fc2ff9d66b41945c2815ca5f59a",
+    "conformance/fountain-v14-saved-scene-inputs.json": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+    "tmp/stroke-conformance/handwritten.sdocx": "77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenColoredPencil.so": "39078a41b0687941c4e22b18df36addb1cda093303e26df844078474d3ca9504",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenZlib.so": "7796339a9c41c3218bef47c17bc1573c544bc431a8d312da390dce40c64adcd7",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "scratch/apk-analysis-native/arm64-v8a/libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+    "tools/fountain_v14/cache_budget.py": "a363e11365daef4a1da3f4e8d648e03a59c3ac147e21d61fc1bc5b876850a0cb"
+  },
+  "verified_members": [
+    {
+      "name": "pageIdInfo.dat",
+      "size": 140,
+      "sha256": "3a731a4e4ab1acc767c99e6c6f593fa8fb8edda226dbd833c35f842cdb67361a"
+    },
+    {
+      "name": "a87cbcbc-43ce-11ee-9848-0b8ce2c9daf6.page",
+      "size": 4487877,
+      "sha256": "c7c834e0eeb751966517f354dc55ea056b5eb2453a5b9e16b7be08ca7b3a9591"
+    },
+    {
+      "name": "media/mediaInfo.dat",
+      "size": 131,
+      "sha256": "289c83e051d99bc075bf5869b1dfce9901b282dad176d9d43c4b0bbbc37a7a53"
+    },
+    {
+      "name": "media/0@page_0000000.spi",
+      "size": 453791,
+      "sha256": "64327fdf9a1940d1fdd7bfa7ec48c1ddbb2bb262d2653ff7de6f16b1555f660c"
+    },
+    {
+      "name": "note.note",
+      "size": 1741,
+      "sha256": "f48cfc56d7008b3cdceb6a7944d761f39c3007151611096323c59478eabf5eb9"
+    },
+    {
+      "name": "end_tag.bin",
+      "size": 144,
+      "sha256": "7dfdd2f6522bd819ef7eb34ad27ff5f4cd0953280be4b0d9a84353a0fc82b6eb"
+    }
+  ],
+  "observations": [
+    {
+      "step": "EndTag type",
+      "field_0x114": 2
+    },
+    {
+      "step": "EndTag signature compare",
+      "length": 22,
+      "actual_hex": "446f63756d656e7420666f7220532d50656e2053444b",
+      "expected_hex": "446f63756d656e7420666f7220532d50656e2053444b"
+    },
+    {
+      "step": "EndTag::ParseImpl return",
+      "x0": "0x1"
+    },
+    {
+      "step": "inflateInit2",
+      "window": -15,
+      "result": 0
+    },
+    {
+      "step": "inflateInit2",
+      "window": -15,
+      "result": 0
+    },
+    {
+      "step": "inflateInit2",
+      "window": -15,
+      "result": 0
+    },
+    {
+      "step": "inflateInit2",
+      "window": -15,
+      "result": 0
+    },
+    {
+      "step": "inflateInit2",
+      "window": -15,
+      "result": 0
+    },
+    {
+      "step": "inflateInit2",
+      "window": -15,
+      "result": 0
+    },
+    {
+      "step": "cache fread",
+      "path": "/tmp/sdocx-fountain-note-cache/SPenSDK30/edcf418d@handwritten.sdocx@63687ab2ec495/media/mediaInfo.dat",
+      "offset": 0,
+      "size": 2,
+      "count": 1,
+      "actual": 2,
+      "prefix_hex": "5214"
+    },
+    {
+      "step": "cache fread",
+      "path": "/tmp/sdocx-fountain-note-cache/SPenSDK30/edcf418d@handwritten.sdocx@63687ab2ec495/media/mediaInfo.dat",
+      "offset": 2,
+      "size": 4,
+      "count": 1,
+      "actual": 4,
+      "prefix_hex": "00000100"
+    },
+    {
+      "step": "cache fread",
+      "path": "/tmp/sdocx-fountain-note-cache/SPenSDK30/edcf418d@handwritten.sdocx@63687ab2ec495/media/mediaInfo.dat",
+      "offset": 6,
+      "size": 2,
+      "count": 1,
+      "actual": 2,
+      "prefix_hex": "7500"
+    },
+    {
+      "step": "cache fread",
+      "path": "/tmp/sdocx-fountain-note-cache/SPenSDK30/edcf418d@handwritten.sdocx@63687ab2ec495/media/mediaInfo.dat",
+      "offset": 8,
+      "size": 234,
+      "count": 1,
+      "actual": 123,
+      "prefix_hex": "00000000000012003000400070006100670065005f0030003000300030003000"
+    },
+    {
+      "step": "native Error::SetError",
+      "code": 11,
+      "line": 776,
+      "source": "/home/buildsdk/actions-runner/_work/spen-sdk/spen-sdk/SPen_Main/document/src/_MediaFileManager/SPen_MediaFileManager.cpp",
+      "lr": "0x728a6d8"
+    },
+    {
+      "step": "NoteDoc::Construct",
+      "result": "0x0"
+    },
+    {
+      "step": "NoteDoc::GetPageCount",
+      "result": "0x0"
+    }
+  ],
+  "interpretation": "The observed native legacy MediaFileManager::Load(String*) interprets the first u16 of modern version-5202 mediaInfo.dat as 5202 records and a subsequent u16 as a filename length, then fails a 234-byte read with 123 bytes remaining. The mismatch is specific to this input, native NoteType, and tested binary; other native versions remain unknown.",
+  "host_environment": {
+    "python": "3.13.5",
+    "unicorn": "2.1.4",
+    "python_zlib_compile": "1.3.1",
+    "python_zlib_runtime": "1.3.1",
+    "host_libz_path": "/lib/x86_64-linux-gnu/libz.so.1",
+    "host_libz_sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e"
+  },
+  "cache_bounds": "32 MiB conservative cache payload/copy budget with 2x slack; sparse gaps and input copies reserved before writes; up to 64 stored/open files, 64 directories, 32 open cache streams, 32 directory handles and 16 archive streams/descriptors. This does not bound Python process memory."
+}

@@ -1,0 +1,205 @@
+{
+  "schema": "sdocx-fountain-v14-direction-write-trace-v1",
+  "scope": "Fresh native ARM64 Drawing source sequence 29,30,30 with saved inputs and one persistent Drawing. Hooks capture selected direction-value writes and reads of the first matched state address. Addresses are run-local; native target data is unmodified. This is not native page loading.",
+  "capture_script_sha256": "ef9691bb537afa782d75c943761a57c7458de579a74cefc047fbd33419845fc0",
+  "full_capture_sha256": "01e29164c25f7de5a674443673e24d3c2614e1b97cd17ec46c336c52cf951440",
+  "source_provenance": {
+    "document": "tmp/stroke-conformance/handwritten.sdocx",
+    "document_sha256": "77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3",
+    "stored_indices": [
+      3,
+      6,
+      7,
+      18,
+      19,
+      28,
+      29,
+      30
+    ]
+  },
+  "cases": {
+    "scene_top_1_clear_0_29": {
+      "source": 29,
+      "argument_count": 12,
+      "native_draws": 1,
+      "stream": "29_1_0",
+      "direction_writes": [
+        {
+          "kind": "write",
+          "pc": "0x20be154",
+          "address": "0x1009ff50",
+          "size": 4,
+          "value": "0x3e86f9bd"
+        },
+        {
+          "kind": "write",
+          "pc": "0x20be154",
+          "address": "0x1009ff54",
+          "size": 4,
+          "value": "0x3f76f1b2"
+        },
+        {
+          "kind": "read",
+          "pc": "0x73208",
+          "address": "0x1009ff50",
+          "size": 4
+        },
+        {
+          "kind": "read",
+          "pc": "0x7328c",
+          "address": "0x1009ff50",
+          "size": 4
+        },
+        {
+          "kind": "read",
+          "pc": "0x73290",
+          "address": "0x1009ff54",
+          "size": 4
+        },
+        {
+          "kind": "write",
+          "pc": "0x9e218",
+          "address": "0x100b02a8",
+          "size": 4,
+          "value": "0x3e86f9bd"
+        },
+        {
+          "kind": "write",
+          "pc": "0x9e2cc",
+          "address": "0x100b02ac",
+          "size": 4,
+          "value": "0x3f76f1b2"
+        },
+        {
+          "kind": "read",
+          "pc": "0x73208",
+          "address": "0x1009ff50",
+          "size": 4
+        },
+        {
+          "kind": "read",
+          "pc": "0x7328c",
+          "address": "0x1009ff50",
+          "size": 4
+        },
+        {
+          "kind": "read",
+          "pc": "0x73290",
+          "address": "0x1009ff54",
+          "size": 4
+        },
+        {
+          "kind": "write",
+          "pc": "0x9e218",
+          "address": "0x100b02cc",
+          "size": 4,
+          "value": "0x3e86f9bd"
+        },
+        {
+          "kind": "write",
+          "pc": "0x9e2cc",
+          "address": "0x100b02d0",
+          "size": 4,
+          "value": "0x3f76f1b2"
+        }
+      ],
+      "pen_pointer": "0x1009f300"
+    },
+    "scene_top_1_clear_1_30": {
+      "source": 30,
+      "argument_count": 1,
+      "native_draws": 1,
+      "stream": "30_1_1",
+      "direction_writes": [
+        {
+          "kind": "read",
+          "pc": "0x73208",
+          "address": "0x1009ff50",
+          "size": 4
+        },
+        {
+          "kind": "read",
+          "pc": "0x7328c",
+          "address": "0x1009ff50",
+          "size": 4
+        },
+        {
+          "kind": "read",
+          "pc": "0x73290",
+          "address": "0x1009ff54",
+          "size": 4
+        },
+        {
+          "kind": "write",
+          "pc": "0x9e288",
+          "address": "0x100b0fb0",
+          "size": 4,
+          "value": "0x3e86f9bd"
+        },
+        {
+          "kind": "write",
+          "pc": "0x9e2cc",
+          "address": "0x100b0fb4",
+          "size": 4,
+          "value": "0x3f76f1b2"
+        },
+        {
+          "kind": "write",
+          "pc": "0x9e584",
+          "address": "0x100b0fd4",
+          "size": 4,
+          "value": "0x3f76f1b2"
+        },
+        {
+          "kind": "write",
+          "pc": "0x9e584",
+          "address": "0x100b0fd0",
+          "size": 4,
+          "value": "0x3e86f9bd"
+        }
+      ],
+      "pen_pointer": "0x1009f300"
+    },
+    "scene_top_1_clear_2_30": {
+      "source": 30,
+      "argument_count": 0,
+      "native_draws": 1,
+      "stream": "30_1_2",
+      "direction_writes": [],
+      "pen_pointer": "0x1009f300"
+    }
+  },
+  "streams": {
+    "29_1_0": {
+      "sha256": "1c88f1754ea4c489da2bca81503a24cf4b2b236ce1b38aa23b6eca10cb8db202",
+      "records": 12
+    },
+    "30_1_1": {
+      "sha256": "0a06492eb2f3e83279c65555a97d15c24e012bb979f991b7375f81108e71997e",
+      "records": 1
+    },
+    "30_1_2": {
+      "sha256": "0a06492eb2f3e83279c65555a97d15c24e012bb979f991b7375f81108e71997e",
+      "records": 1
+    }
+  },
+  "dependency_sha256": {
+    "tools/fountain_v14/state_probe_capture.py": "052d3d7f3677e56788c119df22ce38f31dfc50ddc9bb367c4c39198b2aad4695",
+    "tools/fountain_v14/drawing_capture.py": "969fef6e967a41c888aa1121783da525bda435082533733b8807c425eda5358a",
+    "tmp/vector-parity-plan/pen-family-audit/colored-pencil-v4-mesa-paint-v20-public-color-controls/capture_candidate.py": "0ffc0a80181faaba1c31a1b4c7e3592bcc66e63d90bc59431961d060a158dd68",
+    "tmp/conformance-cleanup/native-capture-a241793/conformance/fountain_persisted_drawing_native.py": "9e0ef723a936b697c65b2ed0c476123287430fc2ff9d66b41945c2815ca5f59a",
+    "conformance/fountain-v14-saved-scene-inputs.json": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenColoredPencil.so": "39078a41b0687941c4e22b18df36addb1cda093303e26df844078474d3ca9504",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenZlib.so": "7796339a9c41c3218bef47c17bc1573c544bc431a8d312da390dce40c64adcd7",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "scratch/apk-analysis-native/arm64-v8a/libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "runner": "PYTHONPATH=scratch/apk-analysis-runtime/python /usr/bin/python3.13 tools/fountain_v14/direction_trace.py"
+}
