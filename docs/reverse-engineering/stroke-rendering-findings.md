@@ -1149,7 +1149,7 @@ is a geometry observation, not a paint or device comparison, and the existing sa
 adding `--probe-curve 1` for the second case and setting
 `PYTHONPATH=scratch/apk-analysis-runtime/python`.
 
-The tool-1 path is admitted to the bounded V5 page route only for Marker3 `5;`, sizes 4–8 and explicit ARGB. A translated
+The tool-1 path is admitted to the bounded V5 page route for Marker3 or StraightMarker with empty or `5;` settings, sizes 4–9 and explicit ARGB; the size-9 controls use Marker3 `5;` and other combinations extrapolate. A translated
 three-point control at (40,40), (50,40), (60,50), size 8 and opaque
 `#336699` retains the actual Drawing vector through the selected native RTV1
 into host Mesa GLES; the GPU upload matches the 24 captured XY pairs. The

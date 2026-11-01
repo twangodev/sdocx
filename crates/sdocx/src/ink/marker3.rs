@@ -33,7 +33,7 @@ pub(crate) fn prepare_for_page(s: &Stroke) -> Option<Ink> {
     let style = &rendering.style;
     let argb = style.color_argb?;
     if (rendering.tool_type_raw == 1
-        && !style.pen_size.is_some_and(|size| (4.0..=8.0).contains(&size)))
+        && !style.pen_size.is_some_and(|size| (4.0..=9.0).contains(&size)))
         || !matches!(rendering.pen_name.as_deref(), Some(PEN | STRAIGHT_PEN))
         || !matches!(rendering.advanced_settings.as_deref(), Some("" | "5;"))
         || !matches!(rendering.tool_type_raw, 1..=3)
@@ -402,7 +402,7 @@ mod tests {
                 let rendering = rejected.rendering.as_mut().unwrap();
                 match change {
                     0 => rendering.style.pen_size = Some(3.99),
-                    1 => rendering.style.pen_size = Some(8.01),
+                    1 => rendering.style.pen_size = Some(9.01),
                     2 => rendering.style.pen_size = Some(f32::NAN),
                     _ => rendering.style.color_argb = None,
                 }
@@ -597,6 +597,28 @@ mod tests {
     }
 
     #[test]
+    fn size_nine_diverse_native_vectors_and_gate() {
+        let cases: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-size9-diverse-native.json"
+        ))
+        .unwrap();
+        for name in ["reverse", "cross", "short"] {
+            let stroke = caller_stroke(&cases[name]);
+            let ink = prepare_for_page(&stroke).unwrap();
+            assert_caller_xy_matches(&ink, &cases[name]);
+            let mut rejected = stroke.clone();
+            rejected.rendering.as_mut().unwrap().style.pen_size = Some(9.001);
+            assert!(prepare_for_page(&rejected).is_none());
+            rejected = stroke.clone();
+            rejected.rendering.as_mut().unwrap().properties.eraser = true;
+            assert!(prepare_for_page(&rejected).is_none());
+            rejected = stroke.clone();
+            rejected.rendering.as_mut().unwrap().advanced_settings = None;
+            assert!(prepare_for_page(&rejected).is_none());
+        }
+    }
+
+    #[test]
     fn terminal_segment_matches_expanded_native_vectors() {
         let cases: serde_json::Value = serde_json::from_str(include_str!(
             "../../../../conformance/marker3-terminal-native.json"
@@ -605,9 +627,12 @@ mod tests {
         for name in ["phase2", "phase4", "boundary"] {
             let case = &cases[name];
             let stroke = caller_stroke(case);
-            // These sizes remain outside the canonical page gate.
-            assert!(prepare_for_page(&stroke).is_none());
-            assert_caller_xy_matches(&prepare(&stroke).unwrap(), case);
+            if name == "boundary" {
+                assert!(prepare_for_page(&stroke).is_none());
+                assert_caller_xy_matches(&prepare(&stroke).unwrap(), case);
+            } else {
+                assert_caller_xy_matches(&prepare_for_page(&stroke).unwrap(), case);
+            }
         }
         for name in ["inside", "near", "two"] {
             let case = &cases[name];

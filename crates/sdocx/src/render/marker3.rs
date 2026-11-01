@@ -1390,7 +1390,7 @@ mod tool_one_export_control {
         }
         for (size, color) in [
             (Some(3.99), Some(0x8033cc55)),
-            (Some(8.01), Some(0x8033cc55)),
+            (Some(9.01), Some(0x8033cc55)),
             (Some(8.0), None),
         ] {
             let mut unsupported = document.clone();

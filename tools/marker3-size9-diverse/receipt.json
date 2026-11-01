@@ -1,0 +1,2070 @@
+{
+  "native_rgba_sha256": {
+    "reverse": "6e67bf953485373b9052ed3a355d9c02c0e4c6008a49cdd7e583680d63ca262d",
+    "cross": "1ff4d46f86121737c7c3b254d494c195bdd80d379513cfd01c4ac923687f9779",
+    "short": "41b35213863252963b3d02d1a7545873ba81d182b213d7c349f6cadf29314c6e",
+    "reverse1": "4d465047e44afa6fd28cfad8de81c8909815d91e22194e5571f97968778bc35f",
+    "cross1": "17e6f1a8633b9c2adaa1652597a848438595cbb094fff8800bf9031cd80e7f08",
+    "short1": "e2068e59a10d681cf867881f63a3f399f79dc6ad20b9ee6b82e3918e12dba736",
+    "reverse4": "0e3b0b6e80f00d7c64033d2d03e0a5ace47f00ffb5fcd8e46005a31fc19097f8",
+    "cross4": "8c4b3c3a94f5f1d941ce5d714da91999c17011dab67a7d6599ec15918358d02d",
+    "short4": "8f712cf5271e7bf66b1f3bd385a57a533e24e4bae5e51a465eef24aceedcb799"
+  },
+  "metrics": {
+    "reverse": {
+      "generic": {
+        "svg_rgba_l1": 438505,
+        "mupdf_rgb_l1": 518018,
+        "pdfium_rgb_l1": 392373,
+        "native_missing": 914
+      },
+      "baseline": {
+        "svg_rgba_l1": 30618,
+        "mupdf_rgb_l1": 160299,
+        "pdfium_rgb_l1": 37562,
+        "native_missing": 0
+      },
+      "profile": {
+        "svg_rgba_l1": 9261,
+        "mupdf_rgb_l1": 140149,
+        "pdfium_rgb_l1": 13983,
+        "native_missing": 0
+      }
+    },
+    "cross": {
+      "generic": {
+        "svg_rgba_l1": 1412211,
+        "mupdf_rgb_l1": 1039163,
+        "pdfium_rgb_l1": 917993,
+        "native_missing": 2138
+      },
+      "baseline": {
+        "svg_rgba_l1": 114358,
+        "mupdf_rgb_l1": 202116,
+        "pdfium_rgb_l1": 93818,
+        "native_missing": 0
+      },
+      "profile": {
+        "svg_rgba_l1": 36816,
+        "mupdf_rgb_l1": 149242,
+        "pdfium_rgb_l1": 36718,
+        "native_missing": 0
+      }
+    },
+    "short": {
+      "generic": {
+        "svg_rgba_l1": 117977,
+        "mupdf_rgb_l1": 223759,
+        "pdfium_rgb_l1": 94774,
+        "native_missing": 432
+      },
+      "baseline": {
+        "svg_rgba_l1": 10989,
+        "mupdf_rgb_l1": 139460,
+        "pdfium_rgb_l1": 11462,
+        "native_missing": 0
+      },
+      "profile": {
+        "svg_rgba_l1": 4018,
+        "mupdf_rgb_l1": 133723,
+        "pdfium_rgb_l1": 4157,
+        "native_missing": 0
+      }
+    },
+    "reverse1": {
+      "generic": {
+        "svg_rgba_l1": 99379,
+        "mupdf_rgb_l1": 118760,
+        "pdfium_rgb_l1": 87696,
+        "native_missing": 181
+      },
+      "baseline": {
+        "svg_rgba_l1": 15446,
+        "mupdf_rgb_l1": 46564,
+        "pdfium_rgb_l1": 21621,
+        "native_missing": 0
+      },
+      "profile": {
+        "svg_rgba_l1": 8138,
+        "mupdf_rgb_l1": 39799,
+        "pdfium_rgb_l1": 9788,
+        "native_missing": 0
+      }
+    },
+    "cross1": {
+      "generic": {
+        "svg_rgba_l1": 325962,
+        "mupdf_rgb_l1": 242573,
+        "pdfium_rgb_l1": 212491,
+        "native_missing": 476
+      },
+      "baseline": {
+        "svg_rgba_l1": 59022,
+        "mupdf_rgb_l1": 69692,
+        "pdfium_rgb_l1": 51169,
+        "native_missing": 0
+      },
+      "profile": {
+        "svg_rgba_l1": 20768,
+        "mupdf_rgb_l1": 44016,
+        "pdfium_rgb_l1": 22336,
+        "native_missing": 0
+      }
+    },
+    "short1": {
+      "generic": {
+        "svg_rgba_l1": 25602,
+        "mupdf_rgb_l1": 52766,
+        "pdfium_rgb_l1": 20470,
+        "native_missing": 102
+      },
+      "baseline": {
+        "svg_rgba_l1": 5550,
+        "mupdf_rgb_l1": 36925,
+        "pdfium_rgb_l1": 5606,
+        "native_missing": 0
+      },
+      "profile": {
+        "svg_rgba_l1": 1830,
+        "mupdf_rgb_l1": 33954,
+        "pdfium_rgb_l1": 1953,
+        "native_missing": 0
+      }
+    },
+    "reverse4": {
+      "generic": {
+        "svg_rgba_l1": 1893520,
+        "mupdf_rgb_l1": 1787913,
+        "pdfium_rgb_l1": 1679555,
+        "native_missing": 3759
+      },
+      "baseline": {
+        "svg_rgba_l1": 62407,
+        "mupdf_rgb_l1": 192944,
+        "pdfium_rgb_l1": 83230,
+        "native_missing": 0
+      },
+      "profile": {
+        "svg_rgba_l1": 21032,
+        "mupdf_rgb_l1": 152698,
+        "pdfium_rgb_l1": 37377,
+        "native_missing": 0
+      }
+    },
+    "cross4": {
+      "generic": {
+        "svg_rgba_l1": 5836725,
+        "mupdf_rgb_l1": 3894727,
+        "pdfium_rgb_l1": 3805736,
+        "native_missing": 8858
+      },
+      "baseline": {
+        "svg_rgba_l1": 233955,
+        "mupdf_rgb_l1": 262053,
+        "pdfium_rgb_l1": 180513,
+        "native_missing": 0
+      },
+      "profile": {
+        "svg_rgba_l1": 77226,
+        "mupdf_rgb_l1": 156022,
+        "pdfium_rgb_l1": 68785,
+        "native_missing": 0
+      }
+    },
+    "short4": {
+      "generic": {
+        "svg_rgba_l1": 506508,
+        "mupdf_rgb_l1": 530541,
+        "pdfium_rgb_l1": 407678,
+        "native_missing": 1793
+      },
+      "baseline": {
+        "svg_rgba_l1": 23096,
+        "mupdf_rgb_l1": 147191,
+        "pdfium_rgb_l1": 22006,
+        "native_missing": 0
+      },
+      "profile": {
+        "svg_rgba_l1": 8343,
+        "mupdf_rgb_l1": 135091,
+        "pdfium_rgb_l1": 7543,
+        "native_missing": 0
+      }
+    }
+  },
+  "scope": "synthetic Model/Drawing, explicitly bridged native vector, Mesa; transparent SVG and PDF composited on #fcfcfc",
+  "source_revision": "9eaa8fc22d01d1564cc2a87c1b445e6147488460",
+  "reader_versions": {
+    "resvg": "0.45.1",
+    "mupdf": "1.28.2",
+    "pypdfium2": "5.14.0",
+    "pdfium": "156.0.8076.0"
+  },
+  "caller_gzip_sha256": {
+    "reverse": "3dc0840a12267faad6b78cebfc77cb70697ebd6eddc4d7669678770ea4ed9193",
+    "cross": "c7f2f86231ee8f2c2627ca4ecac29a6a2c40244c9d860c69bea22a23b9b3eea3",
+    "short": "f16704465242ad44772c2c6bac5ea6ec0dbcaf47de6c92ae749a8f1393a38af4"
+  },
+  "fixture_sha256": "d4979605ff714f44372feae2995da4b59c82e0b4d992699c2befb3eb7e70ed8c",
+  "input_sha256": {
+    "conformance/marker3-size9-diverse-native.json": "d4979605ff714f44372feae2995da4b59c82e0b4d992699c2befb3eb7e70ed8c",
+    "tools/marker3-size9-diverse/export.rs": "418b2497c73b5894329ec8e710cbdb609d1c2ac2432c90444df8a44c57409134",
+    "tools/marker3-size9-diverse/compare.py": "1c43da7c145dbc7bd422b6b5082cb1a6865c62c60e39e582bea2799a6ad642b8",
+    "tools/marker3-size9-diverse/capture.py": "f391e1b1b0df3abae3e5044a46b1ec430ade2316f960f08eafc8d3705625232b",
+    "tools/marker3-size9-exploratory/replay-Cargo.lock": "a99534dcebabcc48a45890bd7e383646b4c010869afc47f77e8b190d533bf741",
+    "tools/marker3-size9-diverse/reverse-caller.json.gz": "3dc0840a12267faad6b78cebfc77cb70697ebd6eddc4d7669678770ea4ed9193",
+    "tools/marker3-size9-diverse/cross-caller.json.gz": "c7f2f86231ee8f2c2627ca4ecac29a6a2c40244c9d860c69bea22a23b9b3eea3",
+    "tools/marker3-size9-diverse/short-caller.json.gz": "f16704465242ad44772c2c6bac5ea6ec0dbcaf47de6c92ae749a8f1393a38af4"
+  },
+  "output_sha256": {
+    "reverse": {
+      "generic.svg": "22b2ed18cbc2502cfccf4d6c67b1e8bc508db21ff174e9b94f628692e9454d69",
+      "generic.pdf": "5832d7c88e542cfe3910660c690e1ea8e49a15ed12407e973f9808d509758410",
+      "baseline.svg": "ec13dfac02c026b38d15cd046dbd2ccc6b977189942baf4262b9b107d6e51cca",
+      "baseline.pdf": "0c241ff025bd7b66f14cf7d9720dddee9768cd73822f0268446f0ba75756a434",
+      "profile.svg": "9513edc892ba400f64433489b91afb9333c29d916cf2c8ef0ff8d01795e84a3c",
+      "profile.pdf": "3f21a45f2ad9e3973816162242811947d6877f44f1ca6e04643ebf1e240c664e"
+    },
+    "cross": {
+      "generic.svg": "0ae38c5b065732d2868dcb4138c1291226185110c28772b839bcdc7ee2d77e44",
+      "generic.pdf": "182ec3c7fc66605d05a9803c5b01c863ff9b97901b06f23d719f610ca1725dc8",
+      "baseline.svg": "7520b7a997ee6d4e8301f377f9e8bc23a9f90d891c6bb302acedb475b024ed52",
+      "baseline.pdf": "e4dc9c642cae727c3f8007cbebf32d8af88adf9be85cbc898f140da0995d631f",
+      "profile.svg": "da6cfdad688697e6ff4799515943fcf080f6fc3f341fd2f4390eef0361927e22",
+      "profile.pdf": "2ce0f61a8c39bb8e338d5a012baf8624e74a6d3d1e027d9c8a9fd761dd5491dd"
+    },
+    "short": {
+      "generic.svg": "edcafd110c8951dcdf2cd0212cf57b87ed5622be2db67b1a449f9da4573f755c",
+      "generic.pdf": "d4e62f6460966bc748c1ff2d74d62d0fe0f04aad71f9f3219435d2713083b522",
+      "baseline.svg": "7a295b2bb7691927f1839a597c2ff228781a1d20dc9c08ec58a94b7d926a7267",
+      "baseline.pdf": "97bddc7c4d911b7149493677927a0f5478b22ee4edc55e16fe5a2ff8ddbbb6a8",
+      "profile.svg": "9127cfe1dd940d88d07ae4493ea3a41a7d5820ba1f1927e124965801ae00211b",
+      "profile.pdf": "1de76206457881d7c71df0403c6659c1bd42bfd9bb4b73716ef4a3b8adf1b19c"
+    },
+    "reverse1": {
+      "generic.svg": "22b2ed18cbc2502cfccf4d6c67b1e8bc508db21ff174e9b94f628692e9454d69",
+      "generic.pdf": "5832d7c88e542cfe3910660c690e1ea8e49a15ed12407e973f9808d509758410",
+      "baseline.svg": "ec13dfac02c026b38d15cd046dbd2ccc6b977189942baf4262b9b107d6e51cca",
+      "baseline.pdf": "0c241ff025bd7b66f14cf7d9720dddee9768cd73822f0268446f0ba75756a434",
+      "profile.svg": "f41582d8eeb9293355d140cf94a8187d5d44701a229c0e1c4f7e0582ccf5c0c3",
+      "profile.pdf": "7f7ffc6ca0c269c00624bf70b89a803e3ae9a9a5f6deb693058f4aa916293627"
+    },
+    "cross1": {
+      "generic.svg": "0ae38c5b065732d2868dcb4138c1291226185110c28772b839bcdc7ee2d77e44",
+      "generic.pdf": "182ec3c7fc66605d05a9803c5b01c863ff9b97901b06f23d719f610ca1725dc8",
+      "baseline.svg": "7520b7a997ee6d4e8301f377f9e8bc23a9f90d891c6bb302acedb475b024ed52",
+      "baseline.pdf": "e4dc9c642cae727c3f8007cbebf32d8af88adf9be85cbc898f140da0995d631f",
+      "profile.svg": "a7ef7900c6ef2df8ddac9c46dc2dc59eace47b5eaa761a69c7bfa16a96fb8fc6",
+      "profile.pdf": "97e027723fd5b06e99a8cb1f2dfcb74b3718457d791270c6cd63307239c2d45c"
+    },
+    "short1": {
+      "generic.svg": "edcafd110c8951dcdf2cd0212cf57b87ed5622be2db67b1a449f9da4573f755c",
+      "generic.pdf": "d4e62f6460966bc748c1ff2d74d62d0fe0f04aad71f9f3219435d2713083b522",
+      "baseline.svg": "7a295b2bb7691927f1839a597c2ff228781a1d20dc9c08ec58a94b7d926a7267",
+      "baseline.pdf": "97bddc7c4d911b7149493677927a0f5478b22ee4edc55e16fe5a2ff8ddbbb6a8",
+      "profile.svg": "3c7dcb2f014ed1946e09924ef0325e24ad62b0e93c30ee41f4f6b993e92740a7",
+      "profile.pdf": "294b270c4c929cd9b1fe5582e6e838d781e766624d50a0d6df77be0fbb91dc2c"
+    },
+    "reverse4": {
+      "generic.svg": "c437e81d0646899b15a7e3af5097d9045a101b58ac7b312d6f796026d179346a",
+      "generic.pdf": "dd485256fbd692f5e673fcff6c8d9b766d15975689abca5759ac019d011853f4",
+      "baseline.svg": "b38b98fcbef65ee49ea5a05646b4682e75580061b4965dd8d8538056106671c4",
+      "baseline.pdf": "29695da500db39abbbd6f82389a02d0d082d000c3d04c2d8fec18eeb86bb4abe",
+      "profile.svg": "6ea2db58022d252668427b58bcaf0247f2a244137fe3875671a1801b742bbb67",
+      "profile.pdf": "6a21b9349e84c23f7831ff04aea9d35ef96049131de5146a60cbc9534a0eccbe"
+    },
+    "cross4": {
+      "generic.svg": "d7a87d4fc5ed7fbb58fcf89ddf4df515e80b50c552b314066b5b33089a47a12f",
+      "generic.pdf": "3c29e0c8ede2ae622a13bd23c92f3018cb2e83850f74537fe84d5f1ad19c87a7",
+      "baseline.svg": "01ad617f1d98ddb15f45a7bc535f74f7975fe1490a97e54d80333105a0726658",
+      "baseline.pdf": "02fd6491f738bc97e2ee9074908ed9f2717bffb0fb118a5968a3f096d02db2b7",
+      "profile.svg": "8a638661a0943dc7090b93152636bc22643cfe90bbacb9da480b6f68e725857d",
+      "profile.pdf": "0100a925f6a62e2d2f32c5cd9ce95362161012e517e8807aba6198e2198bc0d4"
+    },
+    "short4": {
+      "generic.svg": "659d53f0be03f03b01eca7794d04ec02ea02e04d9b3e7ff1033ef4021736605b",
+      "generic.pdf": "ac0480147c8826df22e3c1354b243191eb36ec83e3907600317e6d878abca55e",
+      "baseline.svg": "4031c665c3d759e709d89a2ae7c9627830fdb363fd4e9c0dda403a1fe3e74f53",
+      "baseline.pdf": "42c8f19f46382f789940ff5b5cb4ce5d1831f1f5a3efed84f84930030f4bc7d5",
+      "profile.svg": "452269bb68c1b41292188284cac5c23a360d43ec308d826d30a2ac1925e50108",
+      "profile.pdf": "fa23b3d2bd3466e2ed4192298178161d09b97a25c43e3bb3abb4c90dd51e7343"
+    }
+  },
+  "native_paint": {
+    "reverse": {
+      "readback": {
+        "bbox": [
+          19,
+          31,
+          105,
+          58
+        ],
+        "bytes": 262144,
+        "nonzero_pixels": 1848,
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              1,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              1
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              8,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              8
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              128,
+              128
+            ]
+          }
+        ],
+        "sha256": "6e67bf953485373b9052ed3a355d9c02c0e4c6008a49cdd7e583680d63ca262d"
+      },
+      "native_vector_sha256": "e80fc0c378bd55f458ee6a4773ddca84216e0d59a4bd229d3f9ecc213f590247",
+      "matching_native_gpu_uploads": [
+        {
+          "sha256": "e80fc0c378bd55f458ee6a4773ddca84216e0d59a4bd229d3f9ecc213f590247",
+          "size": 456
+        }
+      ],
+      "same_xy_as_saved_redraw": true,
+      "complete_fbos": [
+        1,
+        2
+      ],
+      "native_rt_color_rgba_f32": [
+        0.800000011920929,
+        0.20000000298023224,
+        0.10196078568696976,
+        0.501960813999176
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.800000011920929,
+            0.20000000298023224,
+            0.10196078568696976,
+            0.501960813999176
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.800000011920929,
+            0.20000000298023224,
+            0.10196078568696976,
+            0.501960813999176
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        }
+      ],
+      "library_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "helper_hashes": {
+        "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+        "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+        "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8"
+      },
+      "gl_error_count": 239,
+      "gl_nonzero_errors": 0
+    },
+    "cross": {
+      "readback": {
+        "bbox": [
+          27,
+          15,
+          100,
+          91
+        ],
+        "bytes": 262144,
+        "nonzero_pixels": 3060,
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              1,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              1
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              8,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              8
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              128,
+              128
+            ]
+          }
+        ],
+        "sha256": "1ff4d46f86121737c7c3b254d494c195bdd80d379513cfd01c4ac923687f9779"
+      },
+      "native_vector_sha256": "1786841747049be1184843ba90cb9d309fe8a38b48dd9c335cb7d73c150e59b7",
+      "matching_native_gpu_uploads": [
+        {
+          "sha256": "1786841747049be1184843ba90cb9d309fe8a38b48dd9c335cb7d73c150e59b7",
+          "size": 648
+        }
+      ],
+      "same_xy_as_saved_redraw": true,
+      "complete_fbos": [
+        1,
+        2
+      ],
+      "native_rt_color_rgba_f32": [
+        0.20000000298023224,
+        0.4000000059604645,
+        0.800000011920929,
+        1.0
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.800000011920929,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.800000011920929,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        }
+      ],
+      "library_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "helper_hashes": {
+        "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+        "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+        "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8"
+      },
+      "gl_error_count": 239,
+      "gl_nonzero_errors": 0
+    },
+    "short": {
+      "readback": {
+        "bbox": [
+          15,
+          26,
+          46,
+          45
+        ],
+        "bytes": 262144,
+        "nonzero_pixels": 551,
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              1,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              1
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              8,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              8
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              128,
+              128
+            ]
+          }
+        ],
+        "sha256": "41b35213863252963b3d02d1a7545873ba81d182b213d7c349f6cadf29314c6e"
+      },
+      "native_vector_sha256": "545c49d77b2a4f1e22aac10dcad7562331ef2c46c27421e4411926bae5039217",
+      "matching_native_gpu_uploads": [
+        {
+          "sha256": "545c49d77b2a4f1e22aac10dcad7562331ef2c46c27421e4411926bae5039217",
+          "size": 64
+        }
+      ],
+      "same_xy_as_saved_redraw": true,
+      "complete_fbos": [
+        1,
+        2
+      ],
+      "native_rt_color_rgba_f32": [
+        0.20000000298023224,
+        0.6666666865348816,
+        0.3333333432674408,
+        0.4000000059604645
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.015625,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.6666666865348816,
+            0.3333333432674408,
+            0.4000000059604645
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.6666666865348816,
+            0.3333333432674408,
+            0.4000000059604645
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        }
+      ],
+      "library_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "helper_hashes": {
+        "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+        "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+        "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8"
+      },
+      "gl_error_count": 239,
+      "gl_nonzero_errors": 0
+    },
+    "reverse1": {
+      "readback": {
+        "bbox": [
+          9,
+          16,
+          52,
+          28
+        ],
+        "bytes": 262144,
+        "nonzero_pixels": 444,
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              1,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              1
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              8,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              8
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              128,
+              128
+            ]
+          }
+        ],
+        "sha256": "4d465047e44afa6fd28cfad8de81c8909815d91e22194e5571f97968778bc35f"
+      },
+      "native_vector_sha256": "e80fc0c378bd55f458ee6a4773ddca84216e0d59a4bd229d3f9ecc213f590247",
+      "matching_native_gpu_uploads": [
+        {
+          "sha256": "e80fc0c378bd55f458ee6a4773ddca84216e0d59a4bd229d3f9ecc213f590247",
+          "size": 456
+        }
+      ],
+      "same_xy_as_saved_redraw": true,
+      "complete_fbos": [
+        1,
+        2
+      ],
+      "native_rt_color_rgba_f32": [
+        0.800000011920929,
+        0.20000000298023224,
+        0.10196078568696976,
+        0.501960813999176
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.0078125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0078125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.800000011920929,
+            0.20000000298023224,
+            0.10196078568696976,
+            0.501960813999176
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.800000011920929,
+            0.20000000298023224,
+            0.10196078568696976,
+            0.501960813999176
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        }
+      ],
+      "library_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "helper_hashes": {
+        "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+        "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+        "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8"
+      },
+      "gl_error_count": 239,
+      "gl_nonzero_errors": 0
+    },
+    "cross1": {
+      "readback": {
+        "bbox": [
+          13,
+          8,
+          49,
+          45
+        ],
+        "bytes": 262144,
+        "nonzero_pixels": 762,
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              1,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              1
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              8,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              8
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              128,
+              128
+            ]
+          }
+        ],
+        "sha256": "17e6f1a8633b9c2adaa1652597a848438595cbb094fff8800bf9031cd80e7f08"
+      },
+      "native_vector_sha256": "1786841747049be1184843ba90cb9d309fe8a38b48dd9c335cb7d73c150e59b7",
+      "matching_native_gpu_uploads": [
+        {
+          "sha256": "1786841747049be1184843ba90cb9d309fe8a38b48dd9c335cb7d73c150e59b7",
+          "size": 648
+        }
+      ],
+      "same_xy_as_saved_redraw": true,
+      "complete_fbos": [
+        1,
+        2
+      ],
+      "native_rt_color_rgba_f32": [
+        0.20000000298023224,
+        0.4000000059604645,
+        0.800000011920929,
+        1.0
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.0078125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0078125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.800000011920929,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.800000011920929,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        }
+      ],
+      "library_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "helper_hashes": {
+        "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+        "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+        "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8"
+      },
+      "gl_error_count": 239,
+      "gl_nonzero_errors": 0
+    },
+    "short1": {
+      "readback": {
+        "bbox": [
+          8,
+          13,
+          22,
+          22
+        ],
+        "bytes": 262144,
+        "nonzero_pixels": 136,
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              1,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              1
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              8,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              8
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              128,
+              128
+            ]
+          }
+        ],
+        "sha256": "e2068e59a10d681cf867881f63a3f399f79dc6ad20b9ee6b82e3918e12dba736"
+      },
+      "native_vector_sha256": "545c49d77b2a4f1e22aac10dcad7562331ef2c46c27421e4411926bae5039217",
+      "matching_native_gpu_uploads": [
+        {
+          "sha256": "545c49d77b2a4f1e22aac10dcad7562331ef2c46c27421e4411926bae5039217",
+          "size": 64
+        }
+      ],
+      "same_xy_as_saved_redraw": true,
+      "complete_fbos": [
+        1,
+        2
+      ],
+      "native_rt_color_rgba_f32": [
+        0.20000000298023224,
+        0.6666666865348816,
+        0.3333333432674408,
+        0.4000000059604645
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.0078125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0078125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.6666666865348816,
+            0.3333333432674408,
+            0.4000000059604645
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.6666666865348816,
+            0.3333333432674408,
+            0.4000000059604645
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        }
+      ],
+      "library_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "helper_hashes": {
+        "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+        "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+        "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8"
+      },
+      "gl_error_count": 239,
+      "gl_nonzero_errors": 0
+    },
+    "reverse4": {
+      "readback": {
+        "bbox": [
+          37,
+          62,
+          212,
+          117
+        ],
+        "bytes": 262144,
+        "nonzero_pixels": 7398,
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              1,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              1
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              8,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              8
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              128,
+              128
+            ]
+          }
+        ],
+        "sha256": "0e3b0b6e80f00d7c64033d2d03e0a5ace47f00ffb5fcd8e46005a31fc19097f8"
+      },
+      "native_vector_sha256": "e80fc0c378bd55f458ee6a4773ddca84216e0d59a4bd229d3f9ecc213f590247",
+      "matching_native_gpu_uploads": [
+        {
+          "sha256": "e80fc0c378bd55f458ee6a4773ddca84216e0d59a4bd229d3f9ecc213f590247",
+          "size": 456
+        }
+      ],
+      "same_xy_as_saved_redraw": true,
+      "complete_fbos": [
+        1,
+        2
+      ],
+      "native_rt_color_rgba_f32": [
+        0.800000011920929,
+        0.20000000298023224,
+        0.10196078568696976,
+        0.501960813999176
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.800000011920929,
+            0.20000000298023224,
+            0.10196078568696976,
+            0.501960813999176
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.800000011920929,
+            0.20000000298023224,
+            0.10196078568696976,
+            0.501960813999176
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        }
+      ],
+      "library_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "helper_hashes": {
+        "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+        "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+        "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8"
+      },
+      "gl_error_count": 239,
+      "gl_nonzero_errors": 0
+    },
+    "cross4": {
+      "readback": {
+        "bbox": [
+          53,
+          30,
+          201,
+          184
+        ],
+        "bytes": 262144,
+        "nonzero_pixels": 12282,
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              1,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              1
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              8,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              8
+            ]
+          },
+          {
+            "rgba": [
+              51,
+              102,
+              204,
+              255
+            ],
+            "xy": [
+              128,
+              128
+            ]
+          }
+        ],
+        "sha256": "8c4b3c3a94f5f1d941ce5d714da91999c17011dab67a7d6599ec15918358d02d"
+      },
+      "native_vector_sha256": "1786841747049be1184843ba90cb9d309fe8a38b48dd9c335cb7d73c150e59b7",
+      "matching_native_gpu_uploads": [
+        {
+          "sha256": "1786841747049be1184843ba90cb9d309fe8a38b48dd9c335cb7d73c150e59b7",
+          "size": 648
+        }
+      ],
+      "same_xy_as_saved_redraw": true,
+      "complete_fbos": [
+        1,
+        2
+      ],
+      "native_rt_color_rgba_f32": [
+        0.20000000298023224,
+        0.4000000059604645,
+        0.800000011920929,
+        1.0
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.800000011920929,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.4000000059604645,
+            0.800000011920929,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        }
+      ],
+      "library_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "helper_hashes": {
+        "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+        "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+        "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8"
+      },
+      "gl_error_count": 239,
+      "gl_nonzero_errors": 0
+    },
+    "short4": {
+      "readback": {
+        "bbox": [
+          30,
+          51,
+          93,
+          92
+        ],
+        "bytes": 262144,
+        "nonzero_pixels": 2226,
+        "samples": [
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              1,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              20,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              1
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              8,
+              0
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              0,
+              8
+            ]
+          },
+          {
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "xy": [
+              128,
+              128
+            ]
+          }
+        ],
+        "sha256": "8f712cf5271e7bf66b1f3bd385a57a533e24e4bae5e51a465eef24aceedcb799"
+      },
+      "native_vector_sha256": "545c49d77b2a4f1e22aac10dcad7562331ef2c46c27421e4411926bae5039217",
+      "matching_native_gpu_uploads": [
+        {
+          "sha256": "545c49d77b2a4f1e22aac10dcad7562331ef2c46c27421e4411926bae5039217",
+          "size": 64
+        }
+      ],
+      "same_xy_as_saved_redraw": true,
+      "complete_fbos": [
+        1,
+        2
+      ],
+      "native_rt_color_rgba_f32": [
+        0.20000000298023224,
+        0.6666666865348816,
+        0.3333333432674408,
+        0.4000000059604645
+      ],
+      "uniform_calls": [
+        {
+          "call": "glUniformMatrix4fv",
+          "location": 0,
+          "values": [
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.03125,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -3.0518509447574615e-05,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.6666666865348816,
+            0.3333333432674408,
+            0.4000000059604645
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 0,
+          "value": 0
+        },
+        {
+          "call": "glUniform4fv",
+          "location": 1,
+          "values": [
+            0.20000000298023224,
+            0.6666666865348816,
+            0.3333333432674408,
+            0.4000000059604645
+          ]
+        },
+        {
+          "call": "glUniform1i",
+          "location": 2,
+          "value": 1
+        }
+      ],
+      "library_hashes": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "helper_hashes": {
+        "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+        "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+        "marker3_paint_scale_native.py": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8"
+      },
+      "gl_error_count": 239,
+      "gl_nonzero_errors": 0
+    }
+  },
+  "cross_scale_caller_fields_sha256": {
+    "reverse": {
+      "input_sha256": "e1a540547fa20091f69cc317b91b8f67327ce1448c22e4513a36e4b0e732a5eb",
+      "source_arrays_sha256": "45880532eafab129bdd97b4db4daebd7cbaa07c8692a6676d833190fe7db5cb7",
+      "drawing_vector_sha256": "5e06982b0a7f8894088aaf29e62a740992f3caf80620dba053d1bdbf4db82c51",
+      "saved_redraw_vector_sha256": "5e06982b0a7f8894088aaf29e62a740992f3caf80620dba053d1bdbf4db82c51"
+    },
+    "cross": {
+      "input_sha256": "d1b6fdf46b527114b62c43d6a5d9b4afd5adb9c2ee6fe66606b662b97aefc6f0",
+      "source_arrays_sha256": "50b81af14591a4632f366b611b1f1049bcf518e8f242467acc94c273c14d300c",
+      "drawing_vector_sha256": "cf09926a5a6fdc1502012e9bf097ab4af95350fa9cafc2554183761fe1a8215e",
+      "saved_redraw_vector_sha256": "cf09926a5a6fdc1502012e9bf097ab4af95350fa9cafc2554183761fe1a8215e"
+    },
+    "short": {
+      "input_sha256": "223ed43a3be832efd82f7f37f21ac0bbd37479b7e17b70ce7ed574b503c7ba0d",
+      "source_arrays_sha256": "f0cf3f3dbeba2985efdfcfc91c37c992746bb6a0a139df4d2ee72abca4200e6f",
+      "drawing_vector_sha256": "c940dcff0b1e90c4f897c5e4b6996355a1f35c51abf7d7e609b8da6033398ea1",
+      "saved_redraw_vector_sha256": "c940dcff0b1e90c4f897c5e4b6996355a1f35c51abf7d7e609b8da6033398ea1"
+    },
+    "reverse1": {
+      "input_sha256": "e1a540547fa20091f69cc317b91b8f67327ce1448c22e4513a36e4b0e732a5eb",
+      "source_arrays_sha256": "45880532eafab129bdd97b4db4daebd7cbaa07c8692a6676d833190fe7db5cb7",
+      "drawing_vector_sha256": "5e06982b0a7f8894088aaf29e62a740992f3caf80620dba053d1bdbf4db82c51",
+      "saved_redraw_vector_sha256": "5e06982b0a7f8894088aaf29e62a740992f3caf80620dba053d1bdbf4db82c51"
+    },
+    "cross1": {
+      "input_sha256": "d1b6fdf46b527114b62c43d6a5d9b4afd5adb9c2ee6fe66606b662b97aefc6f0",
+      "source_arrays_sha256": "50b81af14591a4632f366b611b1f1049bcf518e8f242467acc94c273c14d300c",
+      "drawing_vector_sha256": "cf09926a5a6fdc1502012e9bf097ab4af95350fa9cafc2554183761fe1a8215e",
+      "saved_redraw_vector_sha256": "cf09926a5a6fdc1502012e9bf097ab4af95350fa9cafc2554183761fe1a8215e"
+    },
+    "short1": {
+      "input_sha256": "223ed43a3be832efd82f7f37f21ac0bbd37479b7e17b70ce7ed574b503c7ba0d",
+      "source_arrays_sha256": "f0cf3f3dbeba2985efdfcfc91c37c992746bb6a0a139df4d2ee72abca4200e6f",
+      "drawing_vector_sha256": "c940dcff0b1e90c4f897c5e4b6996355a1f35c51abf7d7e609b8da6033398ea1",
+      "saved_redraw_vector_sha256": "c940dcff0b1e90c4f897c5e4b6996355a1f35c51abf7d7e609b8da6033398ea1"
+    },
+    "reverse4": {
+      "input_sha256": "e1a540547fa20091f69cc317b91b8f67327ce1448c22e4513a36e4b0e732a5eb",
+      "source_arrays_sha256": "45880532eafab129bdd97b4db4daebd7cbaa07c8692a6676d833190fe7db5cb7",
+      "drawing_vector_sha256": "5e06982b0a7f8894088aaf29e62a740992f3caf80620dba053d1bdbf4db82c51",
+      "saved_redraw_vector_sha256": "5e06982b0a7f8894088aaf29e62a740992f3caf80620dba053d1bdbf4db82c51"
+    },
+    "cross4": {
+      "input_sha256": "d1b6fdf46b527114b62c43d6a5d9b4afd5adb9c2ee6fe66606b662b97aefc6f0",
+      "source_arrays_sha256": "50b81af14591a4632f366b611b1f1049bcf518e8f242467acc94c273c14d300c",
+      "drawing_vector_sha256": "cf09926a5a6fdc1502012e9bf097ab4af95350fa9cafc2554183761fe1a8215e",
+      "saved_redraw_vector_sha256": "cf09926a5a6fdc1502012e9bf097ab4af95350fa9cafc2554183761fe1a8215e"
+    },
+    "short4": {
+      "input_sha256": "223ed43a3be832efd82f7f37f21ac0bbd37479b7e17b70ce7ed574b503c7ba0d",
+      "source_arrays_sha256": "f0cf3f3dbeba2985efdfcfc91c37c992746bb6a0a139df4d2ee72abca4200e6f",
+      "drawing_vector_sha256": "c940dcff0b1e90c4f897c5e4b6996355a1f35c51abf7d7e609b8da6033398ea1",
+      "saved_redraw_vector_sha256": "c940dcff0b1e90c4f897c5e4b6996355a1f35c51abf7d7e609b8da6033398ea1"
+    }
+  }
+}

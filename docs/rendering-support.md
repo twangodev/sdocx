@@ -363,7 +363,7 @@ The bounded `marker3_output_scale` tool-1 profile also admits StraightMarker at 
 
 Marker3 and StraightMarker V5 page exports use native-sampled compound disks for the captured
 tool-2 and [tool-3](../conformance/marker3-tool3-native.json) base-pen profiles with explicit saved size/color and ordinary
-style. Marker3 tool 1 with explicit `5;`, size 4–8 and explicit ARGB also uses this route; intermediate sizes are interpolated from host controls. Other profiles retain the approximation. The sampler checks stamp
+style. Marker3 tool 1 with empty or `5;` settings, size 4–9 and explicit ARGB also uses this route. [Size-9 synthetic host controls](../tools/marker3-size9-diverse/README.md) cover three paths at 1×, 2× and 4×; sizes between controls, empty settings, the StraightMarker alias and other contexts extrapolate. Other profiles retain the approximation. The sampler checks stamp
 positions, radii and callback boundaries in ten
 [synthetic native cases](../conformance/marker3-saved-native.json).
 The [Drawing caller capture](../conformance/marker3-saved-caller-native.json)
