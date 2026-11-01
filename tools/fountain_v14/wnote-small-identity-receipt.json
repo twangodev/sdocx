@@ -1,0 +1,35 @@
+{
+  "archive_sha256": "8299abbf763e8e3e5af746815d13dfdf45443da27b0eb79192c328571905cdd2",
+  "native_object_count": 41,
+  "rust_stroke_count": 41,
+  "ordered_full_uuid_sha256_matches": 41,
+  "distinct_uuid_sha256_count": 41,
+  "ordered_uuid_hashes_sha256": "7f2c477bce2adff7000f09da72427e0eca008685b3f5420e3b4c6886520cf56c",
+  "scope": "36-byte native GetUuid ASCII compared to Rust UUID SHA-256 in WPage order; bounded Unicorn host wrapper, not device execution",
+  "schema": "sdocx-wnote-small-page-identity-v1",
+  "input": "hf/04-marker4-highlighter.sdocx (tracked in the local hf submodule; local prerequisite)",
+  "runner": "PYTHONPATH=scratch/apk-analysis-runtime/python /usr/bin/python3.13 tools/fountain_v14/wnote_small_identity_probe.py",
+  "wdoc_sha256": "1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6",
+  "model_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+  "zlib_dso_sha256": "7796339a9c41c3218bef47c17bc1573c544bc431a8d312da390dce40c64adcd7",
+  "adapter": "Project-local REA-style Unicorn ARM64 adapters execute original native libraries with bounded read-only archive access and virtual in-memory cache; 39 WDoc initializers. WNote wrapper uses Construct(cache,path,1848,0,false), followed by page 0 LoadObject/GetObject/GetType/GetUuid. This is not a device run or a validated Java application lifecycle.",
+  "privacy": "Native intermediate records remain in process memory and are reduced to hash/count evidence before output; Rust stdout is captured in process memory. No identifiers or stroke coordinates are persisted.",
+  "dependency_sha256": {
+    "tools/fountain_v14/note_open_probe.py": "eb358c7276f4de5fbcd42a3d26c3b3c031d50da59b517afcde7c5936e2e98ce9",
+    "tools/fountain_v14/state_probe_capture.py": "052d3d7f3677e56788c119df22ce38f31dfc50ddc9bb367c4c39198b2aad4695",
+    "tools/fountain_v14/drawing_capture.py": "969fef6e967a41c888aa1121783da525bda435082533733b8807c425eda5358a",
+    "tools/fountain_v14/cache_budget.py": "a363e11365daef4a1da3f4e8d648e03a59c3ac147e21d61fc1bc5b876850a0cb",
+    "local_capture_candidate.py": "0ffc0a80181faaba1c31a1b4c7e3592bcc66e63d90bc59431961d060a158dd68",
+    "local_fountain_persisted_drawing_native.py": "9e0ef723a936b697c65b2ed0c476123287430fc2ff9d66b41945c2815ca5f59a",
+    "local_fountain-saved-color-native.json": "de23cf21f239fc9e12794bc55777fa18406d1129162f8198b1544b8f009f932d",
+    "conformance/fountain-v14-saved-scene-inputs.json": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+    "crates/sdocx/examples/saved_ink_inputs.rs": "e4494fc13e18c131e6eaec55c04108fe7fa1d0ed1b8a8ceefb4edbc20b02525c"
+  },
+  "runtime_observed": "Python 3.13.5, Unicorn 2.1.4, Cargo 1.98.0; host system libraries are not byte-pinned. The local capture helper validates its own transitive helper, fixture and DSO hashes.",
+  "native_results": {
+    "WNote::Construct": 1,
+    "WNote::GetPageCount": 2,
+    "WPage::LoadObject": 1,
+    "WPage::GetObjectCount(true)": 41
+  }
+}
