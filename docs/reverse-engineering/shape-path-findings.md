@@ -695,6 +695,30 @@ Five fills and independent replay agree; temporary
 `/tmp/sdocx-native-arc-oblique-rotated-controls.json` has SHA-256
 `556e4686577d4bacb1dbf6dcf5df017037929941df31e299cb0970b081c90dc6`.
 
+### Saved rotated Arc size and loaded geometry
+
+A [native writer/load and Drawing replay](../../tools/named_arc_rotation/README.md)
+compares moved Arc controls at 0°, ±37° and 90°, plus a second moved pair at
+37°, across four allocation fills plus a repeat at zero. The three self-sized frames total 604 bytes;
+for the nonzero angles `NewGetBinarySize` returns 608, but the final four bytes
+of the prefilled buffer remain untouched. The writer temporarily clears outer
+rotation before recomputing base-frame size. Passing the exact 604 bytes to the
+loader consumes all 604. The saved type-7 rectangle remains unrotated, while its
+controls and path are in the rotated display frame.
+
+The loaded Arc control setter receives the saved controls and regenerates the
+Drawing path. In these probes, source versus loaded f32 path coordinates differ
+by up to 16 ULP at selected points, even though exposed controls match. The
+recorded Drawing paths are a center-closed fill and a separate open outline.
+This is bounded host execution with a recording canvas, not device or PDF
+appearance. The default renderer falls back for nonzero rotation. Setting
+`RenderOptions::rotated_arc_sector_approximation` enables experimental sector
+reconstruction when two sequential control-generated paths match the
+inverse-normalized saved outline within a strict 0.000025 coordinate margin.
+The margin is heuristic, not a proven bound on Android math differences; a
+captured 2× scale falls back even though native retains its path. Device pixels
+and native PDF parity remain unverified.
+
 ## Empty saved Triangle is distinct from ordinary construction
 
 Static type-2 Triangle loading accepts an empty Path through `0x2140dc` and

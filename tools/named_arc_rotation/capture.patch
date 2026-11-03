@@ -1,0 +1,50 @@
+--- a/capture.rs
++++ b/capture.rs
+@@ -32,6 +32,7 @@
+     let widths = unsafe { &mut *data.cast::<Vec<u32>>() };
+     widths.push(read_register(engine, 136) as u32);
+ }
++unsafe extern "C" fn trace_control(engine: Engine, _:u64, _:u32, _: *mut c_void) { eprintln!("CONTROL template {:x} index {} input {:08x} {:08x}",read_register(engine,REGISTER_X0),read_register(engine,REGISTER_X0+1),read_register(engine,136),read_register(engine,137)); }
+ pub(crate) fn capture_named(model: &Path, base: &Path, skia: &Path) {
+     verify_host_math();
+     let mut machine = Machine::new(model);
+@@ -185,18 +186,26 @@
+       for (i,v) in [end_x,end_y].iter().enumerate() { register(machine.engine,136+i as i32,u64::from(v.to_bits())); }
+       eprintln!("second move {}",machine.call(0x3970d8,&[object,1]));
+     }
++    register(machine.engine,136,std::env::var("ANGLE").unwrap_or_else(|_| "37".into()).parse::<f32>().unwrap().to_bits() as u64);
++    eprintln!("rotation result {}",machine.call(0x397b90,&[object]));
+     let size = machine.call(0x399a9c, &[object, 2]);
+     eprintln!("writer size {size}");
+     let input = MODEL + 0x2000;
++    write(machine.engine,input,&vec![0xa5;size as usize]);
+     let written = machine.call(0x399b40, &[object, input, 2]);
+     eprintln!("writer result {written}");
+     std::fs::write(std::env::var("ARC_OUTPUT").expect("ARC_OUTPUT"), bytes(machine.engine,input,size as usize)).unwrap();
++    let mut control_hook=0;
++    check(unsafe {uc_hook_add(machine.engine,&mut control_hook,4,trace_control as *mut c_void,ptr::null_mut::<c_void>(),0x224628,0x224628)});
+     let target = machine.call(0x36d6cc, &[7,0]);
+     eprintln!("target object {target:x}");
+-    let result = machine.call(0x399d04, &[target, input, size, 0, 1848]);
++    let mut actual = 0u64;
++    for _ in 0..3 { actual += read_u32(machine.engine,input+actual) as u64; }
++    eprintln!("FRAMED_SIZE {actual} TAIL {:?}",bytes(machine.engine,input+actual,(size-actual) as usize));
++    let result = machine.call(0x399d04, &[target, input, actual, 0, 1848]);
+     eprintln!("loader consumed {result} / {size}");
+     assert!(size > 0);
+-    assert_eq!(result, size);
++    assert_eq!(result, actual);
+     eprintln!("pen got {:x}",read_u64(machine.engine,0x0a07ab70));
+     let drawer = MODEL + 0x5000;
+     machine.call(DRAWING_BASE + 0x8a1d8, &[drawer]);
+@@ -254,8 +263,8 @@
+         snapshots.push((bounds,outline,fill,controls));
+     }
+     assert_eq!(snapshots[0].0,snapshots[1].0);
+-    assert_eq!(snapshots[0].1,snapshots[1].1);
+-    assert_eq!(snapshots[0].2,snapshots[1].2);
++    eprintln!("SOURCE {:?}", snapshots[0]);
++
+     eprintln!("SOURCE_CONTROLS {:?}", snapshots[0].3);
+     eprintln!("ACTIVE {:?}",snapshots[1]);
+     let mut live = BTreeMap::new();

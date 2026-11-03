@@ -1,0 +1,29 @@
+Human-readable summary; replay verifies captured-output hashes rather than this summary.
+Samsung Notes 4.4.45.37 arm64, host Unicorn and substituted math/canvas.
+Each case uses geometry rectangle (10, 20, 210, 120), two moved controls,
+solid fill and outline. Frames 0, 6 and 7 occupy 106, 114 and 384 bytes.
+Writer buffer is prefilled 0xa5; returned writer value is 4000 in each case.
+Loader receives the sum of the three frame lengths, exactly 604 bytes.
+
+Case       Controls                   Size query  Framed bytes  Untouched tail  Loader return
+0 degrees  (100,20), (40,100)         604         604           none            604
+37 degrees (100,20), (40,100)         608         604           a5 a5 a5 a5     604
+-37 degrees (100,20), (40,100)        608         604           a5 a5 a5 a5     604
+90 degrees (100,20), (40,100)         608         604           a5 a5 a5 a5     604
+37 degrees (20,30), (40,100)          608         604           a5 a5 a5 a5     604
+
+Source versus loaded outline f32 bit differences, all other recorded outline
+coordinates equal:
+0 degrees: none
+37 degrees: move y +2 ULP
+-37 degrees: move y -1 ULP; quadratic endpoint y -16 ULP
+90 degrees: none
+37 degrees alternative controls: quadratic endpoint y -2 ULP; quadratic
+control x -1 ULP.
+
+Exposed control getter coordinates match bitwise between source and loaded
+object in each case; native loader reaches Arc control setter twice. Native
+Drawing submits a center-closed fill and separate open outline using loaded
+geometry. Every observation and writer buffer matches across four allocation
+fills (0, 85, 165, 255), plus a repeated zero. This does not prove device pixels,
+PDF appearance, arbitrary rotation or general renderer parity.
