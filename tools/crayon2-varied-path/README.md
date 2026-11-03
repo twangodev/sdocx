@@ -10,7 +10,7 @@ For the SVG comparison, run `.venv/bin/python tools/crayon2-varied-path/prepare.
 
 The receipt distinguishes the native bottom-up GL readback hash from the top-down premultiplied native and rendered comparison hashes. The caller owns the private directory and may remove it after the comparison.
 
-A Rust regression fed the same source points, pressures, size and captured host profile into `ink::crayon2::sample`. It produced 303 records with the identical native vector SHA-256 above (`cargo test -p sdocx --features render changed_path_paint_capture_matches_source_derived_records --lib`, one test passed). This joins the existing bounded source geometry sampler to this paint control by exact record identity; the SVG experiment itself still consumed the captured vector and public export remains untested.
+A Rust regression fed the same source points, pressures, size and captured host profile into `ink::crayon2::sample`. It produced 303 records with the identical native vector SHA-256 above (`cargo test -p sdocx --features render changed_path_paint_capture_matches_source_derived_records --lib`, one test passed). This joins the existing bounded source geometry sampler to this paint control by exact record identity; the SVG experiment itself still consumed the captured vector and that experiment did not exercise public export.
 
 ## Experimental standalone host API
 
@@ -49,3 +49,15 @@ native frame. [host-api-receipt.json](host-api-receipt.json) records the source,
 export and fixture hashes and reader versions. Remove temporary exports after
 comparison. The native capture was retained from the prior matched-source
 regression; this API validation regenerates exports, not the native runtime.
+
+## Generic public fallback control
+
+The translated source `(64,64), (72,70), (82,60)` is compared to its matched native host frame. Its first x coordinate changes the sampler seed, so translating the original output is not equivalent. From the repository root, with the shared Cargo settings in AGENTS.md:
+
+```sh
+cargo run -p sdocx --features pdf,serde --example crayon2_varied_public_probe -- /tmp/crayon2-public-new
+/tmp/sdocx-agent-target/debug/sdocx-render-svg-047 /tmp/crayon2-public-new/public.svg /tmp/crayon2-public-new/public.png
+PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-varied-path/public_compare.py /tmp/crayon2-public-new
+```
+
+Use a new output directory; the example refuses to overwrite an existing one. The renderer, Pillow, PyMuPDF and pypdfium2 are local prerequisites. The comparator checks native input and frame hashes and recorded metrics. It measures RGB error 15,718 in resvg and MuPDF and 15,756 in PDFium (maximum channel error 39). Results depend on reader versions; this single synthetic host control does not establish general or device parity.

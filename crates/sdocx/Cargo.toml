@@ -77,3 +77,7 @@ required-features = ["pdf", "serde"]
 [[example]]
 name = "montblanc_pdf_reuse_mixed_probe"
 required-features = ["pdf", "serde"]
+
+[[example]]
+name = "crayon2_varied_public_probe"
+required-features = ["pdf", "serde"]
