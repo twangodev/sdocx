@@ -24,7 +24,11 @@
     },
     "raster_source_model": "RGBA8 atlas uses the observed lowp sampler conversion (normalized R8 -> binary16 RTZ -> f32 alpha math). RGB is native inputColor.xyz. The source alpha byte is quantized after f32*255 using nearest-even as the current llvmpipe host-mode hypothesis; active IR does not record MXCSR, so the opaque control is the decisive rounding oracle.",
     "svg_source": "V28 exact clipped-wrapper atlas carrier; every case keeps full padded atlas, row orientation, nearest sampler CSS and source rect clips; only public ARGB affects PNG RGB and alpha.",
-    "pen_dso_sha256": "239c05bab2a6016ec45b522d5964090514ea8aefb9f3beb8037f9582b3d3ae07"
+    "pen_dso_sha256": "39078a41b0687941c4e22b18df36addb1cda093303e26df844078474d3ca9504",
+    "pen_dso_pin_correction": {
+      "previous_value": "239c05bab2a6016ec45b522d5964090514ea8aefb9f3beb8037f9582b3d3ae07",
+      "evidence": "All four original capture files, verified against their retained native_capture_sha256, record pins.CP DSO.sha256 as the corrected value. Native pixel bytes and frame hashes are unchanged."
+    }
   },
   "binary": {
     "sparse_pixel_file": "colored-pencil-paint-sparse.bin",
