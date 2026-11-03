@@ -1759,6 +1759,69 @@ mod tests {
                 .sum();
             assert!(l1 <= if name == "matrix" { 0 } else { 4 }, "{name}: {l1}");
         }
+        for (receipt, compressed) in [
+            (
+                include_str!(
+                    "../../../tests/fixtures/brushpen-target-sizes/half-scale-receipt.json"
+                ),
+                &include_bytes!(
+                    "../../../tests/fixtures/brushpen-target-sizes/half-scale-frame.rgba.zlib"
+                )[..],
+            ),
+            (
+                include_str!("../../../tests/fixtures/brushpen-target-sizes/double-receipt.json"),
+                &include_bytes!(
+                    "../../../tests/fixtures/brushpen-target-sizes/double-frame.rgba.zlib"
+                )[..],
+            ),
+        ] {
+            let half: Value = serde_json::from_str(receipt).unwrap();
+            let imports = half["draw_time_uniform_imports"].as_array().unwrap();
+            let read = |key: &str, location: u64| -> Vec<f32> {
+                imports.iter().find(|row| row[key] == location).unwrap()["values"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_f64().unwrap() as f32)
+                    .collect()
+            };
+            let mut reference = Vec::new();
+            ZlibDecoder::new(compressed)
+                .read_to_end(&mut reference)
+                .unwrap();
+            assert_eq!(sha256(&reference), half["frame_sha256"]);
+            let mut actual = vec![0; reference.len()];
+            paint(
+                &records,
+                Rgba8 {
+                    width: 144,
+                    height: 144,
+                    bytes: &atlas_rgba,
+                },
+                Rgba8 {
+                    width: 321,
+                    height: 228,
+                    bytes: &grain_rgba,
+                },
+                Context {
+                    width: 321,
+                    height: 228,
+                    projection: read("location", 0).try_into().unwrap(),
+                    rgb: color[..3].try_into().unwrap(),
+                    grain_period: read("uniform2fv_location", 5).try_into().unwrap(),
+                    grain_offset: read("uniform2fv_location", 6).try_into().unwrap(),
+                    num_tiles: 3.0,
+                },
+                &mut actual,
+            )
+            .unwrap();
+            let l1: u64 = actual
+                .iter()
+                .zip(&reference)
+                .map(|(a, b)| u64::from(a.abs_diff(*b)))
+                .sum();
+            assert!(l1 <= 4, "transformed frame: {l1}");
+        }
         let affine: Value = serde_json::from_str(include_str!(
             "../../../../../conformance/brushpen-second-native/affine-uniforms.json"
         ))

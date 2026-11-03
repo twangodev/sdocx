@@ -1,0 +1,92 @@
+{
+  "scope": "Synthetic Drawing/queued RT host-Mesa, existing 221-record control; canvas transform scale 0.5 and translate (25,20); no device or saved-note claim",
+  "canvas_matrix": [
+    0.5,
+    0,
+    0,
+    0,
+    0.5,
+    0,
+    25,
+    20,
+    1
+  ],
+  "geometry_sha256": "9c0e7c402e7bd064b37612b6bcaf8718f4475771cbecb98503afbabb69c61b3d",
+  "capture_runner_sha256": "9e9632df53c725b6018ba6892edc3605649762f7eba6e7b7098f25af6a8d185f",
+  "draw_time_uniform_imports": [
+    {
+      "count": 1,
+      "location": 0,
+      "transpose": 0,
+      "values": [
+        0.0031152646988630295,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.004385964944958687,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -0.8442367315292358,
+        -0.8245614171028137,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "count": 1,
+      "phase": "native PenGLRenderMsg task2",
+      "raw_f32_le": "dddcdc3e8584843ed2d1513f8180003f",
+      "uniform4fv_location": 4,
+      "values": [
+        0.4313725531101227,
+        0.25882354378700256,
+        0.8196078538894653,
+        0.501960813999176
+      ]
+    },
+    {
+      "count": 1,
+      "uniform2fv_location": 5,
+      "values": [
+        160.5,
+        114.0
+      ]
+    },
+    {
+      "count": 1,
+      "uniform2fv_location": 6,
+      "values": [
+        87.50000762939453,
+        35.000003814697266
+      ]
+    },
+    {
+      "uniform1f_location": 1,
+      "value": 3.0
+    },
+    {
+      "uniform1i_location": 2,
+      "value": 0
+    },
+    {
+      "uniform1i_location": 3,
+      "value": 1
+    }
+  ],
+  "frame_sha256": "eed20478efb4299ba96c6f806f008c6c1b11fec83477eef0f73a7395962b987f",
+  "nonzero_alpha_pixels": 133,
+  "dimensions": [
+    321,
+    228
+  ],
+  "draw_returned": true,
+  "read_gl_error": 0,
+  "clear_verified": true,
+  "feedback_alias": false,
+  "reproduce": "python3 tools/brushpen-transform/scale_controls.py; requires project-local scratch native inputs and retained native capture helper tree."
+}
