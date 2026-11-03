@@ -1,4 +1,5 @@
 mod debugger;
+mod ink_raster;
 mod js_numbers;
 mod progress;
 mod render_output;
