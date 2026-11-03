@@ -1,7 +1,7 @@
 {
   "schema": "sdocx-inkpen2-null-v1-pressure-paint-native-v1",
   "scope": "Synthetic ObjectStroke native Drawing and RTV1 host Mesa, transparent 128x96 target; not device or app canvas.",
-  "capture_script": "conformance/inkpen2_v1_pressure_paint_capture.py",
+  "capture_script": "tools/inkpen-capture/inkpen2_v1_pressure_paint_capture.py",
   "cases": {
     "zero": {
       "input": {
