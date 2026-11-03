@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Expand retained capture metadata into a new directory for export_compare.py."""
+"""Expand retained capture metadata into a new directory for final_export_compare.py."""
 import json
 import sys
 from pathlib import Path
