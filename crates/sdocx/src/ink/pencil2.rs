@@ -1186,6 +1186,9 @@ pub(crate) mod device_raster;
 #[cfg(all(test, feature = "serde"))]
 mod tracked_profile_tests;
 
+#[cfg(all(test, feature = "serde"))]
+pub(crate) mod mixed_rgb_tests;
+
 #[cfg(all(test, feature = "serde", feature = "render"))]
 mod drawing_public_comparison;
 
