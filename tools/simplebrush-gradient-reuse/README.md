@@ -1,0 +1,26 @@
+# SimpleBrush exact-radius gradient reuse experiment
+
+This is historical, exploratory evidence for a rejected size experiment, not a production change. The original complete source snapshot and build environment were not pinned, but a later clean-source replay reproduced the recorded export hashes. It reuses an object-bounding-box gradient for stamps with exactly equal stored radii within a stroke. Paint order and stroke-local colors are retained. Same-source exports saved 3–68% SVG and 3–52% direct PDF across the four controls, but reader output changed: MuPDF differed by up to 122 channel units on three pixels for both 65- and 128-point 2× controls. The native comparison errors also changed. Do not treat the transformation as pixel-lossless.
+
+`candidate.patch` contains only the experimental renderer change. The comparison used the same source snapshot for each baseline and candidate; the recorded source hashes identify the two relevant files, not the complete source tree or build environment. Full native geometry matched on the four reported controls. A retained 128-point alternate capture failed its native geometry assertion on both baseline and candidate before export; it is excluded. These are synthetic host captures, not device or saved-page evidence.
+
+`receipt.json` records SVG and PDF hashes, sizes, and native error sums. Its direct baseline/candidate reader values are sum of absolute channel differences, number of differing pixels, and largest channel difference. MuPDF uses the matching fractional native matrix; PDFium uses the existing unshifted grid. Resvg direct-pair raster uses the untransformed SVG. The candidate and baseline PDFs are from the public direct PDF export path.
+
+The observed fixture inputs were:
+
+| Case | Point count | Size | Tool | Variant | Retained native inputs |
+| --- | ---: | ---: | ---: | --- | --- |
+| 320 | 320 | 8 | 2 | reverse | `tools/simplebrush-one-long/320.vector.zlib`, `320.rgba.zlib`, `320-receipt.json` |
+| 64-alternate | 64 | 3 | 0 | alternate | `tools/simplebrush-v209/native-full.json.zlib`, `frame.rgba.zlib` |
+| 65-baseline | 65 | 3 | 0 | unset | `tools/simplebrush-v210/baseline-native.json.gz`, `d-frame.rgba.gz` |
+| 128-baseline | 128 | 3 | 0 | unset | `tools/simplebrush-size3-128/baseline-native.json`, `baseline-frame.rgba.gz` |
+
+The observed exports were generated in an isolated checkout from `two_pixel_native_export_fixture`, with `SDOCX_POINTS_COUNT`, `PROBE_SIZE`, `SDOCX_TOOL`, and `VARIANT` set as above, `SDOCX_V62_NATIVE` pointing at the corresponding native JSON, and `SDOCX_SIMPLEBRUSH_TWO_EXPORT` pointing at the output directory. The retained verifier scripts in those directories show how to reconstruct the native JSON and frame path. The baseline used the existing renderer and the candidate used the experimental patch. The output hashes in the receipt identify what was compared, but only two source files were hashed; they cannot establish full source-to-output provenance.
+
+The generated PDFs and SVGs were removed after measurement. If those exact files are independently available, `PYTHONPATH=/path/to/pypdfium2 .venv/bin/python tools/simplebrush-gradient-reuse/compare.py /path/to/output-parent` checks their hashes, sizes, patch hash, reader versions and direct pair differences. It expects directories named `sb-gradient-base-<case>` and `sb-gradient-<case>`, and resvg 0.45.1, PyMuPDF 1.28.2, PDFium 150.0.7869.0, and Pillow. It does not reconstruct the missing source snapshot or check native metrics. The recorded native metrics were obtained separately using the existing `simplebrush-one-long` or `simplebrush-size3-32` comparators and matching PDFium comparator; they are historical observations, not assertions in this script.
+
+## Clean replay
+
+`replay-clean.py /tmp/NEW-EMPTY-PATH` archives revision `43c3e3c4f14e371741ac37df564d9167e8f21591`, checks the two historical source hashes, builds baseline and candidate sequentially with the shared Cargo settings, checks the retained native frame hash and full native geometry in the export fixture, and checks every SVG and PDF size and hash against `receipt.json`. It then runs `compare-clean.py` against `clean-reader-receipt.json`, with the separately pinned current reader versions. The original `compare.py` and historical receipt remain unchanged. The replay touches the renderer in each archived source variant to force Cargo to rebuild when using the shared target directory. The output directory must not exist; remove it after inspection.
+
+On the clean revision, all eight exports matched the historical hashes and all four geometry assertions passed for both variants. With resvg 0.45.1 and MuPDF 1.28.2 the historical direct differences reproduced. PDFium 156.0.8076.0 produced a baseline-to-candidate difference of 3 channel units across one pixel for the 64 alternate and zero for the other controls. This uses a different reader version from the historical PDFium 150 check. At 65 points, the two largest MuPDF differences occur at output pixels (70,433), RGB (228,241,248) versus (106,186,238), and (82,433), RGB (132,198,240) versus (100,183,238). The candidate changes gradient coordinate space and PDF resource reuse together; the precise reader mechanism is unresolved. These results do not justify adopting the candidate.

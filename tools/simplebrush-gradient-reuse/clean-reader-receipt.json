@@ -1,0 +1,9 @@
+{
+  "reader_versions": {"resvg": "0.45.1", "pymupdf": "1.28.2", "pdfium": "156.0.8076.0", "pypdfium2": "5.14.0", "pillow": "12.3.0"},
+  "comparison": {
+    "320": {"resvg": [15, 15, 1], "mupdf": [0, 0, 0], "pdfium": [0, 0, 0]},
+    "64-alternate": {"resvg": [0, 0, 0], "mupdf": [15, 4, 3], "pdfium": [3, 1, 2]},
+    "65-baseline": {"resvg": [1, 1, 1], "mupdf": [238, 3, 122], "pdfium": [0, 0, 0]},
+    "128-baseline": {"resvg": [1, 1, 1], "mupdf": [238, 3, 122], "pdfium": [0, 0, 0]}
+  }
+}

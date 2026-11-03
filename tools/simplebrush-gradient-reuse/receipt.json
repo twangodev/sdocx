@@ -1,0 +1,221 @@
+{
+  "scope": "same-source synthetic retained native geometry and candidate exports; 128 alternate geometry mismatch occurs in both baseline and candidate before export",
+  "source_sha256": {
+    "crates/sdocx/src/render/simplebrush.rs": "1da781698586fa7399a80a78e08b9323415cf6ea24bae16fd3f09f1f0e0a1bb3",
+    "crates/sdocx/src/render/simplebrush_tests.rs": "5eb618f0dfd6c26b70611c72be38f6df510667bd3bb1112618d583763de99276"
+  },
+  "cases": {
+    "320": {
+      "base": {
+        "one.svg": {
+          "bytes": 467629,
+          "sha256": "1841990d253e318a53f7da2b88a5caf05989e52bdf38a91b607e92988960d4f0"
+        },
+        "one.pdf": {
+          "bytes": 2265187,
+          "sha256": "44474086c3446ba1fa84225e0d833151de12e38b4b6e0e022c474463ccb0bd8d"
+        }
+      },
+      "candidate": {
+        "one.svg": {
+          "bytes": 150054,
+          "sha256": "91098c23c96d479a2e9778cad7cca7968109f29002b42c1b9ab2690ea075097c"
+        },
+        "one.pdf": {
+          "bytes": 1078192,
+          "sha256": "567a192e249be281eb641cc3eb2b3d47b3971dc64431834f9d168e58608a9b3e"
+        }
+      },
+      "comparison": {
+        "svg": [
+          15,
+          15,
+          1
+        ],
+        "mupdf": [
+          0,
+          0,
+          0
+        ],
+        "pdfium": [
+          0,
+          0,
+          0
+        ],
+        "native_baseline": [
+          10010,
+          78058,
+          143015
+        ],
+        "native_candidate": [
+          10010,
+          78058,
+          143015
+        ]
+      }
+    },
+    "64-alternate": {
+      "base": {
+        "two.svg": {
+          "bytes": 99656,
+          "sha256": "8667e836f1cdc55aba29b174aa70abec7049a471056a7ccf8e66c313cdfeba0b"
+        },
+        "two.pdf": {
+          "bytes": 488645,
+          "sha256": "c0c8dac119474f62bce06dbd5f11622ddc1f95730d3d9d0d53834f6048ef0594"
+        }
+      },
+      "candidate": {
+        "two.svg": {
+          "bytes": 64102,
+          "sha256": "91397f7ac70d753f2e8219ef0119fe5fa5f3095b2bb044896fb26b025399d4d0"
+        },
+        "two.pdf": {
+          "bytes": 364469,
+          "sha256": "f55b94a00005e286a9d3f384feb8fbe3c756db083609d1e607b71c79769c52d5"
+        }
+      },
+      "comparison": {
+        "svg": [
+          0,
+          0,
+          0
+        ],
+        "mupdf": [
+          15,
+          4,
+          3
+        ],
+        "pdfium": [
+          3,
+          1,
+          2
+        ],
+        "native_baseline": [
+          14169,
+          61389,
+          99945
+        ],
+        "native_candidate": [
+          14169,
+          61393,
+          99948
+        ]
+      }
+    },
+    "65-baseline": {
+      "base": {
+        "two.svg": {
+          "bytes": 88404,
+          "sha256": "49dae9287d8ba24194098aa0b2ebf3e6cdc6a91aa30c66ada31fc514b90a1a1e"
+        },
+        "two.pdf": {
+          "bytes": 436048,
+          "sha256": "1475b0eeb5328405a05cdd7465800a4a81ae893ae81715d74c1175e54cbbc1fb"
+        }
+      },
+      "candidate": {
+        "two.svg": {
+          "bytes": 79994,
+          "sha256": "73b48b6e66dd9161d0a1f09531a76a448f23bc6193e66ebcdbdc2eacee34181e"
+        },
+        "two.pdf": {
+          "bytes": 422263,
+          "sha256": "1b2bdcf021bec91e3abcdc15fb9e1e1f74eb8d29f9ca4b0ad446320a1f2ba720"
+        }
+      },
+      "comparison": {
+        "svg": [
+          1,
+          1,
+          1
+        ],
+        "mupdf": [
+          238,
+          3,
+          122
+        ],
+        "pdfium": [
+          0,
+          0,
+          0
+        ],
+        "native_baseline": [
+          4681,
+          29994,
+          50361
+        ],
+        "native_candidate": [
+          4681,
+          30128,
+          50361
+        ]
+      }
+    },
+    "128-baseline": {
+      "base": {
+        "two.svg": {
+          "bytes": 173910,
+          "sha256": "a01a7b2ea0f1c57604faa4251860385f60709afbfaacbd88d7f6e8707acc94a8"
+        },
+        "two.pdf": {
+          "bytes": 852322,
+          "sha256": "ed81f0a6459b58242f043928d9e651c663ad8635eebdfe669273c7c30dd7c8c7"
+        }
+      },
+      "candidate": {
+        "two.svg": {
+          "bytes": 101481,
+          "sha256": "1ecbe42921fcff216fd2489680bfe7527719e6a408c5619f6d74cf09a872509d"
+        },
+        "two.pdf": {
+          "bytes": 599798,
+          "sha256": "cf20e88763ac2740038aad5710600b669b635da6d0cb3e6d5cf2e42e9eef8f5b"
+        }
+      },
+      "comparison": {
+        "svg": [
+          1,
+          1,
+          1
+        ],
+        "mupdf": [
+          238,
+          3,
+          122
+        ],
+        "pdfium": [
+          0,
+          0,
+          0
+        ],
+        "native_baseline": [
+          8991,
+          58310,
+          96656
+        ],
+        "native_candidate": [
+          8997,
+          58444,
+          96656
+        ]
+      }
+    }
+  },
+  "difference_fields": [
+    "sum_absolute_channels",
+    "differing_pixels",
+    "max_channel"
+  ],
+  "native_fields": [
+    "resvg_alpha",
+    "mupdf_matched_rgb",
+    "pdfium_unshifted_rgb"
+  ],
+  "readers": {
+    "resvg": "0.45.1",
+    "pymupdf": "1.28.2",
+    "pdfium": "150.0.7869.0"
+  },
+  "candidate_patch_sha256": "23c8ddd610bde976992dda09fe7cb6a23ca169ff3eb37edbff876e3bbef90607"
+}

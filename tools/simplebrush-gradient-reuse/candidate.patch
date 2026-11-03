@@ -1,0 +1,54 @@
+--- a/crates/sdocx/src/render/simplebrush.rs
++++ b/crates/sdocx/src/render/simplebrush.rs
+@@ -7,6 +7,8 @@
+     Circle, ColorValue, Definitions, Gradient, Group, Paint, RadialGradient, Scene, Stop, Styled,
+ };
+ 
++use std::collections::HashMap;
++
+ const MAX_STAMPS: usize = 32_768;
+ const MAX_ESTIMATED_MARKUP_BYTES: usize = 32 * 1024 * 1024;
+ const STAMP_MARKUP_BUDGET: usize = 1_024;
+@@ -58,23 +60,32 @@
+ 
+     let mut group = Group::new();
+     let mut any = false;
++    let mut gradients = HashMap::new();
+     for &[x, y, radius] in samples {
++        let radius_key = radius.to_bits();
+         let (x, y, radius) = (f64::from(x), f64::from(y), f64::from(radius));
+         // Keep touching discs as well: their antialiased fringe can contribute
+         // at the slice boundary. The radius already includes the fade fringe.
+         if page_slice.is_some_and(|(top, bottom)| y + radius < top || y - radius > bottom) {
+             continue;
+         }
+-        let inner = (radius - 1.0 / scale).max(0.0) / radius;
+-        let id = scene.definition::<Gradient>();
+-        let gradient = RadialGradient::new(&id)
+-            .cx(x)
+-            .cy(y)
+-            .r(radius)
+-            .add(Stop::new(0, color))
+-            .add(Stop::new(inner, color))
+-            .add(Stop::new(1, color).opacity(0));
+-        group = group.add(Definitions::new().add(gradient)).add(
++        let id = if let Some(&id) = gradients.get(&radius_key) {
++            id
++        } else {
++            let inner = (radius - 1.0 / scale).max(0.0) / radius;
++            let id = scene.definition::<Gradient>();
++            let gradient = RadialGradient::object_bounding_box(&id)
++                .cx(0.5)
++                .cy(0.5)
++                .r(0.5)
++                .add(Stop::new(0, color))
++                .add(Stop::new(inner, color))
++                .add(Stop::new(1, color).opacity(0));
++            group = group.add(Definitions::new().add(gradient));
++            gradients.insert(radius_key, id);
++            id
++        };
++        group = group.add(
+             Circle::new()
+                 .cx(x)
+                 .cy(y)
