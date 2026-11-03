@@ -77,6 +77,18 @@ impl DocumentSession {
             .map(|output| output.svg)
     }
 
+    /// Render for an axis-aligned output grid at exactly 2 pixels per page unit.
+    /// The caller is responsible for the final rasterization scale and transforms;
+    /// later zooming or scaling changes the experimental Marker2 fringe coverage.
+    pub fn render_svg_marker2_at_2x(
+        &self,
+        page_index: usize,
+        color_mode: &str,
+    ) -> Result<String, JsError> {
+        self.render_svg_output_with_marker2_scale(page_index, color_mode, Some(2))
+            .map(|output| output.svg)
+    }
+
     /// Render one visible page with the diagnostics from that rendering.
     pub fn render_svg_detailed(
         &self,
@@ -126,6 +138,18 @@ impl DocumentSession {
         color_mode: &str,
     ) -> Result<Vec<u8>, JsError> {
         self.render_pdf_output(page_indices, color_mode)
+            .map(|output| output.bytes)
+    }
+
+    /// Export pages for an axis-aligned output grid at exactly 2 pixels per page
+    /// unit. The caller must ensure the final PDF rasterization uses that grid;
+    /// zooming or other transforms change experimental Marker2 fringe coverage.
+    pub fn render_pdf_pages_marker2_at_2x(
+        &self,
+        page_indices: &[u32],
+        color_mode: &str,
+    ) -> Result<Vec<u8>, JsError> {
+        self.render_pdf_output_with_marker2_scale(page_indices, color_mode, Some(2))
             .map(|output| output.bytes)
     }
 
@@ -237,7 +261,21 @@ impl DocumentSession {
         page_index: usize,
         color_mode: &str,
     ) -> Result<sdocx::RenderedPage, JsError> {
-        self.render_svg_output_with_progress(page_index, color_mode, &mut |_| {})
+        self.render_svg_output_with_marker2_scale(page_index, color_mode, None)
+    }
+
+    fn render_svg_output_with_marker2_scale(
+        &self,
+        page_index: usize,
+        color_mode: &str,
+        marker2_output_scale: Option<u32>,
+    ) -> Result<sdocx::RenderedPage, JsError> {
+        self.render_svg_output_with_progress_and_marker2_scale(
+            page_index,
+            color_mode,
+            marker2_output_scale,
+            &mut |_| {},
+        )
     }
 
     fn render_svg_output_with_progress(
@@ -246,9 +284,22 @@ impl DocumentSession {
         color_mode: &str,
         observer: &mut dyn FnMut(sdocx::Progress),
     ) -> Result<sdocx::RenderedPage, JsError> {
+        self.render_svg_output_with_progress_and_marker2_scale(
+            page_index, color_mode, None, observer,
+        )
+    }
+
+    fn render_svg_output_with_progress_and_marker2_scale(
+        &self,
+        page_index: usize,
+        color_mode: &str,
+        marker2_output_scale: Option<u32>,
+        observer: &mut dyn FnMut(sdocx::Progress),
+    ) -> Result<sdocx::RenderedPage, JsError> {
         let parsed = self.parsed()?;
         let mut options = sdocx::RenderOptions::default();
         options.color_mode = parse_render_color_mode(color_mode)?;
+        options.marker2_output_scale = marker2_output_scale;
         self.text_cache
             .try_borrow_mut()
             .map_err(|_| JsError::new("document rendering is already in progress"))?
@@ -268,7 +319,21 @@ impl DocumentSession {
         page_indices: &[u32],
         color_mode: &str,
     ) -> Result<sdocx::PdfOutput, JsError> {
-        self.render_pdf_output_with_progress(page_indices, color_mode, &mut |_| {})
+        self.render_pdf_output_with_marker2_scale(page_indices, color_mode, None)
+    }
+
+    fn render_pdf_output_with_marker2_scale(
+        &self,
+        page_indices: &[u32],
+        color_mode: &str,
+        marker2_output_scale: Option<u32>,
+    ) -> Result<sdocx::PdfOutput, JsError> {
+        self.render_pdf_output_with_progress_and_marker2_scale(
+            page_indices,
+            color_mode,
+            marker2_output_scale,
+            &mut |_| {},
+        )
     }
 
     fn render_pdf_output_with_progress(
@@ -277,10 +342,26 @@ impl DocumentSession {
         color_mode: &str,
         observer: &mut dyn FnMut(sdocx::Progress),
     ) -> Result<sdocx::PdfOutput, JsError> {
+        self.render_pdf_output_with_progress_and_marker2_scale(
+            page_indices,
+            color_mode,
+            None,
+            observer,
+        )
+    }
+
+    fn render_pdf_output_with_progress_and_marker2_scale(
+        &self,
+        page_indices: &[u32],
+        color_mode: &str,
+        marker2_output_scale: Option<u32>,
+        observer: &mut dyn FnMut(sdocx::Progress),
+    ) -> Result<sdocx::PdfOutput, JsError> {
         let parsed = self.parsed()?;
         let layout = self.layout()?;
         let mut options = sdocx::RenderOptions::default();
         options.color_mode = parse_render_color_mode(color_mode)?;
+        options.marker2_output_scale = marker2_output_scale;
         let page_indices = page_indices
             .iter()
             .map(|&index| index as usize)
@@ -653,6 +734,77 @@ mod tests {
         session.layout = Some(sdocx::layout_document(&parsed.document));
         session.page_count = session.layout.as_ref().unwrap().pages.len();
         session
+    }
+
+    #[test]
+    fn marker2_2x_svg_api_passes_explicit_scale_to_core() {
+        let mut session = body_session("", "Roboto");
+        let parsed = session.parsed.as_mut().unwrap();
+        let mut style = serde_json::to_value(sdocx::StrokeStyle::default()).unwrap();
+        style["color_argb"] = serde_json::json!(0x80994422u32);
+        style["pen_size"] = serde_json::json!(2.0);
+        style["stroke_type_raw"] = serde_json::json!(0);
+        let stroke = sdocx::Stroke {
+            rendering: Some(serde_json::from_value(serde_json::json!({
+                "metadata": null,
+                "pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker2",
+                "advanced_settings": "",
+                "tool_type_raw": 2,
+                "properties": { "compressed": true, "replay_only": false, "stylus_channels": false, "eraser": false, "fixed_width": false, "millisecond_timestamps": false, "top_layer_pen": false, "alpha_lock": false, "binary_added": true, "generated": false, "fixed_opacity": false, "rainbow_effect": false, "straighten": false, "reveal_mode": false },
+                "style": style
+            })).unwrap()),
+            bbox: Default::default(),
+            points: vec![
+                sdocx::Point { x: 20., y: 20. },
+                sdocx::Point { x: 30., y: 20. },
+                sdocx::Point { x: 40., y: 30. },
+                sdocx::Point { x: 50., y: 30. },
+            ],
+            pressures: vec![1.; 4],
+            timestamps: vec![],
+            tilts: vec![],
+            orientations: vec![],
+            color: Some(sdocx::Color {
+                r: 0x99,
+                g: 0x44,
+                b: 0x22,
+            }),
+            pen_width: 2.,
+        };
+        parsed.document.pages[0].objects.push(stroke.into());
+        session.layout = Some(sdocx::layout_document(&parsed.document));
+        let parsed = session.parsed.as_ref().unwrap();
+        let mut options = sdocx::RenderOptions::default();
+        options.color_mode = sdocx::RenderColorMode::Light;
+        options.marker2_output_scale = Some(2);
+        let expected = sdocx::render_layout_page_svg_with_fonts(
+            &parsed.document,
+            session.layout.as_ref().unwrap(),
+            0,
+            &options,
+            &session.fonts,
+        )
+        .unwrap();
+        assert_eq!(
+            session.render_svg_marker2_at_2x(0, "light").unwrap(),
+            expected.svg
+        );
+        assert_ne!(session.render_svg(0, "light").unwrap(), expected.svg);
+        let expected_pdf = sdocx::render_layout_pages_pdf_detailed_with_cache(
+            &parsed.document,
+            session.layout.as_ref().unwrap(),
+            &[0],
+            &options,
+            &sdocx::PdfOptions::new(session.fonts.database()),
+            &session.fonts,
+            &mut sdocx::DocumentTextCache::default(),
+        )
+        .unwrap();
+        let pdf = session
+            .render_pdf_pages_marker2_at_2x(&[0], "light")
+            .unwrap();
+        assert_eq!(pdf, expected_pdf.bytes);
+        assert_ne!(pdf, session.render_pdf_pages(&[0], "light").unwrap());
     }
 
     #[test]
