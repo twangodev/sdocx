@@ -81,6 +81,19 @@ fn gate_and_fallback() {
         sdocx::render_document_pdf(&document(stroke), &options, &Default::default()).unwrap()
     };
     assert_eq!(pdf(alias), pdf(s.clone()));
+    // Exercise both public export aliases at the upper admitted width (35).
+    let mut upper = s.clone();
+    upper.rendering.as_mut().unwrap().style.pen_size = Some(35.);
+    upper.pen_width = 35.;
+    let mut upper_alias = upper.clone();
+    upper_alias.rendering.as_mut().unwrap().pen_name =
+        Some("com.samsung.android.sdk.pen.pen.preload.StraightHighlighter".into());
+    assert_ne!(svg(upper.clone(), Some(1)), svg(upper.clone(), None));
+    assert_eq!(
+        svg(upper_alias.clone(), Some(1)),
+        svg(upper.clone(), Some(1))
+    );
+    assert_eq!(pdf(upper_alias), pdf(upper));
     for scale in [0, 3, 5, u32::MAX] {
         assert_eq!(svg(s.clone(), Some(scale)), fallback);
     }
