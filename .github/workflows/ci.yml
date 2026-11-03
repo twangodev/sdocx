@@ -159,6 +159,9 @@ jobs:
         run: |
           wasm-pack build ../crates/sdocx-wasm --target nodejs --out-dir /tmp/sdocx-wasm-node
           node ../crates/sdocx-wasm/tests/pencil_translation.cjs /tmp/sdocx-wasm-node/sdocx_wasm.js
+          SDOCX_WATERCOLOR_ARTIFACTS=/tmp/sdocx-watercolor-test cargo test -p sdocx --all-features --test watercolor_raster public_source_profiles_match_native_rgb_and_svg_at_both_scales
+          node ../crates/sdocx-wasm/tests/watercolor_native.cjs /tmp/sdocx-wasm-node/sdocx_wasm.js ../conformance/watercolor-public-source-native.json /tmp/sdocx-watercolor-test
+          rm -rf /tmp/sdocx-watercolor-test
       - name: Build static application
         run: bun run build:app
       - uses: actions/upload-artifact@v4
