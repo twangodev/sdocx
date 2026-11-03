@@ -36,10 +36,8 @@ fn pixels(value: &Value) -> Vec<[u8; 4]> {
 #[test]
 #[ignore = "diagnostic: native drawable direction can depend on preceding strokes"]
 fn saved_scene_exposes_short_stroke_counterexample() {
-    let receipt: Value = serde_json::from_str(include_str!(
-        "assets/fountain-v14/scene-native.json"
-    ))
-    .unwrap();
+    let receipt: Value =
+        serde_json::from_str(include_str!("assets/fountain-v14/scene-native.json")).unwrap();
     let inputs: Value = serde_json::from_str(include_str!(
         "../../../conformance/fountain-v14-saved-scene-inputs.json"
     ))
@@ -91,10 +89,8 @@ fn saved_scene_exposes_short_stroke_counterexample() {
 
 #[test]
 fn saved_scene_receipts_preserve_ordered_native_frames() {
-    let receipt: Value = serde_json::from_str(include_str!(
-        "assets/fountain-v14/scene-native.json"
-    ))
-    .unwrap();
+    let receipt: Value =
+        serde_json::from_str(include_str!("assets/fountain-v14/scene-native.json")).unwrap();
     let sequence = [3, 6, 7, 18, 19, 28, 29, 30, 6];
     assert_eq!(receipt["cases"].as_object().unwrap().len(), 108);
     for origin in ["top", "bottom"] {
