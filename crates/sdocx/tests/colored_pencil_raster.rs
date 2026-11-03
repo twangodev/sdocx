@@ -13,6 +13,9 @@ use std::io::Read;
 #[path = "colored_pencil_raster/display.rs"]
 mod display;
 
+#[path = "colored_pencil_raster/lifecycle.rs"]
+mod lifecycle;
+
 fn bits(value: &Value) -> f32 {
     let raw = value.as_str().unwrap();
     f32::from_le_bytes(std::array::from_fn(|i| {

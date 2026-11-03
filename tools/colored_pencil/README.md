@@ -62,3 +62,15 @@ source hashes are not complete build provenance.
 MuPDF returns premultiplied samples: 56 frames differ from the original native
 premultiplied bytes, by at most one channel value. This measures intrinsic-size
 transport of synthetic host frames, not saved-note or device fidelity.
+
+## Lifecycle receipt recapture
+
+`lifecycle_capture.py`, `drawing_capture.py`, and `mixed_capture.py` write their
+`colored-pencil-v4-*-native.json` receipts under `conformance/`. After recapture,
+verify the script and dependency pins, native frame hashes, and recorded scope
+before copying the corresponding receipts into
+`crates/sdocx/tests/assets/colored-pencil/` and running the lifecycle tests. Keep
+the capture scripts unchanged so the receipt script hashes remain meaningful.
+These tests supply caller-retained native depth explicitly. The mixed Pencil2
+and ColoredPencil captures are joined through retained pixels; they do not
+establish automatic cache behavior or a shared native mixed-tool session.
