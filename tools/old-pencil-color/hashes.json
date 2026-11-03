@@ -1,0 +1,20 @@
+{
+  "conformance/old-pencil-color/alpha-post.rgba.zlib": "4b0c08f6446fe43564beb4556417a86e91f6b35c2979bb10a638f4e8e7dab9a9",
+  "conformance/old-pencil-color/alpha-pre.rgba.zlib": "69daf06215225f8c68b2d59d8ccea08b76c092346b600fd05f24b6871246ff79",
+  "conformance/old-pencil-color/alpha.vbo": "64604038dcbf4e457a7bbe078e1467b802cffefa7f3309d19870c95628f4715d",
+  "conformance/old-pencil-color/backdrop-post.rgba.zlib": "3c0187c5b321b6dcd33a85724d0db07ee66f45318979ffcc0a0c12bbe374b7b4",
+  "conformance/old-pencil-color/backdrop-pre.rgba.zlib": "6b397fbb5b44df3b91b840bf4de88cd29a8ee086e5d076c141e9102609619ace",
+  "conformance/old-pencil-color/backdrop.vbo": "64604038dcbf4e457a7bbe078e1467b802cffefa7f3309d19870c95628f4715d",
+  "conformance/old-pencil-color/red-post.rgba.zlib": "ce2aba8ed38f9853b8caade76feb87e164b9e906b85186c6516ee323750a830e",
+  "conformance/old-pencil-color/red-pre.rgba.zlib": "69daf06215225f8c68b2d59d8ccea08b76c092346b600fd05f24b6871246ff79",
+  "conformance/old-pencil-color/red.vbo": "64604038dcbf4e457a7bbe078e1467b802cffefa7f3309d19870c95628f4715d",
+  "conformance/old-pencil-color/varied-post.rgba.zlib": "7f8b15b328aaca70bbe2851db1f4dd1fde2c33ecb22768ea4ea8ba99054a431c",
+  "conformance/old-pencil-color/varied-pre.rgba.zlib": "49b2f5e7157f3565c317b8915c5808e4d3fe2a86257e71ebd6b82a32d02c73ad",
+  "conformance/old-pencil-color/varied.vbo": "f6fac0d846675be3aebb5a4c5115fefcc4518819824579b8a4716e4052367148",
+  "tools/old-pencil-color/capture-v17.py.gz": "5148b098e0eb00c602852dc5a1f55206b480107e9262a1022431d0ca4b9ff919",
+  "tools/old-pencil-color/extract_verify.py": "d59744d240e83dba40b1cf66b17d5f4a89dfe90653ba623338cf8dfe8386bc43",
+  "tools/old-pencil-color/local-inputs.json": "f41bce682e8b4dc3d1bd91dc7bfc5ffddb70daa11b59a10d076b5a3ef58fa9e8",
+  "tools/old-pencil-color/make_controls.py": "0bf37f23efb43fd1cbe3c87b6d3d6f5bafe92464766f6656cbe74c422de02c3f",
+  "tools/old-pencil-color/queue_contract.py": "87044d1b476f24041c0b9f5c00a4367e490ba40c727dba677c708676e44153cf",
+  "tools/old-pencil-color/receipt.json": "cc411f16d64a5cc965b24ea8d8f5c6ee75934f8d384de345ec469f9359614f38"
+}

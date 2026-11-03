@@ -1,0 +1,23 @@
+--- translation_only.py
++++ stamps.py
+@@ -1239,7 +1239,19 @@
+         if target.get("object_name") and target.get("framebuffer_status")==0x8CD5 and target.get("width",0)>0 and target.get("height",0)>0 and query_error==0:
+             pre=read_target_rgba(target["width"],target["height"])
+         clear_events=[dict(event) for event in adapter.gl_calls if event.get("call") in ("glClear","glClearColor")]
+-        gl_draw_instanced(*values)
++        attrib = next(item for item in vertex_input_snapshot["enabled_attribute_arrays"] if item["index"] == 1)
++        gl_bind = ip.cfunc(adapter.gles.gl, "glBindBuffer", None, [C.c_uint,C.c_uint])
++        gl_ptr = ip.cfunc(adapter.gles.gl, "glVertexAttribPointer", None, [C.c_uint,C.c_int,C.c_uint,C.c_ubyte,C.c_int,C.c_void_p])
++        gl_bind(0x8892, attrib["buffer_object"])
++        history = []
++        for index in range(values[3]):
++            gl_ptr(1, 3, 0x1406, 0, 16, C.c_void_p(index * 16))
++            gl_ptr(2, 1, 0x1406, 0, 16, C.c_void_p(index * 16 + 12))
++            gl_draw_instanced(values[0], values[1], values[2], 1)
++            pixel = (C.c_ubyte * 4)()
++            gl_read_pixels(168, 108, 1, 1, 0x1908, 0x1401, C.cast(pixel, C.c_void_p))
++            history.append(list(pixel))
++        print("STAMP_HISTORY", history)
+         draw_error=int(adapter.gles.f["glGetError"]())
+         post=None
+         post_target=attached_color_target()

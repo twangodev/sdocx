@@ -1,0 +1,635 @@
+{
+  "note": "Inventory pins available local helper and native inputs; it is not a proof that this list is a complete dependency closure. Unicorn, system tools, Mesa and host libc also required.",
+  "files": [
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/conformance/fountain_native.py",
+      "sha256": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "bytes": 14915
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/conformance/oblique_canvas_native.py",
+      "sha256": "30c96ccf3fbfc7a969b9b443fae2aae429af67c35ff81a15a22eeeabaa24094e",
+      "bytes": 18032
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/conformance/elf_plt.py",
+      "sha256": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "bytes": 10457
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/conformance/inkpen_paint_native.py",
+      "sha256": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+      "bytes": 19999
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/conformance/marker3_paint_scale_native.py",
+      "sha256": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+      "bytes": 49438
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/conformance/native_drawing_runtime.py",
+      "sha256": "8cfdb8ca4b39518856460246ae829957b65f94afbbd002c63ec447b409a4d9f5",
+      "bytes": 13029
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/conformance/airbrush_texture_native.py",
+      "sha256": "6b33ed37a316f76908821e9069a852b34e483ac0da18e6b04e3357a889e59ea3",
+      "bytes": 24799
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/conformance/airbrush_saved_native.py",
+      "sha256": "c6ec4e94b7a88d4186947f779ad78106ff382a8bde35d4d57e29f8f3dbbb10d4",
+      "bytes": 28594
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/runtime-inputs/libc++_shared.so",
+      "sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+      "bytes": 1292904
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/runtime-inputs/libSPenRenderer.so",
+      "sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "bytes": 438784
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/runtime-inputs/libSPenAirBrushPen.so",
+      "sha256": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "bytes": 214032
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/runtime-inputs/libSPenPenCommon.so",
+      "sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "bytes": 491904
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/runtime-inputs/libSPenCxx.so",
+      "sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+      "bytes": 1292904
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/runtime-inputs/libSPenBase.so",
+      "sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "bytes": 980664
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/runtime-inputs/libSPenFountainPen.so",
+      "sha256": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "bytes": 868912
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/runtime-inputs/libSPenMarker3.so",
+      "sha256": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+      "bytes": 351824
+    },
+    {
+      "path": "tmp/vector-parity-plan/montblanc-drawing-capture-root-v2/runtime-inputs/libSPenGraphics.so",
+      "sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "bytes": 871768
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenONNXRuntime.so",
+      "sha256": "af67ea85f72b34578176be06bb3d1dd62366a1091146e637a6b873d37f9f1294",
+      "bytes": 13086080
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenWDoc.so",
+      "sha256": "1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6",
+      "bytes": 1080976
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenEngine.so",
+      "sha256": "79a8024586ce58ceeca613ddfce159e92274c597c5a863dd0aaf3e8e32e1b505",
+      "bytes": 1621656
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenEraser.so",
+      "sha256": "b95ab0451ec8f7cb22ed4a83b1b6e678e441c8486098cb03702ca5a7031eeffb",
+      "bytes": 140760
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenTextLineGeneration.so",
+      "sha256": "436e30a478e4b11cef59436bfbc456702ec5c0300d5ea884dca2648dda4e6ae5",
+      "bytes": 823464
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenInkPen.so",
+      "sha256": "939a7c719838306d693f96701994486b03f5c7eea35f16f25c6a89d84daba401",
+      "bytes": 267048
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libc++_shared.so",
+      "sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+      "bytes": 1292904
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so",
+      "sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "bytes": 438784
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenLaserPen.so",
+      "sha256": "3d94380d106ee9b46562b3e8cc9aef75ac8def105d2e3af09db06606d94fda04",
+      "bytes": 198360
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenMarker2.so",
+      "sha256": "f1b2ceea921baac78b722cbd5423732f42d7bec19ccb63d428cf429582412269",
+      "bytes": 185368
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerV10.so",
+      "sha256": "ddf6e0ce88f06dbe4a1c3b4810aab685659fdbdc1b0eb4b160791ff5f233456f",
+      "bytes": 594400
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenMarker4.so",
+      "sha256": "23b29d7baa2a766909d942dffb50ce4191790d5ed3537648fc0120cdb75fddff",
+      "bytes": 527424
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenWaterColorBrush.so",
+      "sha256": "ae17e7e63abdc0f5bac9ef4d78676d096779f3586f41c88b029dacfa157020ea",
+      "bytes": 476088
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenAirBrushPen.so",
+      "sha256": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "bytes": 214032
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBeautify.so",
+      "sha256": "987cd9b5a11ac48c08db40b1b9a7a884b7417ff19463dcdfa87bc33aa0f462dc",
+      "bytes": 854992
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenSnet.so",
+      "sha256": "bf243f54844a93e42772251feb16b33e14cad27d69529e62db24c4388e5c66b2",
+      "bytes": 209960
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenSelectPen.so",
+      "sha256": "61d28437e759c1a5bdc7c34b56d904ed6362de558d0ec1551d28299d5e7cd66e",
+      "bytes": 129944
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPluginFW.so",
+      "sha256": "6b58cf090135cbdeef0f28e9ac07a64441000480b29c41fa115ba035b628f153",
+      "bytes": 62656
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerMathCommon.so",
+      "sha256": "1c2a92ee06c3314a10d82a347143cada3a171c44b9a0782d6353863df38b2385",
+      "bytes": 44152
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerMathRecognition.so",
+      "sha256": "ecc78e41bf1b9172e3a2c8fd7b1f27be8aca954733398b91f8e257fe7b6baf3a",
+      "bytes": 1191184
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenHandwritingConverter.so",
+      "sha256": "015c33d42f1c3b35095b44de224021c715c1fb64fa1b89a2493d90f158cea0f4",
+      "bytes": 782912
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenTextLineCorrection.so",
+      "sha256": "f7811126697866f76f1ba02978c74de027e5a4bf1dd74ffd1def3e57220b746f",
+      "bytes": 538800
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenHandwritingGeneration.so",
+      "sha256": "dc4e12bf46da8aca6cbd9b01391f147a81a0c57d55a2e2491fe3595621cde630",
+      "bytes": 221056
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenSDoc.so",
+      "sha256": "e1b2aa314e69ea5ba284aafec4326967075c0f2ec878cb2265b96abfd817de10",
+      "bytes": 1078728
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenUuid.so",
+      "sha256": "2f489b54e0a6376c0f74c68b335bc1459636b7677df2f1974e21bf13f1df8926",
+      "bytes": 41624
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPencil.so",
+      "sha256": "39eb599262676ca5ec67b86e702b43474a04e9ca9677072f247b131222189df9",
+      "bytes": 228488
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizer.so",
+      "sha256": "7dd25522867bb182893d29e3101becf2df75787b3046de137c94c463c7abb363",
+      "bytes": 595968
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenMontblancCalligraphyPen.so",
+      "sha256": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42",
+      "bytes": 166320
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenDefaultPen.so",
+      "sha256": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+      "bytes": 118704
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenSelectPen2.so",
+      "sha256": "a271e4bded2bddea94e1adbfeb9f4d7b500d7b32274899f6804db51cafead7c7",
+      "bytes": 108176
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerMathRender.so",
+      "sha256": "83db53a87f272f6782742e53341539e3a61d487c945872d97de050d42a28bc98",
+      "bytes": 959520
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so",
+      "sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "bytes": 491904
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPencil3.so",
+      "sha256": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+      "bytes": 1151976
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenHandwritingGenerationLayoutHelper.so",
+      "sha256": "9a74cd24c042a44f9765ac4ced70c4a5124d0010b8ec6606fccbb0c0dd955ce0",
+      "bytes": 53872
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenHwrLetterBeautifier.so",
+      "sha256": "9e8e798c88f36f2990b9eefa92a3f00c670e5eb8e50f6c5c4ae8cf39ab9c3fe3",
+      "bytes": 267360
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPdfiumB.so",
+      "sha256": "4bd55ef116541205cb8aaf04812a317fe11911c0ff5a5d44526d98d6b0e48854",
+      "bytes": 6670744
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenInkPen2.so",
+      "sha256": "61806b1a7b11c89d0b9c8fa620ac7407d21eda9ac7555c280dbeb38076501c7c",
+      "bytes": 430400
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerGesture.so",
+      "sha256": "8026ed0cf7bf151806bd7679fb0231f22805d14d12ec1e2c97b87bcc8787143b",
+      "bytes": 86784
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenCxx.so",
+      "sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+      "bytes": 1292904
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenObjectControl.so",
+      "sha256": "3211b70ad105e285b57aaa085e2bcd543f197238d702f9233aedea1c7caa1aea",
+      "bytes": 1503872
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenMontblancFountainPen.so",
+      "sha256": "4c808cf7a1c3685e6c99e654bb8132e3ad95db4d28fef931f6936bed3d5b8350",
+      "bytes": 213496
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBase.so",
+      "sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "bytes": 980664
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so",
+      "sha256": "cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9",
+      "bytes": 1010960
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so",
+      "sha256": "42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d",
+      "bytes": 2743512
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenInit.so",
+      "sha256": "f0a90191d5a182dfafd560b97cf4458a038f656d76c462673b008fae0440175b",
+      "bytes": 58856
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPdf.so",
+      "sha256": "cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04",
+      "bytes": 725448
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenSimpleBrush.so",
+      "sha256": "093c8be1daa25beeb2f93fe614d10032c07a658fae921eb5cf09535f985d3032",
+      "bytes": 155616
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerShape.so",
+      "sha256": "e5530f8193e58c9e51d5f44ccf7c4cf7150f65d1511a7070c8067db8e66d3f32",
+      "bytes": 1196520
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPdfViewer.so",
+      "sha256": "e910eed95ce0f519f88cdc95b64ffa77b4593157e5c3a44ff08023b86395ac5d",
+      "bytes": 783104
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so",
+      "sha256": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "bytes": 5942864
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenHwuiCompat.so",
+      "sha256": "880bda2bc2c4682ce8bff4fdc1a54f1d4604fb874a240f6fd4ce520c0656ef47",
+      "bytes": 37536
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenTapePen.so",
+      "sha256": "ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07",
+      "bytes": 300896
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenLibgif.so",
+      "sha256": "6328d17c4b6fd0147d25e0f5c5a776f85b9dabf68528a46682122b20d84d3ed8",
+      "bytes": 29840
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPaintingCompat.so",
+      "sha256": "fb2f8cd46c45cc4b6ef79f7e7d45c7eac9f12583bfc70ff48e1244f9c861d4a8",
+      "bytes": 712080
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so",
+      "sha256": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "bytes": 868912
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenXmlSerializer.so",
+      "sha256": "7be7af380ae378f91c0e565dcc022479c3f87aa965a5190f245f4d006cb6f36a",
+      "bytes": 1573600
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenChineseBrush.so",
+      "sha256": "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5",
+      "bytes": 293912
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenGestureModel.so",
+      "sha256": "bb435fb0ff23d51bfc1e0b3be045ec1fd2bfa72f78b4dc757394c0698455e008",
+      "bytes": 76768
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenLibpng.so",
+      "sha256": "898abcc6ddbe3a4ad7e076484df666b732913db95a7abc7d6e99bfd835f555eb",
+      "bytes": 197064
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenSmartWriting.so",
+      "sha256": "1ef169765d6781ae7c4896b6550229d52c2e593b72e5b4f062ea93489c7fd46d",
+      "bytes": 327064
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenWordDocCoedit.so",
+      "sha256": "82a73d24732efe4f5c3c385b9fcb0ccfb05970507ba50039d252c2abb7f0c2af",
+      "bytes": 429104
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerMathLatex.so",
+      "sha256": "1bae9d3a7a50da7952d6ceeca39d93da93ad79f1cb7a64b08518eb1674b4bb41",
+      "bytes": 660424
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so",
+      "sha256": "46753f76c8c007e78777e8fe7de7b57202f966f9494d4fba2b675c3540e35dbd",
+      "bytes": 1109568
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenTFLite.so",
+      "sha256": "d7b442c3692b8888994daa6a84c1074df2b82aa766e005a7e010f852058d15fb",
+      "bytes": 2947992
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerMathModel.so",
+      "sha256": "98ee347c8072ae120a10a3f245e591de797b1e8eea8b038671f33856b3d8687f",
+      "bytes": 283600
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenColoredPencil.so",
+      "sha256": "39078a41b0687941c4e22b18df36addb1cda093303e26df844078474d3ca9504",
+      "bytes": 235008
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenView.so",
+      "sha256": "c4a17e4232c2074d3833604974d75ac961fab4d9651949bb2552704c86621dc8",
+      "bytes": 676840
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerMathLineSplitter.so",
+      "sha256": "d76b4943330af74d076710df01ef3ae156ebf9f9231ab51c5895504de94ba9b3",
+      "bytes": 411672
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecogUIFeature.so",
+      "sha256": "53ecf90eb45d0a09ecaebb367cf75b3ad327b34386b8a0ca674b0247fa47f276",
+      "bytes": 2061368
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPaintingCore.so",
+      "sha256": "56b386228e9b4217a08e16afd7d8f65482bc6e66e4c76f0951a640e1a703c3fa",
+      "bytes": 726712
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenMarker3.so",
+      "sha256": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+      "bytes": 351824
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenMarker.so",
+      "sha256": "f874166ba82cb4491b2551c9ea02c5891787a755167e67008234d50c8ba6e7a6",
+      "bytes": 442352
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerDocument.so",
+      "sha256": "a596964b96a1a990c40413e8c8acb5c8755c6bb7aaf9822a77e1f6f5446297f8",
+      "bytes": 531720
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPDFDocumentAnalyzer.so",
+      "sha256": "9571ff56a2746bb72ad78435a4e384547fb34e631698d7311a5a60b1322ffefd",
+      "bytes": 893064
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenCrayon2.so",
+      "sha256": "4e9de0e699eb3781e7cdb17d6816370ce3e2f75cf6fe2087fada50cfa816739e",
+      "bytes": 216232
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenZlib.so",
+      "sha256": "7796339a9c41c3218bef47c17bc1573c544bc431a8d312da390dce40c64adcd7",
+      "bytes": 23896
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenHwrData.so",
+      "sha256": "25dfcf1c222936c2e185059f4a7504e5b81219b9df02a377019e85cad8afde10",
+      "bytes": 290480
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenSmudge.so",
+      "sha256": "be57058d0ccdce51004132332a1cf5b84f6432b759350e9f23db3d70b3bc6926",
+      "bytes": 136280
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenHwrBeautifier.so",
+      "sha256": "09114a8b087bf369f23bbb8873534357eb98d70a0418efc0c9bc63ab11bb232b",
+      "bytes": 446280
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenInference.so",
+      "sha256": "fea44502bcd3735d4f9911cb60531affe5c67402bdd2a110d263996693768c59",
+      "bytes": 63008
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenMagicPen.so",
+      "sha256": "e4927da583e96142d072bb3edd977334aa34a58bb723ab1f9aaf531f3bd670a2",
+      "bytes": 258984
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenGraphics.so",
+      "sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "bytes": 871768
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerMathSolver.so",
+      "sha256": "ea5bbeb219acb045531260ee2b7c7b8213090aad2d0fdc691382c555ab9ed777",
+      "bytes": 685456
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenLibjpeg.so",
+      "sha256": "3462bdf4f741615a2816c149417cd34dacc08a109ac03c1d900a30932654237f",
+      "bytes": 293504
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenOilBrush3.so",
+      "sha256": "b6402638f43bebdb8aa95ed33617820ef923a19dbac8475ef980204cdfc419d4",
+      "bytes": 330928
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so",
+      "sha256": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "bytes": 813192
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenObliquePen.so",
+      "sha256": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+      "bytes": 444312
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so",
+      "sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "bytes": 4914280
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so",
+      "sha256": "27324ca3807f07e0c1d0647b23eb9af1296762a8c9d892ee486f37b1eb9543f0",
+      "bytes": 1135632
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenDataClustering.so",
+      "sha256": "880d5687372bf8f47b39f22e0f9ee72008824e4ee5580785fcc594a7503ac00d",
+      "bytes": 48920
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPltData.so",
+      "sha256": "86ad9bab5cf7c1dd6bf884454705fe5df5cea60dd4a52e99c183f584b1b51acc",
+      "bytes": 86984
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenBrushPen.so",
+      "sha256": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce",
+      "bytes": 627136
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenRecognizerMathVRecognition.so",
+      "sha256": "79956b0e5474e39f1349c9d8d7fb01baa8a1a23791537109393a82788831658e",
+      "bytes": 252648
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPencil2.so",
+      "sha256": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f",
+      "bytes": 773592
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenContent.so",
+      "sha256": "8b263185a6dfd89239cd0279bf68e4e95d887d42cc83ae5cc6fd94a4e703c24c",
+      "bytes": 101304
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenText.so",
+      "sha256": "5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b",
+      "bytes": 1006656
+    },
+    {
+      "path": "scratch/apk-analysis-native/arm64-v8a/libSPenPredictor.so",
+      "sha256": "247131bbe3400488631cc2ad50796289839d256488569fc1f5d9abb1dffb2c6d",
+      "bytes": 1087584
+    },
+    {
+      "path": "tools/montblanc/extended-paint/conformance/fountain_native.py",
+      "sha256": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "bytes": 14915
+    },
+    {
+      "path": "tools/montblanc/extended-paint/conformance/oblique_canvas_native.py",
+      "sha256": "30c96ccf3fbfc7a969b9b443fae2aae429af67c35ff81a15a22eeeabaa24094e",
+      "bytes": 18032
+    },
+    {
+      "path": "tools/montblanc/extended-paint/conformance/elf_plt.py",
+      "sha256": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "bytes": 10457
+    },
+    {
+      "path": "tools/montblanc/extended-paint/conformance/inkpen_paint_native.py",
+      "sha256": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+      "bytes": 19999
+    },
+    {
+      "path": "tools/montblanc/extended-paint/conformance/marker3_paint_scale_native.py",
+      "sha256": "9b1eafd3dd07d1b491148d2635aad004c83ac401416f3c8a9c62b1e60099b7a8",
+      "bytes": 49438
+    },
+    {
+      "path": "tools/montblanc/extended-paint/conformance/native_drawing_runtime.py",
+      "sha256": "8cfdb8ca4b39518856460246ae829957b65f94afbbd002c63ec447b409a4d9f5",
+      "bytes": 13029
+    },
+    {
+      "path": "tools/montblanc/extended-paint/conformance/airbrush_texture_native.py",
+      "sha256": "6b33ed37a316f76908821e9069a852b34e483ac0da18e6b04e3357a889e59ea3",
+      "bytes": 24799
+    },
+    {
+      "path": "tools/montblanc/extended-paint/conformance/airbrush_saved_native.py",
+      "sha256": "c6ec4e94b7a88d4186947f779ad78106ff382a8bde35d4d57e29f8f3dbbb10d4",
+      "bytes": 28594
+    },
+    {
+      "path": "scratch/vector-parity-plan/brushpen-full-queue/full_queue_actual_canvas.py",
+      "sha256": "1c1c8d98c5dbd3d492d13dc38de47085206ad4db8d3351ccce9a303a153d6703",
+      "bytes": 75678
+    },
+    {
+      "path": "scratch/vector-parity-plan/brushpen-full-queue/actual-canvas-evidence.json",
+      "sha256": "38778d8184a32402bc8fb40c735fb27f29dde1fb9937c3cfa868ccb8be28b712",
+      "bytes": 899085
+    },
+    {
+      "path": "scratch/apk-input/samsung-notes-4.4.45.37.apk",
+      "sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667",
+      "bytes": 206721727
+    },
+    {
+      "path": "scratch/apk-output/samsung-notes-4.4.45.37/lib/arm64-v8a/libSPenPencil.so",
+      "sha256": "39eb599262676ca5ec67b86e702b43474a04e9ca9677072f247b131222189df9",
+      "bytes": 228488
+    }
+  ]
+}

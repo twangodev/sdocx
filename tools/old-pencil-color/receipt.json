@@ -1,0 +1,281 @@
+{
+  "scope": "Synthetic host Mesa capture; backdrop explicitly injected before native draw; full-frame comparison in top-origin row order. Device and saved note not verified.",
+  "cases": [
+    {
+      "case": "red",
+      "input": {
+        "color_argb": "0xffdd4411",
+        "curve_enabled": true,
+        "orientation": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pen_size_f32": 2.0,
+        "points": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            10.0,
+            0.0
+          ],
+          [
+            20.0,
+            0.0
+          ],
+          [
+            30.0,
+            10.0
+          ]
+        ],
+        "pressure": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "stroke_type": 0,
+        "tilt": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "timestamps": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 2
+      },
+      "draw": {
+        "call": "glDrawArraysInstanced",
+        "count": 4,
+        "first": 0,
+        "instance_count": 47,
+        "mode": 5
+      },
+      "pre_sha256_gl_bottom_origin": "788ae0147bdf979a6575938ca2d7d4403788588f7be2010f03776c968fd1ab49",
+      "post_sha256_gl_bottom_origin": "52c26d114334edb431eb674255e901dd9c413fa13efb8bc2d6d61273ca423494",
+      "gl_errors": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "vbo_sha256": "64604038dcbf4e457a7bbe078e1467b802cffefa7f3309d19870c95628f4715d",
+      "profile_pixel_mismatches": 0
+    },
+    {
+      "case": "alpha",
+      "input": {
+        "color_argb": "0x80dd4411",
+        "curve_enabled": true,
+        "orientation": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pen_size_f32": 2.0,
+        "points": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            10.0,
+            0.0
+          ],
+          [
+            20.0,
+            0.0
+          ],
+          [
+            30.0,
+            10.0
+          ]
+        ],
+        "pressure": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "stroke_type": 0,
+        "tilt": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "timestamps": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 2
+      },
+      "draw": {
+        "call": "glDrawArraysInstanced",
+        "count": 4,
+        "first": 0,
+        "instance_count": 47,
+        "mode": 5
+      },
+      "pre_sha256_gl_bottom_origin": "788ae0147bdf979a6575938ca2d7d4403788588f7be2010f03776c968fd1ab49",
+      "post_sha256_gl_bottom_origin": "d91d0715c0ddce7d273f4bf34a84ad18627d2d3316a3d79d4f053d3878e1c0f8",
+      "gl_errors": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "vbo_sha256": "64604038dcbf4e457a7bbe078e1467b802cffefa7f3309d19870c95628f4715d",
+      "profile_pixel_mismatches": 0
+    },
+    {
+      "case": "backdrop",
+      "input": {
+        "color_argb": "0x80dd4411",
+        "curve_enabled": true,
+        "orientation": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pen_size_f32": 2.0,
+        "points": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            10.0,
+            0.0
+          ],
+          [
+            20.0,
+            0.0
+          ],
+          [
+            30.0,
+            10.0
+          ]
+        ],
+        "pressure": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "stroke_type": 0,
+        "tilt": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "timestamps": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 2
+      },
+      "draw": {
+        "call": "glDrawArraysInstanced",
+        "count": 4,
+        "first": 0,
+        "instance_count": 47,
+        "mode": 5
+      },
+      "pre_sha256_gl_bottom_origin": "8f83a8d17c98087570927563190cf7088c884ce10f067c1bc4a62ef0fcf8fb12",
+      "post_sha256_gl_bottom_origin": "0819610f9332d49e3024f8d8c647c42e11e7ffef611636a60680f39a79657f36",
+      "gl_errors": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "vbo_sha256": "64604038dcbf4e457a7bbe078e1467b802cffefa7f3309d19870c95628f4715d",
+      "profile_pixel_mismatches": 0
+    },
+    {
+      "case": "varied",
+      "input": {
+        "color_argb": "0x80dd4411",
+        "curve_enabled": true,
+        "orientation": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pen_size_f32": 2.0,
+        "points": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            10.0,
+            0.0
+          ],
+          [
+            20.0,
+            0.0
+          ],
+          [
+            30.0,
+            10.0
+          ]
+        ],
+        "pressure": [
+          0.2,
+          0.4,
+          0.7,
+          1.0
+        ],
+        "stroke_type": 0,
+        "tilt": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "timestamps": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 2
+      },
+      "draw": {
+        "call": "glDrawArraysInstanced",
+        "count": 4,
+        "first": 0,
+        "instance_count": 42,
+        "mode": 5
+      },
+      "pre_sha256_gl_bottom_origin": "e8cd122936cb856e0165931cdf763ac27c3e62d52e200ee379caea65d252323c",
+      "post_sha256_gl_bottom_origin": "92d473d88fec106c068f6bb1f126f62ab1851815dc5df59a4b7ba54e8eb24434",
+      "gl_errors": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "vbo_sha256": "f6fac0d846675be3aebb5a4c5115fefcc4518819824579b8a4716e4052367148",
+      "profile_pixel_mismatches": 0
+    }
+  ]
+}

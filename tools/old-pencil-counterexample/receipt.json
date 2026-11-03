@@ -1,0 +1,28 @@
+{
+  "translation_only": {
+    "native_capture_sha256": "ff422dd81a89744531eff543cc0e5782cb91b6d6cf1a7709c755819783f1cd62",
+    "capture_script_sha256": "0b6049f2d0c32a668e31f19d650b080c2c268e7a216dfdc855e29106d3e87ba5",
+    "gl_errors": {
+      "gl_error_after_native_draw": 0,
+      "gl_error_after_post_readback": 0,
+      "gl_error_after_queries": 0,
+      "gl_error_before_queries": 0
+    },
+    "vbo_sha256": "7aed41b4f1be14f63cf75b7f01a72b261d3141bd20c4ca799121d9696a6d5ddf",
+    "pre_sha256": "e8cd122936cb856e0165931cdf763ac27c3e62d52e200ee379caea65d252323c",
+    "post_sha256": "7601f1388bfacec48321229be6b6d38a4b8cb0eb9fdf0cf6f4c81dfa1626e162"
+  },
+  "offset125": {
+    "native_capture_sha256": "5dc01d974cf883617638df54096897af065dc75b9935e96b9a558d4be04f90c3",
+    "capture_script_sha256": "7f8f17450e93d88ebbb31d85603559ad5426bc4dbe3f9fa65f8631c9541ff7bb",
+    "gl_errors": {
+      "gl_error_after_native_draw": 0,
+      "gl_error_after_post_readback": 0,
+      "gl_error_after_queries": 0,
+      "gl_error_before_queries": 0
+    },
+    "vbo_sha256": "c45f9b1de5e46f5ab47d1016407ee8ec5fc1a1bfe97cee7375919b3a9932bb5b",
+    "pre_sha256": "e8cd122936cb856e0165931cdf763ac27c3e62d52e200ee379caea65d252323c",
+    "post_sha256": "a8b67db78d8300cbc5fb6e2d3d04cbff99329c06e2023bebafd0d686d65cf4af"
+  }
+}

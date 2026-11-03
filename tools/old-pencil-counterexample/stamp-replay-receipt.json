@@ -1,0 +1,104 @@
+{
+  "stamps": {
+    "script_sha256": "140ade44d37aebdc1a06548f7b8bf46c3b9892618adaeb12e9b348c870dad401",
+    "native_json_sha256": "c8772b6095daa1e6179a502f2b7f6faf237251bc61338d7df88a89e0d1adbdf6",
+    "stdout_sha256": "c003ab43af24fe493a21a918ae02503e9d09ce8a1a1e5e664df13db6a8278915",
+    "pixel_gl_xy": [
+      168,
+      108
+    ],
+    "gl_errors": {
+      "gl_error_after_native_draw": 0,
+      "gl_error_after_post_readback": 0,
+      "gl_error_after_queries": 0,
+      "gl_error_before_queries": 0
+    },
+    "native_draw_count": 42,
+    "replay_procedure": "Per instance: attribute 1 uses 3 floats at offset 16*i; attribute 2 uses 1 float at offset 16*i+12; each divisor remains 1; issue glDrawArraysInstanced with instance count 1 and read pixel.",
+    "original_capture_sha256": "ff422dd81a89744531eff543cc0e5782cb91b6d6cf1a7709c755819783f1cd62",
+    "original_post_raw_sha256": "2a09939d9f024df8f2f4ce474e5a5f5cc8106d9acf4eace6a33140d8b6e58916",
+    "replay_post_raw_sha256": "2a09939d9f024df8f2f4ce474e5a5f5cc8106d9acf4eace6a33140d8b6e58916",
+    "whole_frame_equal": true,
+    "original_pixel": [
+      136,
+      85,
+      85,
+      255
+    ],
+    "replay_pixel": [
+      136,
+      85,
+      85,
+      255
+    ],
+    "stamp_history_sha256": "53e648e11e246cc25e4a4a8a244296d85f2f032faefdc07e1aa6080136c7038c",
+    "pixel_initial": [
+      51,
+      102,
+      153,
+      255
+    ],
+    "pixel_changes": [
+      {
+        "instance": 35,
+        "pixel": [
+          136,
+          85,
+          85,
+          255
+        ]
+      }
+    ]
+  },
+  "stamps125": {
+    "script_sha256": "4842c017906ca7f29b723072df5757e0d4af80f104f1dd296aeaa6da2337e3d6",
+    "native_json_sha256": "0797df6b8a337e23b115761510c72ed2c84c47628a8dbd40692324ca45696aaf",
+    "stdout_sha256": "cb16518d3e5f9f7a8e8258b9a578ffe097e9bb5fd40f7c0dc22a76e9ed9dbce0",
+    "pixel_gl_xy": [
+      167,
+      107
+    ],
+    "gl_errors": {
+      "gl_error_after_native_draw": 0,
+      "gl_error_after_post_readback": 0,
+      "gl_error_after_queries": 0,
+      "gl_error_before_queries": 0
+    },
+    "native_draw_count": 42,
+    "replay_procedure": "Per instance: attribute 1 uses 3 floats at offset 16*i; attribute 2 uses 1 float at offset 16*i+12; each divisor remains 1; issue glDrawArraysInstanced with instance count 1 and read pixel.",
+    "original_capture_sha256": "5dc01d974cf883617638df54096897af065dc75b9935e96b9a558d4be04f90c3",
+    "original_post_raw_sha256": "d50ccf5dfa36247da6c114155ef4c416c26b5f30417ce1cac76ee63d1987608f",
+    "replay_post_raw_sha256": "d50ccf5dfa36247da6c114155ef4c416c26b5f30417ce1cac76ee63d1987608f",
+    "whole_frame_equal": true,
+    "original_pixel": [
+      62,
+      100,
+      144,
+      255
+    ],
+    "replay_pixel": [
+      62,
+      100,
+      144,
+      255
+    ],
+    "stamp_history_sha256": "9b7459ef23c56131e40012aa8c1845aac6dcdada19b99d78e7f36e23afe7ad68",
+    "pixel_initial": [
+      51,
+      102,
+      153,
+      255
+    ],
+    "pixel_changes": [
+      {
+        "instance": 34,
+        "pixel": [
+          62,
+          100,
+          144,
+          255
+        ]
+      }
+    ]
+  }
+}

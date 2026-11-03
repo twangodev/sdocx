@@ -1,0 +1,20 @@
+--- varied.py
++++ offset125.py
+@@ -2722,7 +2722,7 @@
+         call("SPen::ObjectStroke::SetColor(unsigned int)", [obj, 0x80DD4411])
+         call("SPen::ObjectStroke::SetCurveEnabled(bool)", [obj, 1])
+         call("SPen::ObjectBase::SetVisibility(bool)", [obj, 1])
+-        points = [(0.0, 0.0), (10.0, 0.0), (20.0, 0.0), (30.0, 10.0)]
++        points = [(143.125, 102.125), (153.125, 102.125), (163.125, 102.125), (173.125, 112.125)]
+         timestamps = [10, 20, 30, 40]
+         tilt = [0.0] * 4; orientation = [0.0] * 4
+         pts, prs, ts, tl, ori = (p.alloc(n) for n in (32, 16, 16, 16, 16))
+@@ -3098,7 +3098,7 @@
+                         raise RuntimeError("SetPenData task differs from captured size/color inputs")
+                 if sequence == 5:
+                     rect = struct.unpack("<4f", bytes(p.u.mem_read(task + 40, 16)))
+-                    if rect != (-2.0, -2.0, 36.0, 16.0):
++                    if rect != (141.0, 100.0, 180.0, 119.0):
+                         raise RuntimeError(f"SetRect task differs from captured native bounds: {rect}")
+                 if sequence == 6:
+                     if (p.get(task + 40, "Q")[0] == 0 or p.get(task + 48, "Q")[0] != 0):
