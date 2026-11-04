@@ -126,7 +126,7 @@
       ],
       "nonzero_alpha": 4312,
       "crop": {
-        "file": "simplebrush-2x-fraction32.rgba",
+        "file": "simplebrush-2x-fraction32.rgba", "storage": {"format": "rgba-palette-runs-v1", "container": "conformance/simplebrush-native-crop-runs.json", "case": "conformance/simplebrush-2x-fraction32.rgba", "path_role": "materialized legacy path"},
         "sha256": "d71b0b20455de565adf4961a7948dfbc83fe31cc0483da45401c20ca2d60e20b"
       },
       "svg_alpha_l1_generic_one_two": [
@@ -212,7 +212,7 @@
       ],
       "nonzero_alpha": 5789,
       "crop": {
-        "file": "simplebrush-2x-reverse32.rgba",
+        "file": "simplebrush-2x-reverse32.rgba", "storage": {"format": "rgba-palette-runs-v1", "container": "conformance/simplebrush-native-crop-runs.json", "case": "conformance/simplebrush-2x-reverse32.rgba", "path_role": "materialized legacy path"},
         "sha256": "16e8b36c21c5e55a9ea06f0eb0d4261260a0e9d8229ac46deef91369c9b347bb"
       },
       "svg_alpha_l1_generic_one_two": [

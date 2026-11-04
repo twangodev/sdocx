@@ -130,7 +130,7 @@
         ],
         "paint_clean": true,
         "crop": {
-          "file": "simplebrush-2x-reverse20.rgba",
+          "file": "simplebrush-2x-reverse20.rgba", "storage": {"format": "rgba-palette-runs-v1", "container": "conformance/simplebrush-native-crop-runs.json", "case": "conformance/simplebrush-2x-reverse20.rgba", "path_role": "materialized legacy path"},
           "dimensions": [
             98,
             52
