@@ -844,7 +844,9 @@ page export size.
 
 The three retained empty-setting, omitted-color and two-point sparse bundles
 are stored losslessly in [readable palette runs](../../conformance/legacy-marker-sparse-runs.json).
-Tests verify original record order and all twelve receipt slice hashes. Historical
+Tests verify original record order and all twelve receipt slice hashes. The standalone
+straight, bend and alpha-40 captures reuse identical empty-setting bundle slices
+at byte offsets 0, 3040 and 5720, retaining their original hashes. Historical
 raw readers require decoded original filenames in a temporary conformance mirror;
 keep receipt offsets and capture scripts unchanged. This is storage conversion,
 not a fresh native replay.

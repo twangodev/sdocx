@@ -5,6 +5,18 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 pub fn bytes(name: &str) -> &'static [u8] {
+    // These standalone captures are byte-identical to checked native bundle slices.
+    // Preserve their historical names without storing duplicate binary fixtures.
+    let alias = match name {
+        "conformance/legacy-marker-source-straight-sparse-rgba8.bin" => Some((0, 3040)),
+        "conformance/legacy-marker-source-bend-sparse-rgba8.bin" => Some((3040, 2680)),
+        "conformance/legacy-marker-alpha40-sparse-rgba8.bin" => Some((5720, 3040)),
+        _ => None,
+    };
+    if let Some((offset, length)) = alias {
+        return &bytes("conformance/legacy-marker-empty-setting-sparse-rgba8.bin")
+            [offset..offset + length];
+    }
     static CASES: OnceLock<BTreeMap<String, Vec<u8>>> = OnceLock::new();
     CASES
         .get_or_init(|| {

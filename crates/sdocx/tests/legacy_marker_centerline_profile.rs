@@ -105,24 +105,21 @@ fn profile_improves_varied_native_controls_and_falls_back_for_unsupported_metada
             geometry["cases"]["straight"]["input"]["source_arrays_hex"]["points"]
                 .as_str()
                 .unwrap(),
-            include_bytes!("../../../conformance/legacy-marker-source-straight-sparse-rgba8.bin")
-                .as_slice(),
+            sparse_fixtures::bytes("conformance/legacy-marker-source-straight-sparse-rgba8.bin"),
         ),
         (
             "alpha40",
             alpha40["input"]["source_arrays_hex"]["points"]
                 .as_str()
                 .unwrap(),
-            include_bytes!("../../../conformance/legacy-marker-alpha40-sparse-rgba8.bin")
-                .as_slice(),
+            sparse_fixtures::bytes("conformance/legacy-marker-alpha40-sparse-rgba8.bin"),
         ),
         (
             "bend",
             geometry["cases"]["bend"]["input"]["source_arrays_hex"]["points"]
                 .as_str()
                 .unwrap(),
-            include_bytes!("../../../conformance/legacy-marker-source-bend-sparse-rgba8.bin")
-                .as_slice(),
+            sparse_fixtures::bytes("conformance/legacy-marker-source-bend-sparse-rgba8.bin"),
         ),
         (
             "turn",
@@ -152,8 +149,7 @@ fn profile_improves_varied_native_controls_and_falls_back_for_unsupported_metada
             long["cases"][0]["input"]["source_arrays_hex"]["points"]
                 .as_str()
                 .unwrap(),
-            include_bytes!("../../../conformance/legacy-marker-source-bend-sparse-rgba8.bin")
-                .as_slice(),
+            sparse_fixtures::bytes("conformance/legacy-marker-source-bend-sparse-rgba8.bin"),
         ),
         (
             "long-turns",

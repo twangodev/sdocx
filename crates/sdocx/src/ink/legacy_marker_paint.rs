@@ -497,17 +497,17 @@ fn generated_mesh_paint_matches_native_source_controls() {
         (
             "straight",
             0.0,
-            include_bytes!(
-                "../../../../conformance/legacy-marker-source-straight-sparse-rgba8.bin"
-            )
-            .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-source-straight-sparse-rgba8.bin",
+            ),
             "7266a5a2d494b566f7e5643c013bfd1f30a5c417c348d03115f5863586d920fd",
         ),
         (
             "bend",
             1.0,
-            include_bytes!("../../../../conformance/legacy-marker-source-bend-sparse-rgba8.bin")
-                .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-source-bend-sparse-rgba8.bin",
+            ),
             "62f15c9c6302de5dcae527b1b463e5cc65c695a37c4dcd9cc521f6006407cc36",
         ),
     ] {

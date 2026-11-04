@@ -132,15 +132,15 @@ fn bounded_saved_host_controls_export_svg_and_pdf() {
     for (case, native) in [
         (
             "straight",
-            include_bytes!(
-                "../../../../../conformance/legacy-marker-source-straight-sparse-rgba8.bin"
-            )
-            .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-source-straight-sparse-rgba8.bin",
+            ),
         ),
         (
             "bend",
-            include_bytes!("../../../../../conformance/legacy-marker-source-bend-sparse-rgba8.bin")
-                .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-source-bend-sparse-rgba8.bin",
+            ),
         ),
     ] {
         let doc = document(case, 2, 1);

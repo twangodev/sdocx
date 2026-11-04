@@ -23,20 +23,21 @@ fn legacy_marker_argb_alpha_survives_svg_and_pdf() {
     for (case, bytes) in [
         (
             "straight",
-            include_bytes!(
-                "../../../../conformance/legacy-marker-source-straight-sparse-rgba8.bin"
-            )
-            .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-source-straight-sparse-rgba8.bin",
+            ),
         ),
         (
             "bend",
-            include_bytes!("../../../../conformance/legacy-marker-source-bend-sparse-rgba8.bin")
-                .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-source-bend-sparse-rgba8.bin",
+            ),
         ),
         (
             "alpha40",
-            include_bytes!("../../../../conformance/legacy-marker-alpha40-sparse-rgba8.bin")
-                .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-alpha40-sparse-rgba8.bin",
+            ),
         ),
         (
             "alpha01",

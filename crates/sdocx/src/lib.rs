@@ -287,3 +287,7 @@ pub use ink_raster::{
     InkRasterContext, InkRasterDepthContext, InkRasterError, InkRasterInverseScale,
     InkRasterOrigin, InkRasterProfile, Pencil2V14HostGrainState, pencil2_v14_host_grain_offset,
 };
+
+#[cfg(test)]
+#[path = "../tests/helpers/legacy_marker_sparse.rs"]
+mod legacy_marker_sparse_fixtures;
