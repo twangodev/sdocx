@@ -17,10 +17,13 @@ the reconstructed complete frame against the native SHA-256 in the receipt and
 compares every canvas and SVG pixel. The original compressed native frame remains
 in the historical workspace.
 
-The unmodified historical capture script is
-`tools/pencil2-public-replay/colored_overlap_top2_capture.py`. Its original
-relative input paths point to `tools/pencil2-public-replay/`; copies of the
-sampled input streams are retained here, with hashes in the receipt. The script
+The capture scripts `tools/pencil2-public-replay/colored_overlap_top2_capture.py`
+and `tools/pencil2-public-replay/colored_overlap_capture.py` now read the canonical
+sampled input streams retained here. The duplicate streams beside the scripts
+were verified byte-identical before removal; native input hashes are unchanged.
+Only the scripts' input paths changed, so their current hashes differ from the
+historical script hashes retained in the receipts. Those hashes identify the
+original acquisition scripts and are intentionally unchanged. Each script
 also requires an ignored historical `tmp/.../capture_candidate.py` harness and
 native libraries, neither included here, so these files alone cannot recapture
 this evidence. `colored-top2-translucent-info.json` records host and library pins.
