@@ -634,6 +634,371 @@ fn independent_redraw_window_retained_observations() {
 }
 
 #[test]
+fn redraw_window_retained_trace_and_export_integrity() {
+    use serde_json::Value;
+    use sha2::{Digest, Sha256};
+
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let directory = "tools/montblanc/redraw-window";
+    let read = |name: &str| -> Value {
+        serde_json::from_slice(&std::fs::read(root.join(directory).join(name)).unwrap()).unwrap()
+    };
+    let file_hash = |name: &str| {
+        format!(
+            "{:x}",
+            Sha256::digest(std::fs::read(root.join(name)).unwrap())
+        )
+    };
+    fn unhex(value: &Value) -> Vec<u8> {
+        value
+            .as_str()
+            .unwrap()
+            .split_ascii_whitespace()
+            .flat_map(|word| {
+                assert_eq!(word.len() % 2, 0);
+                assert!(word.bytes().all(|byte| byte.is_ascii_hexdigit()));
+                (0..word.len())
+                    .step_by(2)
+                    .map(|i| u8::from_str_radix(&word[i..i + 2], 16).unwrap())
+                    .collect::<Vec<_>>()
+            })
+            .collect()
+    }
+    fn check_words(stream: &[Value]) {
+        for row in stream {
+            assert_eq!(row.as_array().unwrap().len(), 2);
+            let words = row[1].as_array().unwrap();
+            assert_eq!(words.len(), 6);
+            assert!(words.iter().all(|word| unhex(word).len() == 4));
+        }
+    }
+    let symbol = |kind: &str| {
+        format!(
+            "SPen::MontblancFountainPenStrokeDrawableRTV1::{kind}(SPen::Vector3<float>, SPen::Vector2<float>, float)"
+        )
+    };
+    let receipt = read("streams.json");
+    assert_eq!(
+        file_hash("tools/montblanc/narrow-probe/capture.py"),
+        receipt["capture_source_sha256"]
+    );
+    let cases = receipt["cases"].as_object().unwrap();
+    let expected: [(&str, usize, usize, &[usize]); 7] = [
+        ("9", 45, 36, &[]),
+        ("10-distinct", 49, 18, &[18]),
+        ("11", 54, 27, &[18]),
+        ("12", 58, 18, &[27]),
+        ("13", 63, 27, &[27]),
+        ("duplicate10", 45, 36, &[]),
+        ("duplicate12", 45, 36, &[]),
+    ];
+    assert_eq!(cases.len(), expected.len());
+    for (name, split, replay, expected_offsets) in expected {
+        let case = &cases[name];
+        let source = &case["input"];
+        let points = source["points"].as_array().unwrap();
+        let pressures = source["pressure"].as_array().unwrap();
+        assert_eq!(points.len(), pressures.len());
+        assert!(
+            points
+                .iter()
+                .all(|point| point.as_array().unwrap().len() == 2)
+        );
+        assert!(
+            pressures
+                .iter()
+                .all(|value| (0.0..=1.0).contains(&value.as_f64().unwrap()))
+        );
+        assert!(source["pen_size"].as_f64().unwrap() > 0.0);
+        assert_eq!(case["first_count"].as_u64().unwrap() as usize, split);
+        assert_eq!(case["replay_count"].as_u64().unwrap() as usize, replay);
+        assert_eq!(
+            case["full_word_matching_offsets"],
+            serde_json::json!(expected_offsets)
+        );
+        let records = case["stream"].as_array().unwrap();
+        assert_eq!(records.len(), split + replay);
+        assert_eq!(records[0][0], symbol("AddStartPoint"));
+        assert_eq!(records[split - 1][0], symbol("AddEndPoint"));
+        for row in records[1..split - 1].iter().chain(&records[split..]) {
+            assert_eq!(row[0], symbol("AddPoint"));
+        }
+        check_words(records);
+        let offsets: Vec<_> = (0..split)
+            .filter(|&i| {
+                i + replay <= split
+                    && records[i..i + replay]
+                        .iter()
+                        .zip(&records[split..])
+                        .all(|(x, y)| {
+                            x[1] == y[1] && x[0] == symbol("AddPoint") && y[0] == symbol("AddPoint")
+                        })
+            })
+            .collect();
+        assert_eq!(offsets, expected_offsets, "{name}");
+        for digest in std::iter::once(&case["frame_sha256"])
+            .chain(case["input_pins"].as_object().unwrap().values())
+            .chain(case["host_gl_sha256"].as_object().unwrap().values())
+        {
+            assert_eq!(unhex(digest).len(), 32);
+        }
+    }
+    let nine = &cases["9"];
+    let stream = nine["stream"].as_array().unwrap();
+    let split = nine["first_count"].as_u64().unwrap() as usize;
+    let replay = nine["replay_count"].as_u64().unwrap() as usize;
+    assert_eq!(
+        stream[0][1].as_array().unwrap()[..5],
+        stream[split][1].as_array().unwrap()[..5]
+    );
+    assert_ne!(stream[0][1][5], stream[split][1][5]);
+    assert_eq!(stream[1..replay], stream[split + 1..]);
+    for (name, copies) in [("duplicate10", 1), ("duplicate12", 3)] {
+        let case = &cases[name];
+        for channel in ["points", "pressure"] {
+            let base = nine["input"][channel].as_array().unwrap();
+            let expected: Vec<_> = base[..3]
+                .iter()
+                .cloned()
+                .chain(std::iter::repeat_n(base[2].clone(), copies))
+                .chain(base[3..].iter().cloned())
+                .collect();
+            assert_eq!(case["input"][channel], serde_json::json!(expected));
+        }
+        assert_eq!(case["input"]["pen_size"], nine["input"]["pen_size"]);
+        assert_eq!(case["stream"], nine["stream"]);
+    }
+
+    let trace = read("event-traces.json");
+    assert_eq!(
+        file_hash(&format!("{directory}/trace.py")),
+        trace["trace_script_sha256"]
+    );
+    assert_eq!(
+        trace["capture_script_sha256"],
+        receipt["capture_source_sha256"]
+    );
+    let traces = trace["cases"].as_object().unwrap();
+    assert_eq!(traces.len(), expected.len() + 2);
+    for name in expected
+        .iter()
+        .map(|row| row.0)
+        .chain(["pressure-duplicate", "short-move"])
+    {
+        assert!(traces.contains_key(name));
+    }
+    let variants = [
+        "duplicate10",
+        "duplicate12",
+        "pressure-duplicate",
+        "short-move",
+    ];
+    for (name, case) in traces {
+        if let Some(source) = cases.get(name) {
+            assert_eq!(case["input"], source["input"]);
+            assert_eq!(case["stream"], source["stream"]);
+        }
+        let calls = case["draw_calls"].as_array().unwrap();
+        assert_eq!(calls.len(), 5);
+        let base = if variants.contains(&name.as_str()) {
+            &traces["9"]["input"]["points"]
+        } else {
+            &case["input"]["points"]
+        }
+        .as_array()
+        .unwrap();
+        let actual: Vec<[f64; 2]> = calls
+            .iter()
+            .map(|row| {
+                std::array::from_fn(|i| {
+                    f32::from_le_bytes(unhex(&row["s0_s5_f32_bits"][i]).try_into().unwrap()) as f64
+                })
+            })
+            .collect();
+        let expected: Vec<[f64; 2]> = base[base.len() - 6..base.len() - 1]
+            .iter()
+            .map(|point| [point[0].as_f64().unwrap(), point[1].as_f64().unwrap()])
+            .collect();
+        assert_eq!(actual, expected, "{name}");
+        assert!(calls.iter().all(|row| row["lr"] == "0xb01dd90"));
+        assert_eq!(case["end_state"]["lr"], "0xb01e7a0");
+        assert_eq!(unhex(&case["end_state"]["motion_event_bytes"]).len(), 160);
+        assert!(
+            calls
+                .iter()
+                .all(|row| unhex(&row["receiver_bytes_80_144"]).len() == 64)
+        );
+    }
+    for name in variants {
+        assert_eq!(traces[name]["stream"], traces["9"]["stream"]);
+        let words = |case: &Value| {
+            case["draw_calls"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|row| row["s0_s5_f32_bits"].clone())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(words(&traces[name]), words(&traces["9"]));
+    }
+    let base = &traces["9"]["input"];
+    for (name, delta) in [("pressure-duplicate", 0.0), ("short-move", 1.0)] {
+        let points = base["points"].as_array().unwrap();
+        let inserted = serde_json::json!([
+            points[2][0].as_f64().unwrap() + delta,
+            points[2][1].as_f64().unwrap()
+        ]);
+        let expected: Vec<_> = points[..3]
+            .iter()
+            .cloned()
+            .chain([inserted])
+            .chain(points[3..].iter().cloned())
+            .collect();
+        let actual = traces[name]["input"]["points"].as_array().unwrap();
+        assert_eq!(actual.len(), expected.len());
+        for (a, b) in actual.iter().zip(expected) {
+            assert_eq!(a.as_array().unwrap().len(), 2);
+            for i in 0..2 {
+                assert_eq!(a[i].as_f64(), b[i].as_f64());
+            }
+        }
+        let pressure = base["pressure"].as_array().unwrap();
+        let expected: Vec<_> = pressure[..3]
+            .iter()
+            .cloned()
+            .chain([serde_json::json!(0.9)])
+            .chain(pressure[3..].iter().cloned())
+            .collect();
+        assert_eq!(
+            traces[name]["input"]["pressure"],
+            serde_json::json!(expected)
+        );
+        assert_eq!(traces[name]["input"]["pen_size"], base["pen_size"]);
+    }
+
+    let irregular = read("irregular-native.json");
+    assert_eq!(irregular["input"], read("irregular-input.json"));
+    assert_eq!(
+        irregular["trace_source_sha256"],
+        trace["trace_script_sha256"]
+    );
+    assert_eq!(
+        irregular["candidate_patch_sha256"],
+        file_hash(&format!("{directory}/irregular-candidate.patch"))
+    );
+    assert_eq!(irregular["stream"].as_array().unwrap().len(), 83);
+    assert_eq!(irregular["candidate_result"]["callback_count"], 83);
+    assert_eq!(
+        irregular["candidate_result"]["methods_and_six_f32_words_equal"],
+        true
+    );
+    assert_eq!(irregular["draw_calls"].as_array().unwrap().len(), 5);
+    assert!(
+        irregular["draw_calls"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|row| row["lr"] == "0xb01dd90")
+    );
+    check_words(irregular["stream"].as_array().unwrap());
+    let variants = read("irregular-variants.json");
+    assert_eq!(
+        variants["candidate_patch_sha256"],
+        irregular["candidate_patch_sha256"]
+    );
+    assert_eq!(
+        variants["trace_source_sha256"],
+        trace["trace_script_sha256"]
+    );
+    assert_eq!(
+        variants["candidate_results"],
+        serde_json::json!({"short14": 73, "long17": 97, "reverse17": 95})
+    );
+    let base = &irregular["input"];
+    let points = base["points"].as_array().unwrap();
+    let pressure = base["pressure"].as_array().unwrap();
+    assert_eq!(
+        variants["cases"]["short14"]["input"],
+        serde_json::json!({"points": &points[..14], "pressure": &pressure[..14], "pen_size": base["pen_size"]})
+    );
+    let long_points: Vec<_> = points
+        .iter()
+        .cloned()
+        .chain([serde_json::json!([97, 8])])
+        .collect();
+    let long_pressure: Vec<_> = pressure
+        .iter()
+        .cloned()
+        .chain([serde_json::json!(0.48)])
+        .collect();
+    assert_eq!(
+        variants["cases"]["long17"]["input"],
+        serde_json::json!({"points": long_points, "pressure": long_pressure, "pen_size": base["pen_size"]})
+    );
+    assert_eq!(
+        variants["cases"]["reverse17"]["input"],
+        serde_json::json!({"points": long_points.iter().rev().collect::<Vec<_>>(), "pressure": long_pressure.iter().rev().collect::<Vec<_>>(), "pen_size": base["pen_size"]})
+    );
+    for (name, case) in variants["cases"].as_object().unwrap() {
+        assert_eq!(
+            case["stream"].as_array().unwrap().len() as u64,
+            variants["candidate_results"][name].as_u64().unwrap()
+        );
+        assert_eq!(case["draw_calls"].as_array().unwrap().len(), 5);
+        assert!(
+            case["draw_calls"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|row| row["lr"] == "0xb01dd90")
+        );
+        check_words(case["stream"].as_array().unwrap());
+    }
+
+    // These assertions validate historical summaries, not fresh reader output.
+    let exports = read("export-receipt.json");
+    assert_eq!(exports["complete"], true);
+    assert_eq!(exports["cases"].as_object().unwrap().len(), 8);
+    for path in [
+        "tools/montblanc/redraw-window/irregular-candidate.patch",
+        "tools/montblanc/many-point-public/src/main.rs",
+        "tools/montblanc/many-point-public/Cargo.toml",
+        "tools/montblanc/many-point-public/Cargo.lock",
+        "tools/montblanc/redraw-window/export-compare.py",
+    ] {
+        assert_eq!(exports["source_sha256"][path], file_hash(path));
+    }
+    let isolated = exports["isolated_source_sha256"].as_object().unwrap();
+    assert_eq!(isolated.len(), 2);
+    for mode in ["baseline", "candidate"] {
+        let values = isolated[mode].as_object().unwrap();
+        assert_eq!(values.len(), 3);
+        for key in ["sampler_dispatch", "sampler", "generated_driver"] {
+            assert_eq!(unhex(&values[key]).len(), 32);
+        }
+    }
+    assert_eq!(
+        isolated["baseline"]["generated_driver"],
+        isolated["candidate"]["generated_driver"]
+    );
+    assert_ne!(
+        isolated["baseline"]["sampler"],
+        isolated["candidate"]["sampler"]
+    );
+    for case in exports["cases"].as_object().unwrap().values() {
+        for reader in ["svg", "pdf", "pdfium"] {
+            let baseline = case["metrics"]["baseline"][reader].as_array().unwrap();
+            let candidate = case["metrics"]["candidate"][reader].as_array().unwrap();
+            assert_eq!(baseline.len(), 5);
+            assert_eq!(candidate.len(), 5);
+            assert!(candidate[4].as_u64().unwrap() < baseline[4].as_u64().unwrap());
+            assert_eq!(candidate[2], candidate[0]);
+            assert!(candidate[1].as_u64().unwrap() > candidate[0].as_u64().unwrap());
+        }
+    }
+}
+
+#[test]
 fn nine_point_investigative_native_stream() {
     let cases: serde_json::Value =
         serde_json::from_str(include_str!("montblanc_nine_streams.json")).unwrap();
