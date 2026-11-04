@@ -63,10 +63,7 @@ fn two_ordered_objects_against_native_host_control() {
     doc.pages[0].objects = vec![first.into(), second.into()];
     let mut options = RenderOptions::default();
     options.airbrush_profile = Some(AirBrushRenderProfile::SavedV1);
-    if let Some(path) = std::env::var_os("SDOCX_AIRBRUSH_SCENE_PDF") {
-        let pdf = render_document_pdf(&doc, &options, &PdfOptions::default()).unwrap();
-        std::fs::write(path, pdf).unwrap();
-    }
+    render_document_pdf(&doc, &options, &PdfOptions::default()).unwrap();
     let svg = &render_document_svg(&doc, &options)[0].svg;
     assert!(svg.contains("sdocx-airbrush-v2-r8-v3-"));
     let tree = resvg::usvg::Tree::from_str(svg, &Default::default()).unwrap();

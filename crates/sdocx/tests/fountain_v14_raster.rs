@@ -205,14 +205,6 @@ fn unchanged_saved_stroke_matches_native_masks_rgb_and_public_exports() {
         .collect();
     assert_eq!(differences.iter().filter(|&&e| e != 0).count(), 228);
     assert_eq!(*differences.iter().max().unwrap(), 87);
-    if let Some(directory) = std::env::var_os("SDOCX_FOUNTAIN_V14_ARTIFACTS") {
-        let metrics = serde_json::json!({"case":name,"canonical_24_stamp_channel_errors":228,"absolute_sum":differences.iter().map(|&v|u64::from(v)).sum::<u64>(),"maximum":87,"native_scaled_49_stamp_channel_errors":0});
-        std::fs::write(
-            std::path::PathBuf::from(directory).join("source-sampling-counterexample.json"),
-            serde_json::to_vec(&metrics).unwrap(),
-        )
-        .unwrap();
-    }
 }
 
 #[test]
@@ -263,21 +255,6 @@ fn check_native_cases(receipt: &Value, frames: usize, expected_opaque: usize) {
         if case["argb"].as_u64().unwrap() >> 24 == 0 && case["paint_mode"] != "direct" {
             assert_eq!(canvas.pixels(), prior);
         }
-        let artifacts =
-            std::env::var_os("SDOCX_FOUNTAIN_V14_ARTIFACTS").map(std::path::PathBuf::from);
-        if let Some(path) = &artifacts {
-            std::fs::create_dir_all(path).unwrap();
-            std::fs::write(
-                path.join(format!("{name}.rgba")),
-                canvas.pixels().as_flattened(),
-            )
-            .unwrap();
-            std::fs::write(
-                path.join(format!("{name}.stroke.json")),
-                serde_json::to_vec(&stroke).unwrap(),
-            )
-            .unwrap();
-        }
         if expected.iter().any(|p| p[3] != 255) {
             continue;
         }
@@ -292,24 +269,13 @@ fn check_native_cases(receipt: &Value, frames: usize, expected_opaque: usize) {
             &mut image.as_mut(),
         );
         assert_eq!(image.data(), expected.as_flattened(), "{name}");
-        if let Some(path) = artifacts {
-            std::fs::write(path.join(format!("{name}.svg")), &page.svg).unwrap();
-            std::fs::write(path.join(format!("{name}.png")), canvas.to_png().unwrap()).unwrap();
-            #[cfg(feature = "pdf")]
-            {
-                let mut options = sdocx::PdfOptions::default();
-                options.dpi = 72.;
-                std::fs::write(
-                    path.join(format!("{name}.svg.pdf")),
-                    sdocx::render_svg_pages_pdf(&[page], &options).unwrap(),
-                )
-                .unwrap();
-                std::fs::write(
-                    path.join(format!("{name}.direct.pdf")),
-                    canvas.to_pdf(&options).unwrap(),
-                )
-                .unwrap();
-            }
+        canvas.to_png().unwrap();
+        #[cfg(feature = "pdf")]
+        {
+            let mut options = sdocx::PdfOptions::default();
+            options.dpi = 72.;
+            sdocx::render_svg_pages_pdf(&[page], &options).unwrap();
+            canvas.to_pdf(&options).unwrap();
         }
     }
     assert_eq!(opaque, expected_opaque);

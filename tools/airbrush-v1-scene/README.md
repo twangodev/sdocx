@@ -19,14 +19,11 @@ channel error 30 or less. See `pdf-receipt.json`. This is one order, scale,
 background, and pair of strokes; it does not establish general PDF, saved-page,
 or device parity. The test requires the `pdf` feature.
 
-Generate the PDF with `SDOCX_AIRBRUSH_SCENE_PDF=/tmp/airbrush-v1-scene.pdf`
-and the project's shared agent Cargo environment while running
-`cargo test -p sdocx --features pdf --test airbrush_v1_scene_control`. Then run
-`PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/airbrush-v1-scene/compare_pdf.py /tmp/airbrush-v1-scene.pdf`.
-The retained PDF hash and all reader metrics were reproduced from clean
-`8678f5a8` plus this test. The comparator checks every receipt field and rejects
-optimized Python. The PDF hash depends on source and dependencies. Reader pixels are
-compared directly against the retained native target at 96 dpi.
+Run `cargo test -p sdocx --features pdf --test airbrush_v1_scene_control`
+with the shared agent Cargo environment for the native-frame assertions and
+in-memory PDF construction. The optional PDF exporter and reader comparator
+were removed; the numerical reader findings above remain historical measurements
+at 96 dpi against the retained native target.
 
 Capture requires the local native prerequisites pinned by
 `tools/pen-capture/airbrush_v1_curved_prerequisites.json` and the runner pinned

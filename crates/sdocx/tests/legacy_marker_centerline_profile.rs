@@ -208,13 +208,6 @@ fn profile_improves_varied_native_controls_and_falls_back_for_unsupported_metada
                 .unwrap();
         let new_pdf =
             sdocx::render_document_pdf(&isolated, &profile, &sdocx::PdfOptions::default()).unwrap();
-        if let Some(directory) = std::env::var_os("SDOCX_MARKER_PUBLIC_EXPORT_DIR") {
-            let directory = std::path::PathBuf::from(directory);
-            std::fs::write(directory.join(format!("{name}-fallback.svg")), &old.svg).unwrap();
-            std::fs::write(directory.join(format!("{name}-profile.svg")), &new.svg).unwrap();
-            std::fs::write(directory.join(format!("{name}-fallback.pdf")), &old_pdf).unwrap();
-            std::fs::write(directory.join(format!("{name}-profile.pdf")), &new_pdf).unwrap();
-        }
         assert_ne!(old_pdf, new_pdf, "{name}");
         assert_eq!(
             lopdf::Document::load_mem(&new_pdf)

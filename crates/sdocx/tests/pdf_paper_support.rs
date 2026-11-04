@@ -2378,9 +2378,6 @@ fn public_pdf_paper_keeps_large_integer_origin_in_overlay_commands() {
     *data = bytes;
 
     let output = export(&document, &[0], 96.0).unwrap();
-    if let Some(path) = env::var_os("SDOCX_LARGE_ORIGIN_PROBE") {
-        fs::write(path, &output.bytes).unwrap();
-    }
     let pdf = PdfDocument::load_mem(&output.bytes).unwrap();
     let content = pdf.get_page_content(pdf.get_pages()[&1]).unwrap();
     let commands = String::from_utf8(content).unwrap();

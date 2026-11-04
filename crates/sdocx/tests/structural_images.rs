@@ -2129,8 +2129,6 @@ fn native_partial_source_alpha_keeps_skia_byte_rounding() {
 
 #[cfg(all(feature = "render", feature = "pdf"))]
 fn check_image_alpha_controls(include_native_rounding_edge: bool) {
-    let artifact_dir =
-        std::env::var_os("SDOCX_IMAGE_TRANSPARENCY_ARTIFACT_DIR").map(std::path::PathBuf::from);
     // The two partial-source cases correspond to the V14 native capture:
     // straight PNG RGBA [32,128,224,127] must decode to premul [16,64,112,127]
     // before any group-alpha difference is attributed. Native evidence receipt:
@@ -2211,7 +2209,7 @@ fn check_image_alpha_controls(include_native_rounding_edge: bool) {
             x_max: 48.0,
             y_max: 32.0,
         };
-        // Keep the normal SDK page background in the public artifacts. A
+        // Keep the normal SDK page background in the public rendering. A
         // separately derived layer SVG below removes only that exact paper
         // rectangle for comparison with the native transparent target.
         document.pages[0].background_color = Some(sdocx::Color {
@@ -2249,14 +2247,6 @@ fn check_image_alpha_controls(include_native_rounding_edge: bool) {
         } else {
             None
         };
-        let public_tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
-        let mut public_pixels =
-            resvg::tiny_skia::Pixmap::new(rendered.width, rendered.height).unwrap();
-        resvg::render(
-            &public_tree,
-            resvg::tiny_skia::Transform::identity(),
-            &mut public_pixels.as_mut(),
-        );
         let raster_svg = layer_svg.as_deref().unwrap_or(&rendered.svg);
         let tree = resvg::usvg::Tree::from_str(raster_svg, &Default::default()).unwrap();
         let mut pixels = resvg::tiny_skia::Pixmap::new(rendered.width, rendered.height).unwrap();
@@ -2265,30 +2255,8 @@ fn check_image_alpha_controls(include_native_rounding_edge: bool) {
             resvg::tiny_skia::Transform::identity(),
             &mut pixels.as_mut(),
         );
-        if let Some(directory) = &artifact_dir {
-            std::fs::create_dir_all(directory).unwrap();
-            std::fs::write(directory.join(format!("{label}.svg")), &rendered.svg).unwrap();
-            if let Some(layer_svg) = &layer_svg {
-                std::fs::write(directory.join(format!("{label}.layer.svg")), layer_svg).unwrap();
-            }
-            let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
-            let pdf = sdocx::render_document_pdf(&document, &Default::default(), &options).unwrap();
-            std::fs::write(directory.join(format!("{label}.pdf")), pdf).unwrap();
-            std::fs::write(
-                directory.join(format!("{label}.layer.premul.rgba")),
-                pixels.data(),
-            )
-            .unwrap();
-            let mut png = Vec::new();
-            {
-                let mut encoder = png::Encoder::new(&mut png, rendered.width, rendered.height);
-                encoder.set_color(png::ColorType::Rgba);
-                encoder.set_depth(png::BitDepth::Eight);
-                let mut writer = encoder.write_header().unwrap();
-                writer.write_image_data(public_pixels.data()).unwrap();
-            }
-            std::fs::write(directory.join(format!("{label}.rgba.png")), png).unwrap();
-        }
+        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+        sdocx::render_document_pdf(&document, &Default::default(), &options).unwrap();
 
         let expected_inside = expected_native_rgba;
         let (image_present, image_view_box, opacity) = if let Some(image) = svg_image {
