@@ -45,7 +45,4 @@ The manifest records direct adapter hashes, not every transitive runtime
 dependency. Recapture uses synthetic queues and explicit Update/Draw;
 it establishes neither normal saved-page scheduling nor device parity.
 
-`first_probe.py` remains because the separate precision control consumes its
-pinned source. It approximates a retained synthetic frame; it does not acquire
-native data. Its historical horizontal grain shift matched one pixel but
-worsened whole-frame error from 344 to 2,134, so it is not a production correction.
+The pixel-center and normalized-precision model scripts have been retired. Their historical horizontal grain shift matched one pixel but worsened whole-frame error from 344 to 2,134, so it was not a production correction. Native capture and input verification remain available above.

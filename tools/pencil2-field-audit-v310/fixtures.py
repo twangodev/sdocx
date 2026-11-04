@@ -1,5 +1,8 @@
 """Pin retained compressed native frames and their capture receipts."""
 import hashlib
+import json
+import struct
+import zlib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 HASHES={
@@ -18,3 +21,27 @@ def verify():
  for name,expected in HASHES.items():
   actual=hashlib.sha256((ROOT/'tools/pencil2-mixed-scene-controls'/name).read_bytes()).hexdigest()
   assert actual==expected,(name,actual,expected)
+
+ for case in ('white-1','white-2','blue-2'):
+  base=ROOT/'tools/pencil2-mixed-scene-controls'
+  receipt=json.loads((base/f'{case}-receipt.json').read_text())
+  for phase in ('first','second'):
+   frame=zlib.decompress((base/f'{case}-{phase}.zlib').read_bytes())
+   assert len(frame)==192*192*4,(case,phase)
+   assert hashlib.sha256(frame).hexdigest()==receipt[phase+'_sha256'],(case,phase)
+ for name,expected in (
+  ('grain.r8','dbe4f006debde4b765c1e5ee6966798dd8b14cdc939b149c9e22770a2c0f97f9'),
+  ('point.r8','475d71a47445657c58c944fb14a4746a248b57d33aff7bff864f30dc72d9ad6f'),
+ ):
+  assert hashlib.sha256((ROOT/'crates/sdocx/src/ink/pencil2/assets'/name).read_bytes()).hexdigest()==expected,name
+ for path,expected,count in (
+  ('tools/pencil2-mixed-scene-controls/white-1-second.vbo','ab8c231108800d1a9437783f27d12c57e59c4d81a00538268343f662a1c64389',82),
+  ('tools/pencil2-worker-v259/native-geometry.vbo','be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8',84),
+ ):
+  raw=(ROOT/path).read_bytes()
+  assert hashlib.sha256(raw).hexdigest()==expected,path
+  assert len(list(struct.iter_unpack('<14f',raw)))==count,path
+
+if __name__=='__main__':
+ verify()
+ print('Native frame, receipt, texture and geometry hashes verified.')
