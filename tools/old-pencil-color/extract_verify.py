@@ -21,7 +21,8 @@ for name in ('red', 'alpha', 'backdrop', 'varied'):
         data = zlib.decompress(base64.b64decode(frame['data_base64']))
         assert hashlib.sha256(data).hexdigest() == frame['sha256']
         rows = [data[i:i + 7680] for i in range(0, len(data), 7680)]
-        expected = zlib.decompress((args.fixtures / f'{name}-{kind}.rgba.zlib').read_bytes())
+        retained_name = 'red' if (name, kind) == ('alpha', 'pre') else name
+        expected = zlib.decompress((args.fixtures / f'{retained_name}-{kind}.rgba.zlib').read_bytes())
         assert b''.join(reversed(rows)) == expected, f'{name} {kind} differs'
     draw = case['native_vertex_input_observer']['draw_snapshots'][0]
     attr = next(item for item in draw['enabled_attribute_arrays'] if item['index'] == 1)

@@ -528,7 +528,7 @@ mod tests {
                 [221, 68, 17, 255],
             ),
             (
-                include_bytes!("../../../../../conformance/old-pencil-color/alpha-pre.rgba.zlib"),
+                include_bytes!("../../../../../conformance/old-pencil-color/red-pre.rgba.zlib"),
                 include_bytes!("../../../../../conformance/old-pencil-color/alpha-post.rgba.zlib"),
                 include_bytes!("../../../../../conformance/old-pencil-color/alpha.vbo"),
                 [221, 68, 17, 128],

@@ -16,3 +16,7 @@ python3 tools/old-pencil-color/extract_verify.py /tmp/sdocx-pencil-repro conform
 ```
 
 `extract_verify.py` compares all raw pre/post pixels and VBO bytes against the packaged fixtures, after changing OpenGL bottom-origin rows to top-origin; compression representation is not used as comparison evidence. The half-alpha backdrop cases inject host clears immediately before the draw and are not device or saved-note captures. Live clock values in full JSON receipts need not match. The isolated source patch tests the 4 full frames against all 12 model profiles without the untracked shared compositing helper.
+
+The alpha control shares its byte-identical pre-draw frame with `red-pre.rgba.zlib`.
+The extractor retains separate per-case native hash checks; `hashes.json` pins the
+canonical file and updated extractor. Capture receipts remain unchanged.

@@ -19,7 +19,7 @@ vector = bytes.fromhex(paint['native_vector_hex'])
 frame = zlib.decompress(base64.b64decode(paint['readback']['rgba8_zlib_base64']))
 assert hashlib.sha256(vector).hexdigest() == receipt['native_evidence']['native_vector_sha256']
 assert hashlib.sha256(frame).hexdigest() == paint['readback']['sha256'] == receipt['native_frame_sha256']
-assert vector == (here / 'vector.bin').read_bytes()
+assert vector == (here.parent / 'crayon2-document-holdout/vector.bin').read_bytes()
 assert frame == zlib.decompress((here / 'frame.rgba.zlib').read_bytes())
 assert hashlib.sha256((here / 'capture.py').read_bytes()).hexdigest() == receipt['capture_script_sha256']
 print('native source, frame, vector, uniforms, texture allocations, blend and draw match')

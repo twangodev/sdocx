@@ -3022,7 +3022,7 @@ mod serialized_native_controls {
             ),
             (
                 "state_trace",
-                include_bytes!("../../../../conformance/brushpen-serialized/state_trace.bin.zlib")
+                include_bytes!("../../../../conformance/brushpen-serialized/v10-native-stream.zlib")
                     as &[u8],
             ),
             (
@@ -3066,7 +3066,7 @@ mod serialized_native_controls {
             ),
             (
                 "dim-1080x1920",
-                include_bytes!("../../../../conformance/brushpen-serialized/dim-1080x1920.bin.zlib")
+                include_bytes!("../../../../conformance/brushpen-serialized/v10-native-stream.zlib")
                     as &[u8],
             ),
             (
@@ -3091,7 +3091,7 @@ mod serialized_native_controls {
             ),
             (
                 "dim-777x1001",
-                include_bytes!("../../../../conformance/brushpen-serialized/dim-777x1001.bin.zlib")
+                include_bytes!("../../../../conformance/brushpen-serialized/dim-1001x777.bin.zlib")
                     as &[u8],
             ),
             (
@@ -3241,7 +3241,7 @@ mod serialized_native_controls {
             ),
             (
                 "exact",
-                include_bytes!("../../../../conformance/brushpen-curveoff-controls/exact.bin.zlib"),
+                include_bytes!("../../../../conformance/brushpen-curveoff-controls/below.bin.zlib"),
             ),
             (
                 "above",

@@ -14,7 +14,7 @@ receipt = json.loads((here / 'receipt.json').read_text())
 svg, png, pdf = map(Path, sys.argv[1:])
 raw = zlib.decompress((here / 'frame.rgba.zlib').read_bytes())
 assert hashlib.sha256(raw).hexdigest() == receipt['native_frame_sha256']
-assert hashlib.sha256((here / 'vector.bin').read_bytes()).hexdigest() == receipt['native_evidence']['native_vector_sha256']
+assert hashlib.sha256((here.parent / 'crayon2-document-holdout/vector.bin').read_bytes()).hexdigest() == receipt['native_evidence']['native_vector_sha256']
 native = b''.join(raw[y * 768:(y + 1) * 768] for y in reversed(range(192)))
 native = bytes(v for i, v in enumerate(native) if i % 4 != 3)
 with Image.open(png) as image:

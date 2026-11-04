@@ -28,3 +28,6 @@ export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFIL
 
 The historical comparison used direct document PDF; its export generator has been retired. Native texture inputs and emulation dependencies are local,
 hash-gated prerequisites and are not supplied by a clean checkout.
+
+The retained native vector shares byte-identical storage at
+`tools/crayon2-document-holdout/vector.bin`; case-specific capture evidence remains here.
