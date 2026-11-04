@@ -1320,8 +1320,8 @@ fn captured_alpha_frame(repo: &Path, receipt: &serde_json::Value, case_name: &st
 }
 
 #[test]
-#[ignore = "writes captured alpha128/alpha255 V16 SVG/PDF comparisons when V5 capture/output directories are set"]
-fn write_as18_glv16_alpha_svg_pdf_pairs() {
+#[ignore = "requires pinned V5 alpha capture directory and native frames"]
+fn as18_glv16_alpha_native_and_pdf_checks() {
     const V5_RECEIPT_SHA256: &str =
         "87766dcceff7cb38408db3d6bbf92a9671c14588c517f03302ac41ccc0979009";
     const V5_PINS_SHA256: &str = "a912304fa05810ee6fe85b655ee3ee0fcd413f7a042a6cabd3d40541f82a0fb5";
@@ -1334,11 +1334,6 @@ fn write_as18_glv16_alpha_svg_pdf_pairs() {
         std::env::var_os("SDOCX_FOUNTAIN_V16_204_ALPHA_CAPTURE_DIR")
             .expect("set SDOCX_FOUNTAIN_V16_204_ALPHA_CAPTURE_DIR to the V5 capture directory"),
     );
-    let output_dir = PathBuf::from(
-        std::env::var_os("SDOCX_FOUNTAIN_V16_204_ALPHA_V2_ARTIFACT_DIR")
-            .expect("set SDOCX_FOUNTAIN_V16_204_ALPHA_V2_ARTIFACT_DIR to a fresh output directory"),
-    );
-    fs::create_dir(&output_dir).expect("alpha artifact output directory must be new");
     let repo = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()
@@ -1436,7 +1431,6 @@ fn write_as18_glv16_alpha_svg_pdf_pairs() {
     );
     let svg_transform = svg_matrix_from_native(&matrix_values, &viewport);
 
-    let mut manifest_cases = Vec::new();
     for (case, name, argb, alpha_byte) in [
         (&cases[0], "alpha128", 0x8000_0000_u32, 128_u8),
         (&cases[1], "alpha255", 0xff00_0000_u32, 255_u8),
@@ -1513,7 +1507,7 @@ fn write_as18_glv16_alpha_svg_pdf_pairs() {
             case["native_upload_checkpoint"]["vector_sha256"],
             V5_UPLOAD_SHA256
         );
-        let native = captured_alpha_frame(&repo, &receipt, name);
+        let _native = captured_alpha_frame(&repo, &receipt, name);
 
         let production = retained_scene_with_default_ink(&prepared, svg_transform);
         let production_svg = production.page.svg.clone();
@@ -1550,7 +1544,7 @@ fn write_as18_glv16_alpha_svg_pdf_pairs() {
                 _ => panic!("production admitted an unexpected native ink payload"),
             }
         }
-        let (production_pdf, production_images, production_shadings) =
+        let (production_pdf, _production_images, _production_shadings) =
             vector_pdf_summary(&production);
         let native_alpha = f32::from(alpha_byte) / 255.0;
         if default_sidecar_allowed {
@@ -1573,8 +1567,8 @@ fn write_as18_glv16_alpha_svg_pdf_pairs() {
             plan.stamps.len()
         );
         assert_eq!(legacy_circle_svg.matches("<rect").count(), 0);
-        let legacy_circle_rgba = raster_svg(&legacy_circle_svg);
-        let (legacy_circle_pdf, legacy_pdf_images, legacy_pdf_shadings) =
+        let _legacy_circle_rgba = raster_svg(&legacy_circle_svg);
+        let (legacy_circle_pdf, _legacy_pdf_images, _legacy_pdf_shadings) =
             vector_pdf_summary(&legacy_circle);
         assert!(circle_sidecar_form_signatures(&legacy_circle_pdf, plan.stamps.len()).is_empty());
         let independent_quad_svg = quad_geometry_svg(&legacy_circle_svg, plan.stamps.len());
@@ -1594,37 +1588,6 @@ fn write_as18_glv16_alpha_svg_pdf_pairs() {
             assert_eq!(production_circle_signature.len(), 1);
         }
 
-        write_new(
-            output_dir.join(format!("{name}.production.svg")),
-            production_svg.as_bytes(),
-        );
-        write_new(
-            output_dir.join(format!("{name}.production.pdf")),
-            &production_pdf,
-        );
-        write_new(
-            output_dir.join(format!("{name}.production.rgba")),
-            &production_rgba,
-        );
-        write_new(
-            output_dir.join(format!("{name}.native-topdown.rgba")),
-            &native,
-        );
-        write_new(
-            output_dir.join(format!("{name}.legacy-circle.svg")),
-            legacy_circle_svg.as_bytes(),
-        );
-        write_new(
-            output_dir.join(format!("{name}.legacy-circle.pdf")),
-            &legacy_circle_pdf,
-        );
-        write_new(
-            output_dir.join(format!("{name}.legacy-circle.rgba")),
-            &legacy_circle_rgba,
-        );
-
-        let mut quad_experiment = None;
-        let mut partial_circle_pdf = None;
         if alpha_byte == 128 {
             assert!(
                 default_sidecar_allowed,
@@ -1634,106 +1597,13 @@ fn write_as18_glv16_alpha_svg_pdf_pairs() {
             let circle_signature = circle_sidecar_form_signatures(&circle_pdf, plan.stamps.len());
             assert_eq!(circle_signature, production_circle_signature);
             assert_circle_sidecar_saved_alpha(&circle_pdf, expected_alpha, plan.stamps.len());
-            write_new(
-                output_dir.join("alpha128.quad-experiment.svg"),
-                independent_quad_svg.as_bytes(),
-            );
-            write_new(
-                output_dir.join("alpha128.quad-experiment.rgba"),
-                &independent_quad_rgba,
-            );
-            write_new(
-                output_dir.join("alpha128.partial-circle-sidecar-confirmation.pdf"),
-                &circle_pdf,
-            );
-            quad_experiment = Some(serde_json::json!({
-                "svg_path": "alpha128.quad-experiment.svg",
-                "rgba_path": "alpha128.quad-experiment.rgba",
-                "geometry": "independent source-pinned [-1,1]^2 rectangle per partial-alpha stamp; existing radial gradient, transform, order, and opacity preserved",
-                "stamp_count": plan.stamps.len(),
-                "rgba_sha256": sha256(&independent_quad_rgba),
-                "against_production_quad_rgba": rgba_difference(&production_rgba, &independent_quad_rgba),
-                "parsed_svg_matches_production": true,
-                "pixel_equality_required": false,
-            }));
-            partial_circle_pdf = Some(serde_json::json!({
-                "path": "alpha128.partial-circle-sidecar-confirmation.pdf",
-                "origin": "byte-identical confirmation copy of the actual production PDF, whose default V16Plan/native ink admission uses the existing radial_circle_records and saved alpha",
-                "saved_alpha_applied_once_per_stamp": expected_alpha,
-                "stamp_count": plan.stamps.len(),
-                "vector_forms": circle_signature.len(),
-                "form_signature_matches_production": circle_signature == production_circle_signature,
-                "pdf_image_objects": production_images,
-                "pdf_sha256": sha256(&circle_pdf),
-                "production_output": true,
-            }));
         }
-        manifest_cases.push(serde_json::json!({
-            "case": name,
-            "saved_argb": format!("0x{argb:08x}"),
-            "native_uniform_alpha": native_alpha,
-            "native_inputColor_program": color["program"],
-            "native_inputColor_location": color["location"],
-            "native_inputColor_matched_draw_sequences": color["matched_draw_sequences"],
-            "source_payload_sha256": SOURCE_ARRAYS_SHA256,
-            "source_point_count": 204,
-            "native_upload_sha256": V5_UPLOAD_SHA256,
-            "plan_stamp_count": plan.stamps.len(),
-            "native_default_circle_sidecar_admitted": default_sidecar_allowed,
-            "production_uses_native_quad_geometry": plan.native_quad_geometry(&prepared, true),
-            "production_svg_path": format!("{name}.production.svg"),
-            "production_pdf_path": format!("{name}.production.pdf"),
-            "production_rgba_path": format!("{name}.production.rgba"),
-            "native_rgba_path": format!("{name}.native-topdown.rgba"),
-            "legacy_circle_svg_path": format!("{name}.legacy-circle.svg"),
-            "legacy_circle_pdf_path": format!("{name}.legacy-circle.pdf"),
-            "legacy_circle_rgba_path": format!("{name}.legacy-circle.rgba"),
-            "production_svg_sha256": sha256(production_svg.as_bytes()),
-            "production_pdf_sha256": sha256(&production_pdf),
-            "production_rgba_sha256": sha256(&production_rgba),
-            "native_rgba_sha256_topdown": sha256(&native),
-            "production_vs_native_rgba": rgba_difference(&production_rgba, &native),
-            "production_vs_legacy_circle_rgba": rgba_difference(&production_rgba, &legacy_circle_rgba),
-            "legacy_circle_svg_sha256": sha256(legacy_circle_svg.as_bytes()),
-            "legacy_circle_pdf_sha256": sha256(&legacy_circle_pdf),
-            "legacy_circle_rgba_sha256": sha256(&legacy_circle_rgba),
-            "production_pdf_image_objects": production_images,
-            "production_pdf_radial_shadings": production_shadings,
-            "legacy_circle_pdf_image_objects": legacy_pdf_images,
-            "legacy_circle_pdf_radial_shadings": legacy_pdf_shadings,
-            "production_circle_sidecar_form_signature": production_circle_signature,
-            "partial_alpha_quad_experiment": quad_experiment,
-            "partial_alpha_circle_sidecar_confirmation": partial_circle_pdf,
-            "native_vs_rust_pixel_equality_required": false,
-        }));
     }
-    let manifest = serde_json::json!({
-        "schema": "sdocx.fountain.as18-glv16.alpha-pair-artifacts.v2",
-        "scope": "same pinned persisted 204-point AS18 input and native f32 matrix/upload across V5 saved-alpha 128/255 controls; rainbow stays disabled; retains explicit legacy circle SVG/PDF baselines and records actual bounded production quad SVG/PDF, the actual saved-alpha radial-circle PDF sidecar, and an independently rewritten partial-alpha quad SVG",
-        "provenance": "V5 source frame, arrays, RTV5 upload/AddPoint geometry, inputColor uniform, and two Mesa readbacks are hash-checked. This is a class-level prepared-stroke comparison, not Samsung device or PDFium/MuPDF parity.",
-        "source_payload_sha256": SOURCE_ARRAYS_SHA256,
-        "source_frame_sha256": SOURCE_FRAME_SHA256,
-        "native_upload_sha256": V5_UPLOAD_SHA256,
-        "v5_receipt_sha256": V5_RECEIPT_SHA256,
-        "v5_candidate_pins_sha256": V5_PINS_SHA256,
-        "canvas_px": [WIDTH, HEIGHT],
-        "native_gl_uniform_matrix4fv_program6_location0_f32": matrix_values,
-        "svg_transform_from_native_matrix_and_gl_read_origin": svg_transform,
-        "native_execution": false,
-        "artifact_render_executed": true,
-        "production_gate": "current bounded ordinary V16 admission: source alphaByWidth lanes remain full coverage; unit-scale ordinary strokes use the source-pinned quad SVG and radial-circle PDF sidecar with saved alpha; existing production selection was not changed by this artifact writer",
-        "predecessor_v1_artifacts_modified": false,
-        "cases": manifest_cases,
-    });
-    write_new(
-        output_dir.join("manifest.json"),
-        &serde_json::to_vec_pretty(&manifest).unwrap(),
-    );
 }
 
 #[test]
-#[ignore = "writes thin-width AS18 GLV16 SVG/PDF artifacts from the complete pinned V8 native pair"]
-fn write_as18_glv16_thin_svg_pdf_pairs() {
+#[ignore = "requires pinned V8 thin pair, native frames, and local blend join"]
+fn as18_glv16_thin_native_and_pdf_checks() {
     const PAIR_SHA256: &str = "0204f19ed9d325b78dce5e050e17082e6957d76d7f64efdaf0663aa42dc7cae8";
     const SOURCE_PAYLOAD_SHA256: &str =
         "c01022129e9a3a09ee95dc5935d5e177bd507e03d6d9dbd357a5278a64ab72b4";
@@ -1745,10 +1615,6 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
     let pair_path = PathBuf::from(
         std::env::var_os("SDOCX_FOUNTAIN_V16_204_THIN_V8_PAIR")
             .expect("set SDOCX_FOUNTAIN_V16_204_THIN_V8_PAIR to the pinned V8 pair JSON"),
-    );
-    let output_dir = PathBuf::from(
-        std::env::var_os("SDOCX_FOUNTAIN_V16_204_THIN_V8_ARTIFACT_DIR")
-            .expect("set SDOCX_FOUNTAIN_V16_204_THIN_V8_ARTIFACT_DIR to a fresh output directory"),
     );
     let repo = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
@@ -1847,7 +1713,6 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
         pair["capture_diagnostics"]["status"],
         "host_mesa_pair_captured_no_device_or_document_parity_claim"
     );
-    fs::create_dir(&output_dir).expect("thin V8 artifact output directory must be new");
 
     let native_frame = |name: &str, expected_raw_sha: &str| {
         let artifact = pair["pixel_artifacts"]
@@ -1878,7 +1743,6 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
         topdown_frame(&raw)
     };
 
-    let mut output_cases = Vec::new();
     let mut native_frames = Vec::new();
     for (case, name, argb, alpha_byte, frame_sha) in [
         (
@@ -2176,7 +2040,7 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
             plan.stamps.len()
         );
         assert_eq!(retained_pdf_svg.matches("<rect").count(), 0);
-        let (production_pdf, production_pdf_images, production_pdf_shadings) =
+        let (production_pdf, _production_pdf_images, _production_pdf_shadings) =
             vector_pdf_summary(&production);
         assert!(circle_sidecar_form_signatures(&production_pdf, plan.stamps.len()).is_empty());
 
@@ -2248,8 +2112,6 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
         assert_eq!(legacy_circle_svg.matches("<rect").count(), 0);
         let legacy_circle_raster = raster_svg(&legacy_circle_svg);
         assert_eq!(raster_svg(&retained_pdf_svg), legacy_circle_raster);
-        let legacy_pdf_images = production_pdf_images;
-        let legacy_pdf_shadings = production_pdf_shadings;
 
         // Independently convert the retained circle baseline back to the
         // static RTV5 quad, then compare its raster with the actual renderer.
@@ -2257,130 +2119,8 @@ fn write_as18_glv16_thin_svg_pdf_pairs() {
             .replace("<rect ", "<rect shape-rendering=\"crispEdges\" ");
         let independent_quad_raster = raster_svg(&independent_quad_svg);
         assert_eq!(production_raster, independent_quad_raster);
-        write_new(
-            output_dir.join(format!("{name}.production.svg")),
-            production_svg.as_bytes(),
-        );
-        write_new(
-            output_dir.join(format!("{name}.production.pdf")),
-            &production_pdf,
-        );
-        write_new(
-            output_dir.join(format!("{name}.type4-direct-source-over-experiment.pdf")),
-            &type4_pdf,
-        );
-        write_new(
-            output_dir.join(format!("{name}.retained-pdf-source.svg")),
-            retained_pdf_svg.as_bytes(),
-        );
-        write_new(
-            output_dir.join(format!("{name}.production.rgba")),
-            &production_raster,
-        );
-        write_new(
-            output_dir.join(format!("{name}.native-topdown.rgba")),
-            &native,
-        );
-        write_new(
-            output_dir.join(format!("{name}.legacy-circle.svg")),
-            legacy_circle_svg.as_bytes(),
-        );
-        write_new(
-            output_dir.join(format!("{name}.legacy-circle.pdf")),
-            &production_pdf,
-        );
-        write_new(
-            output_dir.join(format!("{name}.legacy-circle.rgba")),
-            &legacy_circle_raster,
-        );
-        write_new(
-            output_dir.join(format!("{name}.independent-quad.svg")),
-            independent_quad_svg.as_bytes(),
-        );
-        write_new(
-            output_dir.join(format!("{name}.independent-quad.rgba")),
-            &independent_quad_raster,
-        );
-        let type4_record_bytes = type4_records
-            .iter()
-            .flat_map(|record| record.iter())
-            .flat_map(|value| value.to_bits().to_le_bytes())
-            .collect::<Vec<_>>();
-        let type4_experiment = serde_json::json!({
-            "pdf_path": format!("{name}.type4-direct-source-over-experiment.pdf"),
-            "source_join_receipt": "tmp/vector-parity-plan/fountain-as18-v16-thin-native-quad-blend-joins-v1/native-quad-blend-joins.json",
-            "source_join_receipt_sha256": BLEND_JOIN_SHA256,
-            "coverage_mapping": "native upload lane4 transparency * lane6 alphaByWidth; lane4 is source-joined to native RTV5 S3 and exactly 1.0 in these cases; native program-6 inputColor alpha is saved_alpha separately once",
-            "record_count": type4_records.len(),
-            "record_sha256": sha256(&type4_record_bytes),
-            "saved_alpha": expected_alpha,
-            "bounds_f64_exact_union_of_f32_records": [type4_bounds.x_min, type4_bounds.y_min, type4_bounds.x_max, type4_bounds.y_max],
-            "pdf_image_objects": type4_images,
-            "type_1_shading_objects": type4_type1_shadings,
-            "function_type_4_programs": type4_programs.len(),
-            "is_production_admission": false
-        });
-        output_cases.push(serde_json::json!({
-            "case": name,
-            "saved_argb": format!("0x{argb:08x}"),
-            "explicit_native_object_and_style_size": 1.0,
-            "prepared_generic_width_fallback": 0.4,
-            "source_profile": "pinned 204-point archive input with explicit native ObjectStroke size=1.0 override; controlled thin-render fork, not archive-native thin widths",
-            "source_getter_arrays": "complete V8 native Model getters, exact expected lengths and pair equality checked",
-            "native_saved_alpha": expected_alpha,
-            "native_addpoint_count": 76,
-            "native_upload_sha256": NATIVE_UPLOAD_SHA256,
-            "native_upload_records_compared_bitwise": true,
-            "production_geometry": "current V16 unit quad for ordinary unit-scale uniform-color input, including native width-alpha variation",
-            "production_pdf_geometry": "retained PDF sink preserves the native width-alpha circle fallback",
-            "production_pdf_circle_sidecar_admitted": false,
-            "production_svg_path": format!("{name}.production.svg"),
-            "production_pdf_path": format!("{name}.production.pdf"),
-            "type4_direct_source_over_experiment": type4_experiment,
-            "retained_pdf_source_svg_path": format!("{name}.retained-pdf-source.svg"),
-            "production_raster_path": format!("{name}.production.rgba"),
-            "native_raster_path": format!("{name}.native-topdown.rgba"),
-            "legacy_circle_svg_path": format!("{name}.legacy-circle.svg"),
-            "legacy_circle_pdf_path": format!("{name}.legacy-circle.pdf"),
-            "legacy_circle_pdf_same_as_retained_production_fallback": true,
-            "legacy_circle_raster_path": format!("{name}.legacy-circle.rgba"),
-            "retained_pdf_source_svg_geometry": "circles",
-            "independent_quad_svg_path": format!("{name}.independent-quad.svg"),
-            "independent_quad_raster_path": format!("{name}.independent-quad.rgba"),
-            "production_quad_matches_independent_rewrite_rgba": true,
-            "production_vs_legacy_circle_rgba": rgba_difference(&production_raster, &legacy_circle_raster),
-            "production_vs_native_rgba": rgba_difference(&production_raster, &native),
-            "production_pdf_image_objects": production_pdf_images,
-            "production_pdf_radial_shadings": production_pdf_shadings,
-            "legacy_circle_pdf_image_objects": legacy_pdf_images,
-            "legacy_circle_pdf_radial_shadings": legacy_pdf_shadings,
-            "pixel_equality_required": false
-        }));
     }
     assert_ne!(native_frames[0], native_frames[1]);
-    let manifest = serde_json::json!({
-        "schema": "sdocx.fountain.as18-glv16.thin-width-artifacts.v3",
-        "scope": "offline artifact emission from complete V8 native pair: public non-retained SVG uses production quad geometry; retained PDF preserves thin circle fallback without circle sidecar; explicit legacy-circle and independent-quad SVG rasters plus native frames are retained for comparison; no recovered V6 prefix or reconstructed getter tail",
-        "source_pair_path": pair_path,
-        "source_pair_sha256": PAIR_SHA256,
-        "source_payload_sha256": SOURCE_PAYLOAD_SHA256,
-        "source_frame_sha256": SOURCE_FRAME_SHA256,
-        "native_upload_sha256": NATIVE_UPLOAD_SHA256,
-        "native_execution": false,
-        "production_admission_modified_by_artifact_writer": false,
-        "type4_direct_source_over_experiment": {
-            "receipt_path": "tmp/vector-parity-plan/fountain-as18-v16-thin-native-quad-blend-joins-v1/native-quad-blend-joins.json",
-            "receipt_sha256": BLEND_JOIN_SHA256,
-            "coverage_formula": "native lane4 transparency * lane6 alphaByWidth; saved program-6 ARGB alpha is a separate once-only compiler input",
-            "not_production_admission": true,
-            "no_appearance_parity_claim": true
-        },
-        "cases": output_cases
-    });
-    write_new(
-        output_dir.join("manifest.json"),
-        &serde_json::to_vec_pretty(&manifest).unwrap(),
-    );
 }
 
 fn vector_circle_pdf(retained: &crate::render::RenderedScene) -> (Vec<u8>, usize, usize, usize) {
@@ -2562,8 +2302,8 @@ fn captured_frame(capture_dir: &Path, diagnostic: &serde_json::Value, index: usi
 }
 
 #[test]
-#[ignore = "writes paired captured AS18 GLV16 SVG/PDF artifacts when capture/output directories are set"]
-fn write_as18_glv16_capture_svg_pdf_pairs() {
+#[ignore = "requires pinned V14 capture directory and baseline receipt"]
+fn as18_glv16_capture_native_and_pdf_checks() {
     let capture_dir = PathBuf::from(
         std::env::var_os("SDOCX_FOUNTAIN_V16_204_CAPTURE_DIR")
             .expect("set SDOCX_FOUNTAIN_V16_204_CAPTURE_DIR to the V14 capture directory"),
@@ -2572,11 +2312,6 @@ fn write_as18_glv16_capture_svg_pdf_pairs() {
         std::env::var_os("SDOCX_FOUNTAIN_V16_204_BASELINE_RECEIPT")
             .expect("set SDOCX_FOUNTAIN_V16_204_BASELINE_RECEIPT to the pinned HF02 receipt"),
     );
-    let output_dir = PathBuf::from(
-        std::env::var_os("SDOCX_FOUNTAIN_V16_204_ARTIFACT_DIR")
-            .expect("set SDOCX_FOUNTAIN_V16_204_ARTIFACT_DIR to a fresh output directory"),
-    );
-    fs::create_dir(&output_dir).expect("artifact output directory must be new");
     let diagnostic_bytes = fs::read(capture_dir.join("as18-v16-204-incomplete-diagnostic.json"))
         .expect("V14 incomplete diagnostic receipt");
     let diagnostic: serde_json::Value = serde_json::from_slice(&diagnostic_bytes).unwrap();
@@ -2605,7 +2340,7 @@ fn write_as18_glv16_capture_svg_pdf_pairs() {
         baseline["cases"][0]["controlled_preclear_upload"]["vector_sha256"],
         NATIVE_VECTOR_SHA256
     );
-    let native_quad = native_rtv5_quad_source(&baseline);
+    let _native_quad = native_rtv5_quad_source(&baseline);
     assert_eq!(
         diagnostic["state"]["source_payload_sha256"],
         SOURCE_PAYLOAD_SHA256
@@ -2703,15 +2438,12 @@ fn write_as18_glv16_capture_svg_pdf_pairs() {
     let native_off = topdown_frame(&captured_frame(&capture_dir, &diagnostic, 0));
     let native_on = topdown_frame(&captured_frame(&capture_dir, &diagnostic, 1));
     assert_eq!(native_off, native_on);
-    let mut manifest_cases = Vec::new();
+
     let mut shared_rust_raster: Option<Vec<u8>> = None;
     let mut shared_svg: Option<String> = None;
     let mut shared_quad_svg: Option<String> = None;
     let mut shared_quad_raster: Option<Vec<u8>> = None;
-    for (name, rainbow, native) in [
-        ("rainbow_off", false, &native_off),
-        ("rainbow_on", true, &native_on),
-    ] {
+    for rainbow in [false, true] {
         let stroke = source_stroke(&baseline, rainbow);
         let prepared = if rainbow {
             crate::ink::prepare_stroke_for_context_with_fountain_v16_rainbow_ignored(
@@ -2733,7 +2465,7 @@ fn write_as18_glv16_capture_svg_pdf_pairs() {
         let production = retained_scene(&prepared, svg_transform, true, false);
         let production_quad_svg = production.page.svg.clone();
         let production_quad_raster = raster_svg(&production_quad_svg);
-        let (production_quad_pdf, production_images, production_forms, production_segments) =
+        let (production_quad_pdf, _production_images, _production_forms, _production_segments) =
             vector_circle_pdf(&production);
 
         // Preserve the original SVG-circle and PDF-shading output as the
@@ -2742,7 +2474,7 @@ fn write_as18_glv16_capture_svg_pdf_pairs() {
         let legacy_circle = retained_scene(&prepared, svg_transform, false, true);
         let legacy_circle_svg = legacy_circle.page.svg.clone();
         let legacy_circle_raster = raster_svg(&legacy_circle_svg);
-        let (legacy_circle_pdf, image_count, shading_count) = vector_pdf(&legacy_circle);
+        let (_legacy_circle_pdf, _image_count, _shading_count) = vector_pdf(&legacy_circle);
         let quad_svg_from_legacy = quad_geometry_svg(&legacy_circle_svg, plan.stamps.len());
         // SVG attribute order is serializer-specific. Compare the complete
         // element tree and attribute values while retaining exact node order.
@@ -2772,12 +2504,11 @@ fn write_as18_glv16_capture_svg_pdf_pairs() {
             "production quad differs only by the source-pinned native geometry"
         );
         assert_eq!(raster_svg(&quad_svg_from_legacy), production_quad_raster);
-        let quad_vs_circle_raster = rgba_difference(&legacy_circle_raster, &production_quad_raster);
 
         // Compare the legacy radial-shading PDF with ordinary uniform-color
         // V16 full-coverage circle admission. Both use the same prepared stroke;
         // only the legacy PDF omits the registered sidecar during conversion.
-        let (circle_prepared, radius_round_trip) =
+        let (circle_prepared, _radius_round_trip) =
             uniform_black_circle_prepared(&prepared, &diagnostic);
         let circle_plan =
             V16Plan::prepare(&circle_prepared).expect("experimental uniform-black V16Plan");
@@ -2788,7 +2519,7 @@ fn write_as18_glv16_capture_svg_pdf_pairs() {
             circle_svg_raster, production_quad_raster,
             "circle sidecar keeps current production SVG appearance"
         );
-        let (circle_pdf, circle_images, circle_forms, circle_segments) =
+        let (circle_pdf, _circle_images, _circle_forms, _circle_segments) =
             vector_circle_pdf(&circle_scene);
         assert_eq!(
             production_quad_pdf, circle_pdf,
@@ -2823,129 +2554,7 @@ fn write_as18_glv16_capture_svg_pdf_pairs() {
         } else {
             shared_quad_raster = Some(production_quad_raster.clone());
         }
-        let prefix = name.to_owned();
-        write_new(
-            output_dir.join(format!("{prefix}.svg")),
-            legacy_circle_svg.as_bytes(),
-        );
-        write_new(output_dir.join(format!("{prefix}.pdf")), &legacy_circle_pdf);
-        write_new(
-            output_dir.join(format!("{prefix}.production-quad.svg")),
-            production_quad_svg.as_bytes(),
-        );
-        write_new(
-            output_dir.join(format!("{prefix}.production-quad.pdf")),
-            &production_quad_pdf,
-        );
-        write_new(
-            output_dir.join(format!("{prefix}.full-coverage-circles-experiment.pdf")),
-            &circle_pdf,
-        );
-        if name == "rainbow_off" {
-            write_new(output_dir.join("rust-topdown.rgba"), &legacy_circle_raster);
-            write_new(
-                output_dir.join("quad-topdown.rgba"),
-                &production_quad_raster,
-            );
-        }
-        let native_changed = native
-            .as_chunks::<4>()
-            .0
-            .iter()
-            .filter(|pixel| **pixel != [0, 0, 0, 0])
-            .count();
-        let rust_changed = legacy_circle_raster
-            .as_chunks::<4>()
-            .0
-            .iter()
-            .filter(|pixel| **pixel != [0, 0, 0, 0])
-            .count();
-        manifest_cases.push(serde_json::json!({
-            "case": name,
-            "captured_native_frame_sha256_topdown": sha256(native),
-            "captured_native_nontransparent_pixels": native_changed,
-            "rust_svg_raster_sha256_topdown": sha256(&legacy_circle_raster),
-            "rust_svg_nontransparent_pixels": rust_changed,
-            "production_quad": {
-                "svg_path": format!("{prefix}.production-quad.svg"),
-                "pdf_path": format!("{prefix}.production-quad.pdf"),
-                "geometry": "production V16Plan quad gate emits rect x=-1,y=-1,width=2,height=2 per stamp; same source-derived gradient, transform, and draw order",
-                "stamp_count": plan.stamps.len(),
-                "svg_sha256": sha256(production_quad_svg.as_bytes()),
-                "resvg_premultiplied_rgba_sha256_topdown": sha256(&production_quad_raster),
-                "resvg_nontransparent_pixels": production_quad_raster
-                    .as_chunks::<4>()
-                    .0
-                    .iter()
-                    .filter(|pixel| **pixel != [0, 0, 0, 0])
-                    .count(),
-                "against_circle_svg_resvg": quad_vs_circle_raster,
-                "pixel_output_equality_required": false,
-                "native_quad_source": native_quad.clone(),
-                "production_svg_matches_independently_rewritten_native_quad":
-                    true,
-                "pdf_images": production_images,
-                "pdf_radial_shadings": 0,
-                "pdf_native_circle_forms": production_forms,
-                "pdf_native_circle_segments": production_segments,
-                "pdf_sha256": sha256(&production_quad_pdf),
-            },
-            "native_vs_rust_pixel_equality_evaluated": false,
-            "source_to_plan_records": 76,
-            "native_upload_sha256": NATIVE_VECTOR_SHA256,
-            "native_addpoint_input_vs_production_plan_bitwise_compared": rainbow,
-            "pdf_pages": 1,
-            "pdf_image_objects": image_count,
-            "pdf_radial_shadings": shading_count,
-            "svg_sha256": sha256(legacy_circle_svg.as_bytes()),
-            "pdf_sha256": sha256(&legacy_circle_pdf),
-            "experimental_pdf": {
-                "path": format!("{prefix}.full-coverage-circles-experiment.pdf"),
-                "representation": "ordinary uniform-color V16 full-coverage radial-circle admission and existing PDF converter",
-                "native_uniform_argb": "0xff000000",
-                "native_gl_input_color": [0.0, 0.0, 0.0, 1.0],
-                "record_source": "same production V16Plan stamps; existing radial_circle_records admission supplies radii",
-                "positions_or_radii_fitted": false,
-                "radius_round_trip_diagnostic": radius_round_trip,
-                "native_full_coverage_records": circle_plan.stamps.len(),
-                "registered_radial_circle_forms": circle_forms,
-                "cubic_segments": circle_segments,
-                "pdf_image_objects": circle_images,
-                "pdf_vector_only": circle_images == 0 && circle_forms == 1,
-                "svg_scene_raster_matches_production_quad":
-                    circle_svg_raster == production_quad_raster,
-                "pdf_sha256": sha256(&circle_pdf),
-            },
-        }));
     }
-    let manifest = serde_json::json!({
-        "schema": "sdocx.fountain.as18-glv16.capture-svg-pdf-artifacts.v1",
-        "scope": "source arrays from pinned 204-point saved HF02 frame through the production GLV16 V16Plan; explicit legacy circle SVG/PDF comparator, separately emitted production quad SVG/PDF, one captured GLV16/RTV5 native upload, and paired host Mesa frames",
-        "primitive_boundary": "class-level V16 stamp export; this does not prove Samsung device/PDF parity or independent native GPU implementation",
-        "source_payload_sha256": SOURCE_PAYLOAD_SHA256,
-        "source_frame_sha256": SOURCE_FRAME_SHA256,
-        "source_point_count": 204,
-        "native_upload_sha256": NATIVE_VECTOR_SHA256,
-        "native_rtv5_static_quad": native_quad,
-        "native_rgba_sha256": NATIVE_FRAME_SHA256,
-        "native_saved_argb": "0xff000000",
-        "native_canvas_px": [WIDTH, HEIGHT],
-        "native_viewport": [0, 0, WIDTH, HEIGHT],
-        "native_gl_uniform_matrix4fv_program6_location0_f32": matrix_values,
-        "svg_transform_from_native_matrix_and_gl_read_origin": svg_transform,
-        "native_gl_input_color": color["values"],
-        "native_draw": draw["values"],
-        "native_rows_flipped_once_for_topdown_artifacts": true,
-        "off_on_native_frames_bitwise_equal": true,
-        "native_execution": false,
-        "artifact_render_executed": true,
-        "capture_replay": false,
-        "cases": manifest_cases,
-    });
-    write_new(
-        output_dir.join("manifest.json"),
-        &serde_json::to_vec_pretty(&manifest).unwrap(),
-    );
 }
 
 #[test]
