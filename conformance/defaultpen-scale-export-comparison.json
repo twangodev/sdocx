@@ -1,0 +1,176 @@
+{
+  "schema": "sdocx.defaultpen-scale-export-comparison.v1",
+  "scope": "Synthetic Drawing and host Mesa, direct public document PDF, opaque #fcfcfc paper. RGB L1 against native source-over paper; reader-specific 0.5/1/2/4/8x host projections. Does not establish device, serialized note, arbitrary transforms or other PDF viewer parity.",
+  "mupdf": "1.28.2",
+  "pdfium": "pypdfium2 5.14.0, PDFium 156.0.8076.0",
+  "cases": {
+    "phase-half": {
+      "baseline_mupdf_rgb_l1": 2301,
+      "baseline_pdfium_rgb_l1": 1374,
+      "profile_mupdf_rgb_l1": 1568,
+      "profile_pdfium_rgb_l1": 681
+    },
+    "phase-1": {
+      "baseline_mupdf_rgb_l1": 6935,
+      "baseline_pdfium_rgb_l1": 2938,
+      "profile_mupdf_rgb_l1": 5628,
+      "profile_pdfium_rgb_l1": 1590
+    },
+    "phase-2": {
+      "baseline_mupdf_rgb_l1": 22669,
+      "baseline_pdfium_rgb_l1": 6511,
+      "profile_mupdf_rgb_l1": 20072,
+      "profile_pdfium_rgb_l1": 3783
+    },
+    "phase-4": {
+      "baseline_mupdf_rgb_l1": 77636,
+      "baseline_pdfium_rgb_l1": 12098,
+      "profile_mupdf_rgb_l1": 72420,
+      "profile_pdfium_rgb_l1": 6776
+    },
+    "phase-8": {
+      "baseline_mupdf_rgb_l1": 286301,
+      "baseline_pdfium_rgb_l1": 25684,
+      "profile_mupdf_rgb_l1": 275737,
+      "profile_pdfium_rgb_l1": 14910
+    },
+    "curve-half": {
+      "baseline_mupdf_rgb_l1": 3133,
+      "baseline_pdfium_rgb_l1": 2422,
+      "profile_mupdf_rgb_l1": 1887,
+      "profile_pdfium_rgb_l1": 1072
+    },
+    "curve-1": {
+      "baseline_mupdf_rgb_l1": 9399,
+      "baseline_pdfium_rgb_l1": 5461,
+      "profile_mupdf_rgb_l1": 6922,
+      "profile_pdfium_rgb_l1": 2992
+    },
+    "curve-2": {
+      "baseline_mupdf_rgb_l1": 28793,
+      "baseline_pdfium_rgb_l1": 12729,
+      "profile_mupdf_rgb_l1": 23524,
+      "profile_pdfium_rgb_l1": 7425
+    },
+    "curve-4": {
+      "baseline_mupdf_rgb_l1": 89842,
+      "baseline_pdfium_rgb_l1": 24457,
+      "profile_mupdf_rgb_l1": 79445,
+      "profile_pdfium_rgb_l1": 14494
+    },
+    "curve-8": {
+      "baseline_mupdf_rgb_l1": 310211,
+      "baseline_pdfium_rgb_l1": 51317,
+      "profile_mupdf_rgb_l1": 289321,
+      "profile_pdfium_rgb_l1": 30514
+    },
+    "wide-half": {
+      "baseline_mupdf_rgb_l1": 4825,
+      "baseline_pdfium_rgb_l1": 3931,
+      "profile_mupdf_rgb_l1": 3010,
+      "profile_pdfium_rgb_l1": 2121
+    },
+    "wide-1": {
+      "baseline_mupdf_rgb_l1": 12644,
+      "baseline_pdfium_rgb_l1": 8862,
+      "profile_mupdf_rgb_l1": 8938,
+      "profile_pdfium_rgb_l1": 5043
+    },
+    "wide-2": {
+      "baseline_mupdf_rgb_l1": 34221,
+      "baseline_pdfium_rgb_l1": 17994,
+      "profile_mupdf_rgb_l1": 26557,
+      "profile_pdfium_rgb_l1": 10228
+    },
+    "wide-4": {
+      "baseline_mupdf_rgb_l1": 101147,
+      "baseline_pdfium_rgb_l1": 38235,
+      "profile_mupdf_rgb_l1": 85082,
+      "profile_pdfium_rgb_l1": 22402
+    },
+    "wide-8": {
+      "baseline_mupdf_rgb_l1": 326108,
+      "baseline_pdfium_rgb_l1": 73488,
+      "profile_mupdf_rgb_l1": 294562,
+      "profile_pdfium_rgb_l1": 41848
+    },
+    "zero-1": {
+      "baseline_mupdf_rgb_l1": 7619,
+      "baseline_pdfium_rgb_l1": 3578,
+      "profile_mupdf_rgb_l1": 6008,
+      "profile_pdfium_rgb_l1": 1952
+    },
+    "zero-2": {
+      "baseline_mupdf_rgb_l1": 23600,
+      "baseline_pdfium_rgb_l1": 7288,
+      "profile_mupdf_rgb_l1": 20372,
+      "profile_pdfium_rgb_l1": 4185
+    },
+    "zero-4": {
+      "baseline_mupdf_rgb_l1": 80458,
+      "baseline_pdfium_rgb_l1": 14898,
+      "profile_mupdf_rgb_l1": 73850,
+      "profile_pdfium_rgb_l1": 8633
+    },
+    "zero-8": {
+      "baseline_mupdf_rgb_l1": 292537,
+      "baseline_pdfium_rgb_l1": 32411,
+      "profile_mupdf_rgb_l1": 279266,
+      "profile_pdfium_rgb_l1": 19214
+    },
+    "tool2red-1": {
+      "baseline_mupdf_rgb_l1": 11930,
+      "baseline_pdfium_rgb_l1": 8184,
+      "profile_mupdf_rgb_l1": 9334,
+      "profile_pdfium_rgb_l1": 5264
+    },
+    "tool2red-2": {
+      "baseline_mupdf_rgb_l1": 32479,
+      "baseline_pdfium_rgb_l1": 16379,
+      "profile_mupdf_rgb_l1": 27193,
+      "profile_pdfium_rgb_l1": 11185
+    },
+    "tool2red-4": {
+      "baseline_mupdf_rgb_l1": 98741,
+      "baseline_pdfium_rgb_l1": 34136,
+      "profile_mupdf_rgb_l1": 87926,
+      "profile_pdfium_rgb_l1": 24175
+    },
+    "tool3green-1": {
+      "baseline_mupdf_rgb_l1": 13564,
+      "baseline_pdfium_rgb_l1": 9725,
+      "profile_mupdf_rgb_l1": 9975,
+      "profile_pdfium_rgb_l1": 6170
+    },
+    "tool3green-2": {
+      "baseline_mupdf_rgb_l1": 36544,
+      "baseline_pdfium_rgb_l1": 20262,
+      "profile_mupdf_rgb_l1": 29067,
+      "profile_pdfium_rgb_l1": 12952
+    },
+    "tool3green-4": {
+      "baseline_mupdf_rgb_l1": 103684,
+      "baseline_pdfium_rgb_l1": 42080,
+      "profile_mupdf_rgb_l1": 89254,
+      "profile_pdfium_rgb_l1": 27472
+    },
+    "tool4purple-1": {
+      "baseline_mupdf_rgb_l1": 8603,
+      "baseline_pdfium_rgb_l1": 4628,
+      "profile_mupdf_rgb_l1": 6642,
+      "profile_pdfium_rgb_l1": 2694
+    },
+    "tool4purple-2": {
+      "baseline_mupdf_rgb_l1": 26977,
+      "baseline_pdfium_rgb_l1": 10998,
+      "profile_mupdf_rgb_l1": 22890,
+      "profile_pdfium_rgb_l1": 6972
+    },
+    "tool4purple-4": {
+      "baseline_mupdf_rgb_l1": 86416,
+      "baseline_pdfium_rgb_l1": 21519,
+      "profile_mupdf_rgb_l1": 78333,
+      "profile_pdfium_rgb_l1": 13994
+    }
+  }
+}

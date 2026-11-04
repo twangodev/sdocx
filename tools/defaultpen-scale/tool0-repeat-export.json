@@ -1,0 +1,102 @@
+{
+  "scope": "Synthetic native Model/Drawing with explicit host vector bridge and Mesa RGBA8, compared over #fcfcfc paper; no serialized-note or device parity.",
+  "inputs": {
+    "fixture_sha256": "ba8cb1c11fd7eadd9cb8649d3d05016c471aa43cfec5803e6ca2d1a9457416d1",
+    "render_rs_sha256": "00574a0133d840dee36aed3ea4c92f0f7a23d200472f5a0fc7a5c84edcc9a4cc",
+    "base_fixture_sha256": "1c697b01f297c7104617f2965d5dd498fe7f6b748a78d5d62077063e059c682f",
+    "script_sha256": "fd9a7182b0b8239210cd1268a5df50adb60ccbbb79fb3f1557bd0527433eed6b",
+    "cargo_lock_sha256": "5bd9bda9da7b4d02adc97ae3df5ffcea0b596e8dc02d6428c082c1093bea8153",
+    "adapted_test_sha256": "e914ff8036ab3fee776ac71da44f9b1972d2bc2ffd060ffef9f39906766dcd50"
+  },
+  "readers": {
+    "mupdf": "1.28.2",
+    "pypdfium2": "5.9.0",
+    "pdfium": "150.0.7869.0"
+  },
+  "results": {
+    "tool0-1": {
+      "svg_rgb_l1": [
+        7936,
+        4442
+      ],
+      "pdf_rgb_l1": {
+        "mupdf": [
+          11901,
+          8522
+        ],
+        "pdfium": [
+          8022,
+          4612
+        ]
+      },
+      "output_sha256": {
+        "baseline": {
+          "pdf": "27a2afb6c6bac53b08ac3949288f755f05fa667301a27223a85df3106f82bad5",
+          "svg": "97f362b5d44fdada81ef8cef980725264f17a5794b434fd71777933e45f76be0"
+        },
+        "profile": {
+          "pdf": "2342953a290e2757b75959955dab2419006e987a887c13992a6a4bf44c1aa98c",
+          "svg": "abe3915b909ec1a5011691f8bf35967f987fbb6e2dd3e428790ebcb59cc13a0c"
+        }
+      },
+      "native_rgba_sha256": "66769aad9fca9f5652c03cd7f37c8c555d9836c4e4a46389fa47d18c7bcb07dc",
+      "native_stream_sha256": "221ef832d4aaed949ad7c51397af294fb35e817120c2b54ee1457bd2f7ee4b3b"
+    },
+    "tool0-2": {
+      "svg_rgb_l1": [
+        15339,
+        8643
+      ],
+      "pdf_rgb_l1": {
+        "mupdf": [
+          32415,
+          25773
+        ],
+        "pdfium": [
+          16460,
+          9586
+        ]
+      },
+      "output_sha256": {
+        "baseline": {
+          "pdf": "27a2afb6c6bac53b08ac3949288f755f05fa667301a27223a85df3106f82bad5",
+          "svg": "97f362b5d44fdada81ef8cef980725264f17a5794b434fd71777933e45f76be0"
+        },
+        "profile": {
+          "pdf": "38445c781ffd4724d80eed341b41a7bdaab460fdb87c7bcc6ab354933873d186",
+          "svg": "051f13b67f1d4b6ad8d06258576a2677c8ddecbfbfd4e5b8bf366ff68a407dbd"
+        }
+      },
+      "native_rgba_sha256": "b701638166e1a6c73e42430ca32e558e37f51eaf0edde962462a4f1c490e263a",
+      "native_stream_sha256": "221ef832d4aaed949ad7c51397af294fb35e817120c2b54ee1457bd2f7ee4b3b"
+    },
+    "tool0-4": {
+      "svg_rgb_l1": [
+        32368,
+        18801
+      ],
+      "pdf_rgb_l1": {
+        "mupdf": [
+          97572,
+          84191
+        ],
+        "pdfium": [
+          32497,
+          18839
+        ]
+      },
+      "output_sha256": {
+        "baseline": {
+          "pdf": "27a2afb6c6bac53b08ac3949288f755f05fa667301a27223a85df3106f82bad5",
+          "svg": "97f362b5d44fdada81ef8cef980725264f17a5794b434fd71777933e45f76be0"
+        },
+        "profile": {
+          "pdf": "e4ae232ef4314579b689e610845cbf382fe2866e113bb9cc5aa90245b34aca27",
+          "svg": "27fc70f865ccf70fa9f80e84f0e0c12a16d9b7b5d3bde4bd237fa0a8ca5ff8ea"
+        }
+      },
+      "native_rgba_sha256": "c87e28bd186a1cc632bd31c7d1409905649df679b7914dfa01df8f1f469c5dc5",
+      "native_stream_sha256": "221ef832d4aaed949ad7c51397af294fb35e817120c2b54ee1457bd2f7ee4b3b"
+    }
+  }
+}

@@ -1,0 +1,612 @@
+{
+  "schema": "defaultpen-tool0-tool1-native-control-v1",
+  "scope": "Synthetic Model setters, native Drawing and explicit host vector bridge to native RT with host Mesa. Not saved-note or device evidence.",
+  "cases": {
+    "tool0-1x": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00009e41",
+            "00009441"
+          ],
+          [
+            "0000b241",
+            "0000aa41"
+          ],
+          [
+            "0000d041",
+            "00008441"
+          ],
+          [
+            "0000f441",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 0
+      },
+      "native_libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "framebuffer": {
+        "height": 64,
+        "kind": "host RGBA8 texture-backed FBO",
+        "read_format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "status": "0x8cd5",
+        "viewport": [
+          0,
+          0,
+          128,
+          64
+        ],
+        "width": 128
+      },
+      "native_stream_sha256": "c01b22ac9c41ac14bfc5631189404b0bd5e4f59ed84c06f2dcff1eaf0c6c3d40",
+      "instance_count": 8,
+      "rgba_sha256": "0bc034edcf3356e1607ad9627f0129939da6715ae4163875f3a062ca4306add7",
+      "rgba_zlib_base64": "eNrt1T1rU2EYBuCEUpTT0Fj7lQOGtFhp0sY0J4qgiBQKASPBIliCIK146FTooAihndqORRER6eToP3B1cnBxdsgfcCkILuKghHIgg/gDTq4LHng/tvt5Xt5MBgAAAAAAAADg/4Lp0vWp8u34/ES4lMlksxJJp3yp1p5b3Xw/W2s+T84uzNXXK+vdLyubr06jJ29+1rde/xibvXxLWulz6ebDl4343e9+nysP9r4utHY+Xts++dOvxtO3v5J17fHx9zBq7UksXWaqa7vl+y8+J30erMX2s0+D+2rnsJcLr9yRWrqMnAsmljcOvkXx2Xu/2jnqjRcrzeS+EN3bT2Zgfi3+ILF0zkAwWYwuLtx4lPvHX5/0v1C/25XWcBoN8qEUAAAAAAAAAAAAAAAAAAAAAAAAAAAYBn8Be1VUAg==",
+      "gl_error": 0,
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "native_route": {
+        "SendDataToGPU_observed_in_Drawing_route": false,
+        "drawing_phase_vector_object_pointer": "0x10034550",
+        "host_assigned_pointer": "0x10034550",
+        "rt_plus80_before_bridge": "0x0",
+        "rt_plus88_before_bridge": "0x0",
+        "rt_update_input_slot_offset": 88,
+        "same_rt_pointer": "0x10034060",
+        "same_vector_object_identity": true,
+        "selected_class": "SPen::DefaultPenStrokeDrawableGL",
+        "stream_length": 96,
+        "stream_sha256": "c01b22ac9c41ac14bfc5631189404b0bd5e4f59ed84c06f2dcff1eaf0c6c3d40",
+        "transport_scope": "Drawing route records native AddPoint vector; wrapper clears RT+80. Host explicitly assigns that same vector object to RT+88 before native Update. This is a bounded same-object join, not evidence that Drawing invoked SendDataToGPU or queued a GPU update.",
+        "wrapper_clears_rt_plus80_after_return": true
+      },
+      "native_stream_hex": "00009e41000094410000004077c2a941629e9d41000000405a55b541776b9f41000000400000c1410000974100000040012ecc4134d98f4100000040228bd841eb92934100000040c5b7e141df219b41000000407cd0ea4133f5a44100000040"
+    },
+    "tool0-2x": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00009e41",
+            "00009441"
+          ],
+          [
+            "0000b241",
+            "0000aa41"
+          ],
+          [
+            "0000d041",
+            "00008441"
+          ],
+          [
+            "0000f441",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 0
+      },
+      "native_libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "framebuffer": {
+        "height": 128,
+        "kind": "host RGBA8 texture-backed FBO",
+        "read_format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "status": "0x8cd5",
+        "viewport": [
+          0,
+          0,
+          256,
+          128
+        ],
+        "width": 256
+      },
+      "native_stream_sha256": "c01b22ac9c41ac14bfc5631189404b0bd5e4f59ed84c06f2dcff1eaf0c6c3d40",
+      "instance_count": 8,
+      "rgba_sha256": "b4964686af97c102346be1c1596fb70d3663a0bdf6593396ae8c91c15b991ed1",
+      "rgba_zlib_base64": "eNrt2ctLVGEYB2DTsdFs8jLkJS+plY6mzIy1sCACzSi7YGpWEEmWSS2iRSFGEQTtMjEqctOmTVFBy7ZtgiKIaNWmv0BaREQE3c5iwMTURdCMPA+8u/fb/OB3OOd8WVkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwFKQV1TWWLFp75U1m/dfzS+pbJUIZLbiura+0tbOc5HKWOe8e/Vt/Ru6zz7bdGrqZzBNvRdf13YM3S9P7B4rrGnpliRkjlBeQbR666HJVJ8TgxMf6zuHH4TCBSUz9yJrYh3BXvLE7a+p3bmmLL7zglQhMwR9TQ7d+jK7x+XJ7kupncKa1j0tR659mK/3qYn/fn7Ubh+8F8qLrJYupLe2k3e+zdnl4akfGweuvl/XdfpJfHB8ejHdnznBO0R4Vel6CUMG9v8fTM3Ww5MShsx7//9XE9wR5IRXFEsa0s/s/3+LnfixG9P1XSOPmvouv5lvLzl083NwVyhpSF/B/V+sZ/TFQr1vG777vbn/8tvgn2BwLjuUm1+9ZWBioXPLI9FaKUP6Cjq90LdAeXL3xexQuODPk8uWVbX3X08cn/z0t3P50aq4hCG9raps2lHVfnA81jP2srn/yrtUfxv3nX9e2tJxdr6z5Yldo3PeBewYfihZyDyRiobtRXXJ3sW8v+cszy9ct/PM05ndjx0YexV8W0gSlr7s3PDKaEP7sfqukcdrtx2dWhGtTkgFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgffgG/15uL",
+      "gl_error": 0,
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "native_route": {
+        "SendDataToGPU_observed_in_Drawing_route": false,
+        "drawing_phase_vector_object_pointer": "0x10034550",
+        "host_assigned_pointer": "0x10034550",
+        "rt_plus80_before_bridge": "0x0",
+        "rt_plus88_before_bridge": "0x0",
+        "rt_update_input_slot_offset": 88,
+        "same_rt_pointer": "0x10034060",
+        "same_vector_object_identity": true,
+        "selected_class": "SPen::DefaultPenStrokeDrawableGL",
+        "stream_length": 96,
+        "stream_sha256": "c01b22ac9c41ac14bfc5631189404b0bd5e4f59ed84c06f2dcff1eaf0c6c3d40",
+        "transport_scope": "Drawing route records native AddPoint vector; wrapper clears RT+80. Host explicitly assigns that same vector object to RT+88 before native Update. This is a bounded same-object join, not evidence that Drawing invoked SendDataToGPU or queued a GPU update.",
+        "wrapper_clears_rt_plus80_after_return": true
+      },
+      "native_stream_hex": "00009e41000094410000004077c2a941629e9d41000000405a55b541776b9f41000000400000c1410000974100000040012ecc4134d98f4100000040228bd841eb92934100000040c5b7e141df219b41000000407cd0ea4133f5a44100000040"
+    },
+    "tool0-4x": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00009e41",
+            "00009441"
+          ],
+          [
+            "0000b241",
+            "0000aa41"
+          ],
+          [
+            "0000d041",
+            "00008441"
+          ],
+          [
+            "0000f441",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 0
+      },
+      "native_libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "framebuffer": {
+        "height": 256,
+        "kind": "host RGBA8 texture-backed FBO",
+        "read_format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "status": "0x8cd5",
+        "viewport": [
+          0,
+          0,
+          512,
+          256
+        ],
+        "width": 512
+      },
+      "native_stream_sha256": "c01b22ac9c41ac14bfc5631189404b0bd5e4f59ed84c06f2dcff1eaf0c6c3d40",
+      "instance_count": 8,
+      "rgba_sha256": "ea3ffcccabcd614148dc5fe3fddb54aee8082a309f8a9dde2fe096c5f15c2fac",
+      "rgba_zlib_base64": "eNrt3VtolmUcAHCnc1vb2r45t/k5vx2c33TuPIds8zA0DTdnDszptG0eMhG0TCE6CB5CJbQ8JJpEXkRdBEE3UVBhV0Hdh9VFB6GLQsqIuoiI4rkoloe279vngfX7wR/Gt3fPw97/xf/53vd5/++ECQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADcbSZnR6YXVrcNRlu6901vXXWwqGbx9qxIyWxnBgDGn/SsnMJQ8+f0PvnxvEfO/zk8avsOfhZr7zuRmV8cd6YA4E7V6typ+bG6rlCvQ4Sfw2fJjpcVidZULNn86rV1/7p1wNqDl6ru3/FW5dItr8U6+k7ml9V1p01Mz5ARALh1JmVmFxTX3fdYbd+BS9d/Rz9wKfwuHJPImBPTM3MqOocujFT7bxQtD5/7Pd716LthHSA7AJB6WZFpc2Yu3/7mSDU5HBOOHWm8vFjtivLOwVfq+o98nUztHx51/Ye/Kq5dslOWACC13/vLFw+8PNp6HI692XWAzHunVpYt6D/TOHD8+7HW/eFRv+HIN/nlDatkCwBSI9rc/Uyi9Tj8zXW1P6941sxl295IZd3/1xpg43PfFs3t3DExPSNb1gAgeemZOVNmr37io0RrccPg81dKGpbvzZ4aa/57rLCH/1bV/uFRuXTr63mlNctkDwCSE6lo6h1LLW7ecvqXWV273on37Ll4O2r/P/sR1x36wv0AAEhOcd2SXbezbqcywrMBegcBwP+r/oeY0fbgcVkEgMSM9fr/nY7GweNXwv8gkwAwesnu/7ubomno5NVYx/rT4d0CMgoAo5PM8393Y5Qt3HhucnbeNBkFgJEl2v/HfgAAGB9G2/83lVG98vEPYu1rX6jfcPRy6voEHr2cUzKzXUYBYPTXAW72/p9UR+gTGHoFh3lzS6o6ZrT3nWjeeva31FwDWHNMNgEgMeFdv4XV7YNNm05cvRW1P/QJDL2Cr523pH75npZt5/4Y6/izVux8WxYBIDmhv2/q9uif+DHcmx+pZ1+0pXvfmHsD9h36XPYAIDmTMrIjFZ1DF8Zaj8PzhZn5xfHRzZqWFp5HCP19k51vTu9Tn8geACQvI7cgVrZo40vNW178Ndk+/ZHyxgcSnTenuGJ+7dr9nyYz57TmrqdlDgDGKi2tMN42UN2z98OmTSd/Gvbun/9cE4TjC6pa1yU7a2F122DC9xk2n/o57CeUMwBInfC+nfyy+pV5sdoVmflFVWFdEF+5+/2GgWPfDa/701tXP3ujPX6JrjvKFm44m0j9j87r2S9LAHB7TM6JlGYXlbdmRaI1qRz3niml9fHu3e+NpvaXL3rofHpWTqFsAMA4uOZQEJ0b61h36mZ1v2794S9L5/ceUfsBYPwpqGxZE9YBocdf49ALP1T37LlYtqD/TG40vtjZAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgPHhL7+FG7c=",
+      "gl_error": 0,
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "native_route": {
+        "SendDataToGPU_observed_in_Drawing_route": false,
+        "drawing_phase_vector_object_pointer": "0x10034550",
+        "host_assigned_pointer": "0x10034550",
+        "rt_plus80_before_bridge": "0x0",
+        "rt_plus88_before_bridge": "0x0",
+        "rt_update_input_slot_offset": 88,
+        "same_rt_pointer": "0x10034060",
+        "same_vector_object_identity": true,
+        "selected_class": "SPen::DefaultPenStrokeDrawableGL",
+        "stream_length": 96,
+        "stream_sha256": "c01b22ac9c41ac14bfc5631189404b0bd5e4f59ed84c06f2dcff1eaf0c6c3d40",
+        "transport_scope": "Drawing route records native AddPoint vector; wrapper clears RT+80. Host explicitly assigns that same vector object to RT+88 before native Update. This is a bounded same-object join, not evidence that Drawing invoked SendDataToGPU or queued a GPU update.",
+        "wrapper_clears_rt_plus80_after_return": true
+      },
+      "native_stream_hex": "00009e41000094410000004077c2a941629e9d41000000405a55b541776b9f41000000400000c1410000974100000040012ecc4134d98f4100000040228bd841eb92934100000040c5b7e141df219b41000000407cd0ea4133f5a44100000040"
+    },
+    "tool1-1x": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00009e41",
+            "00009441"
+          ],
+          [
+            "0000b241",
+            "0000aa41"
+          ],
+          [
+            "0000d041",
+            "00008441"
+          ],
+          [
+            "0000f441",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "native_libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "framebuffer": {
+        "height": 64,
+        "kind": "host RGBA8 texture-backed FBO",
+        "read_format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "status": "0x8cd5",
+        "viewport": [
+          0,
+          0,
+          128,
+          64
+        ],
+        "width": 128
+      },
+      "native_stream_sha256": "33d2a0a2ca327870df58c5a114b67005cbac8b3ab6e3d68dd96bfb2d1e085cb9",
+      "instance_count": 6,
+      "rgba_sha256": "458a86c0dfcded373c94bb0d6ac945d7ab3a8ded6a66e0e40711dee9e783c682",
+      "rgba_zlib_base64": "eNrt1ssqxGEYwOFJjhkJOTVjTCL6x8xEaljIpFByKIcs5FCyYGGjWVE2NsiUjayUS3ANrFm5BAsLWbPAfzEblzDzPPXewO/9+r4vEgEAAAAAAAAAgEiksTs1n5zcumtPTR+pUX7iY6tXw7s33yN7tz/h1DXFBlUpH22DU4fB8vFzcf+Z7cJnsHb62hrkDurberIVVTVRlUpbdbQ5kdkqfPzdA1/Fc1CcYOXkZWAx/xQbXTprTAzNqVW6Gjr7Jv7vP5zUxvlbevPyvWt8/Vql0ldZ29Aavgvx7PJFMrdz3zu7/9C/kH/sSM/k1Sk/4R+griWeVgIAAAAAAAAAAAAAAAAAAAAAAAAAKCe/1CxDXQ==",
+      "gl_error": 0,
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "native_route": {
+        "SendDataToGPU_observed_in_Drawing_route": false,
+        "drawing_phase_vector_object_pointer": "0x10034550",
+        "host_assigned_pointer": "0x10034550",
+        "rt_plus80_before_bridge": "0x0",
+        "rt_plus88_before_bridge": "0x0",
+        "rt_update_input_slot_offset": 88,
+        "same_rt_pointer": "0x10034060",
+        "same_vector_object_identity": true,
+        "selected_class": "SPen::DefaultPenStrokeDrawableGL",
+        "stream_length": 72,
+        "stream_sha256": "33d2a0a2ca327870df58c5a114b67005cbac8b3ab6e3d68dd96bfb2d1e085cb9",
+        "transport_scope": "Drawing route records native AddPoint vector; wrapper clears RT+80. Host explicitly assigns that same vector object to RT+88 before native Update. This is a bounded same-object join, not evidence that Drawing invoked SendDataToGPU or queued a GPU update.",
+        "wrapper_clears_rt_plus80_after_return": true
+      },
+      "native_stream_hex": "00009e410000944100000040d676a841878e9c41000000404202b741b9b1a341000000409d43c541124ca84100000040dd17d3412b79ab4100000040fbabe2417a0aae4100000040"
+    },
+    "tool1-2x": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00009e41",
+            "00009441"
+          ],
+          [
+            "0000b241",
+            "0000aa41"
+          ],
+          [
+            "0000d041",
+            "00008441"
+          ],
+          [
+            "0000f441",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "native_libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "framebuffer": {
+        "height": 128,
+        "kind": "host RGBA8 texture-backed FBO",
+        "read_format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "status": "0x8cd5",
+        "viewport": [
+          0,
+          0,
+          256,
+          128
+        ],
+        "width": 256
+      },
+      "native_stream_sha256": "33d2a0a2ca327870df58c5a114b67005cbac8b3ab6e3d68dd96bfb2d1e085cb9",
+      "instance_count": 6,
+      "rgba_sha256": "6b1f566136e357b2cbc7e3faa888977fc33d51d7d8e91c25577fe2e98279d075",
+      "rgba_zlib_base64": "eNrt2TtIlQEYBmAtNQ+m5fFyKi+ZlslJT3pKMU1MLIuCyPKS3bykgS0V2RAYBdEFJKTQLkOLU2tja2NDFNTS0NBSUw1BUBDVIY6EBGUtHn0eeMd/eeH7+P/vT0oCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADmmuw10QP5Va2nMwsqWrUBC0NKekZOUUP3zU0n7n2Lpbp3/H1p69CDlCUZQe3A/Bba2HauZmDiU3z+4yluOnwnNZAV0hDMX9HB219mzn48VYeuv1leUtOuJVh48x9LeP/o06KGrvGc8oa+tMycEo3B/H///10quy+/WlmzZzS3ovF4ILiqUnuQ2Gbe//42Fe3nn6xuPna/eGvPZEFd+7X0ZaFybUJiyq1oGgp3Xno52z0w/Z3QceFZ2c6TD2M3g3DnxRfZpZu7tAqJI7i2tic6OPn5X3fAjH3wPKd8S69WIXFk5JfWhyI7zpa09E9V9lx5/T87IHJ07N2ilNSAViHx5IWbh+OzHB26+3XWO+DHM+4CkLgCwcJIsKz2YF5423BJy8DU9D74w3/DWNbtPvVo0eLUdC1C4ksJZOaHIm0jBXX7rhY39kys3zvyOD7rNf23Pv46+9V94x9CVdvPaA3mp7SM7MLYnT+raMOupSvKGgvrO29Ejoy9/Xn/j3ZoCBaa5GQdAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABz2Xcfz1eK",
+      "gl_error": 0,
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "native_route": {
+        "SendDataToGPU_observed_in_Drawing_route": false,
+        "drawing_phase_vector_object_pointer": "0x10034550",
+        "host_assigned_pointer": "0x10034550",
+        "rt_plus80_before_bridge": "0x0",
+        "rt_plus88_before_bridge": "0x0",
+        "rt_update_input_slot_offset": 88,
+        "same_rt_pointer": "0x10034060",
+        "same_vector_object_identity": true,
+        "selected_class": "SPen::DefaultPenStrokeDrawableGL",
+        "stream_length": 72,
+        "stream_sha256": "33d2a0a2ca327870df58c5a114b67005cbac8b3ab6e3d68dd96bfb2d1e085cb9",
+        "transport_scope": "Drawing route records native AddPoint vector; wrapper clears RT+80. Host explicitly assigns that same vector object to RT+88 before native Update. This is a bounded same-object join, not evidence that Drawing invoked SendDataToGPU or queued a GPU update.",
+        "wrapper_clears_rt_plus80_after_return": true
+      },
+      "native_stream_hex": "00009e410000944100000040d676a841878e9c41000000404202b741b9b1a341000000409d43c541124ca84100000040dd17d3412b79ab4100000040fbabe2417a0aae4100000040"
+    },
+    "tool1-4x": {
+      "input": {
+        "advanced_getter_pointer_nonnull": false,
+        "advanced_setting_state": "default_unset",
+        "curve_enabled": true,
+        "kind": "synthetic native ObjectStroke setter input; no serialized SDocx parser input",
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.DefaultPen",
+        "pen_size_f32_bits": "00004040",
+        "points_f32_bits": [
+          [
+            "00009e41",
+            "00009441"
+          ],
+          [
+            "0000b241",
+            "0000aa41"
+          ],
+          [
+            "0000d041",
+            "00008441"
+          ],
+          [
+            "0000f441",
+            "0000b041"
+          ]
+        ],
+        "pressure_f32_bits": [
+          "0000803e",
+          "0000003f",
+          "0000403f",
+          "0000803f"
+        ],
+        "stroke_type": 0,
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          10,
+          20,
+          30,
+          40
+        ],
+        "tool_type": 1
+      },
+      "native_libraries": {
+        "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+        "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+      },
+      "framebuffer": {
+        "height": 256,
+        "kind": "host RGBA8 texture-backed FBO",
+        "read_format": "GL_RGBA/GL_UNSIGNED_BYTE",
+        "status": "0x8cd5",
+        "viewport": [
+          0,
+          0,
+          512,
+          256
+        ],
+        "width": 512
+      },
+      "native_stream_sha256": "33d2a0a2ca327870df58c5a114b67005cbac8b3ab6e3d68dd96bfb2d1e085cb9",
+      "instance_count": 6,
+      "rgba_sha256": "e0ed89faebf5e97e8497c39dee5556b75dce6630287cde8dcb8bb06ee108e163",
+      "rgba_zlib_base64": "eNrt3V1olXUYAHC3Hd1xX2dzbmfHfZ0d9+3m5rbY5kdOZ+rmrOWWaUsnNg2iZYT2qU2JAjGQChWJPqAohC4lvAq6CAqCisjLuumiq6CuooLyDYwpmVOP8xz9/eCBc97zXj3PxfOe//mf/zNnDgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/yUUzlsYqWwZiHUMHgwieB1ckxkAuP1kZecUlbb071uy9fD5zr2n/5oewbXgs+AemQKA20O4sKwxcc+jH13e9y+P4J7gXhkDgPT/3l999443r9b7L0Zwr3UAAEhvsWWDL8y091+Miu6RozIHAOkplJ27oOG+pz+71v7/z28B6/aeKa7v2SmLAJBeCuPtw9fT+6dH5Yptb2QXLEzIJgCkh9KWNZM32v+DiPftejcUzi+RUQC4c/p/EI3Dz35evXrnW7HOoamiRNfWrLnhfBkGgNSTjPX/K0XtxsfPFtf3jssyAKSWG9n/N9Mo77r3pdxoorco0TEaqWoZnJsTick8ANxa1/P/v2uJjj2n/rz8LMHqVQ+fzi2t6ZZ9ALg1rvX8n2TFkgeOnA/2DdasnfigdmDy46qVY6dKW/ufzC4oWawqAHDzzfT839mIxuHnvoguXb8/IyuUnVNS3VXS3PdYtG39gaKajpHsSGmdagFActcBrjT/51ZE6/ZXfmjf9dqv069deP9LRc/IsZyF1Z0qBgDJE8z6rVrx0IlUeAb4vzWCSNXSIdUCgOTJDM3LifeNv5PKzwDNI4e+zi9v7FctAEie+cUVbamyJ+BKUbN29/sZGZlZqgUAyTMvvzhe2bv1eMv2l79P1WeA4FwBlQKA5Mstid+1qGvzkZo1u9+rG9h3rnXs6I+p0v/Lu7eYRQwAs6Cgonl98+jUt6nQ/5tGDn6lIgAwO4IZPw2b93+q/wPAnSVcFGuu6Bl9tWnL819eeubvyT9mq/8H5wGoBADMvmCOUEF507rgjL68srpV0bYNB9rHj/88K/v/Fnc9qAIAkBqC2cI1/RMf3szen1i350xGZmiebANACsnIyIxUtW4qa9/wTHz1+NuVy7e9vqhz04t1GyfP3vj8oMPfRSpbBiQZANJDKJxfEsz0Ceb+/btn4JETvzWPHvqmbuCJc207jv10tT1/hfFl98skAKSncGGsKTea6A0XRhsuXgv+W1A/9NQnHRMnf79kX+GF98EaQl508XKZA4DbU15Z7cpgnSDWOTS1oLZ7bP6CiqWyAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzNTfhx35sQ==",
+      "gl_error": 0,
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "native_route": {
+        "SendDataToGPU_observed_in_Drawing_route": false,
+        "drawing_phase_vector_object_pointer": "0x10034550",
+        "host_assigned_pointer": "0x10034550",
+        "rt_plus80_before_bridge": "0x0",
+        "rt_plus88_before_bridge": "0x0",
+        "rt_update_input_slot_offset": 88,
+        "same_rt_pointer": "0x10034060",
+        "same_vector_object_identity": true,
+        "selected_class": "SPen::DefaultPenStrokeDrawableGL",
+        "stream_length": 72,
+        "stream_sha256": "33d2a0a2ca327870df58c5a114b67005cbac8b3ab6e3d68dd96bfb2d1e085cb9",
+        "transport_scope": "Drawing route records native AddPoint vector; wrapper clears RT+80. Host explicitly assigns that same vector object to RT+88 before native Update. This is a bounded same-object join, not evidence that Drawing invoked SendDataToGPU or queued a GPU update.",
+        "wrapper_clears_rt_plus80_after_return": true
+      },
+      "native_stream_hex": "00009e410000944100000040d676a841878e9c41000000404202b741b9b1a341000000409d43c541124ca84100000040dd17d3412b79ab4100000040fbabe2417a0aae4100000040"
+    }
+  }
+}

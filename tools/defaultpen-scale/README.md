@@ -1,31 +1,216 @@
-# DefaultPen tool-0 crossing evidence
+# DefaultPen output-scale controls
 
-A fresh synthetic size-3 tool-0 path crosses itself at (10.5, 8.25),
-(42.25, 23.5), (10.5, 23.5), (42.25, 8.25), with the harness's alternating
-pressures 0.25/0.5/0.75/1. Native Drawing callback streams match the Rust
-fixture; the host Mesa captures have zero reported GL errors. The existing
-output-scale profile reduces RGB L1 error against the native frame on #fcfcfc:
+Twenty-nine synthetic native Model/Drawing and host-Mesa controls retain inputs,
+VBOs, projection matrices, frames and hashes. The harness supplies synthetic
+setters, overrides RT paint color and bridges the Drawing-selected vector to
+native update/draw. Framebuffer resizing changes projection; it is not recorded
+zoom. These controls do not establish serialized-note or Android-device parity.
 
-| Scale | SVG | MuPDF | PDFium |
-| --- | --- | --- | --- |
-| 1× | 26036 → 15035 | 30046 → 18821 | 26776 → 15503 |
-| 2× | 50101 → 27779 | 68804 → 46406 | 54187 → 31817 |
-| 4× | 106881 → 62764 | 169931 → 125196 | 106023 → 62102 |
+Comparisons use opaque #fcfcfc paper, public SVG and direct document PDF. The
+0.2-output-pixel edge adjustment is empirical; resvg and PDF readers sample
+differently. Reduced RGB L1 error is not pixel identity. Other transforms,
+scales, readers, devices and notes remain unverified. The controls below do not
+change production behavior.
 
-The [native fixture](tool0-crossing-native.json) and [export receipt](tool0-crossing-export.json)
-retain hashes and reader versions. The fixture retains both the Drawing-phase callback hash and bridged stream hash;
-the comparison checks their equality and pins its capture and comparator sources.
-The export comparison uses clean source from pinned revision
-`8ef491537f96154099e7c0c4066c25bba0f4aa0a`, its locked Cargo dependencies,
-and exact tool inputs referenced by its Rust tests. The receipt records that
-revision and tool dependency hashes. Native recapture requires the prepared
-host: pinned Samsung DSOs, Unicorn, AArch64 binutils, Mesa/EGL, and the
-local ignored helpers listed in `hashes.json`; the complete host dependency
-closure is not pinned. The capture rejects an existing output directory.
+Native recapture requires a prepared host with project-local pinned Samsung
+DSOs, Unicorn, AArch64 binutils, Mesa/EGL and ignored helpers referenced by the
+scripts. Wrappers hard-code the original project root and temporary inputs;
+there is no clean-checkout acquisition recipe or fully pinned dependency closure.
+Use fresh output directories and verify captures before interpreting them:
 
-The comparison uses an explicit host vector bridge and a synthetic input; it does not
-establish saved-note or device parity. Lower error does not imply pixel identity.
-No production change follows.
+```sh
+.venv/bin/python tools/defaultpen-scale/capture.py /tmp/defaultpen-capture
+.venv/bin/python tools/defaultpen-scale/verify.py /tmp/defaultpen-capture
+```
+
+```sh
+mkdir -p /tmp/defaultpen-export
+CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 \
+CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_BUILD_JOBS=2 \
+SDOCX_DEFAULTPEN_SCALE_EXPORT=/tmp/defaultpen-export \
+cargo test -p sdocx --features pdf,serde --lib defaultpen_scale_profile_matches_native_controls_and_preserves_replay
+.venv/bin/python tools/defaultpen-scale/compare_pdf.py /tmp/defaultpen-export
+```
+
+```sh
+python tools/defaultpen-scale/compare_pdf.py /tmp/defaultpen-export --case zero-half
+```
+
+```sh
+.venv/bin/python tools/defaultpen-scale/tool0_capture.py --tool 0 /tmp/defaultpen-tool0 --case tool0
+.venv/bin/python tools/defaultpen-scale/tool0_capture.py --tool 1 /tmp/defaultpen-tool1-control --case tool0
+python3 tools/defaultpen-scale/verify_tool0.py --tool0 /tmp/defaultpen-tool0 --tool1 /tmp/defaultpen-tool1-control
+```
+
+For the base `capture.py` and `verify.py` pair, add `--case tool2red` to
+select one family; verification without `--case` requires all cases. The
+separate `verify_tool0.py` command above has no `--case` option. The first export comparison
+covers the original 28 cases with PyMuPDF 1.28.2, pypdfium2 5.14.0 and PDFium
+156.0.8076.0. The separate `zero-half` comparison uses PyMuPDF 1.28.2,
+pypdfium2 5.9.0 and PDFium 150.0.7869.0: RGB L1 falls from 1,264 to 699 in
+SVG, 2,386 to 1,599 in MuPDF and 1,527 to 699 in PDFium. Remove generated PDFs
+after comparison.
+
+The separate size-3, four-point tool-0/tool-1 control has eight/six Drawing
+instances; same-scale native RGBA hashes differ at 1×, 2× and 4×. Its
+[native receipt](../../conformance/defaultpen-tool0-scale-native.json) retains
+compressed readbacks, streams, library identities and bridge details. Stream
+hashes match Drawing sources and GL errors are zero. Run
+`python3 tools/defaultpen-scale/verify_tool0.py` without paths to check retained
+bytes; its capture wrapper pins five local sources and checks substitutions.
+
+The [public-export comparison](tool0-export-receipt.json) records reduced error
+for both tools at all three scales in SVG, MuPDF and PDFium. Its historical
+comparator copied selected workspace sources to an isolated checkout; that copy
+omits include dependencies required by the current tree. The receipt pins the
+lockfile, adapted test and outputs, but not the complete source or runtime.
+The base, diverse and reversal export wrappers and their derivatives should be
+treated as historical recipes until their isolated source closure is updated.
+The retained receipts record reader versions and measured results.
+
+## DefaultPen tool-0 wider path control
+
+A size-8 tool-0 path uses (10.25, 9.5), (16.5, 23), (27.75, 8.25),
+(45.5, 23.5), with pressure 0.25/0.5/0.75/1. Its 16 native instances and
+frames are retained at 1×, 2× and 4×. The existing profile reduces RGB L1
+in SVG and both PDF readers at every scale; the
+[export receipt](tool0-diverse-export-receipt.json) retains measurements,
+source/fixture/output hashes and reader versions.
+
+Run the verifier without a path to check retained bytes. The historical export
+comparator deletes generated exports; its full dependency closure is not pinned.
+
+```sh
+.venv/bin/python tools/defaultpen-scale/tool0_diverse_capture.py --tool 0 /tmp/defaultpen-tool0-diverse --case tool0
+python3 tools/defaultpen-scale/verify_tool0_diverse.py /tmp/defaultpen-tool0-diverse
+```
+
+
+## Tool-0 tilt and orientation control
+
+Replacing the wider control's zero channels with tilt 0.1/0.4/0.8/1.2 and
+orientation 0.2/1.1/2.4/5.3 leaves native streams and RGBA frames byte-identical
+at 1×, 2× and 4×. Public SVG and PDF errors also match the wider control
+(MuPDF 1.28.2, PDFium 150.0.7869.0). This is not general channel invariance.
+The [receipt](tool0-channels-receipt.json) records input bits, hashes and exports.
+
+```sh
+.venv/bin/python tools/defaultpen-scale/tool0_channels_capture.py --tool 0 /tmp/defaultpen-tool0-channels --case tool0
+python3 tools/defaultpen-scale/verify_tool0_channels.py /tmp/defaultpen-tool0-channels
+```
+
+The verifier checks inputs, DSOs, streams, frames, GL errors, script pins and
+adapted fixture hash without Cargo. The historical export comparator checks
+zero-channel bytes against nonzero-capture hashes before reuse.
+
+
+## Tool-0 reversal and alternating pressure
+
+A size-8 path reverses twice through (8, 16), (42, 16), (12, 18), (48, 20),
+with pressure 1/0.15/1/0.15. Native Drawing emits 21 instances at each of
+1×, 2× and 4×. The [native fixture](tool0-reversal-native.json) retains streams,
+frames, projection and observed native color (0.2, 0.4, 0.6, 1.0), used by the
+comparator. The profile reduces SVG and both PDF-reader errors at every scale;
+the [export receipt](tool0-reversal-export.json) records measurements and hashes.
+
+The receipt records reader versions, source/output hashes and errors. Its script
+hash identifies the adapted base comparator; the wrapper adds fixture paths but
+does not supply all current include dependencies.
+
+```sh
+.venv/bin/python tools/defaultpen-scale/tool0_reversal_capture.py --tool 0 /tmp/defaultpen-reversal --case tool0
+python3 tools/defaultpen-scale/retain_tool0_reversal.py /tmp/defaultpen-reversal > /tmp/defaultpen-reversal-native.json
+cmp /tmp/defaultpen-reversal-native.json tools/defaultpen-scale/tool0-reversal-native.json
+```
+
+## Tool-0 uniform-pressure pair
+
+The wider size-8, four-point path produces identical 16-instance streams and
+host frames with all-zero, all-one and alternating pressure at 1×, 2× and 4×.
+The [native receipt](tool0-pressure-receipt.json) retains both uniform inputs
+and output hashes; the diverse fixture supplies shared streams and frames.
+This establishes pressure insensitivity only for these inputs and this tool/path.
+
+Public exports were tested only at full pressure: geometry matches the stream,
+and SVG and both PDF-reader errors equal the wider alternating-pressure control,
+improving at every scale. See the [export receipt](tool0-pressure-export.json).
+The historical wrapper copies selected Rust include inputs; its dependency
+closure is not fully pinned. Run the native verifier without paths to check
+retained data.
+
+```sh
+.venv/bin/python tools/defaultpen-scale/tool0_pressure_capture.py --pressure zero --tool 0 /tmp/defaultpen-zero --case tool0
+.venv/bin/python tools/defaultpen-scale/tool0_pressure_capture.py --pressure full --tool 0 /tmp/defaultpen-full --case tool0
+python3 tools/defaultpen-scale/verify_tool0_pressure.py --zero /tmp/defaultpen-zero --full /tmp/defaultpen-full
+```
+
+## Tool-0 narrow fractional-coordinate control
+
+A size-1 path uses (10.125, 12.375), (13.625, 12.875), (18.375, 14.125),
+(24.875, 15.375). Native ObjectStroke GetPoint preserves all fractional inputs;
+MotionEvent GetX/GetY returns the final 24.875/15.375, recorded in the
+[getter receipt](tool0-subpixel-getters.json). The
+[native fixture](tool0-subpixel-native.json) contains eight instances and frames.
+The profile reduces SVG and both PDF-reader errors at 1×, 2× and 4×; see the
+[export receipt](tool0-subpixel-export.json).
+
+The integer-coordinate variant changes native stream and framebuffer hashes
+at every scale and also improves all three export comparisons. Its
+[native fixture](tool0-integer-native.json) and
+[export receipt](tool0-integer-export.json) retain the paired evidence.
+Reproduce fractional/getter and integer controls, respectively:
+
+```sh
+.venv/bin/python tools/defaultpen-scale/tool0_subpixel_capture.py --tool 0 /tmp/defaultpen-subpixel --case tool0
+python3 tools/defaultpen-scale/retain_tool0_subpixel.py /tmp/defaultpen-subpixel > /tmp/defaultpen-subpixel.json
+cmp /tmp/defaultpen-subpixel.json tools/defaultpen-scale/tool0-subpixel-native.json
+python3 tools/defaultpen-scale/capture_subpixel_getters.py /tmp/defaultpen-subpixel > /tmp/defaultpen-getters.json
+cmp /tmp/defaultpen-getters.json tools/defaultpen-scale/tool0-subpixel-getters.json
+```
+
+```sh
+.venv/bin/python tools/defaultpen-scale/tool0_integer_capture.py --tool 0 /tmp/defaultpen-integer --case tool0
+python3 tools/defaultpen-scale/retain_tool0_integer.py /tmp/defaultpen-integer > /tmp/defaultpen-integer.json
+cmp /tmp/defaultpen-integer.json tools/defaultpen-scale/tool0-integer-native.json
+```
+
+## Tool-0 repeated points
+
+A size-1 input repeats both endpoints: (10.25, 12.5), (10.25, 12.5),
+(24.5, 18.25), (24.5, 18.25), with pressure 0.25/0.5/0.75/1. The
+[native fixture](tool0-repeat-native.json) retains streams and frames.
+ObjectStroke GetPoint returns all four repeated coordinates; MotionEvent
+GetX/GetY returns the last coordinate in observed Drawing and saved-redraw
+calls. The [getter receipt](tool0-repeat-getters.json) retains raw values and
+hashes. Reconstructed export geometry matches the stream, and the profile
+reduces SVG and both PDF-reader errors at 1×, 2× and 4×. The
+[export receipt](tool0-repeat-export.json) records measurements, hashes and
+versions. Comparison requires both PDF readers, resvg and the shared Cargo target.
+
+```sh
+.venv/bin/python tools/defaultpen-scale/tool0_repeat_capture.py --tool 0 /tmp/defaultpen-repeat --case tool0
+python3 tools/defaultpen-scale/retain_tool0_repeat.py /tmp/defaultpen-repeat > /tmp/defaultpen-repeat-native.json
+cmp /tmp/defaultpen-repeat-native.json tools/defaultpen-scale/tool0-repeat-native.json
+python3 tools/defaultpen-scale/capture_subpixel_getters.py /tmp/defaultpen-repeat > /tmp/defaultpen-repeat-getters.json
+cmp /tmp/defaultpen-repeat-getters.json tools/defaultpen-scale/tool0-repeat-getters.json
+```
+
+## Tool-0 crossing control
+
+A size-3 path crosses through (10.5, 8.25), (42.25, 23.5), (10.5, 23.5),
+(42.25, 8.25), with pressure 0.25/0.5/0.75/1. Native callback streams match
+the Rust fixture and GL errors are zero. The profile reduces SVG and both
+PDF-reader errors at 1×, 2× and 4×. The
+[native fixture](tool0-crossing-native.json) and
+[export receipt](tool0-crossing-export.json) retain measurements, hashes and
+reader versions; comparison checks Drawing-callback/bridged-stream hash equality
+and pins capture/comparator sources.
+
+This export comparator uses clean source from revision
+`8ef491537f96154099e7c0c4066c25bba0f4aa0a`, locked Cargo dependencies and exact
+Rust test inputs. The receipt records revision and tool dependency hashes.
+Native recapture still needs the prepared host and ignored helpers listed in
+`hashes.json`; the capture rejects existing output directories.
 
 ```sh
 .venv/bin/python tools/defaultpen-scale/tool0_crossing_capture.py --tool 0 /tmp/defaultpen-crossing-fresh --case tool0

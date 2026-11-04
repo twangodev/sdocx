@@ -1,0 +1,52 @@
+{
+  "scope": "Native ObjectStroke GetPoint array and MotionEvent getter returns; synthetic Model/Drawing host capture.",
+  "object_stroke_points": {
+    "count": 4,
+    "data_hex": "000024410000484100002441000048410000c441000092410000c44100009241",
+    "element_size": 8
+  },
+  "motion_coordinate_returns": [
+    {
+      "phase": "draw_object_stroke",
+      "signature": "SPen::MotionEvent::GetX(int) const",
+      "d0": "0x4038800000000000"
+    },
+    {
+      "phase": "draw_object_stroke",
+      "signature": "SPen::MotionEvent::GetY(int) const",
+      "d0": "0x4032400000000000"
+    },
+    {
+      "phase": "draw_object_stroke",
+      "signature": "SPen::MotionEvent::GetX(int) const",
+      "d0": "0x4038800000000000"
+    },
+    {
+      "phase": "draw_object_stroke",
+      "signature": "SPen::MotionEvent::GetY(int) const",
+      "d0": "0x4032400000000000"
+    },
+    {
+      "phase": "saved_redraw",
+      "signature": "SPen::MotionEvent::GetX(int) const",
+      "d0": "0x4038800000000000"
+    },
+    {
+      "phase": "saved_redraw",
+      "signature": "SPen::MotionEvent::GetY(int) const",
+      "d0": "0x4032400000000000"
+    },
+    {
+      "phase": "saved_redraw",
+      "signature": "SPen::MotionEvent::GetX(int) const",
+      "d0": "0x4038800000000000"
+    },
+    {
+      "phase": "saved_redraw",
+      "signature": "SPen::MotionEvent::GetY(int) const",
+      "d0": "0x4032400000000000"
+    }
+  ],
+  "native_stream_sha256": "221ef832d4aaed949ad7c51397af294fb35e817120c2b54ee1457bd2f7ee4b3b",
+  "native_rgba_sha256": "66769aad9fca9f5652c03cd7f37c8c555d9836c4e4a46389fa47d18c7bcb07dc"
+}
