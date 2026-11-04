@@ -1529,35 +1529,35 @@ mod tests {
             (_, 16) if six => crate::ink::simplebrush::crop_fixtures::pixels(
                 "conformance/simplebrush-six-size16-crop.rgba",
             ),
-            (true, 16) if alt => include_bytes!(
-                "../../../../conformance/simplebrush-paint-v25-four-size16-alt-crop.rgba"
+            (true, 16) if alt => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-paint-v25-four-size16-alt-crop.rgba",
             ),
-            (true, 16) => include_bytes!(
-                "../../../../conformance/simplebrush-paint-v25-four-size16-crop.rgba"
+            (true, 16) => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-paint-v25-four-size16-crop.rgba",
             ),
-            (true, 4) if alt => include_bytes!(
-                "../../../../conformance/simplebrush-paint-v25-four-size4-alt-crop.rgba"
+            (true, 4) if alt => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-paint-v25-four-size4-alt-crop.rgba",
             ),
             (false, 4) => crate::ink::simplebrush::crop_fixtures::pixels(
                 "conformance/simplebrush-paint-v25-size4-crop.rgba",
             ),
-            (false, 8) => {
-                include_bytes!("../../../../conformance/simplebrush-paint-v25-crop.rgba")
-            }
-            (false, 12) => {
-                include_bytes!("../../../../conformance/simplebrush-paint-v25-size12-crop.rgba")
-            }
+            (false, 8) => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-paint-v25-crop.rgba",
+            ),
+            (false, 12) => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-paint-v25-size12-crop.rgba",
+            ),
             (false, 16) => crate::ink::simplebrush::crop_fixtures::pixels(
                 "conformance/simplebrush-paint-v25-size16-crop.rgba",
             ),
             (true, 4) => crate::ink::simplebrush::crop_fixtures::pixels(
                 "conformance/simplebrush-paint-v25-four-size4-crop.rgba",
             ),
-            (true, 8) => {
-                include_bytes!("../../../../conformance/simplebrush-paint-v25-four-crop.rgba")
-            }
-            (true, 12) => include_bytes!(
-                "../../../../conformance/simplebrush-paint-v25-four-size12-crop.rgba"
+            (true, 8) => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-paint-v25-four-crop.rgba",
+            ),
+            (true, 12) => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-paint-v25-four-size12-crop.rgba",
             ),
             _ => unreachable!(),
         };

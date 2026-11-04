@@ -11,7 +11,7 @@
   "paint_observation": {
     "full_frame_sha256": "db205446afe39b3effdf3cd69590aec7086b399367e280d6c445e8be9a3da076",
     "crop": {
-      "path": "simplebrush-paint-v25-four-size16-crop.rgba",
+      "path": "simplebrush-paint-v25-four-size16-crop.rgba", "storage": {"format":"rgba-palette-runs-v1","container":"conformance/simplebrush-native-crop-runs.json","case":"conformance/simplebrush-paint-v25-four-size16-crop.rgba","path_role":"materialized legacy path"},
       "sha256": "a9951af2b5f3f5a8ba5d0cf15e03ad26989aa36ecfdd8a184b5531e85282fc4b",
       "dimensions": [40, 20],
       "nonzero_alpha_pixels": 384,

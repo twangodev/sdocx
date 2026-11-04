@@ -169,7 +169,7 @@
       ],
       "nonzero_alpha": 643,
       "crop": {
-        "file": "simplebrush-2x-reverse3.rgba",
+        "file": "simplebrush-2x-reverse3.rgba", "storage": {"format":"rgba-palette-runs-v1","container":"conformance/simplebrush-native-crop-runs.json","case":"conformance/simplebrush-2x-reverse3.rgba","path_role":"materialized legacy path"},
         "sha256": "a14dd68c0e9847b4fde5b5b0c9ccd0ddb5cefe9cd2d5d3a2fd9948def1144a55"
       },
       "svg_alpha_l1_generic_one_two": [

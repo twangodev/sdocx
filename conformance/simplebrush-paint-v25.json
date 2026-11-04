@@ -30,7 +30,7 @@
     "readback": "Raw host GLES glReadPixels RGBA; original receipt does not infer premultiplication.",
     "full_frame_sha256": "87b8a6ac6ef0fef178230c78a1fa8c8f49946e41c61074b59e4d533a12de638e",
     "full_frame_bytes": 8294400,
-    "crop": {"path": "simplebrush-paint-v25-crop.rgba", "sha256": "a44b658a3df32e1bb4c457404368a4d26600341c56548730ea5ff7e18035425b", "dimensions": [32, 16], "origin": "OpenGL bottom-left, x=0..31, y=0..15, contiguous RGBA rows", "bytes": 2048, "nonzero_alpha_pixels": 137, "all_frame_nonzero_alpha_within_crop": true}
+    "crop": {"path": "simplebrush-paint-v25-crop.rgba", "storage": {"format":"rgba-palette-runs-v1","container":"conformance/simplebrush-native-crop-runs.json","case":"conformance/simplebrush-paint-v25-crop.rgba","path_role":"materialized legacy path"}, "sha256": "a44b658a3df32e1bb4c457404368a4d26600341c56548730ea5ff7e18035425b", "dimensions": [32, 16], "origin": "OpenGL bottom-left, x=0..31, y=0..15, contiguous RGBA rows", "bytes": 2048, "nonzero_alpha_pixels": 137, "all_frame_nonzero_alpha_within_crop": true}
   },
   "provenance": {
     "ephemeral_receipt": {"path_at_capture": "/tmp/sdocx-simplebrush-native-paint-root-v25.log", "sha256": "88871c2265b988b3e9112db6532ec15bb818701b47add86e33641c281137cfcd"},

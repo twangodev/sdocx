@@ -45,7 +45,7 @@
         ],
         "paint_clean": true,
         "crop": {
-          "file": "simplebrush-2x-fraction12.rgba",
+          "file": "simplebrush-2x-fraction12.rgba", "storage": {"format":"rgba-palette-runs-v1","container":"conformance/simplebrush-native-crop-runs.json","case":"conformance/simplebrush-2x-fraction12.rgba","path_role":"materialized legacy path"},
           "dimensions": [
             63,
             32
