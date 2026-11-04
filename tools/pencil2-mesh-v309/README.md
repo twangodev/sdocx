@@ -28,11 +28,10 @@ These are historical experiments, not production rendering or maintained reader
 pixel checks. The original receipt retains measurements and provenance. The
 manifest labels the archived exporter revision separately from native input pins.
 
-From the repository root, check retained inputs without emitting note data:
+Run the maintained note-derived geometry regression:
 
 ```sh
-python3 tools/pencil2-mesh-v309/verify_inputs.py
-python3 tools/pencil2-mesh-v309/verify_inputs.py --native-local
+CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo test -p sdocx --lib --features render,serde note_source_preserves_native_geometry_except_two_known_ulp_lanes
 ```
 
 Native recapture uses the unchanged `capture.py`. On a host with its local
@@ -42,8 +41,8 @@ instead of the default blue backdrop. The output directory contains note-derived
 frames and geometry: keep them local. Native note frames are not retained here.
 The capture requires the independent-Drawing harness, mixed-Drawing patch,
 local `tmp/vector-parity-plan` helpers, native ARM64 libraries, emulation and Mesa.
-The verifier checks recorded direct adapter hashes, not every transitive
-runtime dependency. Recapture uses synthetic queues and explicit Update/Draw;
+The manifest records direct adapter hashes, not every transitive runtime
+dependency. Recapture uses synthetic queues and explicit Update/Draw;
 it establishes neither normal saved-page scheduling nor device parity.
 
 `first_probe.py` remains because the separate precision control consumes its

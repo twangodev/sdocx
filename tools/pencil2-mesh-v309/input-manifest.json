@@ -1,5 +1,5 @@
 {
-  "scope": "Retained native input, capture entry point and descriptor hashes from the original manifest. --native-local additionally checks direct local capture adapters. Transitive native dependencies and runtime libraries remain incompletely pinned.",
+  "scope": "Retained native input, capture entry point and descriptor hashes from the original manifest. native_local_paths identifies direct local capture adapters. Transitive native dependencies and runtime libraries remain incompletely pinned.",
   "native_local_paths": [
     "tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/inkpen_paint_native.py",
     "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-geometry-v12/capture_candidate.py",

@@ -2,7 +2,7 @@
 
 This modifies the retained FountainPen-derived GLV10 serialized frame before native `NewApplyBinary`: the pressure seed is 0.70 and a path delta is 48. This is synthetic, not a saved BrushPen note. Native string resolution, Model attachment, Drawing and RTV1 run under host adapters; the complete note loader and device rendering are outside this control. Principal native libraries and helpers are pinned; transitive adapters and toolchain are not.
 
-Run `python3 tools/brushpen-third/verify_inputs.py` to verify the source-derived frame, payload and native geometry and RGBA hashes. Reproduce native capture with `BRUSHPEN_CAPTURE_ROOT="$PWD" PYTHONPATH=scratch/apk-analysis-runtime/python .venv/bin/python tools/brushpen-third/capture.py`; this writes the frame and native fixture outputs. The retained receipt includes the input hashes as well as the capture result.
+Reproduce native capture with `BRUSHPEN_CAPTURE_ROOT="$PWD" PYTHONPATH=scratch/apk-analysis-runtime/python .venv/bin/python tools/brushpen-third/capture.py`; this writes the frame and native fixture outputs. The retained receipt includes the input hashes as well as the capture result.
 
 The experimental output hook and external comparator have been retired. Run the
 in-memory native regression with the project shared Cargo settings:
