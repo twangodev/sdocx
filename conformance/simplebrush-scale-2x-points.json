@@ -42,7 +42,7 @@
         85
       ],
       "crop": {
-        "file": "simplebrush-scale-2x-points-4.rgba",
+        "file": "simplebrush-scale-2x-points-4.rgba", "storage": {"format":"rgba-palette-runs-v1","container":"conformance/simplebrush-native-crop-runs.json","case":"conformance/simplebrush-scale-2x-points-4.rgba","path_role":"materialized legacy path"},
         "sha256": "8eebeffa87a766f87248c84e29e3b1c3aa985bc22d77e91fb3ce60d60fdacf22"
       }
     },
@@ -58,7 +58,7 @@
         85
       ],
       "crop": {
-        "file": "simplebrush-scale-2x-points-7.rgba",
+        "file": "simplebrush-scale-2x-points-7.rgba", "storage": {"format":"rgba-palette-runs-v1","container":"conformance/simplebrush-native-crop-runs.json","case":"conformance/simplebrush-scale-2x-points-7.rgba","path_role":"materialized legacy path"},
         "sha256": "67af6d86e27e918ac8ce0caa28f25348cfc727eb097c733f1b247fbb17785469"
       }
     },

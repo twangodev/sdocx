@@ -32,7 +32,7 @@ pub(crate) fn pixels(name: &str) -> &'static [u8] {
                 if fixture["schema"] == "sdocx-native-rgba-runs-v1" {
                     31
                 } else {
-                    62
+                    65
                 }
             );
             cases
@@ -77,4 +77,52 @@ pub(crate) fn pixels(name: &str) -> &'static [u8] {
         .get(name)
         .expect("unknown native crop")
         .as_slice()
+}
+
+#[test]
+fn receipt_only_scale_crops_preserve_native_hashes() {
+    let scale: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-scale-2x-host.json"
+    ))
+    .unwrap();
+    let points: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-scale-2x-points.json"
+    ))
+    .unwrap();
+    for (filename, cases) in [
+        ("simplebrush-2x-scale2.rgba", &scale["capture"]["cases"]),
+        ("simplebrush-scale-2x-points-4.rgba", &points["cases"]),
+        ("simplebrush-scale-2x-points-7.rgba", &points["cases"]),
+    ] {
+        let receipt = cases
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["crop"]["file"].as_str() == Some(filename))
+            .unwrap();
+        // Loading a case also validates every retained case's byte length/hash.
+        let crop = pixels(&format!("conformance/{filename}"));
+        assert_eq!(
+            format!("{:x}", Sha256::digest(crop)),
+            receipt["crop"]["sha256"].as_str().unwrap()
+        );
+        let bounds = receipt["alpha_bounds"].as_array().unwrap();
+        assert_eq!(bounds.len(), 4);
+        let [x0, y0, x1, y1]: [usize; 4] =
+            std::array::from_fn(|i| usize::try_from(bounds[i].as_u64().unwrap()).unwrap());
+        assert!(x0 < x1 && x1 <= 256 && y0 < y1 && y1 <= 256);
+        let row_bytes = (x1 - x0) * 4;
+        assert_eq!(crop.len(), row_bytes * (y1 - y0));
+        // Preserve native readback row order on the transparent 256x256 target.
+        // This checks retained evidence, without invoking a renderer.
+        let mut frame = vec![0_u8; 256 * 256 * 4];
+        for (row, pixels) in crop.chunks_exact(row_bytes).enumerate() {
+            let offset = ((y0 + row) * 256 + x0) * 4;
+            frame[offset..offset + row_bytes].copy_from_slice(pixels);
+        }
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&frame)),
+            receipt["frame_sha256"].as_str().unwrap()
+        );
+    }
 }
