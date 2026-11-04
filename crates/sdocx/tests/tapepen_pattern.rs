@@ -72,6 +72,23 @@ fn retained_native_controls() {
         format!("{:x}", Sha256::digest(source.as_bytes())),
         "9f8b208a01db838235f795226acd6e68aa42e609b06c6e171a29447f8b68322b"
     );
+    assert_eq!(source.matches("#3F5480").count(), 136);
+    assert_eq!(source.matches("stroke-width=\"1.7\"").count(), 136);
+    for (changed, expected) in [
+        (
+            source.replace("#3F5480", "#AD2244"),
+            "198d1837f26336d46061936281addbff70f2d1e71c6d012ba748dfa564efbaf9",
+        ),
+        (
+            source.replace("stroke-width=\"1.7\"", "stroke-width=\"2.3\""),
+            "6d00dbc4b62f0e793f0a1d781c4c4876069d9ae17dfbf618df11e5a541f2d547",
+        ),
+    ] {
+        assert_eq!(
+            format!("{:x}", Sha256::digest(changed.as_bytes())),
+            expected
+        );
+    }
     assert_eq!(
         format!("{:x}", Sha256::digest(rasterize(&source, 256).unwrap())),
         "42abf1113cfd13c27f1e0ccb29affae62221c0888f5ffcdc2425e2169b71b13d"
@@ -111,7 +128,58 @@ fn retained_native_controls() {
         source.replace("#3F5480", "#XXXXXX"),
         source.replace("stroke-width=\"1.7\"", "stroke-width=\"1e30\""),
         source.replace("M7.495 4.5V10.5", "MNaN 4.5V10.5"),
+        source.replace("#3F5480", "#3F548"),
+        source[..source.len() - 20].to_owned(),
+        format!("{source}extra\n"),
+        source.replace("stroke-width=\"1.7\"", "stroke-width=\"NaN\""),
+        source.replacen("M7.495 4.5V10.5", "M7.495 4.5V4.5", 1),
     ] {
+        // Any panic fails the test as well as an unexpected successful result.
+        assert!(rasterize(&broken, 64).is_err());
+    }
+    let thin = source.replace("stroke-width=\"1.7\"", "stroke-width=\"0.015\"");
+    let skipped = rasterize(&thin, 64).unwrap();
+    assert_eq!(skipped.len(), 64 * 64 * 4);
+    assert!(
+        skipped
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|pixel| *pixel == [200, 233, 241, 255])
+    );
+    let thin_128 = rasterize(&thin, 128).unwrap();
+    assert_eq!(thin_128.len(), 128 * 128 * 4);
+    // The 128px stroke passes the width cutoff, but upstream coverage still
+    // quantizes to the source background for this very thin control.
+    assert!(
+        thin_128
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|pixel| *pixel == [200, 233, 241, 255])
+    );
+    // Independent upstream_texture.c output with the NanoSVG header hashes
+    // pinned in texture-receipt.json; these are not native capture hashes.
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&skipped)),
+        "5ac8486144d2294bfa0345013589587410872e46938ff90f5b47eae8acee8cdb"
+    );
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&thin_128)),
+        "af594704e479ac5768875b9606715c69acc2fbb5e7ccdd9337a8abb7d9bfd07d"
+    );
+    // This f32 width times (64 / 120) is exactly the 0.01 cutoff.
+    let boundary = source.replace(
+        "stroke-width=\"1.7\"",
+        "stroke-width=\"0.01874999888241291\"",
+    );
+    assert_eq!(rasterize(&boundary, 64).unwrap(), skipped);
+    for broken in [
+        thin.replace("#3F5480", "#XXXXXX"),
+        thin.replace("#3F5480", "#3F548"),
+        thin.replacen("M7.495 4.5V10.5", "MNaN 4.5V10.5", 1),
+    ] {
+        assert_ne!(broken, thin);
         assert!(rasterize(&broken, 64).is_err());
     }
 }
