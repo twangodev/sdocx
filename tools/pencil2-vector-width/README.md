@@ -1,19 +1,6 @@
-# Radial alpha mask reader control
+# Historical radial alpha mask reader control
 
-`radial_mask_control.py` compares resvg, MuPDF and PDFium alpha for a 2 × 2
-rectangle with an object-bounding-box radial alpha mask, then repeats at 64 × 64.
-It converts SVG with `render_svg_pages_pdf`; it does not exercise the direct
-document PDF exporter or use native pixels. Outputs are temporary.
-
-From the repository root, use Python providing Pillow, PyMuPDF and pypdfium2,
-and put `resvg` on PATH:
-
-```sh
-python tools/pencil2-vector-width/radial_mask_control.py
-```
-
-The script builds the helper with Cargo `--offline --locked` in `/tmp/sdocx-agent-target` and prints
-source hashes and reader versions. Cargo dependencies must already be cached.
+The retired harness compared resvg, MuPDF and PDFium for a 2 × 2 rectangle with an object-bounding-box radial alpha mask, then repeated at 64 × 64. It used `render_svg_pages_pdf`, not direct document PDF export or native pixels.
 
 With resvg 0.45.1, MuPDF 1.28.2 and PDFium 156.0.8076.0, the four covered alpha
 values were respectively `[[75, 75], [75, 75]]`, `[[0, 0], [0, 255]]` and
@@ -22,10 +9,7 @@ with error sums 11,137 and 12,722. Results are reported, not asserted across
 versions; this does not attribute the difference exclusively to a reader or
 the converter, or establish Pencil2 or device parity.
 
-Structural assertions check page dimensions, radial-shading coordinates and
-its referenced stop function, a mask, a form with expected bounds, and absence
-of image objects. They do not prove the mask and form connect to that shading.
-These checks may need review when converter representations change.
+The maintained `svg_radial_alpha_mask_preserves_vector_pdf_structure` test in `crates/sdocx/tests/pdf_export.rs` checks page dimensions, radial-shading coordinates and its referenced stop function, a mask, a form with expected bounds, and absence of image objects. These structural checks do not prove mask/form/shading connectivity or reproduce the historical external-reader measurements.
 
 ## Historical width and source-stamp experiments
 

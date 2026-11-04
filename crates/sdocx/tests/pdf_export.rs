@@ -23,6 +23,108 @@ fn no_fonts() -> PdfOptions {
 }
 
 #[test]
+fn svg_radial_alpha_mask_preserves_vector_pdf_structure() {
+    let content = r##"<defs><radialGradient id="r"><stop stop-color="white"/><stop offset="1" stop-color="white" stop-opacity="0"/></radialGradient><mask id="a" mask-type="alpha" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#r)"/></mask></defs><rect x="40" y="40" width="2" height="2" fill="black" mask="url(#a)"/>"##;
+    let mut options = no_fonts();
+    options.dpi = 72.0;
+    let bytes = render_svg_pages_pdf(&[page(192, 192, content)], &options).unwrap();
+    let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+    let pages = pdf.get_pages();
+    assert_eq!(pages.len(), 1);
+    let numbers = |object: &lopdf::Object| {
+        object
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|number| number.as_float().unwrap())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        numbers(
+            pdf.get_dictionary(pages[&1])
+                .unwrap()
+                .get(b"MediaBox")
+                .unwrap()
+        ),
+        [0.0, 0.0, 192.0, 192.0]
+    );
+    let dictionaries: Vec<_> = pdf
+        .objects
+        .values()
+        .filter_map(|object| {
+            object
+                .as_dict()
+                .ok()
+                .or_else(|| object.as_stream().ok().map(|stream| &stream.dict))
+        })
+        .collect();
+    let name_is = |dict: &lopdf::Dictionary, key: &[u8], expected: &[u8]| {
+        dict.get(key)
+            .and_then(lopdf::Object::as_name)
+            .is_ok_and(|value| value == expected)
+    };
+    let shadings: Vec<_> = dictionaries
+        .iter()
+        .filter(|dict| {
+            dict.get(b"ShadingType")
+                .and_then(lopdf::Object::as_i64)
+                .is_ok_and(|value| value == 3)
+                && name_is(dict, b"ColorSpace", b"DeviceGray")
+        })
+        .collect();
+    assert_eq!(shadings.len(), 1);
+    let shading = shadings[0];
+    assert_eq!(
+        numbers(shading.get(b"Coords").unwrap()),
+        [0.5, 0.5, 0.0, 0.5, 0.5, 0.5]
+    );
+    assert!(!shading.get(b"AntiAlias").unwrap().as_bool().unwrap());
+    let function = pdf
+        .get_dictionary(shading.get(b"Function").unwrap().as_reference().unwrap())
+        .unwrap();
+    assert_eq!(function.get(b"FunctionType").unwrap().as_i64().unwrap(), 2);
+    assert_eq!(numbers(function.get(b"C0").unwrap()), [1.0]);
+    assert_eq!(numbers(function.get(b"C1").unwrap()), [0.0]);
+    assert_eq!(function.get(b"N").unwrap().as_float().unwrap(), 1.0);
+    // These presence checks do not establish mask/form/shading connectivity.
+    assert!(
+        dictionaries
+            .iter()
+            .any(|dict| { name_is(dict, b"Type", b"Mask") && name_is(dict, b"S", b"Alpha") })
+    );
+    assert!(dictionaries.iter().any(|dict| {
+        name_is(dict, b"Subtype", b"Form")
+            && dict
+                .get(b"BBox")
+                .is_ok_and(|bounds| numbers(bounds) == [40.0, 40.0, 42.0, 42.0])
+    }));
+    assert!(
+        !dictionaries
+            .iter()
+            .any(|dict| name_is(dict, b"Subtype", b"Image"))
+    );
+
+    let larger = content.replace(
+        "width=\"2\" height=\"2\" fill=\"black\"",
+        "width=\"64\" height=\"64\" fill=\"black\"",
+    );
+    assert_ne!(larger, content);
+    let bytes = render_svg_pages_pdf(&[page(192, 192, &larger)], &options).unwrap();
+    let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+    let pages = pdf.get_pages();
+    assert_eq!(pages.len(), 1);
+    assert_eq!(
+        numbers(
+            pdf.get_dictionary(pages[&1])
+                .unwrap()
+                .get(b"MediaBox")
+                .unwrap()
+        ),
+        [0.0, 0.0, 192.0, 192.0]
+    );
+}
+
+#[test]
 fn generic_svg_pdf_export_refuses_pages_with_omitted_pdf_paper_diagnostics() {
     let mut imported = page(400, 200, "<text x=\"10\" y=\"30\">note overlay</text>");
     imported.source_page_index = 7;
