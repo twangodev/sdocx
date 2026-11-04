@@ -212,9 +212,7 @@
     "tools/marker3-size9-diverse/compare.py": "1c43da7c145dbc7bd422b6b5082cb1a6865c62c60e39e582bea2799a6ad642b8",
     "tools/marker3-size9-diverse/capture.py": "f391e1b1b0df3abae3e5044a46b1ec430ade2316f960f08eafc8d3705625232b",
     "tools/marker3-size9-exploratory/replay-Cargo.lock": "a99534dcebabcc48a45890bd7e383646b4c010869afc47f77e8b190d533bf741",
-    "tools/marker3-size9-diverse/reverse-caller.json.gz": "3dc0840a12267faad6b78cebfc77cb70697ebd6eddc4d7669678770ea4ed9193",
-    "tools/marker3-size9-diverse/cross-caller.json.gz": "c7f2f86231ee8f2c2627ca4ecac29a6a2c40244c9d860c69bea22a23b9b3eea3",
-    "tools/marker3-size9-diverse/short-caller.json.gz": "f16704465242ad44772c2c6bac5ea6ec0dbcaf47de6c92ae749a8f1393a38af4"
+    "tools/marker3-size9-diverse/caller-provenance.json": "70a802cc9098e70bb53e9a683a8ec05d0fe77de980d17b5226f8be0e3025f0f5"
   },
   "output_sha256": {
     "reverse": {

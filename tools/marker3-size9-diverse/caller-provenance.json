@@ -1,0 +1,1248 @@
+{
+  "schema": "marker3-size9-caller-provenance-extraction-v1",
+  "scope": "Lossless structured caller content reconstruction using the unchanged canonical native fixture; original JSON whitespace and gzip envelope are historical, not reconstructed. Synthetic host control, not serialized-note or device evidence.",
+  "canonical_fixture": {
+    "path": "conformance/marker3-size9-diverse-native.json",
+    "sha256": "d4979605ff714f44372feae2995da4b59c82e0b4d992699c2befb3eb7e70ed8c"
+  },
+  "root_schema": "sdocx-marker3-saved-caller-native-v1",
+  "case_key": "marker3_linked_saved1:5:tool1:curve1",
+  "common_case_fields": {
+    "case_id": "marker3_linked_saved1",
+    "host_boundaries": [
+      "ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height",
+      "context vslot +80 is a host identity ARGB callback (entry input and returned W0 captured)",
+      "context vslots +144/+152 return explicit flags/version values 1 and 1.0",
+      "canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods, Drawing selection, Marker3 wrapper, and saved geometry execute natively"
+    ],
+    "libraries": {
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "profile": {
+      "canvas_model_matrix_f32_bits": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "height": 1080,
+      "width": 1920
+    },
+    "runtime_context": {
+      "canvas_model_matrix_f32": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "color_conversion": "identity host callback",
+      "profile_dimensions_and_context_flags": "host-provided explicitly; not device defaults",
+      "profile_size": [
+        1920,
+        1080
+      ]
+    },
+    "schema": "sdocx-marker3-saved-caller-native-case-v1",
+    "scope": "Native Drawing caller plus direct RedrawPen through the selected GLV5 vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export."
+  },
+  "encoding": {
+    "callbacks": "Each changes entry updates the preceding callback object; xy is reconstructed as the first vector_count pairs of the canonical phase vector. All remaining fields, including addresses and xy_bits, are retained exactly.",
+    "lifecycle": "Each changes entry updates the preceding lifecycle entry; regs_changes updates its register map and removed_fields deletes fields absent from the next entry. No lifecycle entry is dropped or reordered."
+  },
+  "cases": {
+    "short": {
+      "historical_gzip_sha256": "f16704465242ad44772c2c6bac5ea6ec0dbcaf47de6c92ae749a8f1393a38af4",
+      "historical_json_sha256": "e1053b8a43036dc683bb29916d9fd0db003516f4e6c47a22b70d27228e11a53f",
+      "original_structured_sha256": "309fdf8d6df601212d0cdaccf860041a0d647d2483500a30b6637515130798be",
+      "case_fields": {
+        "native_calls": {
+          "Drawing_factory_admission": {
+            "factory_created_pen_count": 1,
+            "factory_returned_pen": "0x10035af0",
+            "loader_calls": [
+              {
+                "flags": 2,
+                "fn": "dlopen",
+                "name": "libSPenMarker3.so"
+              },
+              {
+                "fn": "dlsym",
+                "handle": "0x50000001",
+                "name": "createPenInst"
+              }
+            ],
+            "requested_canonical_pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+            "selected_drawable_object": "0x10036130",
+            "selected_v5_or_v1_actual": "5",
+            "selected_vtable_entry": [
+              "non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          "ObjectDrawing::drawObjectStroke_return": 1,
+          "ObjectStroke_GetAdvancedPenSetting": {
+            "is_null": false,
+            "utf8": "5;"
+          },
+          "ObjectStroke_GetColor_argb": "0x6633aa55",
+          "ObjectStroke_getter_snapshots": [
+            {
+              "curve_enabled": 1,
+              "label": "before_drawObjectStroke",
+              "point_count": 3,
+              "size_bits": "00001041",
+              "stroke_type": 0,
+              "tool_type": 1
+            },
+            {
+              "curve_enabled": 1,
+              "label": "before_saved_RedrawPen",
+              "point_count": 3,
+              "size_bits": "00001041",
+              "stroke_type": 0,
+              "tool_type": 1
+            }
+          ],
+          "Pen::SetColor_calls": [
+            {
+              "color_argb_w1": "0x7f000000",
+              "phase": "setup"
+            },
+            {
+              "color_argb_w1": "0x7f000000",
+              "phase": "draw_object_stroke"
+            },
+            {
+              "color_argb_w1": "0x6633aa55",
+              "phase": "draw_object_stroke"
+            }
+          ],
+          "context_color_conversion_calls": [
+            {
+              "input_argb_w1": "0x6633aa55",
+              "phase": "draw_object_stroke",
+              "result_argb_w0": "0x6633aa55"
+            }
+          ],
+          "drawable_getInverseScale_f32_bits": null,
+          "drawable_getSize_f32_bits": "00001041",
+          "drawing_selected_rt_id": "rt0",
+          "loader": [
+            {
+              "flags": 2,
+              "fn": "dlopen",
+              "name": "libSPenMarker3.so"
+            },
+            {
+              "fn": "dlsym",
+              "handle": "0x50000001",
+              "name": "createPenInst"
+            }
+          ],
+          "motion_event_getter_returns": [
+            {
+              "args": {
+                "x0": "0x200eec78",
+                "x1": "0x0",
+                "x2": "0x200eec68",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0ad8",
+              "phase_entry": "draw_object_stroke",
+              "phase_return": "draw_object_stroke",
+              "return": {
+                "d0": "0x4032800000000000",
+                "s0": "0x0",
+                "x0": "0x200eec78"
+              },
+              "return_pc": "0x503d330",
+              "return_pc_expected": "0x503d330",
+              "signature": "SPen::MotionEvent::GetX(int) const"
+            },
+            {
+              "args": {
+                "x0": "0x200eec78",
+                "x1": "0x0",
+                "x2": "0x200eec68",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0b34",
+              "phase_entry": "draw_object_stroke",
+              "phase_return": "draw_object_stroke",
+              "return": {
+                "d0": "0x4031c00000000000",
+                "s0": "0x0",
+                "x0": "0x200eec78"
+              },
+              "return_pc": "0x503d340",
+              "return_pc_expected": "0x503d340",
+              "signature": "SPen::MotionEvent::GetY(int) const"
+            },
+            {
+              "args": {
+                "x0": "0x200eee48",
+                "x1": "0x0",
+                "x2": "0x200eee38",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0ad8",
+              "phase_entry": "saved_redraw",
+              "phase_return": "saved_redraw",
+              "return": {
+                "d0": "0x4032800000000000",
+                "s0": "0x0",
+                "x0": "0x200eee48"
+              },
+              "return_pc": "0x503d330",
+              "return_pc_expected": "0x503d330",
+              "signature": "SPen::MotionEvent::GetX(int) const"
+            },
+            {
+              "args": {
+                "x0": "0x200eee48",
+                "x1": "0x0",
+                "x2": "0x200eee38",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0b34",
+              "phase_entry": "saved_redraw",
+              "phase_return": "saved_redraw",
+              "return": {
+                "d0": "0x4031c00000000000",
+                "s0": "0x0",
+                "x0": "0x200eee48"
+              },
+              "return_pc": "0x503d340",
+              "return_pc_expected": "0x503d340",
+              "signature": "SPen::MotionEvent::GetY(int) const"
+            }
+          ],
+          "pen_GetSize_after_draw_f32_bits": "00001041",
+          "pen_screen_resolution": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "phase_rt_ids": {},
+          "route": {
+            "advanced_setting": "5;",
+            "drawing_selected_drawable_version": "5",
+            "runner_mode": "selected",
+            "saved_redraw_invoked_version": "5"
+          },
+          "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "selected_drawable_object_redraw_return": 1,
+          "selected_drawable_primary_vtable_id": "Marker3StrokeDrawableGLV5",
+          "source_ObjectStroke_GetPenSize_f32_bits": "00001041"
+        }
+      },
+      "callback_changes": [
+        {"phase": "draw_object_stroke", "rt_id": "rt0", "vector_begin": "0x100375a0", "vector_count": 1, "vector_object": "0x10037570", "xy_bits": ["0x41480000", "0x41920000"]},
+        {"vector_begin": "0x10037720", "vector_count": 2, "xy_bits": ["0x415297ab", "0x41918f03"]},
+        {"vector_begin": "0x10037730", "vector_count": 3, "xy_bits": ["0x41658bdd", "0x4190c4d7"]},
+        {"vector_count": 4, "xy_bits": ["0x417284a1", "0x41903a79"]},
+        {"vector_begin": "0x10037750", "vector_count": 5, "xy_bits": ["0x4180ec08", "0x418f9700"]},
+        {"vector_count": 6, "xy_bits": ["0x4189c314", "0x418eda69"]},
+        {"vector_count": 7, "xy_bits": ["0x4193c776", "0x418e04b6"]},
+        {"vector_count": 8, "xy_bits": ["0x41940000", "0x418e0000"]},
+        {"phase": "saved_redraw", "vector_begin": "0x10037fd0", "vector_count": 1, "vector_object": "0x10037fa0", "xy_bits": ["0x41480000", "0x41920000"]},
+        {"vector_begin": "0x100380f0", "vector_count": 2, "xy_bits": ["0x415297ab", "0x41918f03"]},
+        {"vector_begin": "0x10038100", "vector_count": 3, "xy_bits": ["0x41658bdd", "0x4190c4d7"]},
+        {"vector_count": 4, "xy_bits": ["0x417284a1", "0x41903a79"]},
+        {"vector_begin": "0x10038120", "vector_count": 5, "xy_bits": ["0x4180ec08", "0x418f9700"]},
+        {"vector_count": 6, "xy_bits": ["0x4189c314", "0x418eda69"]},
+        {"vector_count": 7, "xy_bits": ["0x4193c776", "0x418e04b6"]},
+        {"vector_count": 8, "xy_bits": ["0x41940000", "0x418e0000"]}
+      ],
+      "lifecycle_changes": [
+        {"pc": "0x503e7cc", "phase": "draw_object_stroke", "signatures": ["non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"s0": "0x0", "s1": "0x0", "s2": "0x3ecccccd", "s3": "0x0", "s4": "0x0", "s5": "0x0", "s6": "0x0", "s7": "0x0", "x0": "0x10036138", "x1": "0x1002d760", "x2": "0x200eee90", "x3": "0x200eee90", "x4": "0x100359f0", "x5": "0x10033b50", "x6": "0x3", "x7": "0x0"}, "removed_fields": []},
+        {"pc": "0x503e124", "signatures": ["SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"x0": "0x10036130"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0x41480000", "s1": "0x41480000", "s2": "0x3f800000", "s3": "0x41100000", "s4": "0x3f800000", "x1": "0x100361a4", "x2": "0x1", "x3": "0x1", "x4": "0x69d", "x5": "0x10035b0c"}, "removed_fields": []},
+        {"motion_event_entry_bytes": "b0750310000000001000000000000000000000000000000000000000cdcccc3e000000000000000000000000ffffffff00000000008032400000000000c03140", "pc": "0x503d2c8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)"], "regs_changes": {"s0": "0x100376b0", "s1": "0xb", "s2": "0x0", "s3": "0x3ecccccd", "x1": "0x200eec78", "x2": "0x200eec68", "x4": "0x0", "x5": "0x100376b0", "x6": "0x100376b0"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0x3f7f1da0", "s1": "0xbdaa13c0", "s2": "0x3e800103", "s3": "0x3f800000", "s4": "0x3fc0aa5f", "s5": "0x3f000000", "s6": "0x3eaa1268", "x1": "0x200eebd8", "x2": "0x1", "x3": "0x7fff"}, "removed_fields": ["motion_event_entry_bytes"]},
+        {"regs_changes": {"s0": "0x3f7f1d9f", "s1": "0xbdaa13bf", "s2": "0x3e1948f7", "s4": "0x40c0aa5f", "s6": "0x3f0e05ae"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f1d9e", "s2": "0x3dff8fa3", "s6": "0x3f2a5e86"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3ddb1ae7", "s6": "0x3f46b75e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f1d9f", "s1": "0xbdaa13c0", "s2": "0x3dbfc067", "s6": "0x3f631036"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f1d9e", "s1": "0xbdaa13bf", "s2": "0x3daa7843", "s6": "0x3f7f690e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s1": "0x418e04b6", "x1": "0x200eebe0"}, "removed_fields": []},
+        {"pc": "0x503e7cc", "phase": "saved_redraw", "signatures": ["non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"s0": "0x41100000", "s1": "0x0", "s2": "0x42136666", "s3": "0x42126666", "s4": "0x419a0000", "s5": "0x41580000", "s6": "0x41380000", "s7": "0x418a0000", "x0": "0x10036138", "x1": "0x1002d760", "x2": "0x10034700", "x3": "0x10034700", "x4": "0x200eedac"}, "removed_fields": []},
+        {"pc": "0x503e124", "signatures": ["SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"x0": "0x10036130"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0x41480000", "s1": "0x41480000", "s2": "0x3f800000", "s3": "0x41100000", "s4": "0x3f800000", "x1": "0x100361a4", "x2": "0x1", "x3": "0x1", "x4": "0xbd9", "x5": "0x10035b0c"}, "removed_fields": []},
+        {"motion_event_entry_bytes": "e07f0310000000001000000000000000000000000000000000000000cdcccc3e000000000000000000000000ffffffff00000000008032400000000000c03140", "pc": "0x503d2c8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)"], "regs_changes": {"s0": "0x100380e0", "s1": "0xb", "s2": "0x0", "s3": "0x3ecccccd", "x1": "0x200eee48", "x2": "0x200eee38", "x4": "0x0", "x5": "0x100380e0", "x6": "0x100380e0"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0x3f7f1da0", "s1": "0xbdaa13c0", "s2": "0x3e800103", "s3": "0x3f800000", "s4": "0x3fc0aa5f", "s5": "0x3f000000", "s6": "0x3eaa1268", "x1": "0x200eeda8", "x2": "0x1", "x3": "0x7fff"}, "removed_fields": ["motion_event_entry_bytes"]},
+        {"regs_changes": {"s0": "0x3f7f1d9f", "s1": "0xbdaa13bf", "s2": "0x3e1948f7", "s4": "0x40c0aa5f", "s6": "0x3f0e05ae"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f1d9e", "s2": "0x3dff8fa3", "s6": "0x3f2a5e86"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3ddb1ae7", "s6": "0x3f46b75e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f1d9f", "s1": "0xbdaa13c0", "s2": "0x3dbfc067", "s6": "0x3f631036"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f1d9e", "s1": "0xbdaa13bf", "s2": "0x3daa7843", "s6": "0x3f7f690e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s1": "0x418e04b6", "x1": "0x200eedb0"}, "removed_fields": []}
+      ]
+    },
+    "reverse": {
+      "historical_gzip_sha256": "3dc0840a12267faad6b78cebfc77cb70697ebd6eddc4d7669678770ea4ed9193",
+      "historical_json_sha256": "67f76767af3c17580e56648d6e512a65ab320c2bd891fbc14521e4d372ad258b",
+      "original_structured_sha256": "c06cfbbea13e0fb2d1fd3a3ab2ea7d65d5949831a655a40f30af79ac4243715b",
+      "case_fields": {
+        "native_calls": {
+          "Drawing_factory_admission": {
+            "factory_created_pen_count": 1,
+            "factory_returned_pen": "0x10035af0",
+            "loader_calls": [
+              {
+                "flags": 2,
+                "fn": "dlopen",
+                "name": "libSPenMarker3.so"
+              },
+              {
+                "fn": "dlsym",
+                "handle": "0x50000001",
+                "name": "createPenInst"
+              }
+            ],
+            "requested_canonical_pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+            "selected_drawable_object": "0x10036130",
+            "selected_v5_or_v1_actual": "5",
+            "selected_vtable_entry": [
+              "non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          "ObjectDrawing::drawObjectStroke_return": 1,
+          "ObjectStroke_GetAdvancedPenSetting": {
+            "is_null": false,
+            "utf8": "5;"
+          },
+          "ObjectStroke_GetColor_argb": "0x80cc331a",
+          "ObjectStroke_getter_snapshots": [
+            {
+              "curve_enabled": 1,
+              "label": "before_drawObjectStroke",
+              "point_count": 4,
+              "size_bits": "00001041",
+              "stroke_type": 0,
+              "tool_type": 1
+            },
+            {
+              "curve_enabled": 1,
+              "label": "before_saved_RedrawPen",
+              "point_count": 4,
+              "size_bits": "00001041",
+              "stroke_type": 0,
+              "tool_type": 1
+            }
+          ],
+          "Pen::SetColor_calls": [
+            {
+              "color_argb_w1": "0x7f000000",
+              "phase": "setup"
+            },
+            {
+              "color_argb_w1": "0x7f000000",
+              "phase": "draw_object_stroke"
+            },
+            {
+              "color_argb_w1": "0x80cc331a",
+              "phase": "draw_object_stroke"
+            }
+          ],
+          "context_color_conversion_calls": [
+            {
+              "input_argb_w1": "0x80cc331a",
+              "phase": "draw_object_stroke",
+              "result_argb_w0": "0x80cc331a"
+            }
+          ],
+          "drawable_getInverseScale_f32_bits": null,
+          "drawable_getSize_f32_bits": "00001041",
+          "drawing_selected_rt_id": "rt0",
+          "loader": [
+            {
+              "flags": 2,
+              "fn": "dlopen",
+              "name": "libSPenMarker3.so"
+            },
+            {
+              "fn": "dlsym",
+              "handle": "0x50000001",
+              "name": "createPenInst"
+            }
+          ],
+          "motion_event_getter_returns": [
+            {
+              "args": {
+                "x0": "0x200eec78",
+                "x1": "0x0",
+                "x2": "0x200eec68",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0ad8",
+              "phase_entry": "draw_object_stroke",
+              "phase_return": "draw_object_stroke",
+              "return": {
+                "d0": "0x4048200000000000",
+                "s0": "0x0",
+                "x0": "0x200eec78"
+              },
+              "return_pc": "0x503d330",
+              "return_pc_expected": "0x503d330",
+              "signature": "SPen::MotionEvent::GetX(int) const"
+            },
+            {
+              "args": {
+                "x0": "0x200eec78",
+                "x1": "0x0",
+                "x2": "0x200eec68",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0b34",
+              "phase_entry": "draw_object_stroke",
+              "phase_return": "draw_object_stroke",
+              "return": {
+                "d0": "0x4038800000000000",
+                "s0": "0x0",
+                "x0": "0x200eec78"
+              },
+              "return_pc": "0x503d340",
+              "return_pc_expected": "0x503d340",
+              "signature": "SPen::MotionEvent::GetY(int) const"
+            },
+            {
+              "args": {
+                "x0": "0x200eee48",
+                "x1": "0x0",
+                "x2": "0x200eee38",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0ad8",
+              "phase_entry": "saved_redraw",
+              "phase_return": "saved_redraw",
+              "return": {
+                "d0": "0x4048200000000000",
+                "s0": "0x0",
+                "x0": "0x200eee48"
+              },
+              "return_pc": "0x503d330",
+              "return_pc_expected": "0x503d330",
+              "signature": "SPen::MotionEvent::GetX(int) const"
+            },
+            {
+              "args": {
+                "x0": "0x200eee48",
+                "x1": "0x0",
+                "x2": "0x200eee38",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0b34",
+              "phase_entry": "saved_redraw",
+              "phase_return": "saved_redraw",
+              "return": {
+                "d0": "0x4038800000000000",
+                "s0": "0x0",
+                "x0": "0x200eee48"
+              },
+              "return_pc": "0x503d340",
+              "return_pc_expected": "0x503d340",
+              "signature": "SPen::MotionEvent::GetY(int) const"
+            }
+          ],
+          "pen_GetSize_after_draw_f32_bits": "00001041",
+          "pen_screen_resolution": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "phase_rt_ids": {},
+          "route": {
+            "advanced_setting": "5;",
+            "drawing_selected_drawable_version": "5",
+            "runner_mode": "selected",
+            "saved_redraw_invoked_version": "5"
+          },
+          "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "selected_drawable_object_redraw_return": 1,
+          "selected_drawable_primary_vtable_id": "Marker3StrokeDrawableGLV5",
+          "source_ObjectStroke_GetPenSize_f32_bits": "00001041"
+        }
+      },
+      "callback_changes": [
+        {"phase": "draw_object_stroke", "rt_id": "rt0", "vector_begin": "0x100375a0", "vector_count": 1, "vector_object": "0x10037570", "xy_bits": ["0x41640000", "0x41a40000"]},
+        {"vector_begin": "0x10037630", "vector_count": 2, "xy_bits": ["0x4173b60d", "0x41a40000"]},
+        {"vector_begin": "0x10037640", "vector_count": 3, "xy_bits": ["0x41803b57", "0x41a40000"]},
+        {"vector_count": 4, "xy_bits": ["0x41887d1f", "0x41a40000"]},
+        {"vector_begin": "0x10037660", "vector_count": 5, "xy_bits": ["0x4191aa12", "0x41a40000"]},
+        {"vector_count": 6, "xy_bits": ["0x41988d0c", "0x41a40000"]},
+        {"vector_count": 7, "xy_bits": ["0x41a01d5b", "0x41a40000"]},
+        {"vector_count": 8, "xy_bits": ["0x41a85afe", "0x41a40000"]},
+        {"vector_begin": "0x100376a0", "vector_count": 9, "xy_bits": ["0x41b145f5", "0x41a40000"]},
+        {"vector_count": 10, "xy_bits": ["0x41b97a5c", "0x41a40000"]},
+        {"vector_count": 11, "xy_bits": ["0x41c0ad91", "0x41a40000"]},
+        {"vector_count": 12, "xy_bits": ["0x41c83934", "0x41a40000"]},
+        {"vector_count": 13, "xy_bits": ["0x41d01d46", "0x41a40000"]},
+        {"vector_count": 14, "xy_bits": ["0x41d859c7", "0x41a40000"]},
+        {"vector_count": 15, "xy_bits": ["0x41e0eeb8", "0x41a40000"]},
+        {"vector_count": 16, "xy_bits": ["0x41e9dc17", "0x41a40000"]},
+        {"vector_begin": "0x10037720", "vector_count": 17, "xy_bits": ["0x41f3d6d0", "0x41a402f0"]},
+        {"vector_count": 18, "xy_bits": ["0x41fd22d8", "0x41a40d7f"]},
+        {"vector_count": 19, "xy_bits": ["0x4202c98d", "0x41a41fbb"]},
+        {"vector_count": 20, "xy_bits": ["0x420693c9", "0x41a439a5"]},
+        {"vector_count": 21, "xy_bits": ["0x4209f022", "0x41a45b3c"]},
+        {"vector_count": 22, "xy_bits": ["0x420d4f39", "0x41a48c02"]},
+        {"vector_count": 23, "xy_bits": ["0x4212c564", "0x41a51fe5"]},
+        {"vector_count": 24, "xy_bits": ["0x421548c2", "0x41a5e886"]},
+        {"vector_count": 25, "xy_bits": ["0x421388a4", "0x41a7779b"]},
+        {"vector_count": 26, "xy_bits": ["0x420e8dde", "0x41a8cb39"]},
+        {"vector_count": 27, "xy_bits": ["0x420b70df", "0x41a96f8f"]},
+        {"vector_count": 28, "xy_bits": ["0x4207c022", "0x41aa1e36"]},
+        {"vector_count": 29, "xy_bits": ["0x42037baa", "0x41aad730"]},
+        {"vector_count": 30, "xy_bits": ["0x41fd46e8", "0x41ab9a7d"]},
+        {"vector_count": 31, "xy_bits": ["0x41f32f44", "0x41ac6005"]},
+        {"vector_count": 32, "xy_bits": ["0x41eab1f7", "0x41ad26a3"]},
+        {"vector_begin": "0x10037970", "vector_count": 33, "xy_bits": ["0x41e3b9ed", "0x41adf60d"]},
+        {"vector_count": 34, "xy_bits": ["0x41daf13d", "0x41af864a"]},
+        {"vector_count": 35, "xy_bits": ["0x41d95bd7", "0x41b35d39"]},
+        {"vector_count": 36, "xy_bits": ["0x41e08735", "0x41b541bd"]},
+        {"vector_count": 37, "xy_bits": ["0x41e87e64", "0x41b6a7c4"]},
+        {"vector_count": 38, "xy_bits": ["0x41efff83", "0x41b7bba9"]},
+        {"vector_count": 39, "xy_bits": ["0x41f8d770", "0x41b8d74e"]},
+        {"vector_count": 40, "xy_bits": ["0x4200376f", "0x41b9b35b"]},
+        {"vector_count": 41, "xy_bits": ["0x4203eda4", "0x41ba7b7a"]},
+        {"vector_count": 42, "xy_bits": ["0x4207f231", "0x41bb4724"]},
+        {"vector_count": 43, "xy_bits": ["0x420c4517", "0x41bc1658"]},
+        {"vector_count": 44, "xy_bits": ["0x421051d6", "0x41bccf3e"]},
+        {"vector_count": 45, "xy_bits": ["0x4213fd51", "0x41bd705c"]},
+        {"vector_count": 46, "xy_bits": ["0x4217d573", "0x41be1380"]},
+        {"vector_count": 47, "xy_bits": ["0x421bda3b", "0x41beb8a8"]},
+        {"vector_count": 48, "xy_bits": ["0x42200baa", "0x41bf5fd4"]},
+        {"vector_count": 49, "xy_bits": ["0x422469c1", "0x41c00905"]},
+        {"vector_count": 50, "xy_bits": ["0x42282b2a", "0x41c096e9"]},
+        {"vector_count": 51, "xy_bits": ["0x422beb18", "0x41c12195"]},
+        {"vector_count": 52, "xy_bits": ["0x422fc7d2", "0x41c1ad8e"]},
+        {"vector_count": 53, "xy_bits": ["0x4233c156", "0x41c23ad5"]},
+        {"vector_count": 54, "xy_bits": ["0x4237d7a6", "0x41c2c968"]},
+        {"vector_count": 55, "xy_bits": ["0x423c0ac0", "0x41c35949"]},
+        {"vector_count": 56, "xy_bits": ["0x42405aa7", "0x41c3ea77"]},
+        {"vector_count": 57, "xy_bits": ["0x42410000", "0x41c40000"]},
+        {"phase": "saved_redraw", "vector_begin": "0x10038540", "vector_count": 1, "vector_object": "0x10038510", "xy_bits": ["0x41640000", "0x41a40000"]},
+        {"vector_begin": "0x10038550", "vector_count": 2, "xy_bits": ["0x4173b60d", "0x41a40000"]},
+        {"vector_begin": "0x10038560", "vector_count": 3, "xy_bits": ["0x41803b57", "0x41a40000"]},
+        {"vector_count": 4, "xy_bits": ["0x41887d1f", "0x41a40000"]},
+        {"vector_begin": "0x10038580", "vector_count": 5, "xy_bits": ["0x4191aa12", "0x41a40000"]},
+        {"vector_count": 6, "xy_bits": ["0x41988d0c", "0x41a40000"]},
+        {"vector_count": 7, "xy_bits": ["0x41a01d5b", "0x41a40000"]},
+        {"vector_count": 8, "xy_bits": ["0x41a85afe", "0x41a40000"]},
+        {"vector_begin": "0x100385c0", "vector_count": 9, "xy_bits": ["0x41b145f5", "0x41a40000"]},
+        {"vector_count": 10, "xy_bits": ["0x41b97a5c", "0x41a40000"]},
+        {"vector_count": 11, "xy_bits": ["0x41c0ad91", "0x41a40000"]},
+        {"vector_count": 12, "xy_bits": ["0x41c83934", "0x41a40000"]},
+        {"vector_count": 13, "xy_bits": ["0x41d01d46", "0x41a40000"]},
+        {"vector_count": 14, "xy_bits": ["0x41d859c7", "0x41a40000"]},
+        {"vector_count": 15, "xy_bits": ["0x41e0eeb8", "0x41a40000"]},
+        {"vector_count": 16, "xy_bits": ["0x41e9dc17", "0x41a40000"]},
+        {"vector_begin": "0x10038640", "vector_count": 17, "xy_bits": ["0x41f3d6d0", "0x41a402f0"]},
+        {"vector_count": 18, "xy_bits": ["0x41fd22d8", "0x41a40d7f"]},
+        {"vector_count": 19, "xy_bits": ["0x4202c98d", "0x41a41fbb"]},
+        {"vector_count": 20, "xy_bits": ["0x420693c9", "0x41a439a5"]},
+        {"vector_count": 21, "xy_bits": ["0x4209f022", "0x41a45b3c"]},
+        {"vector_count": 22, "xy_bits": ["0x420d4f39", "0x41a48c02"]},
+        {"vector_count": 23, "xy_bits": ["0x4212c564", "0x41a51fe5"]},
+        {"vector_count": 24, "xy_bits": ["0x421548c2", "0x41a5e886"]},
+        {"vector_count": 25, "xy_bits": ["0x421388a4", "0x41a7779b"]},
+        {"vector_count": 26, "xy_bits": ["0x420e8dde", "0x41a8cb39"]},
+        {"vector_count": 27, "xy_bits": ["0x420b70df", "0x41a96f8f"]},
+        {"vector_count": 28, "xy_bits": ["0x4207c022", "0x41aa1e36"]},
+        {"vector_count": 29, "xy_bits": ["0x42037baa", "0x41aad730"]},
+        {"vector_count": 30, "xy_bits": ["0x41fd46e8", "0x41ab9a7d"]},
+        {"vector_count": 31, "xy_bits": ["0x41f32f44", "0x41ac6005"]},
+        {"vector_count": 32, "xy_bits": ["0x41eab1f7", "0x41ad26a3"]},
+        {"vector_begin": "0x10038850", "vector_count": 33, "xy_bits": ["0x41e3b9ed", "0x41adf60d"]},
+        {"vector_count": 34, "xy_bits": ["0x41daf13d", "0x41af864a"]},
+        {"vector_count": 35, "xy_bits": ["0x41d95bd7", "0x41b35d39"]},
+        {"vector_count": 36, "xy_bits": ["0x41e08735", "0x41b541bd"]},
+        {"vector_count": 37, "xy_bits": ["0x41e87e64", "0x41b6a7c4"]},
+        {"vector_count": 38, "xy_bits": ["0x41efff83", "0x41b7bba9"]},
+        {"vector_count": 39, "xy_bits": ["0x41f8d770", "0x41b8d74e"]},
+        {"vector_count": 40, "xy_bits": ["0x4200376f", "0x41b9b35b"]},
+        {"vector_count": 41, "xy_bits": ["0x4203eda4", "0x41ba7b7a"]},
+        {"vector_count": 42, "xy_bits": ["0x4207f231", "0x41bb4724"]},
+        {"vector_count": 43, "xy_bits": ["0x420c4517", "0x41bc1658"]},
+        {"vector_count": 44, "xy_bits": ["0x421051d6", "0x41bccf3e"]},
+        {"vector_count": 45, "xy_bits": ["0x4213fd51", "0x41bd705c"]},
+        {"vector_count": 46, "xy_bits": ["0x4217d573", "0x41be1380"]},
+        {"vector_count": 47, "xy_bits": ["0x421bda3b", "0x41beb8a8"]},
+        {"vector_count": 48, "xy_bits": ["0x42200baa", "0x41bf5fd4"]},
+        {"vector_count": 49, "xy_bits": ["0x422469c1", "0x41c00905"]},
+        {"vector_count": 50, "xy_bits": ["0x42282b2a", "0x41c096e9"]},
+        {"vector_count": 51, "xy_bits": ["0x422beb18", "0x41c12195"]},
+        {"vector_count": 52, "xy_bits": ["0x422fc7d2", "0x41c1ad8e"]},
+        {"vector_count": 53, "xy_bits": ["0x4233c156", "0x41c23ad5"]},
+        {"vector_count": 54, "xy_bits": ["0x4237d7a6", "0x41c2c968"]},
+        {"vector_count": 55, "xy_bits": ["0x423c0ac0", "0x41c35949"]},
+        {"vector_count": 56, "xy_bits": ["0x42405aa7", "0x41c3ea77"]},
+        {"vector_count": 57, "xy_bits": ["0x42410000", "0x41c40000"]}
+      ],
+      "lifecycle_changes": [
+        {"pc": "0x503e7cc", "phase": "draw_object_stroke", "signatures": ["non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"s0": "0x0", "s1": "0x0", "s2": "0x3ecccccd", "s3": "0x0", "s4": "0x0", "s5": "0x0", "s6": "0x0", "s7": "0x0", "x0": "0x10036138", "x1": "0x1002d760", "x2": "0x200eee90", "x3": "0x200eee90", "x4": "0x100359f0", "x5": "0x10033b50", "x6": "0x4", "x7": "0x0"}, "removed_fields": []},
+        {"pc": "0x503e124", "signatures": ["SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"x0": "0x10036130"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0x41640000", "s1": "0x41640000", "s2": "0x3f800000", "s3": "0x41100000", "s4": "0x3f800000", "x1": "0x100361a4", "x2": "0x1", "x3": "0x1", "x4": "0x69d", "x5": "0x10035b0c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s1": "0x0", "s2": "0x3e04daeb", "s3": "0x3f800000", "s4": "0x40720000", "s5": "0x3f000000", "s6": "0x3e8274e6", "x1": "0x200eebe0", "x3": "0x7fff", "x4": "0x0"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7fffff", "s2": "0x3dc568c0", "s6": "0x3eaf97ce"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d9d0aa1", "s6": "0x3edcbab5"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s2": "0x3d8458ae", "s4": "0x41082000", "s6": "0x3f02f547"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d6fe37b", "s6": "0x3f107fc0"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7fffff", "s2": "0x3d5b55ba", "s6": "0x3f1e0a39"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s2": "0x3d4a067b", "s6": "0x3f2b94b1"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d3b3f7b", "s6": "0x3f391f2a"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d302c7a", "s4": "0x41720000", "s6": "0x3f44c229"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d27eb57", "s6": "0x3f4e6e37"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d20675d", "s6": "0x3f581a44"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d19883a", "s6": "0x3f61c651"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d1339a0", "s6": "0x3f6b725e"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d0d6a71", "s6": "0x3f751e6b"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d080c2b", "s6": "0x3f7eca78"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7fffc3", "s1": "0x3b30d2f2", "s2": "0x3d11dcbf", "s4": "0x40b8c2c5", "s6": "0x3d1b2b8f"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ffeaf", "s1": "0x3bcfcae1", "s2": "0x3d1ffb23", "s6": "0x3da640f5"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ffc34", "s1": "0x3c30608b", "s2": "0x3d311f69", "s6": "0x3dfeec23"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ff759", "s1": "0x3c851fa3", "s2": "0x3d465f8d", "s6": "0x3e2bcba8"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7fee51", "s1": "0x3cbe4d74", "s2": "0x3d616884", "s6": "0x3e58213e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7fd9aa", "s1": "0x3d0c1561", "s2": "0x3d85f12b", "s4": "0x40ff443e", "s6": "0x3e85de77"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f1290", "s1": "0x3dae2d0d", "s2": "0x3de846d0", "s6": "0x3ebff71e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f6b7512", "s1": "0x3ec8f4d4", "s2": "0x3ecdba86", "s6": "0x3efa0fc6"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7c151d", "s1": "0x3e3274f6", "s2": "0x3e078982", "s4": "0x411650f4", "s6": "0x3f288873"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7e76ab", "s1": "0x3de00b5c", "s2": "0x3d90b679", "s4": "0x4165ffd2", "s6": "0x3f462b6d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7ecbe0", "s1": "0x3dc65c37", "s2": "0x3d70a403", "s6": "0x3f53055b"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7f0230", "s1": "0x3db41177", "s2": "0x3d4de8e3", "s6": "0x3f5fdf4a"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7f275f", "s1": "0x3da661b0", "s2": "0x3d33ee1b", "s6": "0x3f6cb939"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7f4231", "s1": "0x3d9bc1c3", "s2": "0x3d1fc44a", "s6": "0x3f799328"}, "removed_fields": []},
+        {"motion_event_entry_bytes": "207803100000000018000000000000000000000000000000000000009a99193e000000000000000000000000ffffffff00000000002048400000000000803840", "pc": "0x503d2c8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)"], "regs_changes": {"s0": "0x10037920", "s1": "0xb", "s2": "0x0", "s3": "0x3e19999a", "x1": "0x200eec78", "x2": "0x200eec68", "x3": "0x1", "x5": "0x10037920", "x6": "0x10037920"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0xbf7f24a8", "s1": "0x3da76a8e", "s2": "0x3d239fde", "s3": "0x3f800000", "s4": "0x402c96dc", "s6": "0x3cbdd651", "x1": "0x200eebd8", "x2": "0x1", "x3": "0x7fff"}, "removed_fields": ["motion_event_entry_bytes"]},
+        {"regs_changes": {"s0": "0xbf7ea9be", "s1": "0x3dd1083c", "s2": "0x3d43720c", "s6": "0x3d8e5e9a"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7dc1b1", "s1": "0x3e074484", "s2": "0x3d727219", "s6": "0x3ded47a1"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf77d73e", "s1": "0x3e803bb6", "s2": "0x3dd5ae04", "s4": "0x4080fd6f", "s6": "0x3e4d0b1e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f6eacd0", "s1": "0x3eb926a2", "s2": "0x3e059a63", "s4": "0x40bc1404", "s6": "0x3ec58b46"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ae3dc", "s1": "0x3e4b9334", "s2": "0x3d8a9bbf", "s6": "0x3eeffa48"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7cf615", "s1": "0x3e1d4ec7", "s2": "0x3d4e06d7", "s4": "0x410c073c", "s6": "0x3f06ed7e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7dbdff", "s1": "0x3e07b35d", "s2": "0x3d2cce6f", "s6": "0x3f120fa4"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7e3bfd", "s1": "0x3df01ebe", "s2": "0x3d14c4ff", "s6": "0x3f1d31ca"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7e7f18", "s1": "0x3ddda34d", "s2": "0x3d06924f", "s4": "0x41500d2e", "s6": "0x3f25a11d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ead87", "s1": "0x3dcfe0ec", "s2": "0x3cf801d2", "s6": "0x3f2d280b"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ed2d4", "s1": "0x3dc41dab", "s2": "0x3ce5f0d7", "s6": "0x3f34aef8"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ef151", "s1": "0x3db9f211", "s2": "0x3cd65275", "s6": "0x3f3c35e6"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f07c1", "s1": "0x3db215fc", "s2": "0x3cca40ca", "s4": "0x419513fc", "s6": "0x3f42d238"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f1876", "s1": "0x3dac00b9", "s2": "0x3cc0e9b5", "s6": "0x3f4880ed"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f272c", "s1": "0x3da6749b", "s2": "0x3cb86558", "s6": "0x3f4e2fa3"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f343b", "s1": "0x3da16051", "s2": "0x3cb09915", "s6": "0x3f53de58"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f3fdd", "s1": "0x3d9cb553", "s2": "0x3ca96e92", "s6": "0x3f598d0d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f4a4a", "s1": "0x3d986759", "s2": "0x3ca2d2f0", "s6": "0x3f5f3bc3"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f5224", "s1": "0x3d951442", "s2": "0x3c9db87e", "s4": "0x41cd2e49", "s6": "0x3f63f28a"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f5922", "s1": "0x3d920da0", "s2": "0x3c991374", "s6": "0x3f6882b7"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f5f99", "s1": "0x3d8f333b", "s2": "0x3c94b25d", "s6": "0x3f6d12e5"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f6596", "s1": "0x3d8c8169", "s2": "0x3c908f93", "s6": "0x3f71a312"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f6b24", "s1": "0x3d89f4dd", "s2": "0x3c8ca607", "s6": "0x3f763340"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f7051", "s1": "0x3d878aa8", "s2": "0x3c88f137", "s6": "0x3f7ac36d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f7521", "s1": "0x3d854026", "s2": "0x3c856d13", "s6": "0x3f7f539b"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s1": "0x41c3ea77", "x1": "0x200eebe0"}, "removed_fields": []},
+        {"pc": "0x503e7cc", "phase": "saved_redraw", "signatures": ["non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"s0": "0x41100000", "s1": "0x0", "s2": "0x42853333", "s3": "0x422b6666", "s4": "0x41bc0000", "s5": "0x42360000", "s6": "0x41540000", "s7": "0x419c0000", "x0": "0x10036138", "x1": "0x1002d760", "x2": "0x10034700", "x3": "0x10034700", "x4": "0x200eedac"}, "removed_fields": []},
+        {"pc": "0x503e124", "signatures": ["SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"x0": "0x10036130"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0x41640000", "s1": "0x41640000", "s2": "0x3f800000", "s3": "0x41100000", "s4": "0x3f800000", "x1": "0x100361a4", "x2": "0x1", "x3": "0x1", "x4": "0xbd9", "x5": "0x10035b0c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s1": "0x0", "s2": "0x3e04daeb", "s3": "0x3f800000", "s4": "0x40720000", "s5": "0x3f000000", "s6": "0x3e8274e6", "x1": "0x200eedb0", "x3": "0x7fff", "x4": "0x0"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7fffff", "s2": "0x3dc568c0", "s6": "0x3eaf97ce"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d9d0aa1", "s6": "0x3edcbab5"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s2": "0x3d8458ae", "s4": "0x41082000", "s6": "0x3f02f547"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d6fe37b", "s6": "0x3f107fc0"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7fffff", "s2": "0x3d5b55ba", "s6": "0x3f1e0a39"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s2": "0x3d4a067b", "s6": "0x3f2b94b1"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d3b3f7b", "s6": "0x3f391f2a"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d302c7a", "s4": "0x41720000", "s6": "0x3f44c229"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d27eb57", "s6": "0x3f4e6e37"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d20675d", "s6": "0x3f581a44"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d19883a", "s6": "0x3f61c651"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d1339a0", "s6": "0x3f6b725e"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d0d6a71", "s6": "0x3f751e6b"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d080c2b", "s6": "0x3f7eca78"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7fffc3", "s1": "0x3b30d2f2", "s2": "0x3d11dcbf", "s4": "0x40b8c2c5", "s6": "0x3d1b2b8f"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ffeaf", "s1": "0x3bcfcae1", "s2": "0x3d1ffb23", "s6": "0x3da640f5"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ffc34", "s1": "0x3c30608b", "s2": "0x3d311f69", "s6": "0x3dfeec23"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ff759", "s1": "0x3c851fa3", "s2": "0x3d465f8d", "s6": "0x3e2bcba8"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7fee51", "s1": "0x3cbe4d74", "s2": "0x3d616884", "s6": "0x3e58213e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7fd9aa", "s1": "0x3d0c1561", "s2": "0x3d85f12b", "s4": "0x40ff443e", "s6": "0x3e85de77"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f1290", "s1": "0x3dae2d0d", "s2": "0x3de846d0", "s6": "0x3ebff71e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f6b7512", "s1": "0x3ec8f4d4", "s2": "0x3ecdba86", "s6": "0x3efa0fc6"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7c151d", "s1": "0x3e3274f6", "s2": "0x3e078982", "s4": "0x411650f4", "s6": "0x3f288873"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7e76ab", "s1": "0x3de00b5c", "s2": "0x3d90b679", "s4": "0x4165ffd2", "s6": "0x3f462b6d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7ecbe0", "s1": "0x3dc65c37", "s2": "0x3d70a403", "s6": "0x3f53055b"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7f0230", "s1": "0x3db41177", "s2": "0x3d4de8e3", "s6": "0x3f5fdf4a"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7f275f", "s1": "0x3da661b0", "s2": "0x3d33ee1b", "s6": "0x3f6cb939"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7f4231", "s1": "0x3d9bc1c3", "s2": "0x3d1fc44a", "s6": "0x3f799328"}, "removed_fields": []},
+        {"motion_event_entry_bytes": "408703100000000018000000000000000000000000000000000000009a99193e000000000000000000000000ffffffff00000000002048400000000000803840", "pc": "0x503d2c8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)"], "regs_changes": {"s0": "0x10038840", "s1": "0xb", "s2": "0x0", "s3": "0x3e19999a", "x1": "0x200eee48", "x2": "0x200eee38", "x3": "0x1", "x5": "0x10038840", "x6": "0x10038840"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0xbf7f24a8", "s1": "0x3da76a8e", "s2": "0x3d239fde", "s3": "0x3f800000", "s4": "0x402c96dc", "s6": "0x3cbdd651", "x1": "0x200eeda8", "x2": "0x1", "x3": "0x7fff"}, "removed_fields": ["motion_event_entry_bytes"]},
+        {"regs_changes": {"s0": "0xbf7ea9be", "s1": "0x3dd1083c", "s2": "0x3d43720c", "s6": "0x3d8e5e9a"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7dc1b1", "s1": "0x3e074484", "s2": "0x3d727219", "s6": "0x3ded47a1"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf77d73e", "s1": "0x3e803bb6", "s2": "0x3dd5ae04", "s4": "0x4080fd6f", "s6": "0x3e4d0b1e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f6eacd0", "s1": "0x3eb926a2", "s2": "0x3e059a63", "s4": "0x40bc1404", "s6": "0x3ec58b46"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ae3dc", "s1": "0x3e4b9334", "s2": "0x3d8a9bbf", "s6": "0x3eeffa48"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7cf615", "s1": "0x3e1d4ec7", "s2": "0x3d4e06d7", "s4": "0x410c073c", "s6": "0x3f06ed7e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7dbdff", "s1": "0x3e07b35d", "s2": "0x3d2cce6f", "s6": "0x3f120fa4"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7e3bfd", "s1": "0x3df01ebe", "s2": "0x3d14c4ff", "s6": "0x3f1d31ca"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7e7f18", "s1": "0x3ddda34d", "s2": "0x3d06924f", "s4": "0x41500d2e", "s6": "0x3f25a11d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ead87", "s1": "0x3dcfe0ec", "s2": "0x3cf801d2", "s6": "0x3f2d280b"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ed2d4", "s1": "0x3dc41dab", "s2": "0x3ce5f0d7", "s6": "0x3f34aef8"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7ef151", "s1": "0x3db9f211", "s2": "0x3cd65275", "s6": "0x3f3c35e6"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f07c1", "s1": "0x3db215fc", "s2": "0x3cca40ca", "s4": "0x419513fc", "s6": "0x3f42d238"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f1876", "s1": "0x3dac00b9", "s2": "0x3cc0e9b5", "s6": "0x3f4880ed"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f272c", "s1": "0x3da6749b", "s2": "0x3cb86558", "s6": "0x3f4e2fa3"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f343b", "s1": "0x3da16051", "s2": "0x3cb09915", "s6": "0x3f53de58"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f3fdd", "s1": "0x3d9cb553", "s2": "0x3ca96e92", "s6": "0x3f598d0d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f4a4a", "s1": "0x3d986759", "s2": "0x3ca2d2f0", "s6": "0x3f5f3bc3"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f5224", "s1": "0x3d951442", "s2": "0x3c9db87e", "s4": "0x41cd2e49", "s6": "0x3f63f28a"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f5922", "s1": "0x3d920da0", "s2": "0x3c991374", "s6": "0x3f6882b7"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f5f99", "s1": "0x3d8f333b", "s2": "0x3c94b25d", "s6": "0x3f6d12e5"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f6596", "s1": "0x3d8c8169", "s2": "0x3c908f93", "s6": "0x3f71a312"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f6b24", "s1": "0x3d89f4dd", "s2": "0x3c8ca607", "s6": "0x3f763340"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f7051", "s1": "0x3d878aa8", "s2": "0x3c88f137", "s6": "0x3f7ac36d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f7f7521", "s1": "0x3d854026", "s2": "0x3c856d13", "s6": "0x3f7f539b"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s1": "0x41c3ea77", "x1": "0x200eedb0"}, "removed_fields": []}
+      ]
+    },
+    "cross": {
+      "historical_gzip_sha256": "c7f2f86231ee8f2c2627ca4ecac29a6a2c40244c9d860c69bea22a23b9b3eea3",
+      "historical_json_sha256": "fa439a3cee23189cf51d79d2cd0e52410e60c1b78123eb6d5cc339890eddcb78",
+      "original_structured_sha256": "48e50a65f056f910f59899df8d367c49b7c98d8aa34d1ca0ec15d98b71923b99",
+      "case_fields": {
+        "native_calls": {
+          "Drawing_factory_admission": {
+            "factory_created_pen_count": 1,
+            "factory_returned_pen": "0x10035af0",
+            "loader_calls": [
+              {
+                "flags": 2,
+                "fn": "dlopen",
+                "name": "libSPenMarker3.so"
+              },
+              {
+                "fn": "dlsym",
+                "handle": "0x50000001",
+                "name": "createPenInst"
+              }
+            ],
+            "requested_canonical_pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+            "selected_drawable_object": "0x10036130",
+            "selected_v5_or_v1_actual": "5",
+            "selected_vtable_entry": [
+              "non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+            ]
+          },
+          "ObjectDrawing::drawObjectStroke_return": 1,
+          "ObjectStroke_GetAdvancedPenSetting": {
+            "is_null": false,
+            "utf8": "5;"
+          },
+          "ObjectStroke_GetColor_argb": "0xff3366cc",
+          "ObjectStroke_getter_snapshots": [
+            {
+              "curve_enabled": 1,
+              "label": "before_drawObjectStroke",
+              "point_count": 4,
+              "size_bits": "00001041",
+              "stroke_type": 0,
+              "tool_type": 1
+            },
+            {
+              "curve_enabled": 1,
+              "label": "before_saved_RedrawPen",
+              "point_count": 4,
+              "size_bits": "00001041",
+              "stroke_type": 0,
+              "tool_type": 1
+            }
+          ],
+          "Pen::SetColor_calls": [
+            {
+              "color_argb_w1": "0x7f000000",
+              "phase": "setup"
+            },
+            {
+              "color_argb_w1": "0x7f000000",
+              "phase": "draw_object_stroke"
+            },
+            {
+              "color_argb_w1": "0xff3366cc",
+              "phase": "draw_object_stroke"
+            }
+          ],
+          "context_color_conversion_calls": [
+            {
+              "input_argb_w1": "0xff3366cc",
+              "phase": "draw_object_stroke",
+              "result_argb_w0": "0xff3366cc"
+            }
+          ],
+          "drawable_getInverseScale_f32_bits": null,
+          "drawable_getSize_f32_bits": "00001041",
+          "drawing_selected_rt_id": "rt0",
+          "loader": [
+            {
+              "flags": 2,
+              "fn": "dlopen",
+              "name": "libSPenMarker3.so"
+            },
+            {
+              "fn": "dlsym",
+              "handle": "0x50000001",
+              "name": "createPenInst"
+            }
+          ],
+          "motion_event_getter_returns": [
+            {
+              "args": {
+                "x0": "0x200eec78",
+                "x1": "0x0",
+                "x2": "0x200eec68",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0ad8",
+              "phase_entry": "draw_object_stroke",
+              "phase_return": "draw_object_stroke",
+              "return": {
+                "d0": "0x4046c00000000000",
+                "s0": "0x0",
+                "x0": "0x200eec78"
+              },
+              "return_pc": "0x503d330",
+              "return_pc_expected": "0x503d330",
+              "signature": "SPen::MotionEvent::GetX(int) const"
+            },
+            {
+              "args": {
+                "x0": "0x200eec78",
+                "x1": "0x0",
+                "x2": "0x200eec68",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0b34",
+              "phase_entry": "draw_object_stroke",
+              "phase_return": "draw_object_stroke",
+              "return": {
+                "d0": "0x4029000000000000",
+                "s0": "0x0",
+                "x0": "0x200eec78"
+              },
+              "return_pc": "0x503d340",
+              "return_pc_expected": "0x503d340",
+              "signature": "SPen::MotionEvent::GetY(int) const"
+            },
+            {
+              "args": {
+                "x0": "0x200eee48",
+                "x1": "0x0",
+                "x2": "0x200eee38",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0ad8",
+              "phase_entry": "saved_redraw",
+              "phase_return": "saved_redraw",
+              "return": {
+                "d0": "0x4046c00000000000",
+                "s0": "0x0",
+                "x0": "0x200eee48"
+              },
+              "return_pc": "0x503d330",
+              "return_pc_expected": "0x503d330",
+              "signature": "SPen::MotionEvent::GetX(int) const"
+            },
+            {
+              "args": {
+                "x0": "0x200eee48",
+                "x1": "0x0",
+                "x2": "0x200eee38",
+                "x3": "0x1"
+              },
+              "entry_pc": "0x20c0b34",
+              "phase_entry": "saved_redraw",
+              "phase_return": "saved_redraw",
+              "return": {
+                "d0": "0x4029000000000000",
+                "s0": "0x0",
+                "x0": "0x200eee48"
+              },
+              "return_pc": "0x503d340",
+              "return_pc_expected": "0x503d340",
+              "signature": "SPen::MotionEvent::GetY(int) const"
+            }
+          ],
+          "pen_GetSize_after_draw_f32_bits": "00001041",
+          "pen_screen_resolution": [
+            {
+              "height": 1080,
+              "width": 1920
+            }
+          ],
+          "phase_rt_ids": {},
+          "route": {
+            "advanced_setting": "5;",
+            "drawing_selected_drawable_version": "5",
+            "runner_mode": "selected",
+            "saved_redraw_invoked_version": "5"
+          },
+          "selected_drawable_object_redraw_entry": "non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "selected_drawable_object_redraw_return": 1,
+          "selected_drawable_primary_vtable_id": "Marker3StrokeDrawableGLV5",
+          "source_ObjectStroke_GetPenSize_f32_bits": "00001041"
+        }
+      },
+      "callback_changes": [
+        {"phase": "draw_object_stroke", "rt_id": "rt0", "vector_begin": "0x100375a0", "vector_count": 1, "vector_object": "0x10037570", "xy_bits": ["0x41920000", "0x41480000"]},
+        {"vector_begin": "0x10037630", "vector_count": 2, "xy_bits": ["0x419671ea", "0x4151611a"]},
+        {"vector_begin": "0x10037640", "vector_count": 3, "xy_bits": ["0x419be4e7", "0x415ce0a8"]},
+        {"vector_count": 4, "xy_bits": ["0x41a0cf50", "0x41674005"]},
+        {"vector_begin": "0x10037660", "vector_count": 5, "xy_bits": ["0x41a6b6a8", "0x4173b517"]},
+        {"vector_count": 6, "xy_bits": ["0x41ad7650", "0x4180f94e"]},
+        {"vector_count": 7, "xy_bits": ["0x41b20f57", "0x4185d320"]},
+        {"vector_count": 8, "xy_bits": ["0x41b7036d", "0x418b0d02"]},
+        {"vector_begin": "0x100376a0", "vector_count": 9, "xy_bits": ["0x41bc5291", "0x4190a6f6"]},
+        {"vector_count": 10, "xy_bits": ["0x41c1fcc3", "0x4196a0fc"]},
+        {"vector_count": 11, "xy_bits": ["0x41c80202", "0x419cfb13"]},
+        {"vector_count": 12, "xy_bits": ["0x41ce6250", "0x41a3b53b"]},
+        {"vector_count": 13, "xy_bits": ["0x41d36e3e", "0x41a90846"]},
+        {"vector_count": 14, "xy_bits": ["0x41d86500", "0x41ae44fb"]},
+        {"vector_count": 15, "xy_bits": ["0x41dd8a36", "0x41b3b2b3"]},
+        {"vector_count": 16, "xy_bits": ["0x41e2dde1", "0x41b9516f"]},
+        {"vector_begin": "0x10037720", "vector_count": 17, "xy_bits": ["0x41e86002", "0x41bf212f"]},
+        {"vector_count": 18, "xy_bits": ["0x41ee1098", "0x41c521f2"]},
+        {"vector_count": 19, "xy_bits": ["0x41f3efa2", "0x41cb53b9"]},
+        {"vector_count": 20, "xy_bits": ["0x41f9fd20", "0x41d1b683"]},
+        {"vector_count": 21, "xy_bits": ["0x420025ed", "0x41d85f2c"]},
+        {"vector_count": 22, "xy_bits": ["0x42035de9", "0x41df50be"]},
+        {"vector_count": 23, "xy_bits": ["0x420660c7", "0x41e60a45"]},
+        {"vector_count": 24, "xy_bits": ["0x42092e89", "0x41ec8bc3"]},
+        {"vector_count": 25, "xy_bits": ["0x420bc72e", "0x41f2d538"]},
+        {"vector_count": 26, "xy_bits": ["0x420e2ab5", "0x41f8e6a1"]},
+        {"vector_count": 27, "xy_bits": ["0x4210591f", "0x41fec003"]},
+        {"vector_count": 28, "xy_bits": ["0x4212526c", "0x420230ad"]},
+        {"vector_count": 29, "xy_bits": ["0x42143117", "0x42050faa"]},
+        {"vector_count": 30, "xy_bits": ["0x4216ade6", "0x42095d9d"]},
+        {"vector_count": 31, "xy_bits": ["0x42189393", "0x420d5bd6"]},
+        {"vector_count": 32, "xy_bits": ["0x4219e21e", "0x42110a56"]},
+        {"vector_begin": "0x10037820", "vector_count": 33, "xy_bits": ["0x421a9986", "0x4214691b"]},
+        {"vector_count": 34, "xy_bits": ["0x421ab1ea", "0x4217e350"]},
+        {"vector_count": 35, "xy_bits": ["0x4219a403", "0x421bd72f"]},
+        {"vector_count": 36, "xy_bits": ["0x42173ef7", "0x421f1609"]},
+        {"vector_count": 37, "xy_bits": ["0x4213ad4e", "0x42218a86"]},
+        {"vector_count": 38, "xy_bits": ["0x4210bf64", "0x4222c44f"]},
+        {"vector_count": 39, "xy_bits": ["0x420d4fde", "0x4223b9b9"]},
+        {"vector_count": 40, "xy_bits": ["0x42095ebc", "0x42246ac4"]},
+        {"vector_count": 41, "xy_bits": ["0x4204ebfd", "0x4224d76f"]},
+        {"vector_count": 42, "xy_bits": ["0x41ffef43", "0x4224ffba"]},
+        {"vector_count": 43, "xy_bits": ["0x41f6b0a3", "0x4224cf7f"]},
+        {"vector_count": 44, "xy_bits": ["0x41eece57", "0x42242a7a"]},
+        {"vector_count": 45, "xy_bits": ["0x41e7f8b4", "0x422301f9"]},
+        {"vector_count": 46, "xy_bits": ["0x41e107a5", "0x4220addc"]},
+        {"vector_count": 47, "xy_bits": ["0x41dca745", "0x421d7fda"]},
+        {"vector_count": 48, "xy_bits": ["0x41dad533", "0x4219e456"]},
+        {"vector_count": 49, "xy_bits": ["0x41db0515", "0x42159412"]},
+        {"vector_count": 50, "xy_bits": ["0x41dc6cd7", "0x4211fb4c"]},
+        {"vector_count": 51, "xy_bits": ["0x41deb1d4", "0x420e4bf5"]},
+        {"vector_count": 52, "xy_bits": ["0x41e1e431", "0x420a4921"]},
+        {"vector_count": 53, "xy_bits": ["0x41e5554d", "0x42069fd6"]},
+        {"vector_count": 54, "xy_bits": ["0x41e8ba3d", "0x42036124"]},
+        {"vector_count": 55, "xy_bits": ["0x41ec9704", "0x41fff098"]},
+        {"vector_count": 56, "xy_bits": ["0x41f0eba4", "0x41f8ca9f"]},
+        {"vector_count": 57, "xy_bits": ["0x41f5b81c", "0x41f15059"]},
+        {"vector_count": 58, "xy_bits": ["0x41f9e31f", "0x41eb1b3c"]},
+        {"vector_count": 59, "xy_bits": ["0x41fe25ca", "0x41e4fafd"]},
+        {"vector_count": 60, "xy_bits": ["0x42015718", "0x41dea9b2"]},
+        {"vector_count": 61, "xy_bits": ["0x4203be29", "0x41d8275a"]},
+        {"vector_count": 62, "xy_bits": ["0x42064819", "0x41d173f4"]},
+        {"vector_count": 63, "xy_bits": ["0x4208f4e6", "0x41ca8f83"]},
+        {"vector_count": 64, "xy_bits": ["0x420b5c1a", "0x41c47ee8"]},
+        {"vector_begin": "0x10037b70", "vector_count": 65, "xy_bits": ["0x420db3ca", "0x41beaf73"]},
+        {"vector_count": 66, "xy_bits": ["0x42102200", "0x41b8c04f"]},
+        {"vector_count": 67, "xy_bits": ["0x4212a6bc", "0x41b2b17d"]},
+        {"vector_count": 68, "xy_bits": ["0x421541fd", "0x41ac82fd"]},
+        {"vector_count": 69, "xy_bits": ["0x4217f3c4", "0x41a634cd"]},
+        {"vector_count": 70, "xy_bits": ["0x421abc12", "0x419fc6ee"]},
+        {"vector_count": 71, "xy_bits": ["0x421d8e12", "0x4199567a"]},
+        {"vector_count": 72, "xy_bits": ["0x422003bd", "0x4193c7cb"]},
+        {"vector_count": 73, "xy_bits": ["0x42228912", "0x418e2314"]},
+        {"vector_count": 74, "xy_bits": ["0x42251e0e", "0x41886857"]},
+        {"vector_count": 75, "xy_bits": ["0x4227c2b6", "0x4182978f"]},
+        {"vector_count": 76, "xy_bits": ["0x422a7706", "0x41796183"]},
+        {"vector_count": 77, "xy_bits": ["0x422d3b00", "0x416d67d4"]},
+        {"vector_count": 78, "xy_bits": ["0x42300ea3", "0x41614213"]},
+        {"vector_count": 79, "xy_bits": ["0x4232f1ef", "0x4154f047"]},
+        {"vector_count": 80, "xy_bits": ["0x4235e4e5", "0x41487265"]},
+        {"vector_count": 81, "xy_bits": ["0x42360000", "0x41480000"]},
+        {"phase": "saved_redraw", "vector_begin": "0x10038a00", "vector_count": 1, "vector_object": "0x100389d0", "xy_bits": ["0x41920000", "0x41480000"]},
+        {"vector_begin": "0x10038a10", "vector_count": 2, "xy_bits": ["0x419671ea", "0x4151611a"]},
+        {"vector_begin": "0x10038a20", "vector_count": 3, "xy_bits": ["0x419be4e7", "0x415ce0a8"]},
+        {"vector_count": 4, "xy_bits": ["0x41a0cf50", "0x41674005"]},
+        {"vector_begin": "0x10038a40", "vector_count": 5, "xy_bits": ["0x41a6b6a8", "0x4173b517"]},
+        {"vector_count": 6, "xy_bits": ["0x41ad7650", "0x4180f94e"]},
+        {"vector_count": 7, "xy_bits": ["0x41b20f57", "0x4185d320"]},
+        {"vector_count": 8, "xy_bits": ["0x41b7036d", "0x418b0d02"]},
+        {"vector_begin": "0x10038a80", "vector_count": 9, "xy_bits": ["0x41bc5291", "0x4190a6f6"]},
+        {"vector_count": 10, "xy_bits": ["0x41c1fcc3", "0x4196a0fc"]},
+        {"vector_count": 11, "xy_bits": ["0x41c80202", "0x419cfb13"]},
+        {"vector_count": 12, "xy_bits": ["0x41ce6250", "0x41a3b53b"]},
+        {"vector_count": 13, "xy_bits": ["0x41d36e3e", "0x41a90846"]},
+        {"vector_count": 14, "xy_bits": ["0x41d86500", "0x41ae44fb"]},
+        {"vector_count": 15, "xy_bits": ["0x41dd8a36", "0x41b3b2b3"]},
+        {"vector_count": 16, "xy_bits": ["0x41e2dde1", "0x41b9516f"]},
+        {"vector_begin": "0x10038b00", "vector_count": 17, "xy_bits": ["0x41e86002", "0x41bf212f"]},
+        {"vector_count": 18, "xy_bits": ["0x41ee1098", "0x41c521f2"]},
+        {"vector_count": 19, "xy_bits": ["0x41f3efa2", "0x41cb53b9"]},
+        {"vector_count": 20, "xy_bits": ["0x41f9fd20", "0x41d1b683"]},
+        {"vector_count": 21, "xy_bits": ["0x420025ed", "0x41d85f2c"]},
+        {"vector_count": 22, "xy_bits": ["0x42035de9", "0x41df50be"]},
+        {"vector_count": 23, "xy_bits": ["0x420660c7", "0x41e60a45"]},
+        {"vector_count": 24, "xy_bits": ["0x42092e89", "0x41ec8bc3"]},
+        {"vector_count": 25, "xy_bits": ["0x420bc72e", "0x41f2d538"]},
+        {"vector_count": 26, "xy_bits": ["0x420e2ab5", "0x41f8e6a1"]},
+        {"vector_count": 27, "xy_bits": ["0x4210591f", "0x41fec003"]},
+        {"vector_count": 28, "xy_bits": ["0x4212526c", "0x420230ad"]},
+        {"vector_count": 29, "xy_bits": ["0x42143117", "0x42050faa"]},
+        {"vector_count": 30, "xy_bits": ["0x4216ade6", "0x42095d9d"]},
+        {"vector_count": 31, "xy_bits": ["0x42189393", "0x420d5bd6"]},
+        {"vector_count": 32, "xy_bits": ["0x4219e21e", "0x42110a56"]},
+        {"vector_begin": "0x10038c00", "vector_count": 33, "xy_bits": ["0x421a9986", "0x4214691b"]},
+        {"vector_count": 34, "xy_bits": ["0x421ab1ea", "0x4217e350"]},
+        {"vector_count": 35, "xy_bits": ["0x4219a403", "0x421bd72f"]},
+        {"vector_count": 36, "xy_bits": ["0x42173ef7", "0x421f1609"]},
+        {"vector_count": 37, "xy_bits": ["0x4213ad4e", "0x42218a86"]},
+        {"vector_count": 38, "xy_bits": ["0x4210bf64", "0x4222c44f"]},
+        {"vector_count": 39, "xy_bits": ["0x420d4fde", "0x4223b9b9"]},
+        {"vector_count": 40, "xy_bits": ["0x42095ebc", "0x42246ac4"]},
+        {"vector_count": 41, "xy_bits": ["0x4204ebfd", "0x4224d76f"]},
+        {"vector_count": 42, "xy_bits": ["0x41ffef43", "0x4224ffba"]},
+        {"vector_count": 43, "xy_bits": ["0x41f6b0a3", "0x4224cf7f"]},
+        {"vector_count": 44, "xy_bits": ["0x41eece57", "0x42242a7a"]},
+        {"vector_count": 45, "xy_bits": ["0x41e7f8b4", "0x422301f9"]},
+        {"vector_count": 46, "xy_bits": ["0x41e107a5", "0x4220addc"]},
+        {"vector_count": 47, "xy_bits": ["0x41dca745", "0x421d7fda"]},
+        {"vector_count": 48, "xy_bits": ["0x41dad533", "0x4219e456"]},
+        {"vector_count": 49, "xy_bits": ["0x41db0515", "0x42159412"]},
+        {"vector_count": 50, "xy_bits": ["0x41dc6cd7", "0x4211fb4c"]},
+        {"vector_count": 51, "xy_bits": ["0x41deb1d4", "0x420e4bf5"]},
+        {"vector_count": 52, "xy_bits": ["0x41e1e431", "0x420a4921"]},
+        {"vector_count": 53, "xy_bits": ["0x41e5554d", "0x42069fd6"]},
+        {"vector_count": 54, "xy_bits": ["0x41e8ba3d", "0x42036124"]},
+        {"vector_count": 55, "xy_bits": ["0x41ec9704", "0x41fff098"]},
+        {"vector_count": 56, "xy_bits": ["0x41f0eba4", "0x41f8ca9f"]},
+        {"vector_count": 57, "xy_bits": ["0x41f5b81c", "0x41f15059"]},
+        {"vector_count": 58, "xy_bits": ["0x41f9e31f", "0x41eb1b3c"]},
+        {"vector_count": 59, "xy_bits": ["0x41fe25ca", "0x41e4fafd"]},
+        {"vector_count": 60, "xy_bits": ["0x42015718", "0x41dea9b2"]},
+        {"vector_count": 61, "xy_bits": ["0x4203be29", "0x41d8275a"]},
+        {"vector_count": 62, "xy_bits": ["0x42064819", "0x41d173f4"]},
+        {"vector_count": 63, "xy_bits": ["0x4208f4e6", "0x41ca8f83"]},
+        {"vector_count": 64, "xy_bits": ["0x420b5c1a", "0x41c47ee8"]},
+        {"vector_begin": "0x10038f10", "vector_count": 65, "xy_bits": ["0x420db3ca", "0x41beaf73"]},
+        {"vector_count": 66, "xy_bits": ["0x42102200", "0x41b8c04f"]},
+        {"vector_count": 67, "xy_bits": ["0x4212a6bc", "0x41b2b17d"]},
+        {"vector_count": 68, "xy_bits": ["0x421541fd", "0x41ac82fd"]},
+        {"vector_count": 69, "xy_bits": ["0x4217f3c4", "0x41a634cd"]},
+        {"vector_count": 70, "xy_bits": ["0x421abc12", "0x419fc6ee"]},
+        {"vector_count": 71, "xy_bits": ["0x421d8e12", "0x4199567a"]},
+        {"vector_count": 72, "xy_bits": ["0x422003bd", "0x4193c7cb"]},
+        {"vector_count": 73, "xy_bits": ["0x42228912", "0x418e2314"]},
+        {"vector_count": 74, "xy_bits": ["0x42251e0e", "0x41886857"]},
+        {"vector_count": 75, "xy_bits": ["0x4227c2b6", "0x4182978f"]},
+        {"vector_count": 76, "xy_bits": ["0x422a7706", "0x41796183"]},
+        {"vector_count": 77, "xy_bits": ["0x422d3b00", "0x416d67d4"]},
+        {"vector_count": 78, "xy_bits": ["0x42300ea3", "0x41614213"]},
+        {"vector_count": 79, "xy_bits": ["0x4232f1ef", "0x4154f047"]},
+        {"vector_count": 80, "xy_bits": ["0x4235e4e5", "0x41487265"]},
+        {"vector_count": 81, "xy_bits": ["0x42360000", "0x41480000"]}
+      ],
+      "lifecycle_changes": [
+        {"pc": "0x503e7cc", "phase": "draw_object_stroke", "signatures": ["non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"s0": "0x0", "s1": "0x0", "s2": "0x3ecccccd", "s3": "0x0", "s4": "0x0", "s5": "0x0", "s6": "0x0", "s7": "0x0", "x0": "0x10036138", "x1": "0x1002d760", "x2": "0x200eee90", "x3": "0x200eee90", "x4": "0x100359f0", "x5": "0x10033b50", "x6": "0x4", "x7": "0x0"}, "removed_fields": []},
+        {"pc": "0x503e124", "signatures": ["SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"x0": "0x10036130"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0x41920000", "s1": "0x41920000", "s2": "0x3f800000", "s3": "0x41100000", "s4": "0x3f800000", "x1": "0x100361a4", "x2": "0x1", "x3": "0x1", "x4": "0x69d", "x5": "0x10035b0c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b81", "s1": "0x3f39cd2a", "s2": "0x3e000303", "s3": "0x3f800000", "s4": "0x3f9e72e0", "s5": "0x3f000000", "s6": "0x3e4ec93b", "x1": "0x200eebe0", "x3": "0x7fff", "x4": "0x0"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3dab9a66", "s4": "0x409e72e0", "s6": "0x3e9a41e4"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d8c4308", "s6": "0x3ebcb9d7"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d6d339e", "s6": "0x3edf31ca"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b82", "s1": "0x3f39cd2b", "s2": "0x3d4e0132", "s4": "0x4132413c", "s6": "0x3f007f51"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b81", "s1": "0x3f39cd2a", "s2": "0x3d3ea95c", "s6": "0x3f0ad680"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b82", "s1": "0x3f39cd2b", "s2": "0x3d31720f", "s6": "0x3f152daf"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d25f163", "s6": "0x3f1f84de"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b81", "s1": "0x3f39cd2a", "s2": "0x3d1bd73c", "s6": "0x3f29dc0e"}, "removed_fields": []},
+        {"regs_changes": {"s1": "0x3f39cd2b", "s2": "0x3d12e5e6", "s6": "0x3f34333d"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d0aed0b", "s6": "0x3f3e8a6c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b80", "s1": "0x3f39cd2a", "s2": "0x3d0575f9", "s4": "0x419e72e0", "s6": "0x3f4657db"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b81", "s1": "0x3f39cd2b", "s2": "0x3d00ab58", "s6": "0x3f4dbab4"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b80", "s1": "0x3f39cd2a", "s2": "0x3cf86b78", "s6": "0x3f551d8d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b81", "s2": "0x3cf01939", "s6": "0x3f5c8065"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3ce8510f", "s6": "0x3f63e33e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b80", "s1": "0x3f39cd29", "s2": "0x3ce105f9", "s6": "0x3f6b4617"}, "removed_fields": []},
+        {"regs_changes": {"s1": "0x3f39cd2a", "s2": "0x3cda2c8e", "s6": "0x3f72a8f0"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3cd3baba", "s6": "0x3f7a0bc8"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2f8bf9", "s1": "0x3f3a54cd", "s2": "0x3cd0a496", "s4": "0x4101a5bd", "s6": "0x3bc40579"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2c7645", "s1": "0x3f3d30a7", "s2": "0x3cdaa11d", "s6": "0x3d16dd54"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2903a9", "s1": "0x3f4046ba", "s2": "0x3ce58c56", "s6": "0x3d8a9cfd"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f252434", "s1": "0x3f439cd7", "s2": "0x3cf185f3", "s6": "0x3dc9cb50"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f20c464", "s1": "0x3f473928", "s2": "0x3cfeb292", "s6": "0x3e047cd2"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f1bcc48", "s1": "0x3f4b2208", "s2": "0x3d069e3b", "s6": "0x3e2413fb"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f161e49", "s1": "0x3f4f5d97", "s2": "0x3d0eaa01", "s6": "0x3e43ab24"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f0f95b6", "s1": "0x3f53f126", "s2": "0x3d17980e", "s6": "0x3e63424d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f0781ee", "s1": "0x3f5931f1", "s2": "0x3d222efa", "s4": "0x414e83c3", "s6": "0x3e826951"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3eef365a", "s1": "0x3f62575d", "s2": "0x3d35b341", "s6": "0x3e9d0e37"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3ec53f56", "s1": "0x3f6c3d75", "s2": "0x3d4d09b9", "s6": "0x3eb7b31c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3e8d338d", "s1": "0x3f76127d", "s2": "0x3d686f7b", "s6": "0x3ed25802"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3e050eaf", "s1": "0x3f7dd462", "s2": "0x3d837efb", "s6": "0x3eecfce8"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbdb5f2d2", "s1": "0x3f7efcd9", "s2": "0x3d94954d", "s4": "0x4180c38c", "s6": "0x3f05c086"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbedd3d93", "s1": "0x3f66ddb8", "s2": "0x3da0f52a", "s6": "0x3f19d372"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf3a325a", "s1": "0x3f2fb080", "s2": "0x3d987031", "s6": "0x3f2de65e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf643f23", "s1": "0x3ee7db88", "s2": "0x3d83866b", "s4": "0x41aa4417", "s6": "0x3f413657"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf722341", "s1": "0x3ea63255", "s2": "0x3d6aaa25", "s6": "0x3f4d8ca3"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf79d399", "s1": "0x3e5f8640", "s2": "0x3d50e2a0", "s6": "0x3f59e2ef"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7dc3c8", "s1": "0x3e0705ab", "s2": "0x3d3a9225", "s6": "0x3f66393a"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7f82df", "s1": "0x3d7cff1b", "s2": "0x3d279fec", "s6": "0x3f728f86"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7fff4f", "s1": "0x3b9625ce", "s2": "0x3d179db0", "s6": "0x3f7ee5d2"}, "removed_fields": []},
+        {"motion_event_entry_bytes": "207a03100000000018000000000000000000000000000000000000000000803f000000000000000000000000ffffffff0000000000c046400000000000002940", "pc": "0x503d2c8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)"], "regs_changes": {"s0": "0x10037b20", "s1": "0xb", "s2": "0x0", "x1": "0x200eec78", "x2": "0x200eec68", "x3": "0x1", "x5": "0x10037b20", "x6": "0x10037b20"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0xbf7eca89", "s1": "0xbdc6ca68", "s2": "0x3d2a5874", "s4": "0x4033716f", "s6": "0x3d264284", "x1": "0x200eebd8", "x2": "0x1", "x3": "0x7fff"}, "removed_fields": ["motion_event_entry_bytes"]},
+        {"regs_changes": {"s0": "0xbf78da7f", "s1": "0xbe7043a3", "s2": "0x3d444207", "s6": "0x3dae6a42"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf68aa47", "s1": "0xbed591ab", "s2": "0x3d61c0a9", "s4": "0x409a0445", "s6": "0x3e06c7da"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf371492", "s1": "0xbf32ef40", "s2": "0x3d806f21", "s6": "0x3e467d23"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbecbcf68", "s1": "0xbf6ad7de", "s2": "0x3d7fe092", "s4": "0x40e236bc", "s6": "0x3e82c211"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbdd210cd", "s1": "0xbf7ea658", "s2": "0x3d63feb0", "s6": "0x3e9f202e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3e019b27", "s1": "0xbf7df0f3", "s2": "0x3d40f602", "s6": "0x3ebb7e4b"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3e7e4e1e", "s1": "0xbf77fade", "s2": "0x3d29ae1f", "s4": "0x4126394f", "s6": "0x3ed03680"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3eab5851", "s1": "0xbf713d2b", "s2": "0x3d171437", "s6": "0x3ee37ddf"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3ecd9927", "s1": "0xbf6a740a", "s2": "0x3d075bc0", "s6": "0x3ef6c53e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3ee4d5f9", "s1": "0xbf6501f9", "s2": "0x3cf7fb22", "s4": "0x4170fab6", "s6": "0x3f0391af"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3ef51a34", "s1": "0xbf60c2a6", "s2": "0x3ce756b7", "s6": "0x3f0a6b14"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f018673", "s1": "0xbf5cd09e", "s2": "0x3cd88fd9", "s6": "0x3f11447a"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f078d4e", "s1": "0xbf592ad8", "s2": "0x3ccb6511", "s6": "0x3f181ddf"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f0ccc87", "s1": "0xbf55cd88", "s2": "0x3cbf9db0", "s6": "0x3f1ef744"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f1084c8", "s1": "0xbf534e69", "s2": "0x3cb71461", "s4": "0x41a97d5d", "s6": "0x3f246f63"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f13bcf2", "s1": "0xbf51116d", "s2": "0x3caf8fec", "s6": "0x3f29a8e5"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f16ac18", "s1": "0xbf4ef6a6", "s2": "0x3ca89a50", "s6": "0x3f2ee267"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f195b05", "s1": "0xbf4cfbad", "s2": "0x3ca2253b", "s6": "0x3f341be9"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f1bd13b", "s1": "0xbf4b1e3c", "s2": "0x3c9c240b", "s6": "0x3f39556c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f1e1529", "s1": "0xbf495c2d", "s2": "0x3c968ba0", "s6": "0x3f3e8eee"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f1fe2c6", "s1": "0xbf47ee68", "s2": "0x3c920ae0", "s4": "0x41e67521", "s6": "0x3f430a3c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f217820", "s1": "0xbf46a79a", "s2": "0x3c8e0d3d", "s6": "0x3f473d32"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f22f57c", "s1": "0xbf456f3d", "s2": "0x3c8a43e4", "s6": "0x3f4b7028"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f245cd8", "s1": "0xbf444479", "s2": "0x3c86ab14", "s6": "0x3f4fa31e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f25affb", "s1": "0xbf432680", "s2": "0x3c833f61", "s6": "0x3f53d613"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f26f082", "s1": "0xbf421498", "s2": "0x3c7ffb5a", "s6": "0x3f580909"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f281fdb", "s1": "0xbf410e0b", "s2": "0x3c79c638", "s6": "0x3f5c3bff"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f293a84", "s1": "0xbf401676", "s2": "0x3c73f3a3", "s4": "0x4217c8dc", "s6": "0x3f605c7b"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2a1f28", "s1": "0xbf3f4c12", "s2": "0x3c6f36da", "s6": "0x3f63dce4"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2afa32", "s1": "0xbf3e8868", "s2": "0x3c6aa70e", "s6": "0x3f675d4d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2bcc32", "s1": "0xbf3dcb22", "s2": "0x3c6641d6", "s6": "0x3f6addb5"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2c95b3", "s1": "0xbf3d13f9", "s2": "0x3c6204fb", "s6": "0x3f6e5e1e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2d5733", "s1": "0xbf3c62a5", "s2": "0x3c5dee6a", "s6": "0x3f71de86"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2e1124", "s1": "0xbf3bb6e4", "s2": "0x3c59fc2e", "s6": "0x3f755eef"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2ec3f5", "s1": "0xbf3b1075", "s2": "0x3c562c79", "s6": "0x3f78df58"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2f7007", "s1": "0xbf3a6f1c", "s2": "0x3c527d95", "s6": "0x3f7c5fc0"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f3015bc", "s1": "0xbf39d2a4", "s2": "0x3c4eeded", "s6": "0x3f7fe029"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s1": "0x41487265", "x1": "0x200eebe0"}, "removed_fields": []},
+        {"pc": "0x503e7cc", "phase": "saved_redraw", "signatures": ["non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"s0": "0x41100000", "s1": "0x0", "s2": "0x427f6666", "s3": "0x426e6666", "s4": "0x42290000", "s5": "0x423a0000", "s6": "0x418a0000", "s7": "0x41380000", "x0": "0x10036138", "x1": "0x1002d760", "x2": "0x10034700", "x3": "0x10034700", "x4": "0x200eedac"}, "removed_fields": []},
+        {"pc": "0x503e124", "signatures": ["SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"], "regs_changes": {"x0": "0x10036130"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0x41920000", "s1": "0x41920000", "s2": "0x3f800000", "s3": "0x41100000", "s4": "0x3f800000", "x1": "0x100361a4", "x2": "0x1", "x3": "0x1", "x4": "0xbd9", "x5": "0x10035b0c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b81", "s1": "0x3f39cd2a", "s2": "0x3e000303", "s3": "0x3f800000", "s4": "0x3f9e72e0", "s5": "0x3f000000", "s6": "0x3e4ec93b", "x1": "0x200eedb0", "x3": "0x7fff", "x4": "0x0"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3dab9a66", "s4": "0x409e72e0", "s6": "0x3e9a41e4"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d8c4308", "s6": "0x3ebcb9d7"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d6d339e", "s6": "0x3edf31ca"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b82", "s1": "0x3f39cd2b", "s2": "0x3d4e0132", "s4": "0x4132413c", "s6": "0x3f007f51"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b81", "s1": "0x3f39cd2a", "s2": "0x3d3ea95c", "s6": "0x3f0ad680"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b82", "s1": "0x3f39cd2b", "s2": "0x3d31720f", "s6": "0x3f152daf"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d25f163", "s6": "0x3f1f84de"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b81", "s1": "0x3f39cd2a", "s2": "0x3d1bd73c", "s6": "0x3f29dc0e"}, "removed_fields": []},
+        {"regs_changes": {"s1": "0x3f39cd2b", "s2": "0x3d12e5e6", "s6": "0x3f34333d"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3d0aed0b", "s6": "0x3f3e8a6c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b80", "s1": "0x3f39cd2a", "s2": "0x3d0575f9", "s4": "0x419e72e0", "s6": "0x3f4657db"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b81", "s1": "0x3f39cd2b", "s2": "0x3d00ab58", "s6": "0x3f4dbab4"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b80", "s1": "0x3f39cd2a", "s2": "0x3cf86b78", "s6": "0x3f551d8d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b81", "s2": "0x3cf01939", "s6": "0x3f5c8065"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3ce8510f", "s6": "0x3f63e33e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f301b80", "s1": "0x3f39cd29", "s2": "0x3ce105f9", "s6": "0x3f6b4617"}, "removed_fields": []},
+        {"regs_changes": {"s1": "0x3f39cd2a", "s2": "0x3cda2c8e", "s6": "0x3f72a8f0"}, "removed_fields": []},
+        {"regs_changes": {"s2": "0x3cd3baba", "s6": "0x3f7a0bc8"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2f8bf9", "s1": "0x3f3a54cd", "s2": "0x3cd0a496", "s4": "0x4101a5bd", "s6": "0x3bc40579"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2c7645", "s1": "0x3f3d30a7", "s2": "0x3cdaa11d", "s6": "0x3d16dd54"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2903a9", "s1": "0x3f4046ba", "s2": "0x3ce58c56", "s6": "0x3d8a9cfd"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f252434", "s1": "0x3f439cd7", "s2": "0x3cf185f3", "s6": "0x3dc9cb50"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f20c464", "s1": "0x3f473928", "s2": "0x3cfeb292", "s6": "0x3e047cd2"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f1bcc48", "s1": "0x3f4b2208", "s2": "0x3d069e3b", "s6": "0x3e2413fb"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f161e49", "s1": "0x3f4f5d97", "s2": "0x3d0eaa01", "s6": "0x3e43ab24"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f0f95b6", "s1": "0x3f53f126", "s2": "0x3d17980e", "s6": "0x3e63424d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f0781ee", "s1": "0x3f5931f1", "s2": "0x3d222efa", "s4": "0x414e83c3", "s6": "0x3e826951"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3eef365a", "s1": "0x3f62575d", "s2": "0x3d35b341", "s6": "0x3e9d0e37"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3ec53f56", "s1": "0x3f6c3d75", "s2": "0x3d4d09b9", "s6": "0x3eb7b31c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3e8d338d", "s1": "0x3f76127d", "s2": "0x3d686f7b", "s6": "0x3ed25802"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3e050eaf", "s1": "0x3f7dd462", "s2": "0x3d837efb", "s6": "0x3eecfce8"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbdb5f2d2", "s1": "0x3f7efcd9", "s2": "0x3d94954d", "s4": "0x4180c38c", "s6": "0x3f05c086"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbedd3d93", "s1": "0x3f66ddb8", "s2": "0x3da0f52a", "s6": "0x3f19d372"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf3a325a", "s1": "0x3f2fb080", "s2": "0x3d987031", "s6": "0x3f2de65e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf643f23", "s1": "0x3ee7db88", "s2": "0x3d83866b", "s4": "0x41aa4417", "s6": "0x3f413657"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf722341", "s1": "0x3ea63255", "s2": "0x3d6aaa25", "s6": "0x3f4d8ca3"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf79d399", "s1": "0x3e5f8640", "s2": "0x3d50e2a0", "s6": "0x3f59e2ef"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7dc3c8", "s1": "0x3e0705ab", "s2": "0x3d3a9225", "s6": "0x3f66393a"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7f82df", "s1": "0x3d7cff1b", "s2": "0x3d279fec", "s6": "0x3f728f86"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf7fff4f", "s1": "0x3b9625ce", "s2": "0x3d179db0", "s6": "0x3f7ee5d2"}, "removed_fields": []},
+        {"motion_event_entry_bytes": "008e03100000000018000000000000000000000000000000000000000000803f000000000000000000000000ffffffff0000000000c046400000000000002940", "pc": "0x503d2c8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)"], "regs_changes": {"s0": "0x10038f00", "s1": "0xb", "s2": "0x0", "x1": "0x200eee48", "x2": "0x200eee38", "x3": "0x1", "x5": "0x10038f00", "x6": "0x10038f00"}, "removed_fields": []},
+        {"pc": "0x503ddb8", "signatures": ["SPen::Marker3StrokeDrawableGLV5::drawPoint(SPen::SmPoint const*, bool)"], "regs_changes": {"s0": "0xbf7eca89", "s1": "0xbdc6ca68", "s2": "0x3d2a5874", "s4": "0x4033716f", "s6": "0x3d264284", "x1": "0x200eeda8", "x2": "0x1", "x3": "0x7fff"}, "removed_fields": ["motion_event_entry_bytes"]},
+        {"regs_changes": {"s0": "0xbf78da7f", "s1": "0xbe7043a3", "s2": "0x3d444207", "s6": "0x3dae6a42"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf68aa47", "s1": "0xbed591ab", "s2": "0x3d61c0a9", "s4": "0x409a0445", "s6": "0x3e06c7da"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbf371492", "s1": "0xbf32ef40", "s2": "0x3d806f21", "s6": "0x3e467d23"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbecbcf68", "s1": "0xbf6ad7de", "s2": "0x3d7fe092", "s4": "0x40e236bc", "s6": "0x3e82c211"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0xbdd210cd", "s1": "0xbf7ea658", "s2": "0x3d63feb0", "s6": "0x3e9f202e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3e019b27", "s1": "0xbf7df0f3", "s2": "0x3d40f602", "s6": "0x3ebb7e4b"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3e7e4e1e", "s1": "0xbf77fade", "s2": "0x3d29ae1f", "s4": "0x4126394f", "s6": "0x3ed03680"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3eab5851", "s1": "0xbf713d2b", "s2": "0x3d171437", "s6": "0x3ee37ddf"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3ecd9927", "s1": "0xbf6a740a", "s2": "0x3d075bc0", "s6": "0x3ef6c53e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3ee4d5f9", "s1": "0xbf6501f9", "s2": "0x3cf7fb22", "s4": "0x4170fab6", "s6": "0x3f0391af"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3ef51a34", "s1": "0xbf60c2a6", "s2": "0x3ce756b7", "s6": "0x3f0a6b14"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f018673", "s1": "0xbf5cd09e", "s2": "0x3cd88fd9", "s6": "0x3f11447a"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f078d4e", "s1": "0xbf592ad8", "s2": "0x3ccb6511", "s6": "0x3f181ddf"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f0ccc87", "s1": "0xbf55cd88", "s2": "0x3cbf9db0", "s6": "0x3f1ef744"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f1084c8", "s1": "0xbf534e69", "s2": "0x3cb71461", "s4": "0x41a97d5d", "s6": "0x3f246f63"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f13bcf2", "s1": "0xbf51116d", "s2": "0x3caf8fec", "s6": "0x3f29a8e5"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f16ac18", "s1": "0xbf4ef6a6", "s2": "0x3ca89a50", "s6": "0x3f2ee267"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f195b05", "s1": "0xbf4cfbad", "s2": "0x3ca2253b", "s6": "0x3f341be9"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f1bd13b", "s1": "0xbf4b1e3c", "s2": "0x3c9c240b", "s6": "0x3f39556c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f1e1529", "s1": "0xbf495c2d", "s2": "0x3c968ba0", "s6": "0x3f3e8eee"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f1fe2c6", "s1": "0xbf47ee68", "s2": "0x3c920ae0", "s4": "0x41e67521", "s6": "0x3f430a3c"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f217820", "s1": "0xbf46a79a", "s2": "0x3c8e0d3d", "s6": "0x3f473d32"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f22f57c", "s1": "0xbf456f3d", "s2": "0x3c8a43e4", "s6": "0x3f4b7028"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f245cd8", "s1": "0xbf444479", "s2": "0x3c86ab14", "s6": "0x3f4fa31e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f25affb", "s1": "0xbf432680", "s2": "0x3c833f61", "s6": "0x3f53d613"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f26f082", "s1": "0xbf421498", "s2": "0x3c7ffb5a", "s6": "0x3f580909"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f281fdb", "s1": "0xbf410e0b", "s2": "0x3c79c638", "s6": "0x3f5c3bff"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f293a84", "s1": "0xbf401676", "s2": "0x3c73f3a3", "s4": "0x4217c8dc", "s6": "0x3f605c7b"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2a1f28", "s1": "0xbf3f4c12", "s2": "0x3c6f36da", "s6": "0x3f63dce4"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2afa32", "s1": "0xbf3e8868", "s2": "0x3c6aa70e", "s6": "0x3f675d4d"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2bcc32", "s1": "0xbf3dcb22", "s2": "0x3c6641d6", "s6": "0x3f6addb5"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2c95b3", "s1": "0xbf3d13f9", "s2": "0x3c6204fb", "s6": "0x3f6e5e1e"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2d5733", "s1": "0xbf3c62a5", "s2": "0x3c5dee6a", "s6": "0x3f71de86"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2e1124", "s1": "0xbf3bb6e4", "s2": "0x3c59fc2e", "s6": "0x3f755eef"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2ec3f5", "s1": "0xbf3b1075", "s2": "0x3c562c79", "s6": "0x3f78df58"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f2f7007", "s1": "0xbf3a6f1c", "s2": "0x3c527d95", "s6": "0x3f7c5fc0"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f3015bc", "s1": "0xbf39d2a4", "s2": "0x3c4eeded", "s6": "0x3f7fe029"}, "removed_fields": []},
+        {"regs_changes": {"s0": "0x3f800000", "s1": "0x41487265", "x1": "0x200eedb0"}, "removed_fields": []}
+      ]
+    }
+  }
+}
