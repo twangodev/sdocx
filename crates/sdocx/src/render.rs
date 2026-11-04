@@ -46,6 +46,8 @@ mod simplebrush;
 mod simplebrush_tests;
 pub use geometry::{GeometryDiagnostic, GeometryDiagnosticKind};
 mod old_pencil;
+#[cfg(all(test, feature = "serde", feature = "pdf"))]
+mod pencil2_tests;
 mod pencil3;
 pub use pencil3::Pencil3PaperSampler;
 mod paint_diagnostic;
