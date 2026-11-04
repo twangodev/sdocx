@@ -181,6 +181,15 @@ Rust retains note `tape_visible()` and stroke `reveal_mode`, but the current
 production renderer reads neither; the plugin registry entry does not implement
 these presentation controls.
 
+### TapePen public Drawing host control
+
+A synthetic host Drawing control observed the caller bitmap texture as the
+framebuffer attachment after the queue drained, with no reported GL errors.
+A historical public export comparison used a clipped stroke and assumed matching
+row orientation and premultiplied channels; neither assumption was independently
+established. The capture and comparison evidence is not packaged with this
+document. These observations do not establish device or saved-note parity.
+
 ## Optional pen fields
 
 Fields are consumed in ascending mask-bit order. Their exact stored types

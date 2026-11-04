@@ -21,8 +21,8 @@ The Java SDK names types 14, 15, 18 and 100 in
 and original-rectangle accessors. Java declarations establish names and API
 boundaries; native branches below establish the recovered behavior.
 
-All native claims here are **static traces**, not execution of a saved brush
-record or proof of visual parity. None of these four outer object types occurs
+The outer-object analysis above and below uses static traces; it does not execute a saved brush
+record or prove visual parity. Later sections also describe bounded host captures. None of these four outer object types occurs
 in the seven-document [inspected corpus](rendering-corpus-findings.md).
 
 ## The names do not imply four independent vector formats
@@ -311,3 +311,25 @@ seven target-sized native frame PNGs in SVG and a separately generated PDF. Its
 zero RGBA error in resvg and alpha error sums of 103–338 in MuPDF. These synthetic
 host frame replays are not public exports or scalable paint: they require the final
 transform and target pixels, and retain the captured texture and caller limits.
+
+## Additional bounded host observations
+
+Synthetic host controls combined scale with translation and varied target size;
+captured grain uniforms remained consistent with the tested transforms. Historical
+output-grid and PDF mask experiments showed reader-dependent differences and did
+not establish scalable export or arbitrary composition. Their experimental
+replay scaffolding is not packaged.
+
+A published calibration-corpus Fountain stroke was remapped to BrushPen for
+synthetic native deserialization and Drawing controls; the [serialized receipt](../../conformance/brushpen-serialized/receipt.json), [paint receipt](../../conformance/brushpen-serialized/paint-receipt.json), and [capture script](../../tools/brushpen-transform/serialized_paint_capture.py) are tracked. A paired settings control
+observed the same 63-record stream and host paint for `10;` and `11;`; this is not
+a saved BrushPen or device parity claim. Eight [curve-disabled controls](../../conformance/brushpen-curveoff-controls/receipt.json)
+matched the test-only model's native streams, including threshold boundaries.
+The public source sampler matches 22 native streams; its serialized paint control
+retains a one-level pixel residual. The separate test-only prototype covers the
+experimental first zero-length transition and is not public dispatch.
+
+Two-submission host controls exercised translated, varying-pressure and distinct-color
+strokes on controlled priors. The Rust host canvas matched the captured overlap frames
+for those cases. These observations do not establish general page composition or
+device parity. Some additional overlap capture and receipt files are not packaged here.

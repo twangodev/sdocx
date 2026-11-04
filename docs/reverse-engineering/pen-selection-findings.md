@@ -263,6 +263,12 @@ An ordered native RTV4 host-Mesa prefix replay yields alpha 0, 12, 38 and 38 at 
 
 A resolution-specific scalar model evaluates the shader and rounded source-over for every potentially covered pixel of that 192×192 frame. It differs from the native alpha at 22 pixels, with maximum error 4 and absolute error sum 29; the V8 SVG differs at 32 pixels, with maximum 19 and sum 93. A precomposed PNG alpha mask embedded in SVG renders the modeled alpha exactly with resvg 0.45.1 at that size and retains those 22 differences from native. The synthetic black-stroke SVG is 1,214 bytes, including its 589-byte PNG. This is a resolution-specific raster mask, not resolution-independent vector paint. It covers one scale and stroke; the mask needs recomputation at each output resolution and does not establish device, PDF reader, arbitrary-color or production parity. The reproducible scripts and compact receipts are in `tmp/vector-parity-plan/pen-family-audit/pencil2-v14-full-frame-scalar-model/`.
 
+The explicit Rust and WASM canvas also accepts a framebuffer translation. A
+synthetic pressure-ramp host control matched its native alpha frame and SVG;
+historical PDF comparisons remained reader-dependent. The additional capture
+receipt is not packaged with this document, and the control does not establish
+device or saved-note parity.
+
 A controlled host-Mesa RTV4 replay translates the same 84 records by six pixels in the draw matrix. After alignment with the baseline, alpha differs at 37 of 52 nonzero-union pixels (absolute difference sum 577, maximum 54); the grain offset uniform remains (0, 0). The fragment shader samples grain using `gl_FragCoord`, so this is consistent with grain fixed in device coordinates as geometry moves. A 75-pixel translation, the nominal grain repeat period, still differs at 14 of 52 pixels (sum 226, maximum 45); the aggregate frame does not isolate the cause or establish exact periodicity. The [compact receipt](../../conformance/pencil2-v14-device-grain-transform-native.json) identifies the scripts and controls. This is not full Drawing, saved-note, Android, or production output evidence.
 
 A [90-degree rotation control](../../conformance/pencil2-v14-rotation-native.json) differs at 42 of 52 alpha pixels after alignment, with absolute error 462 and maximum 39. The grain offset remained zero; device-coordinate sampling and rasterization may both contribute. This host capture does not establish a scalable vector paint contract.
