@@ -20810,7 +20810,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "pdf")]
+    #[cfg(all(feature = "pdf", feature = "serde"))]
     #[test]
     fn inkpen2_v1_model_tolerance_public_exports_and_boundaries() {
         let mut stroke: Stroke = serde_json::from_str(include_str!(
