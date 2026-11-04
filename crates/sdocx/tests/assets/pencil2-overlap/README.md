@@ -27,3 +27,5 @@ this evidence. `colored-top2-translucent-info.json` records host and library pin
 
 `tools/pencil2-public-replay/colored_overlap_top2_capture.py` writes a transient capture-info
 copy beside the script on recapture; inspect it before refreshing this fixture.
+
+The synthetic opaque BottomLeft capture used `tools/pencil2-public-replay/colored_overlap_capture.py` and its two hash-pinned input streams. Recapture also requires the historical local harness and native libraries described above.
