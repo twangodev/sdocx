@@ -137,12 +137,14 @@ Real-note depth selection, GL queue ownership and device display selection
 remain unverified. The display-derived arithmetic and native queued setter
 have separate evidence below.
 
-The [compiled Node/WASM depth controls](../../conformance/colored-pencil-depth-wasm-canvas.json)
+Historical export and Node/WASM comparisons in this section and below used the listed controls and readers.
+
+The compiled Node/WASM depth controls
 match all 360 native/Rust frames and reject malformed depth storage atomically.
-The [Rust paired exports](../../conformance/colored-pencil-depth-public-canvas-export.json)
+The Rust paired exports
 match all 120 opaque native frames through PNG, SVG/resvg, SVG-page PDF and
 retained-scene direct PDF. MuPDF and PDFium each match both Rust PDF routes;
-the [WASM direct-PDF controls](../../conformance/colored-pencil-depth-wasm-canvas-export.json)
+the WASM direct-PDF controls
 also match both readers at intrinsic 256x256 pixels and 72 DPI. Together with
 the earlier controls, public Rust/WASM coverage is 760 native frames and 256
 opaque export controls. These PDFs carry the resolved raster frame.
@@ -177,18 +179,18 @@ In the 800x600 bottom-origin 1x white control, replacing the native scale with
 derived context removes all differences. Native display selection, depth-map
 selection and persistent bitmap lifecycle still require separate caller context.
 
-The [Node/WASM controls](../../conformance/colored-pencil-display-wasm-canvas.json)
+The Node/WASM controls
 also match all 96 frames and check native scale equality plus invalid-display
-rejection. All [32 opaque Rust exports](../../conformance/colored-pencil-display-public-canvas-export.json)
+rejection. All 32 opaque Rust exports
 match PNG, SVG/resvg and both PDF routes in MuPDF/PDFium; the corresponding
-[WASM PDFs](../../conformance/colored-pencil-display-wasm-canvas-export.json)
+WASM PDFs
 match both readers. Combined public coverage is 856 native paint frames and
 288 opaque export controls. Browser execution and complete saved-note/device
 rendering remain unverified.
 
 ## Native Drawing and retained depth
 
-The [Drawing lifecycle receipt](../../conformance/colored-pencil-v4-drawing-lifecycle-native.json)
+The [Drawing lifecycle receipt](../../crates/sdocx/tests/assets/colored-pencil/colored-pencil-v4-drawing-lifecycle-native.json)
 adds 96 full native Drawing frames in about 369 KiB. A native
 `SPGraphicsFactory::CreatePenCanvas` supplies the pen canvas over the existing
 native output bitmap. Native Model size/color setters, cached PenManager
@@ -236,16 +238,16 @@ sequence produces 333 differing channels, sum 2666 and maximum 47; retained
 depth has zero errors. Higher-level note reset/disposal and actual depth-map
 selection remain unverified.
 
-The [Rust paired controls](../../conformance/colored-pencil-drawing-public-canvas-export.json)
-and [Node/WASM controls](../../conformance/colored-pencil-drawing-wasm-canvas.json)
+The Rust paired controls
+and Node/WASM controls
 match all 96 native Drawing frames. Their 32 opaque prefixes also match PNG,
-SVG/resvg and both Rust PDF routes in MuPDF/PDFium; [WASM PDFs](../../conformance/colored-pencil-drawing-wasm-canvas-export.json)
+SVG/resvg and both Rust PDF routes in MuPDF/PDFium; WASM PDFs
 match both readers. Combined public coverage is 952 native frames and 320
 opaque export controls, with persistent state supplied explicitly per submission.
 
 ## Mixed Pencil2 prior
 
-The [joined capture](../../conformance/colored-pencil-v4-pencil2-drawing-native.json)
+The [joined capture](../../crates/sdocx/tests/assets/colored-pencil/colored-pencil-v4-pencil2-drawing-native.json)
 adds twelve native Drawing prefixes in about 75 KiB, including four compressed
 prior images. Each prior comes from a retained native Pencil2 mixed-record
 frame, with forward/reversed record order and 1x/2x projection. Its 192x192
@@ -262,16 +264,16 @@ exactly. For the 1x mixed-prior GL-null prefix, a fresh null-depth submission
 produces 328 channel differences, sum 2573 and maximum 46; retaining the map
 removes all differences.
 
-The [Rust exports](../../conformance/colored-pencil-mixed-public-canvas-export.json)
+The Rust exports
 match all twelve opaque frames through PNG, SVG/resvg and both PDF routes
 in MuPDF/PDFium. These controls join separate native producers through RGBA
 bytes; they do not establish one native mixed-tool Drawing invocation, SDK
 deserialization or saved-note/device parity. The controls use synthetic source
 inputs; real saved ColoredPencil admission remains unverified.
 
-The [compiled Node/WASM canvas](../../conformance/colored-pencil-mixed-wasm-canvas.json)
+The compiled Node/WASM canvas
 also matches all twelve frames, reconstructing the same retained-depth state.
-Its SVG carriers equal Rust's, and [direct-PDF output](../../conformance/colored-pencil-mixed-wasm-canvas-export.json)
+Its SVG carriers equal Rust's, and direct-PDF output
 matches both readers. Combined ColoredPencil coverage is 964 native frames
 and 332 opaque export controls.
 
@@ -279,15 +281,15 @@ and 332 opaque export controls.
 
 The [Rust public regression](../../crates/sdocx/tests/colored_pencil_raster.rs)
 compares all 100 native frames through `Stroke -> InkRasterCanvas::paint`. The
-[paired export receipt](../../conformance/colored-pencil-public-canvas-export.json)
+paired export receipt
 checks all 36 opaque-white frames through PNG, SVG/resvg, SVG-page PDF and
 retained-scene direct PDF. MuPDF and PDFium match native exactly at intrinsic
 destination pixels and 72 DPI, including the non-square frames. These PDFs
 carry the resolved raster image.
 
-The [compiled Node/WASM controls](../../conformance/colored-pencil-wasm-canvas.json)
+The compiled Node/WASM controls
 also match all 100 native/Rust frames, with rejected-context atomicity and matching
-SVG carriers for the 36 opaque frames. Their [direct-PDF measurements](../../conformance/colored-pencil-wasm-canvas-export.json)
+SVG carriers for the 36 opaque frames. Their direct-PDF measurements
 match native in both readers. Browser UI execution remains untested.
 
 The expanded context controls have separate Rust/WASM export receipts linked in
@@ -309,3 +311,10 @@ is separate from the verified caller-owned RGBA backdrop contract.
 Reproduction commands and retained harness dependencies are in
 [tools/colored_pencil](../../tools/colored_pencil/README.md). Rust owns lasting
 regressions; Python in tools acquires and measures native evidence.
+
+The pinned `tools/colored_pencil/drawing_capture.py` and `mixed_capture.py` write
+their historical `conformance/colored-pencil-v4-drawing-lifecycle-native.json`
+and `conformance/colored-pencil-v4-pencil2-drawing-native.json` paths. After
+recapture, compare each output byte-for-byte with its corresponding fixture in
+`crates/sdocx/tests/assets/colored-pencil/`, then remove the generated copy if
+it matches. The scripts remain unchanged to preserve their recorded hashes.

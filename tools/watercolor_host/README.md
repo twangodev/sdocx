@@ -81,17 +81,13 @@ Fresh source controls:
 PYTHONPATH=scratch/apk-analysis-runtime/python .venv/bin/python tools/watercolor_host/public_capture.py
 ```
 
-With the required shared Cargo settings above, emit reproducible exports:
+With the required shared Cargo settings above, run the in-memory regressions:
 
 ```sh
-SDOCX_WATERCOLOR_ARTIFACTS="$PWD/scratch/watercolor-public/exports" \
 cargo test -p sdocx --all-features --test watercolor_raster
-python3 tools/watercolor_host/export_compare.py rust
 ```
 
-The measurement command needs an existing environment with Pillow, PyMuPDF and
-pypdfium2. It checks native pixels through PNG and both SVG-page and retained-scene
-PDF paths in MuPDF/PDFium. SVG correctness is asserted by Rust/resvg. The eight WaterColor source controls are native-exact in all measured readers.
+The experimental artifact writers and external comparison callers have been retired. Historical reader measurements checked native pixels through PNG and both SVG-page and retained-scene PDF paths in MuPDF/PDFium; the eight source controls matched in those runs. Rust tests retain in-memory native frame, SVG and PDF construction checks. These observations do not attest current external reader output or complete build provenance.
 
 The public Rust API is explicit: construct `InkRasterCanvas` with an
 `InkRasterContext`, then call `paint(stroke, InkRasterProfile::WaterColorHostRtv1
@@ -105,5 +101,4 @@ work exhaustion leave the existing canvas unchanged. The profile is based on
 captured host arithmetic and does not alter normal document dispatch or claim
 Android device fidelity.
 
-Native inputs and compact JSON receipts stay in conformance. Generated exports
-under `scratch/watercolor-public/exports` can be removed after measurement.
+Native inputs and compact JSON receipts stay in conformance. The retired artifact writers are not required for native replay or in-memory tests.

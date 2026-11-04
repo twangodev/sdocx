@@ -57,7 +57,7 @@ fn full_native_drawing_sequences_match_public_canvas_and_svg() {
         "../assets/colored-pencil/colored-pencil-v4-drawing-lifecycle-native.json"
     ))
     .unwrap();
-    check_drawing_sequences(&receipt, 96, 12, "drawing");
+    check_drawing_sequences(&receipt, 96, 12);
 }
 
 #[test]
@@ -112,10 +112,10 @@ fn native_mixed_pencil2_prior_and_cached_drawing_match_public_canvas() {
             assert_ne!(a["frame_sha256"], b["frame_sha256"]);
         }
     }
-    check_drawing_sequences(&receipt, 12, 4, "mixed");
+    check_drawing_sequences(&receipt, 12, 4);
 }
 
-fn check_drawing_sequences(receipt: &Value, frames: usize, groups: usize, prefix: &str) {
+fn check_drawing_sequences(receipt: &Value, frames: usize, groups: usize) {
     let geometry: Value = serde_json::from_str(include_str!(
         "../../../../conformance/colored-pencil-v4-source-context-native.json"
     ))
@@ -235,7 +235,6 @@ fn check_drawing_sequences(receipt: &Value, frames: usize, groups: usize, prefix
                 );
                 assert_eq!(image.data(), canvas.pixels().as_flattened());
             }
-            artifacts(&format!("{prefix}_{name}"), &canvas, &stroke);
         }
     }
     let (name, fresh) = counterexample.unwrap();
@@ -251,12 +250,4 @@ fn check_drawing_sequences(receipt: &Value, frames: usize, groups: usize, prefix
         count > 0,
         "a fresh null-depth submission must differ from native retained depth"
     );
-    if let Some(directory) = std::env::var_os("SDOCX_COLORED_PENCIL_ARTIFACTS") {
-        let metrics = json!({"case":name,"fresh_null_different_channels":count,"absolute_sum":differences.iter().map(|&d|u64::from(d)).sum::<u64>(),"maximum":differences.iter().max().unwrap(),"retained_depth_different_channels":0});
-        std::fs::write(
-            std::path::PathBuf::from(directory).join(format!("{prefix}-counterexample.json")),
-            serde_json::to_vec(&metrics).unwrap(),
-        )
-        .unwrap();
-    }
 }

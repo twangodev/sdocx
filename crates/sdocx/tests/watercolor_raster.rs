@@ -101,55 +101,6 @@ fn svg_pixels(page: &sdocx::RenderedPage) -> Vec<[u8; 4]> {
     image.data().as_chunks::<4>().0.to_vec()
 }
 
-fn artifacts(name: &str, canvas: &InkRasterCanvas, case: &Value) {
-    let Some(directory) = std::env::var_os("SDOCX_WATERCOLOR_ARTIFACTS") else {
-        return;
-    };
-    let directory = std::path::PathBuf::from(directory);
-    std::fs::create_dir_all(&directory).unwrap();
-    let page = canvas.rendered_page(0).unwrap();
-    std::fs::write(
-        directory.join(format!("{name}.rgba")),
-        canvas
-            .pixels()
-            .iter()
-            .flatten()
-            .copied()
-            .collect::<Vec<_>>(),
-    )
-    .unwrap();
-    std::fs::write(
-        directory.join(format!("{name}.png")),
-        canvas.to_png().unwrap(),
-    )
-    .unwrap();
-    std::fs::write(directory.join(format!("{name}.svg")), &page.svg).unwrap();
-    #[cfg(feature = "pdf")]
-    {
-        let mut options = sdocx::PdfOptions::default();
-        options.dpi = 72.;
-        std::fs::write(
-            directory.join(format!("{name}.direct.pdf")),
-            canvas.to_pdf(&options).unwrap(),
-        )
-        .unwrap();
-        std::fs::write(
-            directory.join(format!("{name}.pdf")),
-            sdocx::render_svg_pages_pdf(&[page], &options).unwrap(),
-        )
-        .unwrap();
-    }
-    std::fs::write(
-        directory.join(format!("{name}.stroke.json")),
-        serde_json::to_vec(&stroke(
-            case["version"].as_u64().unwrap() as u32,
-            case["argb"].as_u64().unwrap() as u32,
-        ))
-        .unwrap(),
-    )
-    .unwrap();
-}
-
 #[test]
 fn public_source_profiles_match_native_rgb_and_svg_at_both_scales() {
     let fixture: Value = serde_json::from_str(include_str!(
@@ -185,7 +136,6 @@ fn public_source_profiles_match_native_rgb_and_svg_at_both_scales() {
             svg_pixels(&page) == canvas.pixels(),
             "{name}: intrinsic SVG pixels differ"
         );
-        artifacts(name, &canvas, case);
     }
 }
 
@@ -363,8 +313,6 @@ fn watercolor_continuation_matches_native_pixel_handoff_and_pencil_precision_lim
         let mut case = fixture["cases"][scale.to_string()].clone();
         case["frame"] = json!([192, 192]);
         case["background"] = json!([255, 255, 255, 255]);
-        case["version"] = json!(1);
-        case["argb"] = json!(0x8044aaeeu32);
         let target = expected(&case);
         let p = &pencil["results"][format!("colored_top_scale{scale}_white")];
         let mut prior = vec![[255; 4]; 192 * 192];
@@ -423,7 +371,6 @@ fn watercolor_continuation_matches_native_pixel_handoff_and_pencil_precision_lim
             svg_pixels(&joined.rendered_page(0).unwrap()) == joined.pixels(),
             "scale {scale}: mixed SVG transport differs"
         );
-        artifacts(&format!("mixed_scale{scale}"), &joined, &case);
     }
 }
 
@@ -475,7 +422,6 @@ fn translucent_source_profiles_match_native_canvas_and_svg() {
             canvas.pixels(),
             "{name}: SVG pixels differ"
         );
-        artifacts(name, &canvas, case);
     }
 }
 

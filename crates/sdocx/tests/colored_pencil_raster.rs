@@ -166,47 +166,6 @@ fn native(case: &Value) -> Vec<[u8; 4]> {
     image.chunks_exact(width).rev().flatten().copied().collect()
 }
 
-fn artifacts(name: &str, canvas: &InkRasterCanvas, stroke: &Stroke) {
-    let Some(path) = std::env::var_os("SDOCX_COLORED_PENCIL_ARTIFACTS") else {
-        return;
-    };
-    let path = std::path::PathBuf::from(path);
-    std::fs::create_dir_all(&path).unwrap();
-    std::fs::write(
-        path.join(format!("{name}.stroke.json")),
-        serde_json::to_vec(stroke).unwrap(),
-    )
-    .unwrap();
-    std::fs::write(
-        path.join(format!("{name}.rgba")),
-        canvas
-            .pixels()
-            .iter()
-            .flatten()
-            .copied()
-            .collect::<Vec<_>>(),
-    )
-    .unwrap();
-    std::fs::write(path.join(format!("{name}.png")), canvas.to_png().unwrap()).unwrap();
-    let page = canvas.rendered_page(0).unwrap();
-    std::fs::write(path.join(format!("{name}.svg")), &page.svg).unwrap();
-    #[cfg(feature = "pdf")]
-    {
-        let mut options = sdocx::PdfOptions::default();
-        options.dpi = 72.;
-        std::fs::write(
-            path.join(format!("{name}.svg.pdf")),
-            sdocx::render_svg_pages_pdf(&[page], &options).unwrap(),
-        )
-        .unwrap();
-        std::fs::write(
-            path.join(format!("{name}.direct.pdf")),
-            canvas.to_pdf(&options).unwrap(),
-        )
-        .unwrap();
-    }
-}
-
 #[test]
 fn public_source_to_pixels_matches_all_native_backdrops_and_projection_controls() {
     let receipt: Value = serde_json::from_str(include_str!(
@@ -250,7 +209,6 @@ fn public_source_to_pixels_matches_all_native_backdrops_and_projection_controls(
                 "SVG native mismatch: {name}"
             );
         }
-        artifacts(name, &canvas, &stroke);
     }
 }
 
@@ -313,7 +271,6 @@ fn source_sizes_display_contexts_and_displacement_gates_match_native_pixels() {
             );
             assert_eq!(image.data(), canvas.pixels().as_flattened());
         }
-        artifacts(&format!("context_{name}"), &canvas, &stroke);
     }
     assert!(failures.is_empty(), "{failures:?}");
 }
@@ -377,7 +334,6 @@ fn explicit_depth_bitmap_matches_native_pixels_and_svg() {
             );
             assert_eq!(image.data(), canvas.pixels().as_flattened());
         }
-        artifacts(&format!("depth_{name}"), &canvas, &stroke);
     }
 }
 

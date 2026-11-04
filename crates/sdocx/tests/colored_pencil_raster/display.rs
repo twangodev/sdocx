@@ -139,7 +139,7 @@ fn derived_display_depth_context_matches_native_paint_and_svg() {
             );
             assert_eq!(image.data(), canvas.pixels().as_flattened());
         }
-        artifacts(&format!("display_{name}"), &canvas, &stroke);
+
         if case["source"] == "screen_800x600"
             && case["origin"] == "bottom"
             && ctx.pixels_per_unit == 1
@@ -169,14 +169,6 @@ fn derived_display_depth_context_matches_native_paint_and_svg() {
                 count > 0,
                 "fixed 0.75 must not replace the native display-scale producer"
             );
-            if let Some(directory) = std::env::var_os("SDOCX_COLORED_PENCIL_ARTIFACTS") {
-                let report = json!({"case":name,"fixed_background_scale":0.75,"native_background_scale":depth.background_scale,"different_channels":count,"absolute_sum":differences.iter().map(|&d|u64::from(d)).sum::<u64>(),"maximum":differences.iter().max().unwrap(),"derived_context_different_channels":0});
-                std::fs::write(
-                    std::path::PathBuf::from(directory).join("display-counterexample.json"),
-                    serde_json::to_vec(&report).unwrap(),
-                )
-                .unwrap();
-            }
             counterexample_found = true;
         }
     }
