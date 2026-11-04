@@ -1,4 +1,6 @@
 #![cfg(feature = "pdf")]
+#[path = "helpers/old_pencil_dot_channels.rs"]
+mod dot_channels;
 use sdocx::{
     BoundingBox, Color, Document, ObjectType, Page, ParseLimits, PdfOptions, RenderOptions,
     StoredObject, render_document_svg,
@@ -810,7 +812,7 @@ fn size12_visible_dot_decoded_channels_match_native_getters() {
     }
     assert_eq!(
         channels,
-        include_bytes!("../../../conformance/old-pencil-counterexample/dot-12-visible.channels")
+        dot_channels::channels("dot-12-visible.channels")
     );
 }
 

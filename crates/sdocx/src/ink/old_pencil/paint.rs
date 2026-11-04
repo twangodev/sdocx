@@ -504,6 +504,10 @@ fn expected_native_sparse() -> Result<Vec<[u8; SPARSE_RECORD_BYTES]>, &'static s
 }
 
 #[cfg(test)]
+#[path = "../../../tests/helpers/old_pencil_dot_channels.rs"]
+mod dot_channels;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -2338,9 +2342,7 @@ mod serialized_dot_tests {
                 0,
                 false,
                 include_bytes!("../../../../../conformance/old-pencil-counterexample/dot-425.vbo"),
-                include_bytes!(
-                    "../../../../../conformance/old-pencil-counterexample/dot-425.channels"
-                ),
+                super::dot_channels::channels("dot-425.channels"),
                 include_bytes!(
                     "../../../../../conformance/old-pencil-counterexample/dot-425-post.z"
                 ),
@@ -2353,9 +2355,7 @@ mod serialized_dot_tests {
                 2,
                 false,
                 include_bytes!("../../../../../conformance/old-pencil-counterexample/dot-8.vbo"),
-                include_bytes!(
-                    "../../../../../conformance/old-pencil-counterexample/dot-8.channels"
-                ),
+                super::dot_channels::channels("dot-8.channels"),
                 include_bytes!("../../../../../conformance/old-pencil-counterexample/dot-8-post.z"),
             ),
             (
@@ -2368,9 +2368,7 @@ mod serialized_dot_tests {
                 include_bytes!(
                     "../../../../../conformance/old-pencil-counterexample/dot-3_full.vbo"
                 ),
-                include_bytes!(
-                    "../../../../../conformance/old-pencil-counterexample/dot-3_full.channels"
-                ),
+                super::dot_channels::channels("dot-3_full.channels"),
                 include_bytes!(
                     "../../../../../conformance/old-pencil-counterexample/dot-3_full-post.z"
                 ),
@@ -2383,9 +2381,7 @@ mod serialized_dot_tests {
                 2,
                 false,
                 include_bytes!("../../../../../conformance/old-pencil-counterexample/dot-8.vbo"),
-                include_bytes!(
-                    "../../../../../conformance/old-pencil-counterexample/dot-12_zero.channels"
-                ),
+                super::dot_channels::channels("dot-12_zero.channels"),
                 include_bytes!(
                     "../../../../../conformance/old-pencil-counterexample/serialized5-plain-pre.z"
                 ),
@@ -2400,9 +2396,7 @@ mod serialized_dot_tests {
                 include_bytes!(
                     "../../../../../conformance/old-pencil-counterexample/dot-threshold_below.vbo"
                 ),
-                include_bytes!(
-                    "../../../../../conformance/old-pencil-counterexample/dot-threshold_below.channels"
-                ),
+                super::dot_channels::channels("dot-threshold_below.channels"),
                 include_bytes!(
                     "../../../../../conformance/old-pencil-counterexample/dot-threshold_below-post.z"
                 ),
@@ -2417,9 +2411,7 @@ mod serialized_dot_tests {
                 include_bytes!(
                     "../../../../../conformance/old-pencil-counterexample/dot-threshold_exact.vbo"
                 ),
-                include_bytes!(
-                    "../../../../../conformance/old-pencil-counterexample/dot-threshold_exact.channels"
-                ),
+                super::dot_channels::channels("dot-threshold_exact.channels"),
                 include_bytes!(
                     "../../../../../conformance/old-pencil-counterexample/dot-threshold_exact-post.z"
                 ),
@@ -2432,9 +2424,7 @@ mod serialized_dot_tests {
                 2,
                 false,
                 include_bytes!("../../../../../conformance/old-pencil-counterexample/dot-8.vbo"),
-                include_bytes!(
-                    "../../../../../conformance/old-pencil-counterexample/dot-two.channels"
-                ),
+                super::dot_channels::channels("dot-two.channels"),
                 include_bytes!("../../../../../conformance/old-pencil-counterexample/dot-8-post.z"),
             ),
         ];
