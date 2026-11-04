@@ -31,6 +31,14 @@ PDF export lowers that filter to a vector luminosity mask and preserves gradient
 shadings and Lighten blending. The generated fountain output contains no image
 elements or bitmap strokes.
 
+A retired image-loaded SVG experiment on Firefox 155.0 / Playwright 1.63.0
+put Lighten inside a luminance mask and measured overlap alpha 125 where
+maximum coverage required 255. Two `feImage` filter constructions (Lighten
+and arithmetic composite) instead reproduced only the first stamp, omitting
+the second-only sample. This bounded synthetic browser result does not rule
+out other filter constructions or establish native-frame parity. Its optional
+probe was removed.
+
 The SVG/PDF consumer owns edge antialiasing. V14 retains the directional field
 without the native device-pixel fringe; default V16 expresses radial coverage at
 canonical unit inverse scale. Small-field PDF sampling, zoom-dependent coverage
@@ -437,6 +445,15 @@ of the 56,713 native V14 stamps is an exact repeated center/radius/direction
 within its stroke, so duplicate removal cannot explain the whole-page gap.
 
 ### Explicit V14 output scale
+
+Native persisted-object Drawing controls now establish scale-dependent V14
+source spacing, in addition to the RT fringe described below. The explicit
+vector scale option regenerates source geometry using `0.82 * min(inverse_x,
+inverse_y)`; a real 161-point source emits 24 stamps at 1x and 49 at 2x.
+[Native matrix controls](../../conformance/fountain-v14-drawing-scale-native.json) and [scaled-source exports](../../conformance/fountain-v14-scaled-source-public-canvas-export.json)
+verify the correction. The earlier 2x/4x field-only diagnostics below retained
+canonical source sampling; their measurements do not describe the corrected
+scaled source path. Unit-scale geometry and default vector output are unchanged.
 
 `FountainV14OutputScaleProfile` adds the native half-pixel fringe and
 minimum-width alpha at a caller-declared uniform output scale. Each stamp's

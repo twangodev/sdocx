@@ -1,9 +1,8 @@
 # FountainPen stamp rasterization
 
 Current vector SVG/PDF behavior is described in [fountain parity](fountain-parity.md).
-The software rasterizer and shader-comparison tooling are not in the SDK.
-This document preserves historical APK research; it does not describe a
-current SDK raster backend.
+The SDK also has an explicit bounded V14 host raster profile. The historical
+APK experiments below do not describe that backend.
 
 The experiment scripts cited here are archived at Git revision `40de721`.
 See [native geometry checks](../../conformance/README.md#native-geometry-checks)
@@ -584,3 +583,9 @@ Pinned PDFium 126 samples both radial and function shadings at integer device
 coordinates. Evaluating the captured radial fields on that grid predicts all
 65 PDFium support coordinates exactly in each direction, without shifting the
 export. MuPDF's 65-pixel sets differ; their sampling cause remains unproven.
+
+A historical phase experiment shifted only the PDF ink field. At 96 dpi, a
+-0.25-pixel horizontal shift restored native support and reduced error in
+PDFium 126 but worsened PyMuPDF 1.27.2.3; a +0.25-pixel shift had the opposite
+trend. These two synthetic host controls do not establish a native coordinate
+rule, a production correction, other scales, or device parity.

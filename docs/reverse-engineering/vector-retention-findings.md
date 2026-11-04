@@ -1354,3 +1354,13 @@ still return only SVG and default ink color. The
 [render-report contract](../svg-rendering.md#render-diagnostics) records these
 scopes and compatibility boundaries. The
 [CLI](../../crates/sdocx-cli/src/main.rs) also reports render diagnostics.
+
+### Historical MagicPen vector experiments
+
+Synthetic host controls showed that output-grid cells depend on pixel grid and
+phase, and their geometry grows with covered area. Merging adjacent cells
+preserved all 72 aggregate error and support measurements in the tested
+variable-radius cases; this does not establish pixel identity or bounded output
+for arbitrary strokes. Radial-gradient and PDF sampling experiments showed
+reader-dependent error and support tradeoffs. Neither representation established
+a general correction or device parity; the experimental replays were retired.
