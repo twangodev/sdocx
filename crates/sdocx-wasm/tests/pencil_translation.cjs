@@ -22,6 +22,9 @@ const stroke = {
       straighten: false, reveal_mode: false}
   }
 };
+assert.throws(() => new sdk.InkRasterCanvas(
+  {width: 0, height: 192, pixels_per_unit: 1, origin: 'TopLeft'}, new Uint8Array()));
+
 for (const origin of ['TopLeft', 'BottomLeft']) {
   for (const inverse of ['One', 'Half']) {
     const context = {width: 192, height: 192, pixels_per_unit: 1, origin};
@@ -30,6 +33,11 @@ for (const origin of ['TopLeft', 'BottomLeft']) {
     const translated = new sdk.InkRasterCanvas(context, backdrop);
     try {
       standard.paint(stroke, {Pencil2V14: {inverse_scale: inverse}});
+      const rejected = structuredClone(stroke);
+      rejected.rendering.pen_name = 'com.samsung.android.sdk.pen.pen.preload.WaterColorBrush';
+      const painted = standard.pixels();
+      assert.throws(() => standard.paint(rejected, {Pencil2V14: {inverse_scale: inverse}}));
+      assert.deepEqual(standard.pixels(), painted);
       translated.paint_pencil2_translated(stroke, inverse, 0, 0);
       assert.deepEqual(translated.pixels(), standard.pixels());
       const zero = new sdk.InkRasterCanvas(context, backdrop);
