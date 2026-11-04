@@ -5,13 +5,14 @@ const NATIVE_STREAMS: &[u8] = include_bytes!("../../../../../conformance/pencil2
 
 #[test]
 fn packaged_raster_textures_match_native_uploads() {
+    use sha2::{Digest, Sha256};
     assert_eq!(
-        include_bytes!("assets/grain.r8").as_slice(),
-        include_bytes!("../../../../../conformance/pencil2-v14-device-profile/grain.r8").as_slice()
+        format!("{:x}", Sha256::digest(include_bytes!("assets/grain.r8"))),
+        "dbe4f006debde4b765c1e5ee6966798dd8b14cdc939b149c9e22770a2c0f97f9"
     );
     assert_eq!(
-        include_bytes!("assets/point.r8").as_slice(),
-        include_bytes!("../../../../../conformance/pencil2-v14-device-profile/point.r8").as_slice()
+        format!("{:x}", Sha256::digest(include_bytes!("assets/point.r8"))),
+        "475d71a47445657c58c944fb14a4746a248b57d33aff7bff864f30dc72d9ad6f"
     );
 }
 

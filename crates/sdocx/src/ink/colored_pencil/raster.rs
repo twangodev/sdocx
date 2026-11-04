@@ -389,8 +389,8 @@ mod tests {
     #[test]
     fn varying_records_match_native_rgba_over_verified_priors() {
         assert_eq!(
-            POINT,
-            include_bytes!("../../../../../conformance/colored-pencil-point.r8").as_slice()
+            format!("{:x}", Sha256::digest(POINT)),
+            "673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405"
         );
         let native: Native = serde_json::from_str(include_str!(
             "../../../../../conformance/colored-pencil-v4-canvas-native.json"

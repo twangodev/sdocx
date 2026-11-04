@@ -1378,7 +1378,7 @@ mod tests {
         const JSON: &str = include_str!("../../../../conformance/airbrush-matrix-native.json");
         const BIN: &[u8] = include_bytes!("../../../../conformance/airbrush-matrix-native.bin");
         const PAINT: &str = include_str!("../../../../conformance/airbrush-paint-native.json");
-        const PATTERN: &[u8] = include_bytes!("../../../../conformance/airbrush-pattern.r8");
+        const PATTERN: &[u8] = include_bytes!("../render/airbrush_assets/airbrush-pattern.r8");
         const JSON_SHA256: &str =
             "72b10ef6f67b16e023530b49227e092830f59e11593a27681e142f54fc3ff605";
         const BIN_SHA256: &str = "99c61ff47e32bb27b9df1834fa8844234946e362ab3c353af5843823836f5a73";
@@ -1672,7 +1672,7 @@ mod tests {
 
         const JSON: &str = include_str!("../../../../conformance/airbrush-paint-native.json");
         const BIN: &[u8] = include_bytes!("../../../../conformance/airbrush-paint-native.bin");
-        const PATTERN: &[u8] = include_bytes!("../../../../conformance/airbrush-pattern.r8");
+        const PATTERN: &[u8] = include_bytes!("../render/airbrush_assets/airbrush-pattern.r8");
 
         let meta: Value = serde_json::from_str(JSON).unwrap();
         assert_eq!(meta["schema"], "sdocx.airbrush-saved-paint-oracles.v1");

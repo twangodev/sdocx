@@ -709,7 +709,7 @@ mod tests {
 
         const PAINT_FIXTURE: &str =
             include_str!("../../../../conformance/colored-pencil-paint-native.json");
-        const POINT_R8: &[u8] = include_bytes!("../../../../conformance/colored-pencil-point.r8");
+        const POINT_R8: &[u8] = include_bytes!("colored_pencil/assets/point.r8");
         const SPARSE: &[u8] =
             include_bytes!("../../../../conformance/colored-pencil-paint-sparse.bin");
 

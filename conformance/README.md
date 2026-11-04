@@ -79,3 +79,10 @@ git archive a24179384fbe043a8b5f003ee0c7bebeb394d106 conformance | \
 The standalone `conformance/native_table.rs` harness remains available for
 manual native investigations. Its build and APK-library requirements are
 checkout-specific; it is not part of ordinary CI.
+
+Some historical capture receipts name texture copies previously stored in this
+directory. Their byte-identical retained assets are
+`crates/sdocx/src/render/airbrush_assets/airbrush-pattern.r8`,
+`crates/sdocx/src/ink/colored_pencil/assets/point.r8`, and
+`crates/sdocx/src/ink/pencil2/assets/{grain,point}.r8`. The receipt paths are
+historical; their native capture hashes still identify the retained bytes.
