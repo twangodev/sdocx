@@ -1,6 +1,7 @@
 {
   "base_commit": "b73af8ec",
   "scope": "isolated Pencil2 API with captured source, frame and export control",
+  "files_sha256_scope": "Historical paths and hashes from the isolated validation; the byte-identical first frame is now retained at crates/sdocx/src/ink/pencil2/test_assets/drawing/independent-drawing/first.zlib.",
   "files_sha256": {
     "crates/sdocx/src/ink.rs": "33bf6eecb3e32a9779890035dbd4a32f46ca7fd197c28c86c82bb0dbeab7cd30",
     "crates/sdocx/src/ink/host_raster.rs": "df44615b661bc704e07ddd92dd74b540061d68d692a0c9acb77c50b82879f9bd",

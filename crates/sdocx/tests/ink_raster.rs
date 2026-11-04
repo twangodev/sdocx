@@ -674,7 +674,7 @@ fn changed_input_native_grain_offset_and_canvas_match() {
             .collect::<Vec<_>>()
     };
     let prior = decode(
-        include_bytes!("../../../tools/pencil2-control/first.rgba.zlib"),
+        include_bytes!("../src/ink/pencil2/test_assets/drawing/independent-drawing/first.zlib"),
         "first_sha256",
     );
     let expected = decode(
