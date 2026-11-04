@@ -8,7 +8,7 @@ is unchanged. These Mesa host controls do not establish Samsung-device or
 complete saved-page fidelity.
 
 The retained native receipts contain the original saved stroke and compressed
-RGBA frames. The four integration tests check 360 native frames, including
+RGBA frames. The integration suite checks 360 native frames, including
 clipped and outside viewports. Historical measurements of 120 opaque frames matched SVG, PNG, direct PDF and
 SVG-derived PDF to native pixels in MuPDF and PDFium. Current tests retain
 in-memory native-frame, SVG, PNG and PDF construction checks.
@@ -29,3 +29,5 @@ project-local emulator/GLES runtime. Those local resources are not bundled.
 Native recapture also requires the `ink_geometry` adapter, built with
 `cargo build -p sdocx --features render,serde --example ink_geometry` using the
 shared Cargo settings above. Controllers verify helper hashes before running. Receipt replay does not require them.
+
+The caller-managed scene replay covers 108 retained frames; its inputs, lifecycle boundaries and native recapture instructions are described in [SCENE.md](SCENE.md). This does not infer automatic saved-page mapping or general native cache identity.
