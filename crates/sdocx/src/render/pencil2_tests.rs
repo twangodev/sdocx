@@ -75,7 +75,7 @@ fn raster(svg: &str) -> Vec<[u8; 4]> {
     pixmap.data().as_chunks::<4>().0.to_vec()
 }
 
-fn export(name: &str, scene: &RenderedScene) {
+fn assert_pdf_transport(scene: &RenderedScene) {
     let mut options = crate::PdfOptions::default();
     options.dpi = 72.;
     let direct = crate::pdf::render_native_scene_pdf_for_test(scene, &options).unwrap();
@@ -94,24 +94,11 @@ fn export(name: &str, scene: &RenderedScene) {
                 }))
         );
     }
-    if let Some(directory) = std::env::var_os("SDOCX_PENCIL2_ARTIFACTS") {
-        let directory = std::path::PathBuf::from(directory);
-        std::fs::create_dir_all(&directory).unwrap();
-        std::fs::write(directory.join(format!("{name}.svg")), &scene.page.svg).unwrap();
-        std::fs::write(directory.join(format!("{name}.direct.pdf")), direct).unwrap();
-        std::fs::write(directory.join(format!("{name}.svg.pdf")), from_svg).unwrap();
-        let rgba: Vec<_> = raster(&scene.page.svg).into_iter().flatten().collect();
-        std::fs::write(directory.join(format!("{name}.resvg.rgba")), rgba).unwrap();
-    }
 }
 
 #[test]
 fn pencil2_rgba_raster_svg_and_direct_pdf_transport() {
     let receipt = mixed_rgb_tests::receipt();
-    let paired: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../conformance/pencil2-v14-mixed-rgb-paired.json"
-    ))
-    .unwrap();
     let mut mismatches = Vec::new();
     for name in ["colored", "mixed", "mixed_reversed"] {
         let image = device_raster::render(
@@ -119,7 +106,6 @@ fn pencil2_rgba_raster_svg_and_direct_pdf_transport() {
             device_raster::Context::default(),
         )
         .unwrap();
-        let native = receipt.results[name].image();
         for (suffix, background) in [
             ("", None),
             (
@@ -143,26 +129,24 @@ fn pencil2_rgba_raster_svg_and_direct_pdf_transport() {
             let output = raster(&scene.page.svg);
             let target = receipt.results[&format!("{name}{suffix}")].image();
             let errors = mixed_rgb_tests::error(&output, &target);
-            let expected = &paired["results"][format!("{name}{suffix}")]["resvg"];
-            let expected = (
-                expected["different_channel_bytes"].as_u64().unwrap() as usize,
-                expected["absolute_sum"].as_u64().unwrap(),
-                expected["maximum"].as_u64().unwrap() as u8,
-            );
+            // Native-frame discrepancies introduced by transparent image transport.
+            let expected = match (name, suffix) {
+                (_, "") => (0, 0, 0),
+                ("colored", "_white") => (53, 68, 3),
+                ("colored", "_paper") => (72, 79, 2),
+                ("mixed", "_white") => (75, 102, 4),
+                ("mixed", "_paper") => (244, 268, 3),
+                ("mixed_reversed", "_white") => (67, 83, 2),
+                ("mixed_reversed", "_paper") => (238, 255, 3),
+                _ => unreachable!("unknown transport control"),
+            };
             if errors != expected {
                 mismatches.push((format!("{name}{suffix}"), errors, expected));
             }
             if background.is_none() {
                 assert!(mixed_rgb_tests::error(&output, &image).2 <= 1);
             }
-            export(&format!("{name}{suffix}"), &scene);
-        }
-        if let Some(directory) = std::env::var_os("SDOCX_PENCIL2_ARTIFACTS") {
-            std::fs::write(
-                std::path::PathBuf::from(directory).join(format!("{name}.native.png")),
-                png(&native),
-            )
-            .unwrap();
+            assert_pdf_transport(&scene);
         }
     }
     assert!(mismatches.is_empty(), "{mismatches:?}");
@@ -204,7 +188,7 @@ fn pencil2_backdrop_seeded_svg_and_direct_pdf_transport() {
                 expected,
                 "{name}{suffix}"
             );
-            export(&format!("{name}{suffix}_seeded"), &scene);
+            assert_pdf_transport(&scene);
         }
     }
 }
@@ -281,32 +265,12 @@ fn pencil2_colored_generic_svg_and_direct_pdf_baseline() {
     let rendered = render_document_svg(&document, &options).remove(0);
     let native = mixed_rgb_tests::receipt().results["colored_white"].image();
     let errors = mixed_rgb_tests::error(&raster(&rendered.svg), &native);
-    let paired: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../conformance/pencil2-v14-mixed-rgb-paired.json"
-    ))
-    .unwrap();
-    let baseline = paired["results"]["generic_colored_white"]["resvg"]["absolute_sum"]
-        .as_u64()
-        .unwrap();
+    let baseline = 4_135;
     assert!(
         errors.1 <= baseline,
         "generic colored white SVG/native error {errors:?} exceeds retained baseline {baseline}"
     );
     let mut pdf_options = crate::PdfOptions::default();
     pdf_options.dpi = 72.;
-    let pdf = crate::render_document_pdf(&document, &options, &pdf_options).unwrap();
-    if let Some(directory) = std::env::var_os("SDOCX_PENCIL2_ARTIFACTS") {
-        let directory = std::path::PathBuf::from(directory);
-        std::fs::create_dir_all(&directory).unwrap();
-        std::fs::write(directory.join("generic_colored_white.svg"), &rendered.svg).unwrap();
-        std::fs::write(directory.join("generic_colored_white.direct.pdf"), pdf).unwrap();
-        std::fs::write(
-            directory.join("generic_colored_white.resvg.rgba"),
-            raster(&rendered.svg)
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>(),
-        )
-        .unwrap();
-    }
+    crate::render_document_pdf(&document, &options, &pdf_options).unwrap();
 }

@@ -80,19 +80,21 @@ compares zero, full, and alternating pressure on the same four-point stroke,
 and a diagonal stroke at unit scale. All three pressure controls produce the
 same native frame; the diagonal produces a different frame. The existing public
 profile has lower alpha-byte L1 error than generic output in all four SVG and
-SVG-derived PDF comparisons recorded in the receipt. SVG uses resvg; the separate
-[PDF comparison](../../conformance/inkpen2-v1-pressure-pdf-comparison.json)
-also checks MuPDF 1.28.2 and PDFium 150.0.7869.0 at 4/3 pixels per point,
-and both readers improve in all four cases. These are synthetic transparent host-Mesa controls,
-not saved-note or device parity; they do not justify a change to the existing
-profile. Recapture the native inputs with
+SVG-derived PDF comparisons. Historical measurements with MuPDF 1.28.2 and
+PDFium 150.0.7869.0 at 4/3 pixels per point gave these alpha-byte absolute-error sums:
+
+| Control | MuPDF public / generic | PDFium public / generic |
+| --- | ---: | ---: |
+| Zero pressure | 5,737 / 16,591 | 4,626 / 16,495 |
+| Full pressure | 5,737 / 16,482 | 4,626 / 16,337 |
+| Alternating pressure | 5,737 / 20,758 | 4,626 / 18,973 |
+| Diagonal | 6,649 / 28,295 | 2,086 / 26,882 |
+
+These are synthetic transparent host-Mesa controls, not saved-note or device
+parity. Native inputs remain reproducible with
 `python3 tools/inkpen-capture/inkpen2_v1_pressure_paint_capture.py` using the local
-prerequisites above. To replay the public comparison, run the focused
-`inkpen2_v1_pressure_and_diagonal_native_pixels` Rust test with
-`SDOCX_V1_PRESSURE_PDF_CAPTURE` pointing to an empty directory, then run
-`tools/inkpen-capture/inkpen2_v1_pressure_pdf_compare.py` with that directory.
-The comparator requires PyMuPDF, pypdfium2 and Pillow. It checks the pinned
-reader versions, source receipt and role-specific PDF hashes, and exact error
-totals against the retained comparison receipt.
+prerequisites above. The focused `inkpen2_v1_pressure_and_diagonal_native_pixels`
+Rust test retains native hashes, SVG error assertions, and PDF construction checks.
+The optional export hook, reader comparator, and derived PDF receipt were removed.
 
 The [experimental half-grid viewport](../../tools/inkpen2-v1-tablet-half/README.md) opt-in covers an asserted fixed 0.5× raster grid on the tablet host profile, with per-stroke fallback and page work limits. Retained native frames and public SVG/direct-PDF comparisons cover synthetic host controls; device and saved-note parity remain unverified.
