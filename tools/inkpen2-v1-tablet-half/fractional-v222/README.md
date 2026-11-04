@@ -10,6 +10,11 @@ Capture from the repository root using the local Unicorn runtime and dependencie
 PYTHONPATH=scratch/straightinkpen2-alias:scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin /tmp/sdocx-unicorn-venv/bin/python tools/inkpen2-v1-tablet-half/viewport_native.py --print-capture --width 1440 --height 2560 --matrix-scale 0.5 --matrix-translate-x 16.25 --matrix-translate-y 17.375 --output-width 63 --output-height 47 --color-argb 0xffff0000 --input-json "$PWD/tools/inkpen2-v1-tablet-half/fractional-v222/input.json" > /tmp/ink-v222-native.json
 ```
 
-For public exports, apply `export-test.patch` to an isolated copy of the matching source, then run `CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 SDOCX_INKPEN2_HALF_EXPORT=OUTPUT_DIR cargo test -p sdocx --features pdf,serde --lib inkpen2_half_grid_mixed_order_exports`. OUTPUT_DIR must exist. Run `/tmp/pencil-candidate/evidence/python tools/inkpen2-v1-tablet-half/fractional-v222/compare.py OUTPUT_DIR` and compare its output with `receipt.json`. The comparison uses resvg 0.45.1, MuPDF 1.28.2 and PDFium 150.0.7869.0, with the native premultiplied frame composited over #fcfcfc. The patch changes test inputs only; the opt-in takes the public SVG and direct PDF routes.
-
-The original export used dirty source at Git HEAD `0e3f6b3594a8f30429c313cc082e025689c07490`. A subsequent isolated clean-source replay at `a4460e0a7f624d001e17b3b557adda1e61af2669` applied the same patch and reproduced all four export hashes and every comparison metric. Its unpatched `render.rs` SHA-256 is `c7cc46b8dbe2889777e2337494158bc33e4d8c1e21c144f9f7a6a4b4572c02b3`; after patching it is `edd9702f1ec05e3c102d5acf2f10e00ccb8ed9ff957c6e2446bade7cd50ce1a2`. The native adapter requires the pinned local scratch support and DSOs; the two `/tmp` Python environments are local paths, not project-managed installations. The comparator checks reader versions, frame identity, each raster's dimensions, export hashes and every recorded metric against the receipt; successful completion verifies the retained measurement, not the provenance of a newly captured frame.
+Historical comparisons used resvg 0.45.1, MuPDF 1.28.2 and PDFium
+150.0.7869.0, compositing the native premultiplied frame over #fcfcfc. A clean
+replay at `a4460e0a7f624d001e17b3b557adda1e61af2669` reproduced the original
+four export hashes and metrics. The export hook, patch and comparator have
+been retired. The hybrid receipt retains their historical source identities
+alongside unique native geometry, matrix, framebuffer and GL evidence; it does
+not validate current reader output. Native recapture requires the pinned local
+scratch support, DSOs and Python environment documented in the parent README.
