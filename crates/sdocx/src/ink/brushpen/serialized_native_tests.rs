@@ -32,6 +32,45 @@ fn independent_serialized_brushpen_native() {
 }
 #[test]
 fn third_serialized_brushpen_native() {
+    use sha2::{Digest, Sha256};
+
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../tools/brushpen-third/receipt.json"
+    ))
+    .unwrap();
+    let getters: [(&str, &[u8]); 5] = [
+        (
+            "GetPoint.bin",
+            include_bytes!("../../../tests/assets/brushpen-third/GetPoint.bin"),
+        ),
+        (
+            "GetPressure.bin",
+            include_bytes!("../../../tests/assets/brushpen-third/GetPressure.bin"),
+        ),
+        (
+            "GetTilt.bin",
+            include_bytes!("../../../tests/assets/brushpen-third/GetTilt.bin"),
+        ),
+        (
+            "GetOrientation.bin",
+            include_bytes!("../../../tests/assets/brushpen-third/GetOrientation.bin"),
+        ),
+        (
+            "GetTimeStamp.bin",
+            include_bytes!("../../../tests/assets/brushpen-third/GetTimeStamp.bin"),
+        ),
+    ];
+    assert_eq!(
+        receipt["native_getter_sha256"].as_object().unwrap().len(),
+        getters.len()
+    );
+    for (name, bytes) in getters {
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            receipt["native_getter_sha256"][name],
+            "{name} native getter"
+        );
+    }
     verify_capture(
         "third",
         include_bytes!("../../../tests/assets/brushpen-third/payload.bin"),
