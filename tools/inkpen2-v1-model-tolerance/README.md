@@ -1,17 +1,56 @@
-# InkPen2 V1 native Model tolerance control
+# InkPen2 V1 native Model tolerance controls
 
-The pinned host-Unicorn Drawing caller replays the 57 positions and input channels of Fountain source 29, translated by (-96, -268), as InkPen2 V1, tool 2, size 9, at 1920×1080. This is a converted Fountain trajectory, not a saved InkPen2. The native Model setter is omitted or supplied 0, 0.5, 2, or 100; each supplied value is checked through the native getter before Drawing. Both Drawing and a separate saved redraw produce the same nine 12-byte callback records for all five controls; complete bytes and hashes are in `receipt.json`. The Rust V1 opt-in route admits finite tolerance 0–100 and supplies 2 to its sampler. The full native records match the Rust sampler on this trajectory. The result does not establish other pen versions or general behavior; the retained host paint controls below support only the bounded V1 admission.
+The retained host-Unicorn controls convert Fountain trajectories to setter-built
+InkPen2 V1 objects; they are not saved InkPen2, complete application or Android
+device captures. For Fountain source 29 (57 points, translated by −96, −268),
+tool 2, size 9 and a 1920×1080 screen, omitted tolerance and explicit 0, 0.5, 2
+and 100 produce identical nine-record Drawing and saved-redraw streams. The
+native getter checks each supplied value. `receipt.json` retains complete
+callback bytes and hashes.
 
-Run `.venv/bin/python tools/inkpen2-v1-model-tolerance/capture.py > /tmp/inkpen2-tolerance.json` from the project root, then compare the generated JSON with `receipt.json`. The wrapper injects the Model setter and getter into the locally held saved-caller harness; the pinned proprietary libraries and additional helper closure are required. The host adapters and boundaries are those documented by that harness; this is not a serialized parser, Android device, or application capture.
+A second saved Fountain trajectory, scene stroke 7, preserves 231 points and
+channels after translation by (−148.24111938476562, −116.8331298828125).
+Explicit tolerance 0.5 produces 46 matching Drawing/saved-redraw records in
+`scene7-redraw.json`. Current Rust tests compare every record for both controls:
 
-A second control uses the independently saved stroke index 7 in `crates/sdocx/tests/assets/fountain-v14/scene-sources.json`, translated by (-148.24111938476562, -116.8331298828125), preserving its 231-point input channels. Explicit 0.5 Drawing and saved redraw both emit the 46 records retained in `scene7-redraw.json`. Focused Rust tests compare every record byte for both note-derived trajectories and passed with `cargo test -p sdocx --features serde,pdf v1_model_tolerance_ --lib` under the project agent target settings.
+```sh
+CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 \
+CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 \
+cargo test -p sdocx --features serde,pdf v1_model_tolerance_ --lib
+```
 
-Host Mesa RTV1 captures also show that the first trajectory's omitted and explicit 0.5 cases have identical geometry and RGBA bytes, and the second trajectory's explicit 0, 0.5 and 100 cases have identical geometry and RGBA bytes. The compressed native RGBA frames and hashes are retained alongside `paint-receipt.json`. For both cases the actual public 1× profile admits omitted and zero tolerance; positive values through 100 select the same profile; the retained fallback comparison disables the profile. Against each native frame composited over #fcfcfc, that receipt records RGB absolute-error sums for actual profile and fallback exports. Direct PDFs were rendered at 4/3 pixels per point to match 64×64 native frames. The profile is lower error than fallback in resvg, MuPDF and PDFium on both cases; these are bounded host comparisons, not pixel parity, and do not establish every positive value or profile. `export.rs` was built as `crates/sdocx/examples/inkpen2_tolerance_probe.rs` to produce both public SVG and direct PDF; its optional `scene7` argument selects the second trajectory.
+Eight native Mesa paint captures retain geometry and frame hashes in
+`paint-receipt.json`: source 29 omitted/0.5, scene 7 at 0/0.5/100, and a
+synthetic four-point tool-3 turn at 0/0.5/100. Each group has identical geometry
+and RGBA bytes. The tool-3 control uses size 4, 1440×2560 and a 2× transform.
+The three compressed native frames remain retained.
 
-AArch64 disassembly of InkPen2 V1 `RedrawPen(ObjectStroke...)` at 0x3ecac and its direct `redraw` callee at 0x3f00c shows no `GetInitialToloerance` call; `redraw` directly retrieves point, time, pressure, tilt, orientation, and tool. This bounded direct-call observation does not establish all indirect callers or future versions. The opt-in V1 tolerance gate admits finite 0–100; values between captured controls are an inference from the native field dataflow.
+The explicit V1 route admits finite tolerance 0–100 and passes 2 to its sampler.
+Direct-call disassembly of `RedrawPen` at 0x3ecac and `redraw` at 0x3f00c found
+no `GetInitialToloerance` call; the latter retrieves points, time, pressure, tilt,
+orientation and tool directly. Admission between captured values extrapolates
+from this bounded dataflow. Other versions retain the zero-only guard; this does
+not establish every indirect caller or general tolerance behavior.
 
-The distinct synthetic 4-point turn, tool 3, size 4, uses a 1440×2560 screen profile and 2× transform. Model 0, 0.5 and 100 produce identical native geometry and 128×128 host frames. The public selected profile and positive-tolerance fallback were compared to the explicit 0.5 native frame in all three readers, using 2× SVG rasterization and 8/3 PDF pixels per point; the profile has lower RGB L1 error in each. The `tool3` export argument selects this control. The 0–100 interval is an extrapolation between captured values supported by the V1 dataflow; other versions keep the zero-only guard.
+Historical public SVG and direct-PDF comparisons had lower RGB L1 error than
+fallback on all three controls in resvg, MuPDF and PDFium. Native transparent
+frames were composited over #fcfcfc; the first two controls used 1× SVG and
+4/3 PDF pixels per point, and tool 3 used 2× SVG and 8/3 PDF pixels per point.
+`paint-receipt.json` retains the measured error pairs and provenance. The optional
+exporter and reader comparator were retired. These results are not current
+reader validation or pixel parity; the reader/toolchain closure was not fully
+pinned.
 
-To reproduce the public reader comparison in a clean source snapshot that includes these files, copy `export.rs` to `crates/sdocx/examples/inkpen2_tolerance_probe.rs`, create `/tmp/inkpen-tolerance-probe`, then run the example three times (no argument, `scene7`, and `tool3`) with `--features serde,pdf` and the project agent Cargo settings. Run `PYTHONPATH=/tmp/sdocx-marker3-v133-readers .venv/bin/python tools/inkpen2-v1-model-tolerance/compare.py`; it checks all nine saved RGB error pairs. The readers and dependencies are local and not pinned as a complete closure, so another setup can produce different results. The copied example can then be removed.
+Native acquisition requires the locally held saved-caller harness, pinned
+proprietary libraries, Unicorn/Mesa and additional helper dependencies. These
+are not bundled as a clean-checkout runtime. From the repository root on the prepared capture host:
 
-`capture_paint.py` repeats the eight Mesa captures and checks the geometry and RGBA hashes in `paint-receipt.json`. Run `.venv/bin/python tools/inkpen2-v1-model-tolerance/capture_scene7.py` to check the second Drawing and saved-redraw streams against `scene7-redraw.json`. The caller and the pinned native libraries require the local helper closure described above.
+```sh
+.venv/bin/python tools/inkpen2-v1-model-tolerance/capture.py > /tmp/inkpen2-tolerance.json
+.venv/bin/python tools/inkpen2-v1-model-tolerance/capture_scene7.py
+.venv/bin/python tools/inkpen2-v1-model-tolerance/capture_paint.py
+```
+
+Compare the first command's JSON with `receipt.json`. The other commands check
+the retained scene-7 streams and eight paint captures respectively. Capture
+scripts and native inputs remain independent of the retired export workflow.
