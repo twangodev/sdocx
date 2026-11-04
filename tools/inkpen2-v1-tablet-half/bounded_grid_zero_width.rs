@@ -1,6 +1,5 @@
-// Standalone experimental bottom-left pixel grid; no production export contract.
+// Test-only bottom-left pixel grid model; no production export contract.
 use std::collections::BTreeMap;
-use std::io::{self, Read, Write};
 
 fn add_work(work: usize, width: usize, height: usize) -> Option<usize> {
     work.checked_add(width.checked_mul(height)?)
@@ -36,17 +35,6 @@ pub fn grid(data: &[u8], width: i32, height: i32, scale: f64, tx: f64, ty: f64, 
     }
     Some(pixels)
 }
-fn main() {
-    let args: Vec<_> = std::env::args().skip(1).collect();
-    let dx: f64 = args[0].parse().unwrap(); let dy: f64 = args[1].parse().unwrap();
-    let limits: [usize;3] = if args.len() == 5 { [args[2].parse().unwrap(),args[3].parse().unwrap(),args[4].parse().unwrap()] } else { [1000,100000,3072] };
-    let mut data = Vec::new(); io::stdin().read_to_end(&mut data).unwrap();
-    let Some(pixels) = grid(&data,64,48,0.5,16.0+dx,16.0+dy,limits) else { std::process::exit(2) };
-    let mut out = vec![0u8;64*48];
-    for ((x,y),a) in pixels { out[y as usize*64+x as usize] = a; }
-    io::stdout().write_all(&out).unwrap();
-}
-
 #[cfg(test)]
 mod tests {
     fn stamp(x: f32, y: f32, radius: f32) -> Vec<u8> {
