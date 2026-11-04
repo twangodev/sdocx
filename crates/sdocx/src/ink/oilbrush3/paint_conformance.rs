@@ -1788,21 +1788,6 @@ mod public_fallback_comparison {
         )
         .unwrap();
         assert!(pdf.starts_with(b"%PDF-"));
-        if let Some(dir) = std::env::var_os("SDOCX_OILBRUSH3_EXPORT_DIR") {
-            let dir = std::path::Path::new(&dir);
-            std::fs::write(dir.join("public.pdf"), pdf).unwrap();
-            std::fs::write(dir.join("public-svg.rgba"), pix.data()).unwrap();
-            let mut white = vec![255u8; V17_PIXELS * 3];
-            for (&index, rgba) in &native {
-                let x = index % V17_PAGE_WIDTH;
-                let y = V17_PAGE_HEIGHT - 1 - index / V17_PAGE_WIDTH;
-                for c in 0..3 {
-                    white[(y * V17_PAGE_WIDTH + x) * 3 + c] =
-                        (u16::from(rgba.0[c]) + u16::from(255 - rgba.0[3])).min(255) as u8;
-                }
-            }
-            std::fs::write(dir.join("native.rgb"), white).unwrap();
-        }
         let mut diff_pixels = 0usize;
         let mut sums = [0u64; 3];
         let mut maxima = [0u8; 3];
@@ -1825,29 +1810,10 @@ mod public_fallback_comparison {
             "native support={} public-vs-native differing_pixels={diff_pixels} RGB_abs_sums={sums:?} RGB_max={maxima:?}",
             native.len()
         );
-        let receipt: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../../../conformance/oilbrush3-public-fallback-v17-comparison.json"
-        ))
-        .unwrap();
-        let expected = &receipt["public_svg_vs_native"];
-        assert_eq!(
-            native.len() as u64,
-            receipt["native_alpha_support_pixels"].as_u64().unwrap()
-        );
-        assert_eq!(
-            diff_pixels as u64,
-            expected["differing_pixels"].as_u64().unwrap()
-        );
-        for c in 0..3 {
-            assert_eq!(
-                sums[c],
-                expected["rgb_absolute_error_sum"][c].as_u64().unwrap()
-            );
-            assert_eq!(
-                u64::from(maxima[c]),
-                expected["rgb_maximum_error"][c].as_u64().unwrap()
-            );
-        }
+        assert_eq!(native.len(), 76);
+        assert_eq!(diff_pixels, 161);
+        assert_eq!(sums, [17_991, 8_185, 1_671]);
+        assert_eq!(maxima, [187, 85, 17]);
     }
 }
 
@@ -2395,28 +2361,9 @@ fn oilbrush3_source_model_public_canvas_export() {
         &mut pix.as_mut(),
     );
     assert_eq!(pix.data(), canvas.pixels().as_flattened());
-    if let Some(dir) = std::env::var_os("SDOCX_OILBRUSH3_SOURCE_EXPORT_DIR") {
-        let dir = std::path::Path::new(&dir);
-        let options = PdfOptions::default();
-        std::fs::write(dir.join("source.svg"), &svg.svg).unwrap();
-        std::fs::write(dir.join("source-svg.rgba"), pix.data()).unwrap();
-        std::fs::write(dir.join("source.pdf"), canvas.to_pdf(&options).unwrap()).unwrap();
-        std::fs::write(
-            dir.join("source-svg.pdf"),
-            crate::render_svg_pages_pdf(&[svg], &options).unwrap(),
-        )
-        .unwrap();
-        let mut native_white = vec![255u8; V17_PIXELS * 3];
-        for (&index, rgba) in &native {
-            let x = index % V17_PAGE_WIDTH;
-            let y = V17_PAGE_HEIGHT - 1 - index / V17_PAGE_WIDTH;
-            for c in 0..3 {
-                native_white[(y * V17_PAGE_WIDTH + x) * 3 + c] =
-                    (u16::from(rgba.0[c]) + u16::from(255 - rgba.0[3])).min(255) as u8;
-            }
-        }
-        std::fs::write(dir.join("native.rgb"), native_white).unwrap();
-    }
+    let options = PdfOptions::default();
+    canvas.to_pdf(&options).unwrap();
+    crate::render_svg_pages_pdf(&[svg], &options).unwrap();
 }
 
 #[cfg(feature = "render")]
@@ -2561,29 +2508,9 @@ fn oilbrush3_fresh_trajectory_public_export() {
         &mut pix.as_mut(),
     );
     assert_eq!(pix.data(), canvas.pixels().as_flattened());
-    if let Some(dir) = std::env::var_os("SDOCX_OILBRUSH3_FRESH_EXPORT_DIR") {
-        let dir = std::path::Path::new(&dir);
-        std::fs::write(dir.join("source-svg.rgba"), pix.data()).unwrap();
-        std::fs::write(
-            dir.join("source.pdf"),
-            canvas.to_pdf(&PdfOptions::default()).unwrap(),
-        )
-        .unwrap();
-        std::fs::write(
-            dir.join("source-svg.pdf"),
-            crate::render_svg_pages_pdf(&[svg], &PdfOptions::default()).unwrap(),
-        )
-        .unwrap();
-        let white_rgb: Vec<u8> = expected
-            .as_chunks::<4>()
-            .0
-            .iter()
-            .flat_map(|p| {
-                (0..3).map(move |c| (u16::from(p[c]) + u16::from(255 - p[3])).min(255) as u8)
-            })
-            .collect();
-        std::fs::write(dir.join("native.rgb"), white_rgb).unwrap();
-    }
+    let options = PdfOptions::default();
+    canvas.to_pdf(&options).unwrap();
+    crate::render_svg_pages_pdf(&[svg], &options).unwrap();
 }
 
 #[cfg(all(feature = "render", feature = "pdf"))]
@@ -2641,27 +2568,9 @@ fn oilbrush3_opaque_page_public_export() {
         &mut pix.as_mut(),
     );
     assert_eq!(pix.data(), native_top);
-    if let Some(dir) = std::env::var_os("SDOCX_OILBRUSH3_OVERLAP_EXPORT_DIR") {
-        let dir = std::path::Path::new(&dir);
-        let opts = PdfOptions::default();
-        std::fs::write(dir.join("source.svg"), &svg.svg).unwrap();
-        std::fs::write(dir.join("source.pdf"), canvas.to_pdf(&opts).unwrap()).unwrap();
-        std::fs::write(
-            dir.join("source-svg.pdf"),
-            crate::render_svg_pages_pdf(&[svg], &opts).unwrap(),
-        )
-        .unwrap();
-        std::fs::write(
-            dir.join("native.rgb"),
-            native_top
-                .as_chunks::<4>()
-                .0
-                .iter()
-                .flat_map(|p| p[..3].iter().copied())
-                .collect::<Vec<_>>(),
-        )
-        .unwrap();
-    }
+    let options = PdfOptions::default();
+    canvas.to_pdf(&options).unwrap();
+    crate::render_svg_pages_pdf(&[svg], &options).unwrap();
 }
 
 #[cfg(all(feature = "render", feature = "pdf"))]
@@ -2728,25 +2637,7 @@ fn oilbrush3_opaque_fresh_public_export() {
         &mut pix.as_mut(),
     );
     assert_eq!(pix.data(), native_top);
-    if let Some(dir) = std::env::var_os("SDOCX_OILBRUSH3_OPAQUE_FRESH_EXPORT_DIR") {
-        let dir = std::path::Path::new(&dir);
-        let opts = PdfOptions::default();
-        std::fs::write(dir.join("source.svg"), &svg.svg).unwrap();
-        std::fs::write(dir.join("source.pdf"), canvas.to_pdf(&opts).unwrap()).unwrap();
-        std::fs::write(
-            dir.join("source-svg.pdf"),
-            crate::render_svg_pages_pdf(&[svg], &opts).unwrap(),
-        )
-        .unwrap();
-        std::fs::write(
-            dir.join("native.rgb"),
-            native_top
-                .as_chunks::<4>()
-                .0
-                .iter()
-                .flat_map(|p| p[..3].iter().copied())
-                .collect::<Vec<_>>(),
-        )
-        .unwrap();
-    }
+    let options = PdfOptions::default();
+    canvas.to_pdf(&options).unwrap();
+    crate::render_svg_pages_pdf(&[svg], &options).unwrap();
 }

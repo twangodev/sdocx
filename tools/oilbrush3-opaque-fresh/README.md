@@ -10,12 +10,14 @@ SVG-page PDF match the native RGB frame at 1x in MuPDF and PDFium. These are
 synthetic host controls, not device, saved-note, arbitrary page or lifecycle
 parity.
 
-The capture requires the pinned project-local runner and Unicorn 2.1.4; the
-comparison requires PyMuPDF and pypdfium2. Local reproduction:
+The capture requires the pinned project-local runner and Unicorn 2.1.4.
+Native capture and in-memory regression checks:
 
 ```sh
 /tmp/sdocx-unicorn-venv/bin/python tools/oilbrush3-opaque-fresh/capture.py
-mkdir -p /tmp/sdocx-oilbrush3-opaque-fresh-export
-SDOCX_OILBRUSH3_OPAQUE_FRESH_EXPORT_DIR=/tmp/sdocx-oilbrush3-opaque-fresh-export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo test -p sdocx --lib --features pdf,serde oilbrush3_opaque_fresh_public_export
-/tmp/sdocx-v190-readers/bin/python tools/oilbrush3-opaque-fresh/compare.py /tmp/sdocx-oilbrush3-opaque-fresh-export
+CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo test -p sdocx --lib --features pdf,serde oilbrush3_opaque_fresh_public_export
 ```
+
+The optional artifact exporter, reader comparator, and derived export receipt
+were removed. Rust retains native/SVG assertions and in-memory PDF construction;
+PDF-reader results above are historical measurements.
