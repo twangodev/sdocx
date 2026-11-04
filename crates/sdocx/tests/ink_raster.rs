@@ -408,12 +408,12 @@ fn pencil2_translation_matrix_and_nonuniform_prior_match_host() {
         ),
     ] {
         let mut expected: Vec<u8> = prior.iter().flatten().copied().collect();
-        let mut records = compressed.chunks_exact(8);
-        for record in &mut records {
+        let (records, remainder) = compressed.as_chunks::<8>();
+        for record in records {
             let index = u32::from_le_bytes(record[..4].try_into().unwrap()) as usize;
             expected[index * 4..index * 4 + 4].copy_from_slice(&record[4..]);
         }
-        assert!(records.remainder().is_empty());
+        assert!(remainder.is_empty());
         let receipt: Value = serde_json::from_str(include_str!(
             "assets/pencil2-translation/translation-matrix-receipt.json"
         ))
