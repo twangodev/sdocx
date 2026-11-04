@@ -1459,7 +1459,7 @@ mod tests {
         use base64::Engine;
         use flate2::read::ZlibDecoder;
         use sha2::{Digest, Sha256};
-        use std::io::{Read, Write};
+        use std::io::Read;
 
         let receipt: Value = serde_json::from_str(include_str!(
             "../../../../conformance/inkpen-v4-crossing-native.json"
@@ -1503,19 +1503,16 @@ mod tests {
             metadata: Default::default(),
         };
         let mut errors = Vec::new();
-        for (name, options) in [
-            ("generic", crate::RenderOptions::default()),
-            (
-                "profile",
-                crate::RenderOptions {
-                    inkpen_profile: Some(crate::InkPenRenderProfile {
-                        screen_width: 1920,
-                        screen_height: 1080,
-                    }),
-                    inkpen_v4_output_scale: Some(1),
-                    ..Default::default()
-                },
-            ),
+        for options in [
+            crate::RenderOptions::default(),
+            crate::RenderOptions {
+                inkpen_profile: Some(crate::InkPenRenderProfile {
+                    screen_width: 1920,
+                    screen_height: 1080,
+                }),
+                inkpen_v4_output_scale: Some(1),
+                ..Default::default()
+            },
         ] {
             let svg = crate::render_document_svg(&document, &options)
                 .remove(0)
@@ -1532,26 +1529,11 @@ mod tests {
                 "{}<g transform=\"translate(0 64) scale(1 -1)\">{body}</g></svg>",
                 &svg[..start]
             );
-            if let Some(dir) = std::env::var_os("SDOCX_INKPEN_CROSSING_EXPORT_DIR") {
-                let dir = std::path::Path::new(&dir);
-                let write_export = |extension, bytes: &[u8]| {
-                    std::fs::File::options()
-                        .write(true)
-                        .create_new(true)
-                        .open(dir.join(format!("{name}.{extension}")))
-                        .unwrap()
-                        .write_all(bytes)
-                        .unwrap();
-                };
-                write_export("svg", svg.as_bytes());
-                #[cfg(feature = "pdf")]
-                {
-                    let rendered = crate::RenderedPage::new(0, 128, 64, svg.clone());
-                    let pdf =
-                        crate::render_svg_pages_pdf(&[rendered], &crate::PdfOptions::default())
-                            .unwrap();
-                    write_export("pdf", &pdf);
-                }
+            #[cfg(feature = "pdf")]
+            {
+                let rendered = crate::RenderedPage::new(0, 128, 64, svg.clone());
+                let _ = crate::render_svg_pages_pdf(&[rendered], &crate::PdfOptions::default())
+                    .unwrap();
             }
             let tree = resvg::usvg::Tree::from_str(&svg, &resvg::usvg::Options::default()).unwrap();
             let mut pixmap = resvg::tiny_skia::Pixmap::new(128, 64).unwrap();

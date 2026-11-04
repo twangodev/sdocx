@@ -159,21 +159,20 @@ call-path observations, not Android lifecycle, Rust or appearance parity.
 A fresh crossing-stroke [host capture](../../conformance/inkpen-v4-crossing-native.json)
 checks a distinct self-crossing trajectory. The scale-1 profile's SVG alpha
 error is less than one fifth of the generic route in the Rust raster regression.
-In a separate MuPDF 1.28.2 comparison, both the SVG and PDF alpha error sums
+In a historical MuPDF 1.28.2 comparison, both the SVG and PDF alpha error sums
 were 3,719 for the profile and 49,953 for the generic route. This synthetic
 host control does not establish device or general PDF parity. The transparent
 comparison strips the SVG page background, flips the SVG body vertically, and
-reverses the native framebuffer rows. The [comparison receipt](../../conformance/inkpen-v4-crossing-export-comparison.json)
-records the frame hash and raster recipe. The capture uses the retained local
+reverses the native framebuffer rows. The capture uses the retained local
 `inkpen_joined_paint_native.py` and `inkpen_saved_caller_native.py` harnesses,
 whose SHA-256 values are pinned by `inkpen_v4_scale_capture.py`; the harness
 also pins its renderer library. Run with `PYTHONPATH=scratch/apk-analysis-runtime/python`,
 `INKPEN_CAPTURE_BENT=loop`, and `--print-capture`. These host inputs and the
 local native libraries are required to reproduce the capture.
-Set `SDOCX_INKPEN_CROSSING_EXPORT_DIR` to an existing directory when running
-the focused `v4_crossing_export_control` test to write its transparent SVG and
-PDF pairs for the receipt's separate MuPDF comparison. Without that variable,
-the regression only compares its in-memory SVG raster.
+The focused `v4_crossing_export_control` test checks its in-memory SVG raster
+against the native frame and constructs both transparent PDFs when the `pdf`
+feature is enabled. The optional exporter and derived comparison receipt have
+been retired; this test does not repeat the historical MuPDF comparisons.
 
 The Rust numeric core matches these configured-context fixtures and four native
 setter cases for fixed width and size clamps. An explicit display profile selects
