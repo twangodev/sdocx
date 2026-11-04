@@ -7,3 +7,5 @@ These frames capture two synthetic ObjectStroke submissions on one Unicorn/Mesa 
 The retained color receipt records the original builder SHA-256 `0b1cf519ed24538b244f6f2079c27c6f9aefeb2e786cdbf4c5b3496743d8a1e2`. The checked-in builder differs only in resolving the checkout root relative to the script. The earlier baseline and pressure receipts record a prior builder revision.
 
 The historical source manifest records former local copies of these three frames. To verify that snapshot, copy the byte-identical crate assets to this directory temporarily; remove the copies afterward.
+
+The SVG and PDF reader receipts are historical observations from the versions recorded in each receipt. The Rust test `second_native_control_compares_geometry_and_paint` checks the three native-matched canvases and their SVG rasters in process. The former external PDF reader comparison and export hook have been retired; the receipts do not imply current reader results.
