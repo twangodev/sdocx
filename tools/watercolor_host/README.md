@@ -73,32 +73,40 @@ temporary and removed after successful acquisition. The explicit public canvas
 profile is bounded to its documented source/context contract; normal document
 rendering and device parity remain separate work.
 
-## Public profile and paired export checks
+## Public profile and native regressions
 
-Fresh source controls:
+Construct `InkRasterCanvas` with an `InkRasterContext`, then call
+`paint(stroke, InkRasterProfile::WaterColorHostRtv1 { screen_width, screen_height })`.
+Screen dimensions describe source sampling; canvas dimensions and
+`pixels_per_unit` describe output at the admitted scales 1 and 2. `pixels()`
+exposes premultiplied top-origin RGBA8; `to_png`, `rendered_page` and `to_pdf`
+export the resolved frame. Each submission uses a fresh mask with redraw enabled.
+Invalid source input or exhausted work budgets leave the canvas unchanged.
+This explicit host profile does not change normal document dispatch.
+
+With the local native dependencies above, capture fresh source controls, mixed
+continuations, or transparent/translucent GLV1/GLV2 controls:
 
 ```sh
 PYTHONPATH=scratch/apk-analysis-runtime/python .venv/bin/python tools/watercolor_host/public_capture.py
+PYTHONPATH=scratch/apk-analysis-runtime/python .venv/bin/python tools/watercolor_host/mixed_capture.py
+PYTHONPATH=scratch/apk-analysis-runtime/python .venv/bin/python tools/watercolor_host/translucent_capture.py
 ```
 
-With the required shared Cargo settings above, run the in-memory regressions:
+Using the shared Cargo settings above, run the maintained in-memory native
+frame, SVG and PDF construction checks:
 
 ```sh
 cargo test -p sdocx --all-features --test watercolor_raster
 ```
 
-The experimental artifact writers and external comparison callers have been retired. Historical reader measurements checked native pixels through PNG and both SVG-page and retained-scene PDF paths in MuPDF/PDFium; the eight source controls matched in those runs. Rust tests retain in-memory native frame, SVG and PDF construction checks. These observations do not attest current external reader output or complete build provenance.
-
-The public Rust API is explicit: construct `InkRasterCanvas` with an
-`InkRasterContext`, then call `paint(stroke, InkRasterProfile::WaterColorHostRtv1
-{ screen_width, screen_height })`. The screen dimensions describe source
-sampling; canvas dimensions and `pixels_per_unit` describe the output. The
-admitted output scales are 1 and 2. `pixels()` exposes premultiplied top-origin
-RGBA8; `to_png`, `rendered_page`, and `to_pdf` export the resolved frame.
-
-Each submission uses a fresh mask and redraw enabled. Source validation and
-work exhaustion leave the existing canvas unchanged. The profile is based on
-captured host arithmetic and does not alter normal document dispatch or claim
-Android device fidelity.
-
-Native inputs and compact JSON receipts stay in conformance. The retired artifact writers are not required for native replay or in-memory tests.
+The mixed 2× control retains two one-byte channel errors from Pencil2; the
+other nine source/continuation controls match native. Eight transparent and
+translucent controls verify supplied priors and native frames at 1×/2×.
+Historical PNG/PDF reader comparisons matched the resolved canvas, except
+MuPDF could differ by one channel value on translucent controls. External
+comparators and artifact writers are retired; these measurements and historical
+Node/WASM receipts do not attest current reader output or complete build
+provenance. Native inputs, acquisition scripts and compact receipts remain
+retained. These synthetic host controls do not establish saved-page or device
+parity.
