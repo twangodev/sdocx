@@ -5112,22 +5112,15 @@ mod tests {
             [0.0, 5.0, 150.0, 120.0],
         )
         .unwrap();
-        if let Some(probe_dir) = std::env::var_os("SDOCX_PAPER_PROBE_DIR") {
-            let probe_dir = std::path::PathBuf::from(probe_dir);
-            std::fs::create_dir_all(&probe_dir).unwrap();
-            std::fs::write(probe_dir.join("source.pdf"), &source_bytes).unwrap();
-            std::fs::write(probe_dir.join("marked.pdf"), &grafted).unwrap();
-            let zero = graft_overlay_page(
-                &source_bytes,
-                2,
-                &sdk_noop_overlay_pdf(),
-                1,
-                [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
-                [0.0, 5.0, 150.0, 120.0],
-            )
-            .unwrap();
-            std::fs::write(probe_dir.join("zero.pdf"), zero).unwrap();
-        }
+        let _zero = graft_overlay_page(
+            &source_bytes,
+            2,
+            &sdk_noop_overlay_pdf(),
+            1,
+            [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            [0.0, 5.0, 150.0, 120.0],
+        )
+        .unwrap();
         let output = Document::load_mem(&grafted).unwrap();
         let pages = output.get_pages();
         assert_eq!(pages.len(), 3);

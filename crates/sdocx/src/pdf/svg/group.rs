@@ -376,26 +376,22 @@ mod reuse_tests {
             form_count(&pdf(&svg(true, false, false, "opacity='.8'"))),
             form_count(&pdf(&svg(false, false, false, "opacity='.8'")))
         );
-        if let Ok(dir) = std::env::var("SDOCX_REUSE_TEST_OUTPUT") {
-            std::fs::write(format!("{dir}/shared.pdf"), shared).unwrap();
-            std::fs::write(format!("{dir}/flat.pdf"), flat).unwrap();
-            let make = |marked| {
-                svg(marked, false, false, "")
-                    .replacen("translate(2 8)", "translate(80 8)", 1)
-                    .replace(
-                        "<rect width='100'",
-                        "<g style='mix-blend-mode:multiply'><rect width='100'",
-                    )
-                    .replace("</svg>", "</g></svg>")
-            };
-            std::fs::write(format!("{dir}/shared-offscreen.pdf"), pdf(&make(true))).unwrap();
-            std::fs::write(format!("{dir}/flat-offscreen.pdf"), pdf(&make(false))).unwrap();
-            let mask = |marked| {
-                svg(marked, false, false, "").replace("</defs>", "<mask id='m'><rect width='100' height='50' fill='white' opacity='.6'/></mask></defs>").replace("<rect width='100' height='50' fill='white'/>", "<g mask='url(#m)' style='mix-blend-mode:multiply'><rect width='100' height='50' fill='white'/>").replace("</svg>", "</g></svg>")
-            };
-            std::fs::write(format!("{dir}/shared-mask.pdf"), pdf(&mask(true))).unwrap();
-            std::fs::write(format!("{dir}/flat-mask.pdf"), pdf(&mask(false))).unwrap();
-        }
+        let make = |marked| {
+            svg(marked, false, false, "")
+                .replacen("translate(2 8)", "translate(80 8)", 1)
+                .replace(
+                    "<rect width='100'",
+                    "<g style='mix-blend-mode:multiply'><rect width='100'",
+                )
+                .replace("</svg>", "</g></svg>")
+        };
+        let _ = pdf(&make(true));
+        let _ = pdf(&make(false));
+        let mask = |marked| {
+            svg(marked, false, false, "").replace("</defs>", "<mask id='m'><rect width='100' height='50' fill='white' opacity='.6'/></mask></defs>").replace("<rect width='100' height='50' fill='white'/>", "<g mask='url(#m)' style='mix-blend-mode:multiply'><rect width='100' height='50' fill='white'/>").replace("</svg>", "</g></svg>")
+        };
+        let _ = pdf(&mask(true));
+        let _ = pdf(&mask(false));
     }
     #[test]
     fn rotated_or_sheared_ancestors_disable_reuse() {

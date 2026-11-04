@@ -370,18 +370,9 @@ mod tests {
                 let only = make_document(vec![other.clone()]);
                 let mixed = make_document(vec![stroke.clone(), other.clone()]);
                 let reversed = make_document(vec![other, stroke]);
-                if let Some(dir) = std::env::var_os("SDOCX_MARKER3_ZERO_EXPORT") {
-                    let path = std::path::Path::new(&dir);
-                    for (name, document) in
-                        [("only", &only), ("mixed", &mixed), ("reversed", &reversed)]
-                    {
-                        std::fs::write(
-                            path.join(format!("{key}-{name}.pdf")),
-                            crate::render_document_pdf(document, &options, &Default::default())
-                                .unwrap(),
-                        )
+                for document in [&only, &mixed, &reversed] {
+                    let _ = crate::render_document_pdf(document, &options, &Default::default())
                         .unwrap();
-                    }
                 }
                 assert_eq!(
                     raster(&crate::render_document_svg(&only, &options).remove(0).svg),
@@ -398,18 +389,9 @@ mod tests {
                     "reversed mixed {key}"
                 );
             }
-            if let Some(dir) = std::env::var_os("SDOCX_MARKER3_ZERO_EXPORT") {
-                let path = std::path::Path::new(&dir);
-                std::fs::write(
-                    path.join(format!("{key}.pdf")),
-                    crate::render_document_pdf(&source, &options, &Default::default()).unwrap(),
-                )
-                .unwrap();
-                std::fs::write(
-                    path.join(format!("{key}-blank.pdf")),
-                    crate::render_document_pdf(&blank, &options, &Default::default()).unwrap(),
-                )
-                .unwrap();
+            for document in [&source, &blank] {
+                let _ =
+                    crate::render_document_pdf(document, &options, &Default::default()).unwrap();
             }
         }
         assert_eq!(native["cases"].as_object().unwrap().len(), 8);
