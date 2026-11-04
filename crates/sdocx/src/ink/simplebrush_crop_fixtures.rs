@@ -126,3 +126,76 @@ fn receipt_only_scale_crops_preserve_native_hashes() {
         );
     }
 }
+
+#[test]
+fn compressed_scale_crops_preserve_native_frames() {
+    use std::io::Read;
+    let points: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-scale-2x-points.json"
+    ))
+    .unwrap();
+    let variants: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/simplebrush-scale-2x-points-32-variants.json"
+    ))
+    .unwrap();
+    for (filename, length) in [
+        ("simplebrush-scale-2x-points-16.rgba", 11664),
+        ("simplebrush-scale-2x-points-32.rgba", 21460),
+        ("simplebrush-scale-2x-points-32-reverse.rgba", 23244),
+        ("simplebrush-scale-2x-points-32-alternate.rgba", 27824),
+    ] {
+        let receipt = points["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .chain(variants["cases"].as_object().unwrap().values())
+            .find(|case| case["crop"]["file"].as_str() == Some(filename))
+            .unwrap();
+        let storage = &receipt["crop"]["storage"];
+        assert_eq!(storage["format"], "zlib-hex");
+        assert_eq!(storage["byte_length"].as_u64().unwrap(), length as u64);
+        let chunks = storage["zlib_hex"].as_array().unwrap();
+        assert!(!chunks.is_empty() && chunks.len() <= 89);
+        let mut compressed = Vec::new();
+        for chunk in chunks {
+            let hex = chunk.as_str().unwrap();
+            assert!(!hex.is_empty() && hex.len() <= 96 && hex.len() % 2 == 0);
+            assert!(hex.bytes().all(|b| b.is_ascii_hexdigit()));
+            compressed.extend(
+                (0..hex.len())
+                    .step_by(2)
+                    .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap()),
+            );
+        }
+        let mut decoder = flate2::read::ZlibDecoder::new(compressed.as_slice());
+        let mut crop = Vec::with_capacity(length);
+        decoder
+            .by_ref()
+            .take(length as u64 + 1)
+            .read_to_end(&mut crop)
+            .unwrap();
+        assert_eq!(crop.len(), length);
+        assert_eq!(decoder.total_in(), compressed.len() as u64);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&crop)),
+            receipt["crop"]["sha256"].as_str().unwrap()
+        );
+        let bounds = receipt["alpha_bounds"].as_array().unwrap();
+        assert_eq!(bounds.len(), 4);
+        let [x0, y0, x1, y1]: [usize; 4] =
+            std::array::from_fn(|i| usize::try_from(bounds[i].as_u64().unwrap()).unwrap());
+        assert!(x0 < x1 && x1 <= 256 && y0 < y1 && y1 <= 256);
+        let row_bytes = (x1 - x0) * 4;
+        assert_eq!(crop.len(), row_bytes * (y1 - y0));
+        // Original transparent native readback, without a renderer-generated oracle.
+        let mut frame = vec![0_u8; 256 * 256 * 4];
+        for (row, pixels) in crop.chunks_exact(row_bytes).enumerate() {
+            let offset = ((y0 + row) * 256 + x0) * 4;
+            frame[offset..offset + row_bytes].copy_from_slice(pixels);
+        }
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&frame)),
+            receipt["frame_sha256"].as_str().unwrap()
+        );
+    }
+}
