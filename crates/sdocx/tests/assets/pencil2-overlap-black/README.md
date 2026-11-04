@@ -18,3 +18,6 @@ original script refers to streams at its historical path and depends on an
 ignored historical capture harness and native libraries not included here, so
 these files alone cannot recapture the evidence. Host and library pins are in
 `overlap-capture-info.json`.
+
+`tools/pencil2-public-replay/overlap_capture.py` writes a transient capture-info
+copy beside the script on recapture; inspect it before refreshing this fixture.

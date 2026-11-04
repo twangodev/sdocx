@@ -24,3 +24,6 @@ sampled input streams are retained here, with hashes in the receipt. The script
 also requires an ignored historical `tmp/.../capture_candidate.py` harness and
 native libraries, neither included here, so these files alone cannot recapture
 this evidence. `colored-top2-translucent-info.json` records host and library pins.
+
+`tools/pencil2-public-replay/colored_overlap_top2_capture.py` writes a transient capture-info
+copy beside the script on recapture; inspect it before refreshing this fixture.
