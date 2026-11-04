@@ -58,11 +58,4 @@ cmp /tmp/v4-opaque-packed/inkpen-v4-3x-native.json tools/inkpen-v4/opaque/inkpen
 cmp /tmp/v4-opaque-packed/inkpen-v4-3x-native.bin tools/inkpen-v4/opaque/inkpen-v4-3x-native.bin
 ```
 
-For the public comparison, supply Pillow, PyMuPDF, pypdfium2 and the existing resvg helper. Coordinate the shared Cargo target before running:
-
-```sh
-python3 tools/inkpen-v4/opaque/compare.py --repo . --source . --svg-renderer /tmp/sdocx-agent-target/debug/sdocx-render-svg-047 --output /tmp/v4-opaque-comparison.json
-cmp /tmp/v4-opaque-comparison.json tools/inkpen-v4/opaque/v4-opaque-comparison.json
-```
-
-The comparator overlays `--source` Rust source, manifest and lockfile plus `--repo` conformance inputs and tools onto a temporary Git archive, runs Cargo with `--locked`, and removes that temporary tree. The receipt pins selected source files, the renderer executable, reader package versions, and exported SVG/PDF hashes; `cmp` checks these along with the metrics. It does not pin the complete dependency closure; later source changes or reader versions may change the result. The receipt records aggregate errors, not pixel equality or a direct native PDF export.
+The public comparison figures above are historical measurements; the native input and frame remain available for inspection.

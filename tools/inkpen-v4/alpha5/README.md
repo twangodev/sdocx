@@ -11,7 +11,7 @@ cmp /tmp/v4-alpha5/packed.json tools/inkpen-v4/alpha5/packed.json
 cmp /tmp/v4-alpha5/packed.bin tools/inkpen-v4/alpha5/packed.bin
 ```
 
-Use the disposable-checkout export probe and comparison instructions in the [high-scale README](../highscale/README.md), with this packed fixture. The comparison receipt pins output and renderer hashes and reader versions. The Rust source hash was recorded at comparison time and does not attest the complete temporary build snapshot; export artifacts are not retained. The recorded test ran on a temporary source copy with the shared Cargo target; this is a historical measurement, not validation of the current checkout.
+The export figures above are historical measurements from a temporary source copy; they do not validate the current checkout.
 
 A separate capture sets the native ObjectStroke advanced setting to literal `4;`. Its native getter returned `4;`, selected V4, and produced the identical complete geometry stream and framebuffer SHA-256 as the empty-setting capture. This verifies the setting pair for this input. The capture script modifies an external caller source in memory and checks replacement anchors, but does not verify the runner or caller source hashes. Its native libraries and helper dependencies are not fully pinned. The inherited case label still says `empty`, so the native getter is the authoritative setting observation. `verify-literal.py` compares the recorded getter, selected renderer, stream values and stream hash, plus the capture-reported framebuffer digest; it does not decompress or independently hash that capture’s framebuffer. Retained fixture hashes identify bytes, not the complete capture runtime.
 

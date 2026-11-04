@@ -1,8 +1,0 @@
-{
-  "schema": "sdocx.defaultpen-zero-half-export-comparison.v1",
-  "scope": "Synthetic zero-width DefaultPen Drawing and host Mesa, public SVG and direct document PDF, opaque #fcfcfc paper. RGB L1 against native source-over paper at 0.5x host projection; not device or saved-note parity.",
-  "native_frame_sha256": "a490e93ebeecc9ec3c8b6e56ebe6555ceb466a98e3e0bb9314b4e26711341bf3",
-  "svg_resvg_rgb_l1": {"baseline": 1264, "profile": 699},
-  "pdf_mupdf_1.28.2_rgb_l1": {"baseline": 2386, "profile": 1599},
-  "pdf_pypdfium2_5.9.0_pdfium_150.0.7869.0_rgb_l1": {"baseline": 1527, "profile": 699}
-}

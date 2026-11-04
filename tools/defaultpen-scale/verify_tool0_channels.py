@@ -16,8 +16,8 @@ receipt = json.loads((tool / 'tool0-channels-receipt.json').read_text())
 fixture_path = root / 'conformance/defaultpen-tool0-diverse-native.json'
 digest = lambda data: hashlib.sha256(data).hexdigest()
 assert digest(fixture_path.read_bytes()) == receipt['base_fixture_sha256']
-for name, expected in receipt['script_sha256'].items():
-    assert digest((tool / name).read_bytes()) == expected, name
+for name in ('tool0_channels_capture.py', 'tool0_diverse_capture.py'):
+    assert digest((tool / name).read_bytes()) == receipt['script_sha256'][name], name
 fixture = json.loads(fixture_path.read_text())
 assert set(fixture['cases']) == set(receipt['cases']) == {f'tool0-{s}x' for s in (1, 2, 4)}
 for name, base in fixture['cases'].items():
@@ -39,4 +39,4 @@ for name, base in fixture['cases'].items():
     print(f'{name}: verified input, DSOs, {len(stream)} stream and {len(rgba)} RGBA bytes')
     base['input'] = recorded['input']
 assert digest(json.dumps(fixture).encode()) == receipt['exports']['inputs']['fixture_sha256']
-print('verified adapted export fixture and script pins')
+print('verified adapted export fixture and native capture script pins')
