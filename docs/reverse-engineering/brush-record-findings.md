@@ -283,6 +283,8 @@ receipt includes the capture recipe; capture scripts are retained under
 `tools/brushpen-transform`; native inputs and host helpers remain in scratch and ignored
 helper trees. Public SVG/PDF transport and device parity remain unverified.
 
+A [synthetic bitmap-matrix probe](../../tools/brushpen-transform/bitmap_matrix_probe.py) supplies identity, translation `(17, 29)`, and nonuniform scale `(2, 0.5)` through the host adapter while keeping the canvas matrix at identity. Two runs produced identical captured uniforms and full-frame SHA-256 `39fa1443113fdeaca78173613ba7c87282407609527763993b37dc6fdd924da2` across all three inputs, with 539 nonzero-alpha pixels, a verified clear, and no GL error. The [receipt](../../tools/brushpen-transform/bitmap-matrix-receipt.jsonl) records each observation; run `.venv/bin/python tools/brushpen-transform/bitmap_matrix_probe.py` with the local native prerequisites to replay it. The bitmap callback ran twice per case and returned the requested matrix bytes. Two native Draw entries were observed per case; their entry matrix bytes are identical across cases and recorded separately in the receipt. This does not establish how callback results flow to those Draw entries. The principal native libraries and two helpers are hash checked; the transitive adapter closure remains unpinned. This does not establish general bitmap-matrix behavior, device parity, scalable vector output, or SVG/PDF reader parity.
+
 Additional [affine uniform controls](../../conformance/brushpen-second-native/affine-uniforms.json)
 cover nonuniform scale, shear, a quarter turn, and reflection. For this fixture,
 the observed grain period equals the affine linear transform of `[321, 228]`,
