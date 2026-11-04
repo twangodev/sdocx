@@ -810,10 +810,7 @@ fn size12_visible_dot_decoded_channels_match_native_getters() {
     for value in stroke.tilts.iter().chain(&stroke.orientations) {
         channels.extend_from_slice(&(*value as f32).to_le_bytes());
     }
-    assert_eq!(
-        channels,
-        dot_channels::channels("dot-12-visible.channels")
-    );
+    assert_eq!(channels, dot_channels::channels("dot-12-visible.channels"));
 }
 
 #[test]

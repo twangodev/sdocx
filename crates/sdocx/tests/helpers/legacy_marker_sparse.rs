@@ -129,7 +129,7 @@ pub fn bytes(name: &str) -> &'static [u8] {
                         assert_eq!(case["sha256"], receipt["sparse_sha256"]);
                         assert_eq!(case["frame_sha256"], receipt["frame_sha256"]);
                         let mut frame = vec![0_u8; 1920 * 1080 * 4];
-                        for record in raw.chunks_exact(8) {
+                        for record in raw.as_chunks::<8>().0 {
                             let index =
                                 u32::from_le_bytes(record[..4].try_into().unwrap()) as usize;
                             frame[index * 4..index * 4 + 4].copy_from_slice(&record[4..]);
@@ -178,7 +178,7 @@ pub fn bytes(name: &str) -> &'static [u8] {
                         let segment = raw.get(offset..end).unwrap();
                         // Ordering restarts at each original frame slice, not at bundle boundaries.
                         let mut previous = None;
-                        for record in segment.chunks_exact(8) {
+                        for record in segment.as_chunks::<8>().0 {
                             let index = u32::from_le_bytes(record[..4].try_into().unwrap());
                             assert!(index < 1920 * 1080);
                             assert!(previous.is_none_or(|value| index > value));
