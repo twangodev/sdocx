@@ -2042,3 +2042,107 @@ fn gradient_stops_share_shape_foreground_policy_and_keep_saved_alpha() {
         assert_eq!(source, before);
     }
 }
+
+#[test]
+fn synthetic_radial_line_exports_preserve_alpha_step_and_geometry() {
+    // Migrated from direct-radial-shape: a constructed source control, not a
+    // native pixel oracle. External PDF-reader differences remain historical.
+    for size in [2.0, 64.0] {
+        let bbox = BoundingBox {
+            x_min: 40.0,
+            y_min: 40.0,
+            x_max: 40.0 + size,
+            y_max: 40.0 + size,
+        };
+        let mut source = radial_line_source();
+        source.position = [PaintFloat32::from_bits(0.5_f32.to_bits()); 2];
+        source.stops = [(0xff00_0000, 0.25_f32), (0, 0.75)]
+            .map(|(argb, offset)| GradientStopSource {
+                argb,
+                position: PaintFloat32::from_bits(offset.to_bits()),
+            })
+            .into();
+        let mut control = line(bbox);
+        control.metadata.uuid = "alpha-radial".into();
+        control.metadata.bbox = bbox;
+        control.geometry_bbox = bbox;
+        control.begin = [40.0, 40.0 + size / 2.0];
+        control.end = [40.0 + size, 40.0 + size / 2.0];
+        control.style = ShapeStyle {
+            width: size as f32,
+            paint: ShapePaint::Gradient,
+            paint_source: Some(ShapePaintSource::Color(source)),
+            ..ShapeStyle::default()
+        };
+        let document = crate::Document {
+            pages: vec![crate::Page {
+                uuid: "page".into(),
+                width: 192,
+                height: 192,
+                content_bbox: BoundingBox::default(),
+                background_color: Some(crate::Color {
+                    r: 255,
+                    g: 255,
+                    b: 255,
+                }),
+                template: None,
+                background: Default::default(),
+                objects: vec![crate::PageElement::Line(control).into()],
+            }],
+            metadata: crate::DocumentMetadata::default(),
+        };
+        let options = crate::RenderOptions::default();
+        let pages = crate::render_document_svg(&document, &options);
+        assert_eq!(pages.len(), 1);
+        assert!(pages[0].paint_diagnostics.is_empty());
+        let xml = roxmltree::Document::parse(&pages[0].svg).unwrap();
+        let gradients: Vec<_> = xml
+            .descendants()
+            .filter(|n| n.has_tag_name("radialGradient"))
+            .collect();
+        assert_eq!(gradients.len(), 1);
+        let gradient = gradients[0];
+        assert_eq!(gradient.attribute("gradientUnits"), Some("userSpaceOnUse"));
+        let number = |node: roxmltree::Node<'_, '_>, name| {
+            node.attribute(name).unwrap().parse::<f64>().unwrap()
+        };
+        assert_eq!(number(gradient, "cx"), 40.0 + size / 2.0);
+        assert_eq!(number(gradient, "cy"), 40.0 + size / 2.0);
+        assert!((number(gradient, "r") - size * 2.0_f64.sqrt() / 2.0).abs() < 1e-5);
+        let stops: Vec<_> = gradient
+            .children()
+            .filter(|n| n.has_tag_name("stop"))
+            .map(|n| {
+                (
+                    n.attribute("offset").unwrap(),
+                    n.attribute("stop-color").unwrap(),
+                    n.attribute("stop-opacity").unwrap(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            stops,
+            [
+                ("0", "#000000", "0"),
+                ("0.25", "#000000", "0"),
+                ("0.25", "#000000", "1"),
+                ("1", "#000000", "1")
+            ]
+        );
+        let line = xml.descendants().find(|n| n.has_tag_name("line")).unwrap();
+        assert_eq!(number(line, "x1"), 40.0);
+        assert_eq!(number(line, "x2"), 40.0 + size);
+        assert_eq!(number(line, "y1"), 40.0 + size / 2.0);
+        assert_eq!(number(line, "y2"), 40.0 + size / 2.0);
+        let paint = format!("url(#{})", gradient.attribute("id").unwrap());
+        assert!(xml.descendants().any(|n| n.has_tag_name("g")
+            && n.attribute("stroke") == Some(paint.as_str())
+            && number(n, "stroke-width") == size));
+        #[cfg(feature = "pdf")]
+        {
+            let mut pdf_options = crate::PdfOptions::default();
+            pdf_options.dpi = 72.0;
+            crate::render_document_pdf(&document, &options, &pdf_options).unwrap();
+        }
+    }
+}
