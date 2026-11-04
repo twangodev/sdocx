@@ -1,5 +1,5 @@
-//! Opt-in SVG/PDF artifacts for the pinned persisted AS18 Fountain GLV16
-//! capture. The saved source arrays pass through the production V16
+//! In-memory SVG/PDF checks for pinned persisted AS18 Fountain GLV16
+//! captures. The saved source arrays pass through the production V16
 //! preparation and paint plan; captured native AddPoint upload records and the
 //! native Mesa frame remain explicit external evidence.
 
@@ -9,8 +9,8 @@ use crate::{Color, Point, Stroke};
 use flate2::read::ZlibDecoder;
 use sha2::{Digest, Sha256};
 use std::{
-    fs::{self, OpenOptions},
-    io::{Read, Write},
+    fs,
+    io::Read,
     path::{Path, PathBuf},
 };
 
@@ -45,16 +45,6 @@ const RTV5_QUAD_SHA256: &str = "a39b6ddc1dbf16f1c1efb544817dc4ca4de6b575365af723
 
 fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
-}
-
-fn write_new(path: PathBuf, bytes: &[u8]) {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)
-        .expect("artifact path must be new");
-    file.write_all(bytes).expect("write artifact");
-    file.sync_all().expect("sync artifact");
 }
 
 fn decode_f32_words(values: &serde_json::Value) -> Vec<f32> {
@@ -2627,14 +2617,7 @@ fn v16_explicit_scale_matches_native_scale_sweep() {
     );
     assert_eq!(capture["cases"].as_array().unwrap().len(), 6);
     assert_eq!(rainbow_capture["cases"].as_array().unwrap().len(), 6);
-    let output_dir = PathBuf::from(
-        std::env::var_os("SDOCX_FOUNTAIN_V16_SCALE_ARTIFACT_DIR")
-            .expect("set SDOCX_FOUNTAIN_V16_SCALE_ARTIFACT_DIR to a fresh output directory"),
-    );
-    fs::create_dir(&output_dir).expect("scale artifact output directory must be new");
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let mut artifact_cases = Vec::new();
-    let mut compact_geometry_cases = Vec::new();
 
     for (capture, rainbow_flag, prefix) in [
         (&capture, false, "rainbow-off"),
@@ -2720,14 +2703,6 @@ fn v16_explicit_scale_matches_native_scale_sweep() {
                     "native AddPoint center and radius"
                 );
             }
-            if !rainbow_flag && case["alpha_control_case"] == "alpha128" {
-                compact_geometry_cases.push(serde_json::json!({
-                    "q": scale,
-                    "xy_radius_f32_bits": native_geometry.iter().map(|row|
-                        row.map(|word| format!("{word:08x}"))
-                    ).collect::<Vec<_>>(),
-                }));
-            }
 
             let transform = sweep_svg_transform(case);
             let canonical = if rainbow_flag {
@@ -2746,17 +2721,6 @@ fn v16_explicit_scale_matches_native_scale_sweep() {
             let production_svg = sweep_svg_from_plan(&scaled, transform, false);
             let quad_svg = sweep_svg_from_plan(&scaled, transform, true);
             let name = case["case"].as_str().unwrap();
-            let artifact_prefix = format!("{prefix}-{name}");
-            for (suffix, svg) in [
-                ("canonical", &canonical_svg),
-                ("production", &production_svg),
-                ("test-native-quad", &quad_svg),
-            ] {
-                write_new(
-                    output_dir.join(format!("{artifact_prefix}.{suffix}.svg")),
-                    svg.as_bytes(),
-                );
-            }
             let native_artifact = capture["pixel_artifacts"]
                 .as_array()
                 .unwrap()
@@ -2774,7 +2738,7 @@ fn v16_explicit_scale_matches_native_scale_sweep() {
             let native_topdown = topdown_frame(&raw);
             let canonical_pixels = raster_svg(&canonical_svg);
             let production_pixels = raster_svg(&production_svg);
-            let quad_pixels = raster_svg(&quad_svg);
+            let _quad_pixels = raster_svg(&quad_svg);
             let canonical_metrics = alpha_support_metrics(&native_topdown, &canonical_pixels);
             let production_metrics = alpha_support_metrics(&native_topdown, &production_pixels);
             if plan.native_quad_geometry {
@@ -2804,69 +2768,8 @@ fn v16_explicit_scale_matches_native_scale_sweep() {
                 assert_eq!(canonical.dot_radii, scaled.dot_radii, "q=1 radii");
                 assert_eq!(canonical.sample_ends, scaled.sample_ends, "q=1 boundaries");
             }
-            artifact_cases.push(serde_json::json!({
-                "case": name,
-                "capture_variant": prefix,
-                "rainbow_flag": rainbow_flag,
-                "q": scale,
-                "saved_argb": format!("0x{argb:08x}"),
-                "page_px": [WIDTH, HEIGHT],
-                "native_gl_projection_uniform_to_svg_transform": transform,
-                "native_frame": {
-                    "path": native_path,
-                    "compressed_sha256": native_artifact["compressed_sha256"],
-                    "raw_sha256": native_artifact["raw_sha256"],
-                    "raw_bytes": native_artifact["raw_bytes"],
-                    "format": native_artifact["format"],
-                },
-                "canonical_svg": {
-                    "path": format!("{artifact_prefix}.canonical.svg"),
-                    "sha256": sha256(canonical_svg.as_bytes()),
-                    "against_native": canonical_metrics,
-                },
-                "profile_production_svg": {
-                    "path": format!("{artifact_prefix}.production.svg"),
-                    "sha256": sha256(production_svg.as_bytes()),
-                    "uses_native_quad_by_production_gate": plan.native_quad_geometry,
-                    "against_native": production_metrics,
-                },
-                "test_native_quad_svg": {
-                    "path": format!("{artifact_prefix}.test-native-quad.svg"),
-                    "sha256": sha256(quad_svg.as_bytes()),
-                    "forced_only_in_test": true,
-                    "against_native": alpha_support_metrics(&native_topdown, &quad_pixels),
-                },
-                "record_count": plan.stamps.len(),
-                "all_seven_upload_lanes_exact": true,
-            }));
         }
     }
-
-    let compact_geometry = serde_json::json!({
-        "schema": "sdocx.native-v16-uniform-scale-geometry.v1",
-        "scope": "Native GLV16 AddPoint center/radius inputs for the controlled size-1, rainbow-off 204-point source; uniform scale only, no device or PDF parity claim.",
-        "capture_sha256": SCALE_SWEEP_SHA256,
-        "validation_sha256": SCALE_SWEEP_VALIDATION_SHA256,
-        "stroke": source_stroke_argb_width(&capture, false, 0x80000000, 1.0),
-        "cases": compact_geometry_cases,
-    });
-    let mut compact_bytes = serde_json::to_vec(&compact_geometry).unwrap();
-    compact_bytes.push(b'\n');
-    write_new(output_dir.join("native-geometry-ci.json"), &compact_bytes);
-    write_new(
-        output_dir.join("manifest.json"),
-        &serde_json::to_vec_pretty(&serde_json::json!({
-            "schema": "sdocx.fountain-v16-scale-native-svg-candidates.v2",
-            "scope": "Production and test-only V16 SVG candidates from six rainbow-off and six rainbow-flag-on native q=0.5/1/2 captures; the test quad variant does not change production admission.",
-            "rainbow_off_capture_sha256": SCALE_SWEEP_SHA256,
-            "rainbow_off_validation_sha256": SCALE_SWEEP_VALIDATION_SHA256,
-            "rainbow_on_capture_sha256": SCALE_SWEEP_RAINBOW_SHA256,
-            "rainbow_on_validation_sha256": SCALE_SWEEP_RAINBOW_VALIDATION_SHA256,
-            "native_projection_transform": "captured GLV16 projection uniform and viewport with one readback-y flip",
-            "records": artifact_cases,
-        }))
-        .unwrap(),
-    );
 }
 
 #[test]
@@ -2997,12 +2900,7 @@ fn v16_radial_single_duplicate_replay_matches_production_svg_field() {
                 .is_none()
         );
     }
-    let output_dir = PathBuf::from(
-        std::env::var_os("SDOCX_FOUNTAIN_V16_RADIAL_REPLAY_ARTIFACT_DIR")
-            .expect("set to a fresh directory for Rust SVG and metrics"),
-    );
-    fs::create_dir(&output_dir).expect("Rust SVG artifact directory must be new");
-    let mut rows = Vec::new();
+    let mut checked_cases = 0;
     let mut total_compressed_frame_bytes = 0usize;
 
     for (q, alpha) in [(1_u32, 128_u32), (1, 255), (2, 128), (2, 255)] {
@@ -3167,8 +3065,7 @@ fn v16_radial_single_duplicate_replay_matches_production_svg_field() {
                     multiplicity as usize,
                     transform,
                 );
-                let svg_path = output_dir.join(format!("{case_id}.svg"));
-                write_new(svg_path.clone(), svg.as_bytes());
+
                 let rendered = raster_svg(&svg);
                 let artifact_name = captured["rgba_zlib_path"].as_str().unwrap();
                 let relative = Path::new(artifact_name);
@@ -3208,24 +3105,7 @@ fn v16_radial_single_duplicate_replay_matches_production_svg_field() {
                     "single/duplicate radial field exceeds captured Mesa alpha tolerance: {case_id}"
                 );
 
-                rows.push(serde_json::json!({
-                    "case": case_id,
-                    "source_case": source_name,
-                    "q": q,
-                    "saved_alpha": alpha,
-                    "stamp_selector": selector,
-                    "record_index": record_index,
-                    "record_sha256": sha256(&record_bytes),
-                    "identical_instance_count": multiplicity,
-                    "mesa_shader_replay_rgba_sha256": captured["rgba_sha256"],
-                    "replay_readback_order": captured["readback_row_order"],
-                    "rust_svg_path": format!("{case_id}.svg"),
-                    "rust_svg_sha256": sha256(svg.as_bytes()),
-                    "mesa_replay_vs_resvg_rgba": difference,
-                    "pixel_comparison_scope": "Direct host Mesa shader replay versus production SVG rendered by resvg; native Drawing and queue execution were not performed by this replay.",
-                    "native_center_extent_inner_width_alpha_lanes_exact": true,
-                    "projection_and_color_bits_equal_to_source_capture": true,
-                }));
+                checked_cases += 1;
             }
 
             let single_name = format!("{source_name}_{selector}_x1");
@@ -3273,19 +3153,5 @@ fn v16_radial_single_duplicate_replay_matches_production_svg_field() {
         }
     }
 
-    assert_eq!(rows.len(), 16);
-    write_new(
-        output_dir.join("manifest.json"),
-        &serde_json::to_vec_pretty(&serde_json::json!({
-            "schema": "sdocx.fountain.v16.radial-single-duplicate-svg-comparison.v1",
-            "scope": "The exact native-upload record is routed through the production Rust V16Plan field and resvg. The separate Mesa receipt replays the same captured direct shader/state; no Drawing queue, device, or PDF claim is made.",
-            "q_scale_receipt_sha256": SCALE_SWEEP_SHA256,
-            "replay_runner_sha256": RADIAL_REPLAY_RUNNER_SHA256,
-            "replay_plan_sha256": RADIAL_REPLAY_PLAN_SHA256,
-            "replay_receipt_sha256": sha256(&replay_bytes),
-            "captured_native_static_quad_sha256": RTV5_QUAD_SHA256,
-            "cases": rows,
-        }))
-        .unwrap(),
-    );
+    assert_eq!(checked_cases, 16);
 }
