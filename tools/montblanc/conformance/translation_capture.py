@@ -37,8 +37,23 @@ def shift(source, dx, dy):
 
 
 def verify_crop(data, name, left, top):
-    crop = (ROOT / f'conformance/montblanc-translation-{name}.rgba').read_bytes()
+    stored = receipt['crop_storage']
+    assert stored['encoding'] == 'rgba8-palette-runs-v1'
+    assert (stored['width'], stored['height']) == (23, 7)
+    palette = stored['palette']
+    assert isinstance(palette, list) and 0 < len(palette) <= 161
+    for rgba in palette:
+        assert len(rgba) == 4 and all(type(v) is int and 0 <= v <= 255 for v in rgba)
+    crop = bytearray()
+    for run in stored['runs']:
+        assert isinstance(run, list) and len(run) == 2
+        count, index = run
+        assert type(count) is int and 0 < count <= (23 * 7 * 4 - len(crop)) // 4
+        assert type(index) is int and 0 <= index < len(palette)
+        crop.extend(bytes(palette[index]) * count)
     assert len(crop) == 23 * 7 * 4
+    assert digest(crop) == receipt['crop_rgba_sha256']
+    assert digest(data) == receipt[f'{name}_rgba8_sha256']
     expanded = bytearray(len(data))
     for y in range(7):
         dest = ((top + y) * 256 + left) * 4
