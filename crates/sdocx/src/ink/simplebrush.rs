@@ -1479,21 +1479,21 @@ mod tests {
                 crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-edge-7-3-crop.rgba")
             }
             (_, 3) if probe == 16 => {
-                include_bytes!("../../../../conformance/simplebrush-edge-16-3-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-edge-16-3-crop.rgba")
             }
             (_, 24) if probe == 7 => {
                 crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-edge-7-24-crop.rgba")
             }
             (_, 24) if probe == 16 => {
-                include_bytes!("../../../../conformance/simplebrush-edge-16-24-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-edge-16-24-crop.rgba")
             }
             (_, 10) => crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-size-3-10-crop.rgba"),
             (_, 55) => crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-size-7-55-crop.rgba"),
-            (_, 20) => include_bytes!("../../../../conformance/simplebrush-size-16-20-crop.rgba"),
+            (_, 20) => crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-size-16-20-crop.rgba"),
             _ if probe == 5 => crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-5-8-crop.rgba"),
             _ if probe == 7 => crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-7-12-crop.rgba"),
             _ if probe == 17 => {
-                include_bytes!("../../../../conformance/simplebrush-17-8-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-17-8-crop.rgba")
             }
             _ if probe == 32 => {
                 crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-32-8-crop.rgba")
@@ -1511,13 +1511,13 @@ mod tests {
                 crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-192-8-crop.rgba")
             }
             _ if probe == 16 => {
-                include_bytes!("../../../../conformance/simplebrush-16-8-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-16-8-crop.rgba")
             }
             (_, 4) if six => {
-                include_bytes!("../../../../conformance/simplebrush-six-size4-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-six-size4-crop.rgba")
             }
             (_, 16) if six => {
-                include_bytes!("../../../../conformance/simplebrush-six-size16-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-six-size16-crop.rgba")
             }
             (true, 16) if alt => include_bytes!(
                 "../../../../conformance/simplebrush-paint-v25-four-size16-alt-crop.rgba"
@@ -1529,7 +1529,7 @@ mod tests {
                 "../../../../conformance/simplebrush-paint-v25-four-size4-alt-crop.rgba"
             ),
             (false, 4) => {
-                include_bytes!("../../../../conformance/simplebrush-paint-v25-size4-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-paint-v25-size4-crop.rgba")
             }
             (false, 8) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-crop.rgba")
@@ -1538,10 +1538,10 @@ mod tests {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-size12-crop.rgba")
             }
             (false, 16) => {
-                include_bytes!("../../../../conformance/simplebrush-paint-v25-size16-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-paint-v25-size16-crop.rgba")
             }
             (true, 4) => {
-                include_bytes!("../../../../conformance/simplebrush-paint-v25-four-size4-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-paint-v25-four-size4-crop.rgba")
             }
             (true, 8) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-four-crop.rgba")

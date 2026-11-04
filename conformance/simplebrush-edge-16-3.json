@@ -6,7 +6,7 @@
   "geometry_sha256": "2279a56e886ddcded2574d5a3a28d187a5f4b0973c0e6916025c51ec56b1d9a9",
   "full_frame_sha256": "54418fcc92f747b2be38a6b491eaca7feba71ad21bc4cb9f9f8546a93e44e3fd",
   "crop": {
-    "path": "simplebrush-edge-16-3-crop.rgba",
+    "path": "simplebrush-edge-16-3-crop.rgba", "storage": {"format": "rgba-palette-runs-v1", "container": "conformance/simplebrush-native-crop-runs.json", "case": "conformance/simplebrush-edge-16-3-crop.rgba", "path_role": "materialized legacy path"},
     "dimensions": [
       144,
       32

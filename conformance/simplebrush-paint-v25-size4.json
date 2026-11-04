@@ -31,7 +31,7 @@
     "full_frame_sha256": "9feadd32cb741c24bce260fff7af6d369e2e14c2ddf8402714cd6b0b450f28d4",
     "full_frame_bytes": 8294400,
     "crop": {
-      "path": "simplebrush-paint-v25-size4-crop.rgba",
+      "path": "simplebrush-paint-v25-size4-crop.rgba", "storage": {"format": "rgba-palette-runs-v1", "container": "conformance/simplebrush-native-crop-runs.json", "case": "conformance/simplebrush-paint-v25-size4-crop.rgba", "path_role": "materialized legacy path"},
       "sha256": "d360d68d0d01a2853f4a77d2143c83bdd9819b5a1ffd34bb6a7cae661ccf704e",
       "dimensions": [32, 16],
       "origin": "OpenGL bottom-left, x=0..31, y=0..15, contiguous RGBA rows",

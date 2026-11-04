@@ -32,7 +32,7 @@ pub(crate) fn pixels(name: &str) -> &'static [u8] {
                 if fixture["schema"] == "sdocx-native-rgba-runs-v1" {
                     31
                 } else {
-                    39
+                    50
                 }
             );
             cases

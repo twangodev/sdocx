@@ -7,6 +7,7 @@
   "arguments": "SIMPLEBRUSH_POINTS=[[0,4],[8,8],[16,4],[24,12]] SIMPLEBRUSH_PRESSURES=[0.25,0.5,0.75,1.0] --tool-type 0 or 2 --pen-size 32 --width 256 --height 256 --dispatch-task-seq 0 through 7",
   "rgba_sha256": "11816bb062e8b0f3060a328bc6561bf60715a5c79d80716a8210d1363414c9d2",
   "crop_sha256": "652c7ab11b08494aafc29d3df785224ca7135094ef326819a549952ffc92abc3",
+  "crop_storage": {"format": "rgba-palette-runs-v1", "container": "conformance/simplebrush-native-crop-runs.json", "case": "conformance/simplebrush-tool0-size32-crop.rgba", "path_role": "materialized legacy path"},
   "controls": {
     "curve-32": {
       "input": {

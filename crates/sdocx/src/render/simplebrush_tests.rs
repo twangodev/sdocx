@@ -789,7 +789,7 @@ fn tool_zero_large_curve_svg_improves_against_native_frame() {
         ),
         (
             32.0,
-            include_bytes!("../../../../conformance/simplebrush-tool0-size32-crop.rgba").as_slice(),
+            crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-tool0-size32-crop.rgba"),
             1_500,
             698,
         ),
