@@ -50,8 +50,12 @@ inputs = {
  'boundary': ([[21.75,30.25],[39.75,43.25],[54.75,27.25],[67.75,40.25]],[0.9,0.1,0.7,0.3],9.0001),
 }
 export = (root/'tools/marker3-terminal-size85/export.rs').read_text().replace(' ', '')
+def caller_path(name):
+    directory = 'marker3-size9-expanded' if name == 'boundary' else 'marker3-terminal-size85'
+    return root/'tools'/directory/f'{name}-caller.json.gz'
+
 for name, (points, pressure, size) in inputs.items():
-    case=json.loads(gzip.decompress((root/'tools/marker3-terminal-size85'/f'{name}-caller.json.gz').read_bytes()))
+    case=json.loads(gzip.decompress(caller_path(name).read_bytes()))
     data=case['input']; bits=lambda x: struct.pack('<f',x).hex()
     assert data['points_f32_bits'] == [[bits(x) for x in pair] for pair in points]
     assert data['pressure_f32_bits'] == [bits(x) for x in pressure]
@@ -67,7 +71,7 @@ for name, (points, pressure, size) in inputs.items():
     assert 'timestamps:(0..coords.len()).map(|i|(8*i)asi64).collect()' in export
     assert 'tilts:vec![0.0;coords.len()],orientations:vec![0.0;coords.len()]' in export
 for name in ('phase2','phase4','boundary'):
-    (work/f'{name}.json').write_bytes(gzip.decompress((root/'tools/marker3-terminal-size85'/f'{name}-caller.json.gz').read_bytes()))
+    (work/f'{name}.json').write_bytes(gzip.decompress(caller_path(name).read_bytes()))
 PY
 export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_BUILD_JOBS=2 MARKER3_SIZE9_INPUT="$work"
 cargo test --locked --offline --manifest-path "$work/work/sdocx/Cargo.toml" --features 'pdf serde' --lib marker3_size9_probe -- --nocapture
