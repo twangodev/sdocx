@@ -377,3 +377,156 @@ fn marker2_page_budget_for_stroke(s: Stroke) {
         "PDF must select candidate"
     );
 }
+
+// Retained synthetic host-Mesa controls, not device or saved-page parity.
+// This checks SVG pixels; historical MuPDF/PDFium measurements are not rerun here.
+#[test]
+fn marker2_both_widths_improve_native_overlap_rgb() {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tools/marker2-scale-investigation");
+    let read_pinned = |path: &str, expected: &str| {
+        let bytes = std::fs::read(root.join(path)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(&bytes)), expected, "{path}");
+        serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()
+    };
+    let decode = |value: &serde_json::Value| {
+        let hex = value.as_str().unwrap();
+        assert_eq!(hex.len(), 8);
+        f32::from_le_bytes(std::array::from_fn(|i| {
+            u8::from_str_radix(&hex[2 * i..2 * i + 2], 16).unwrap()
+        })) as f64
+    };
+    for (source_path, source_hash, native_dir, receipt_hash) in [
+        (
+            "v61/bend/w2-translated-a255.json",
+            "3855b96ee0a39a1f24c6853f0af8e765a7820283f004a6cb8551be624903dded",
+            "expanded/independent-lifecycle",
+            "2897535340da643d019f42590a25b0a2e7b2e850ca1ebd5369ad3debb5ec4a88",
+        ),
+        (
+            "fringe-sweep/bend/w3-translated-a255.json",
+            "8689de71d4da3cff3bc9f4e9510a438feaa15f7b13cf63f646b08dea5dbdf145",
+            "width3-controls",
+            "2b44034dd9cbf29677c8ebdca86f24851addbd37fa4ffce723bc0136f3baca21",
+        ),
+    ] {
+        let source = read_pinned(source_path, source_hash);
+        let receipt = read_pinned(&format!("{native_dir}/receipt.json"), receipt_hash);
+        assert!(receipt["nonzero_gl_errors"].as_array().unwrap().is_empty());
+        for field in ["object_strokes", "drawings", "pens", "renderers"] {
+            assert_eq!(receipt[format!("independent_{field}")], true);
+        }
+        assert_eq!(
+            receipt["native_vector_sha256"],
+            receipt["second_native_vector_sha256"]
+        );
+        assert_eq!(
+            source["source"]["source_callback_vector_sha256"],
+            receipt["native_vector_sha256"]
+        );
+        let mut native = Vec::new();
+        for frame in ["first", "second"] {
+            let compressed =
+                std::fs::read(root.join(format!("{native_dir}/{frame}.rgba.zlib"))).unwrap();
+            native.clear();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut native)
+                .unwrap();
+            assert_eq!(native.len(), 256 * 256 * 4);
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&native)),
+                receipt[format!("{frame}_sha256")].as_str().unwrap()
+            );
+        }
+        let input = &source["native_input"]["source_case"];
+        let translation = &source["native_input"]["translation_f32"];
+        for i in 0..2 {
+            assert_eq!(translation[i], receipt["matrices"][0][12 + i]);
+        }
+        let dx = translation[0].as_f64().unwrap();
+        let dy = translation[1].as_f64().unwrap();
+        let mut s = stroke();
+        let rendering = s.rendering.as_mut().unwrap();
+        assert_eq!(input["pen_name"].as_str(), rendering.pen_name.as_deref());
+        assert_eq!(input["advanced_setting"], "");
+        assert_eq!(input["tool_type"], 2);
+        assert_eq!(input["curve_enabled"], true);
+        assert_eq!(input["stroke_type"], 0);
+        s.pen_width = decode(&input["pen_size_f32_bits"]) as f32;
+        rendering.style.pen_size = Some(s.pen_width);
+        s.points = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| Point {
+                x: ((decode(&p[0]) + dx / 2.) as f32) as f64,
+                y: ((128. - dy / 2. - decode(&p[1])) as f32) as f64,
+            })
+            .collect();
+        let channel = |key: &str| input[key].as_array().unwrap().iter().map(&decode).collect();
+        s.pressures = channel("pressure_f32_bits");
+        s.tilts = channel("tilt_f32_bits");
+        s.orientations = channel("orientation_f32_bits");
+        s.timestamps = input["timestamps_i32"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_i64().unwrap())
+            .collect();
+        s.bbox = BoundingBox {
+            x_min: 10.,
+            y_min: 20.,
+            x_max: 34.,
+            y_max: 25.,
+        };
+        let mut second = s.clone();
+        for point in &mut second.points {
+            point.x += 2.;
+            point.y -= 1.5;
+        }
+        let mut doc = document(vec![s, second]);
+        doc.metadata.page_dimensions = Some((256, 256));
+        doc.pages[0].content_bbox = BoundingBox {
+            x_min: 0.,
+            y_min: 0.,
+            x_max: 256.,
+            y_max: 256.,
+        };
+        let error = |scale| {
+            let tree = resvg::usvg::Tree::from_str(&svg(&doc, scale), &Default::default()).unwrap();
+            let mut pixels = resvg::tiny_skia::Pixmap::new(512, 512).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::from_scale(2., 2.),
+                &mut pixels.as_mut(),
+            );
+            assert_eq!(&pixels.data()[..4], &[252, 252, 252, 255]);
+            let mut sum = 0u64;
+            for y in 0..256 {
+                for x in 0..256 {
+                    let actual = &pixels.data()[(y * 512 + x) * 4..][..4];
+                    assert_eq!(actual[3], 255);
+                    let expected = &native[((255 - y) * 256 + x) * 4..][..4];
+                    // Integer rounding matches NumPy rint here: denominator 255
+                    // is odd, so this fraction can never be exactly half-integral.
+                    let background = (252u32 * (255 - expected[3] as u32) + 127) / 255;
+                    for channel in 0..3 {
+                        sum +=
+                            (actual[channel] as i32 - expected[channel] as i32 - background as i32)
+                                .unsigned_abs() as u64;
+                    }
+                }
+            }
+            sum
+        };
+        let baseline = error(None);
+        let candidate = error(Some(2));
+        assert!(
+            candidate < baseline,
+            "{native_dir}: candidate {candidate}, baseline {baseline}"
+        );
+    }
+}

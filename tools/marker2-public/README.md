@@ -1,43 +1,36 @@
 # Bounded Marker2 output-grid approximation
 
-`RenderOptions::marker2_output_scale = Some(2)` selects four nested vector
-contours per sampled stamp for eligible Marker2 strokes at an explicitly
-asserted axis-aligned two-pixels-per-page-unit output grid. It does not apply
-the output transform. Other values preserve the default renderer.
+`RenderOptions::marker2_output_scale = Some(2)` selects a bounded vector
+approximation for eligible width-2 and width-3 strokes. The caller must assert
+an axis-aligned two-pixels-per-page-unit output grid; the option does not apply
+that transform. Width 2 uses a 0.5 fringe and width 3 uses 0.2. Unsupported
+sources, replay and slices retain fallback, with atomic fallback at the shared
+65,536-vertex page budget.
 
-Admission requires at least two finite source points within ±256, tool 2,
-non-null empty advanced settings, compressed curves, stroke type 0, and
-uniform sampled radius 1 or 1.5 (native widths 2 and 3). The renderer validates
-sampled bounds and opacity, limits each stroke to 1,024 stamps, and shares a
-65,536-vertex budget across the page. A rejected stroke consumes no budget;
-replay and sliced scenes retain fallback. Existing source admission still
-applies before these checks.
+The maintained Rust regression
+[`marker2_both_widths_improve_native_overlap_rgb`](../../crates/sdocx/src/render/marker2_guard_tests.rs)
+reconstructs paired translucent strokes from pinned native inputs and checks
+that both widths improve aggregate RGB error over the default renderer using
+in-memory resvg at 2×. It verifies native frame hashes and independent lifecycle
+provenance. Other tests in that module cover admission, source order and page
+budgets, including direct PDF operators.
 
-Width 2 uses a 0.5 fringe; width 3 uses 0.2. An earlier width-3 experiment
-using 0.5 regressed in PDFium, so the widths deliberately use different
-constants. These are discrete approximations, not an interpolated coverage
-model or native pixel parity. Arbitrary zoom, transforms, paths, backgrounds,
-saved-page state and Android GPU behavior remain unverified.
+The exporter, external reader comparator and generated reports were retired.
+Their historical aggregate RGB absolute errors were:
 
-The retained controls contain two independently created synthetic native
-ObjectStrokes, Drawings, pens and renderers sharing one host Mesa framebuffer.
-The native input vectors are bridged explicitly. The comparison checks pinned
-input-vector identity and decompressed native-frame hashes, renders the paired
-public strokes through SVG and direct PDF, and requires aggregate RGB error
-to improve against the default renderer in resvg, MuPDF and PDFium for both
-widths. The native transparent framebuffer is composited over each reader's
-observed light background for comparison. Capture runners require their
-manifest-pinned local native dependencies; retained-frame comparisons do not.
+| Width | resvg default → opt-in | MuPDF default → opt-in | PDFium default → opt-in |
+| --- | ---: | ---: | ---: |
+| 2 | 47,455 → 7,019 | 47,222 → 7,584 | 42,824 → 7,757 |
+| 3 | 24,434 → 7,787 | 22,333 → 8,555 | 18,977 → 10,752 |
 
-From the repository root, with NumPy, Pillow, PyMuPDF, pypdfium2 and resvg
-available:
-
-```sh
-CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo build --manifest-path tools/marker2-public/Cargo.toml --offline
-python3 tools/marker2-public/compare.py /tmp/sdocx-agent-target/debug/marker2-public-export
-```
-
-The isolated validation receipt records source hashes and both readers' error
-sums. Rust `marker2_` tests cover admission, replay/slices, mixed source order,
-atomic page-budget fallback, smaller strokes after budget rejection, and
-budget reset between pages, including direct PDF operators.
+The MuPDF and PDFium measurements are historical external reader evidence;
+the Rust regression does not rerun those pixel checks. Native controls remain
+in [independent-lifecycle](../marker2-scale-investigation/expanded/independent-lifecycle/)
+and [width3-controls](../marker2-scale-investigation/width3-controls/), with
+[source width 2](../marker2-scale-investigation/v61/bend/w2-translated-a255.json)
+and [source width 3](../marker2-scale-investigation/fringe-sweep/bend/w3-translated-a255.json).
+They contain independently created synthetic native ObjectStrokes, Drawings,
+pens and renderers sharing one host Mesa framebuffer. Native recapture requires
+the capture runners' pinned local dependencies; the Rust regression uses retained
+frames. Other paths, colors, backgrounds, phases and transforms remain
+extrapolations. These controls establish neither device nor saved-page parity.
