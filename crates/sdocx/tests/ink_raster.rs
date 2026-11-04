@@ -369,6 +369,13 @@ fn pencil2_transparent_page_exports_native_frame() {
         &mut pixels.as_mut(),
     );
     assert_eq!(pixels.data().as_chunks::<4>().0, expected);
+    #[cfg(feature = "pdf")]
+    {
+        let mut options = sdocx::PdfOptions::default();
+        options.dpi = 72.;
+        sdocx::render_svg_pages_pdf(&[page], &options).unwrap();
+        canvas.to_pdf(&options).unwrap();
+    }
 }
 
 #[test]
@@ -454,6 +461,13 @@ fn pencil2_translation_matrix_and_nonuniform_prior_match_host() {
             &mut image.as_mut(),
         );
         assert_eq!(image.data(), expected, "SVG {name}");
+        #[cfg(feature = "pdf")]
+        {
+            let mut options = sdocx::PdfOptions::default();
+            options.dpi = 72.;
+            sdocx::render_svg_pages_pdf(&[page], &options).unwrap();
+            canvas.to_pdf(&options).unwrap();
+        }
     }
 }
 
@@ -521,6 +535,13 @@ fn pencil2_colored_tilted_top2_translucent_overlap_matches_host() {
         &mut image.as_mut(),
     );
     assert_eq!(image.data(), expected);
+    #[cfg(feature = "pdf")]
+    {
+        let mut options = sdocx::PdfOptions::default();
+        options.dpi = 72.;
+        sdocx::render_svg_pages_pdf(&[page], &options).unwrap();
+        canvas.to_pdf(&options).unwrap();
+    }
 }
 
 #[test]
@@ -581,6 +602,13 @@ fn pencil2_translated_overlapping_strokes_match_host_and_svg() {
         &mut image.as_mut(),
     );
     assert_eq!(image.data(), expected);
+    #[cfg(feature = "pdf")]
+    {
+        let mut options = sdocx::PdfOptions::default();
+        options.dpi = 72.;
+        sdocx::render_svg_pages_pdf(&[page], &options).unwrap();
+        canvas.to_pdf(&options).unwrap();
+    }
 }
 
 #[test]
