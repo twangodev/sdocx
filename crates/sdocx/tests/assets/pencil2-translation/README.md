@@ -15,10 +15,12 @@ and verify their hashes, then reconstruct each frame over the deterministic
 opaque prior and check the original native frame hash. Original compressed
 readbacks remain in the historical workspace.
 
-`tools/pencil2-public-replay/translation_matrix_capture.py` is the unmodified historical capture script,
-retained for provenance. Its original relative paths refer to
-`tools/pencil2-public-replay/` and an ignored historical `tmp/.../capture_candidate.py`
-harness, as well as native libraries. The historical harness and libraries are
+`tools/pencil2-public-replay/translation_matrix_capture.py` now reads the canonical
+`ramp.bin` retained here. Its former tool-directory copy was verified byte-identical
+before removal. Only the input path changed; the receipt preserves the original
+acquisition script hash, which differs from the current script. The script still
+requires an ignored historical `tmp/.../capture_candidate.py` harness and native
+libraries. The historical harness and libraries are
 not included, so the capture is not reproducible from these files alone.
 
 The PDF reader measurements in the receipt are historical. This regression test

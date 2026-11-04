@@ -15,9 +15,12 @@ the complete frame over the deterministic prior and verify the native hash
 before comparing every pixel. The original native frame
 remains in the historical workspace. `flat.bin` is the independently sampled
 second input; the first stream is retained at `../pencil2-translation/ramp.bin`.
-The unchanged script is `tools/pencil2-public-replay/overlap_capture.py`. The
-original script refers to streams at its historical path and depends on an
-ignored historical capture harness and native libraries not included here, so
+The capture script `tools/pencil2-public-replay/overlap_capture.py` now reads
+these canonical streams; its former tool-directory copies were verified
+byte-identical before removal. Only input paths changed. The receipt preserves
+the original acquisition script hash, which differs from the current script.
+It still depends on an ignored historical capture harness and native libraries
+not included here, so
 these files alone cannot recapture the evidence. Host and library pins are in
 `overlap-capture-info.json`.
 

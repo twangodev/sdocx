@@ -3,7 +3,7 @@ import hashlib, json, struct, zlib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 SOURCE=ROOT/'tmp/vector-parity-plan/pen-family-audit/pencil2-v14-mesa-draw-v38/capture_candidate.py'
-stream=(ROOT/'tools/pencil2-public-replay/ramp.bin').read_bytes()
+stream=(ROOT/'crates/sdocx/tests/assets/pencil2-translation/ramp.bin').read_bytes()
 prior=bytes(c for y in range(192) for x in range(192) for c in ((x*3+y)%256,(x+y*5)%256,(x*7+y*3)%256,255))
 bottom=b''.join(prior[y*768:(y+1)*768] for y in reversed(range(192)))
 cases={'bottom1':[1,1,6,9],'bottom2':[2,2,6,9],'top2':[2,-2,6,185]}
