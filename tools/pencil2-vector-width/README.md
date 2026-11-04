@@ -26,3 +26,7 @@ Structural assertions check page dimensions, radial-shading coordinates and
 its referenced stop function, a mask, a form with expected bounds, and absence
 of image objects. They do not prove the mask and form connect to that shading.
 These checks may need review when converter representations change.
+
+## Historical width and source-stamp experiments
+
+A synthetic host comparison found opposing width adjustments, so it did not establish a general width correction; a source-stamp SVG mask prototype also retained substantial reader-dependent PDF errors and was not promoted. The historical native alpha captures recorded uncompressed SHA-256 values `8b1a2ab915b32265aa8e4898d8ed08d539b5bcf5ad5df0ebe62790d43198576f` (pressure ramp) and `699cb08853a9f08cd1b39b27b99de36add28e8a6545a3d7654f02245d7c6062b` (constant size 8).
