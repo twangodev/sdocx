@@ -1,0 +1,42 @@
+{
+  "scope": "Host Mesa RTV4 replay of production-generated sampled records; conditional raster comparison, not independent native geometry, saved-note, device, or arbitrary-transform parity.",
+  "inputs": "pressure_ramp ARGB 80336699 tilt 0.4 then channel_baseline ARGB ffdd4411 tilt 0.8; top-left origin, scale 2, translations [6,-7] and [9,-9], nonuniform premultiplied RGBA prior with alpha 128.",
+  "native_rgba_sha256": "27703590474923863ca71840923361136a95eb8694956e11f281afa60df6a640",
+  "native_changed_pixels": 567,
+  "files_sha256": {
+    "colored-ramp.bin": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8",
+    "colored-flat.bin": "8a12e28a8946b273996d12f5bbb45bc9948c7dc23b169f1ab2a11ff27a22e5c3",
+    "colored-top2-translucent-overlap-prior.rgba.zlib": "7be5a45fc22aa5ae93ef3d7246c1e4f43228249e17cacc4a83b3e0e89487aa66",
+    "colored_overlap_top2_capture.py": "e06b6131ce3ea1a1212b6c4438206783797e6a2e08ae2f90a7553c0bfdd94f34",
+    "colored_overlap_top2_pdf_compare.py": "4222aea02fb279da147a3cb484c2ece19c3aba87e6f72fa11d318f72e95bfe47"
+  },
+  "results": "Rust canvas, resvg and freshly built Node WASM match native RGBA exactly.",
+  "pdf_white_composite": {
+    "method": "72 dpi RGB against native premultiplied RGB plus 255 minus alpha",
+    "svg_and_direct": {
+      "mupdf": {
+        "absolute_error_sum": 110925,
+        "maximum_channel_error": 2,
+        "different_channels": 110592
+      },
+      "pdfium": {
+        "absolute_error_sum": 54757,
+        "maximum_channel_error": 1,
+        "different_channels": 54757
+      }
+    },
+    "note": "Differences include untouched prior pixels; reader compositing/transport is not exact for this translucent control."
+  },
+  "fresh_wasm": {
+    "cargo_wasm_sha256": "7ae1a4af40926eca1ec918db1d008aeb141df062ab529b63fd7ed6765ce7ec60",
+    "bound_wasm_sha256": "07a8771e069b5bb48ab1c222b6543bf129e85f4b0ce6f8fb418cbb14ad32b42c",
+    "test_sha256": "6e1e96b36ce3be3c9f27ad7cbb0faaeab1185f9b34f2fa5a5ce3e6d77acad31f",
+    "result": "passed",
+    "commands": [
+      "CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo build -p sdocx-wasm --target wasm32-unknown-unknown",
+      "/tmp/codex-cargo-home/bin/wasm-bindgen /tmp/sdocx-agent-target/wasm32-unknown-unknown/debug/sdocx_wasm.wasm --target nodejs --out-dir /tmp/sdocx-pencil2-fresh-wasm --out-name sdocx",
+      "node crates/sdocx-wasm/tests/pencil_translation.cjs /tmp/sdocx-pencil2-fresh-wasm/sdocx.js"
+    ],
+    "paths_note": "Paths describe this run; another environment may use a different matching wasm-bindgen 0.2.114 installation and output directory."
+  }
+}

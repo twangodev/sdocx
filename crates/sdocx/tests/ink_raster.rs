@@ -456,3 +456,69 @@ fn pencil2_translation_matrix_and_nonuniform_prior_match_host() {
         assert_eq!(image.data(), expected, "SVG {name}");
     }
 }
+
+#[test]
+fn pencil2_colored_tilted_top2_translucent_overlap_matches_host() {
+    let prior: Vec<[u8; 4]> = (0..192 * 192)
+        .map(|i| {
+            let (x, y) = (i % 192, i / 192);
+            [
+                ((x * 3 + y) as u8) / 2,
+                ((x + y * 5) as u8) / 2,
+                ((x * 7 + y * 3) as u8) / 2,
+                128,
+            ]
+        })
+        .collect();
+    let mut expected: Vec<u8> = prior.iter().flatten().copied().collect();
+    let delta = include_bytes!("assets/pencil2-overlap/top2-translucent.delta");
+    let records = delta.as_chunks::<8>();
+    assert!(records.1.is_empty());
+    for record in records.0 {
+        let index = u32::from_le_bytes(record[..4].try_into().unwrap()) as usize;
+        expected[index * 4..index * 4 + 4].copy_from_slice(&record[4..]);
+    }
+    let receipt: Value = serde_json::from_str(include_str!(
+        "assets/pencil2-overlap/colored-top2-translucent-receipt.json"
+    ))
+    .unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&expected)),
+        receipt["native_rgba_sha256"].as_str().unwrap()
+    );
+    let mut canvas =
+        InkRasterCanvas::from_pixels(context(InkRasterOrigin::TopLeft, 2), prior).unwrap();
+    for (case, translation, argb, tilt) in [
+        ("pressure_ramp", [6., -7.], 0x80336699, 0.4),
+        ("channel_baseline", [9., -9.], 0xffdd4411, 0.8),
+    ] {
+        let mut input = stroke(case, argb);
+        input.tilts.fill(tilt);
+        canvas
+            .paint_pencil2_translated(&input, InkRasterInverseScale::One, translation)
+            .unwrap();
+    }
+    let actual: Vec<u8> = canvas.pixels().iter().flatten().copied().collect();
+    assert_eq!(actual.len(), expected.len());
+    let differences: Vec<_> = actual
+        .iter()
+        .zip(&expected)
+        .enumerate()
+        .filter(|(_, (a, b))| a != b)
+        .collect();
+    assert!(
+        differences.is_empty(),
+        "{} differences: {:?}",
+        differences.len(),
+        differences.first()
+    );
+    let page = canvas.rendered_page(0).unwrap();
+    let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
+    let mut image = resvg::tiny_skia::Pixmap::new(192, 192).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut image.as_mut(),
+    );
+    assert_eq!(image.data(), expected);
+}
