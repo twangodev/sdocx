@@ -1,0 +1,14 @@
+# InkPen V4 8× translucent crossing host control
+
+This literal `4;` synthetic crossing-stroke capture uses ARGB `80402010` and host Mesa. The 8× contour reduces public SVG/resvg alpha error from 469,948 to 9,524 and direct PDF/MuPDF RGB error over #fcfcfc from 2,232,062 to 1,100,108 versus the 1× contour. MuPDF color conversion contributes to the RGB total. It extends the existing translucent straight controls; it does not establish other trajectories, device or saved-note parity, or native PDF parity.
+
+Run `PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/straightinkpen2-alias INKPEN_CAPTURE_SCALE=8 python3 tools/inkpen-v4/alpha8-crossing/capture.py --capture-one --argb 0x80402010 > /tmp/8-crossing.json` with the local native inputs described in the parent README. The script modifies the caller source in memory and asserts the trajectory and all replacement anchors. The fixture retains its source input, native stream, and compressed framebuffer. Replacement-anchor checks do not verify the external runner or caller hashes; native libraries and helper dependencies are not fully pinned. The fixture hashes identify retained bytes, not the complete capture runtime.
+
+The historical paired metrics used the parent highscale export probe and comparator; reproducing them requires the matching instrumented source and reader environment. Copy the fixture to a disposable directory first: the comparator writes `probe.svg`, `probe.png`, and `comparison.json` there. The measured build used a Git archive of commit `a5398c251230db3890661ec3f685d2ee472e316b`, with workspace `inkpen.rs` overlaid and the temporary export probe inserted. The comparison receipt records the resvg executable hash and relevant source hashes; these do not attest the complete build dependency closure. Exports were temporary. The capture uses a literal setting and assumes no empty-setting equivalence.
+
+The inherited capture case label `advanced_setting_state` says `empty`; the native getter reports `4;` and is authoritative for this control. The comparator takes the disposable fixture directory, resvg executable, instrumented build source tree, and a caller-supplied build provenance description as four arguments. Its source hashes include the temporary probe; the description is supplied context, not independently verified by the comparator. For example, with the original temporary source tree and exports available:
+
+```sh
+.venv/bin/python tools/inkpen-v4/alpha8-crossing/compare.py /tmp/brush-v152-cross /tmp/sdocx-agent-target/debug/sdocx-render-svg-047 /tmp/brush-v152-src 'HEAD a5398c251230db3890661ec3f685d2ee472e316b archive with workspace inkpen.rs and temporary export probe; source hashes do not attest complete dependency closure'
+cmp /tmp/brush-v152-cross/comparison.json tools/inkpen-v4/alpha8-crossing/comparison.json
+```

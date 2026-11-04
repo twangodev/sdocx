@@ -1,0 +1,37 @@
+{
+  "scope": "Synthetic host Mesa capture, SVG resvg alpha and MuPDF PDF RGB on #fcfcfc; not device or saved-note parity",
+  "frames_sha256": "0e1dd4799c4d2b63a2179d449e35cf29c3ba97dd0b41a171cd49ffe695dedbf8",
+  "fixture_sha256": "1289e785ba0549dc211d32ad19167fd3c4459e9bac829a72f03896b0b159e028",
+  "renderer_sha256": "4c1dd5928f75490d6e399c32b3c9fc25029852836ad04de0711c6d761174b980",
+  "render_rs_sha256": "f88202d9fa9d1990eeede13d5b19c8a5c57253f560674377d4ef0c01698a3aef",
+  "versions": {
+    "Pillow": "12.1.1",
+    "PyMuPDF": "1.28.2",
+    "numpy": "2.4.2",
+    "MuPDF_engine": "1.28.2"
+  },
+  "cases": [
+    {
+      "name": "8-straight",
+      "scale": 8,
+      "rgba_sha256": "bb0246626acb69bcba5c7037147e264b10f995d253f0707703341264cf483092",
+      "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+      "contours": {
+        "1": {
+          "svg_alpha_error": 246332,
+          "mupdf_rgb_error": 1684519,
+          "svg_sha256": "c12e66036bf019eca81c33a4bdf7caeebdff7d1888dda9a92b45d99fc6b3fe5e",
+          "pdf_sha256": "a5e8917ec3373b221395c3200546f5b9d370c6a32915f3678c9c692dd381f3ec"
+        },
+        "8": {
+          "svg_alpha_error": 4862,
+          "mupdf_rgb_error": 1090090,
+          "svg_sha256": "048b8e49eb516a0ef819d6f4bf3b6160076f4b9b11c3ea7f7c3f1fa85101b5c8",
+          "pdf_sha256": "0a265d3f43f9ec1cdca53fc0c25d74adfeabf5ff7bc30f1897e726d6e1b1b32c"
+        }
+      }
+    }
+  ],
+  "build_scope": "HEAD a5398c251230db3890661ec3f685d2ee472e316b archive with workspace inkpen.rs and temporary export probe; source hashes do not attest complete dependency closure",
+  "inkpen_rs_sha256": "4a9e2b15e040acd9a6a47e22458f408b4ce6fdae7fc84673bd226afdf42133dc"
+}

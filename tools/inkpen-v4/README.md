@@ -22,7 +22,10 @@ python3 tools/inkpen-v4/pack.py /tmp
 
 The packer writes the fixture in the checkout; run it only on a disposable copy
 when preserving existing fixtures. The capture scripts use native inputs described by the existing scale receipt;
-the loop and phase routes additionally enforce helper hashes.
+the loop and phase routes additionally enforce helper hashes. The color-control
+adapters do not verify the external runner or caller source hashes, and their
+native runtime dependencies are not fully pinned. Retained frame and stream
+hashes identify bytes, not the complete acquisition environment.
 The `phase` capture was independently rerun with matching stream and RGBA hashes.
 
 To reproduce public comparisons, install the Python imports used by `compare.py`
@@ -40,4 +43,26 @@ python3 tools/inkpen-v4/compare.py --repo /path/to/git-checkout \
 
 Compare the resulting per-case hashes and errors with `comparison.json`; raster
 library versions can change numeric results. The temporary export instrumentation
-uses the captured saved inputs and calls the public SVG and PDF APIs.
+uses the retained synthetic inputs and calls the public SVG and PDF APIs.
+
+## Opaque color control
+
+This extends the 3× synthetic host-Mesa controls with opaque ARGB `ffa1b2c3`, using the same straight trajectory and 1920×1080 display context. The native ObjectStroke supplies an empty advanced setting; the public probe explicitly supplies `4;` to select V4. The capture selected V4, but this control does not establish equivalence for other settings or inputs. The native stream hash matches the earlier straight control. The retained native frame and input are in [`opaque/inkpen-v4-3x-native.json`](opaque/inkpen-v4-3x-native.json) and [`opaque/inkpen-v4-3x-native.bin`](opaque/inkpen-v4-3x-native.bin). At 3× rasterization, selecting the scale-3 contour instead of scale 1 changed absolute alpha error in public SVG/resvg from 52,623 to 3,480, and RGB error in direct PDF from 189,304 to 146,957 in MuPDF and 42,741 to 5,442 in PDFium. The PDF comparison composites native premultiplied RGBA over #fcfcfc. Both contours use the same explicit V4 profile; this does not compare against generic fallback. This single synthetic control does not establish device, saved-note, or general color parity.
+
+With the native capture inputs and libraries described above, reproduce and compare the native bytes:
+
+```sh
+PYTHONPATH=scratch/apk-analysis-runtime/python:scratch/straightinkpen2-alias INKPEN_CAPTURE_SCALE=3 python3 tools/inkpen-capture/inkpen_v4_color_scale_capture.py --capture-one --argb 0xffa1b2c3 > /tmp/v4-opaque-capture.json
+python3 tools/inkpen-v4/opaque/pack.py /tmp/v4-opaque-capture.json /tmp/v4-opaque-packed
+cmp /tmp/v4-opaque-packed/inkpen-v4-3x-native.json tools/inkpen-v4/opaque/inkpen-v4-3x-native.json
+cmp /tmp/v4-opaque-packed/inkpen-v4-3x-native.bin tools/inkpen-v4/opaque/inkpen-v4-3x-native.bin
+```
+
+For the public comparison, supply Pillow, PyMuPDF, pypdfium2 and the existing resvg helper. Coordinate the shared Cargo target before running:
+
+```sh
+python3 tools/inkpen-v4/opaque/compare.py --repo . --source . --svg-renderer /tmp/sdocx-agent-target/debug/sdocx-render-svg-047 --output /tmp/v4-opaque-comparison.json
+cmp /tmp/v4-opaque-comparison.json tools/inkpen-v4/opaque/v4-opaque-comparison.json
+```
+
+The comparator overlays `--source` Rust source, manifest and lockfile plus `--repo` conformance inputs and tools onto a temporary Git archive, runs Cargo with `--locked`, and removes that temporary tree. The receipt pins selected source files, the renderer executable, reader package versions, and exported SVG/PDF hashes; `cmp` checks these along with the metrics. It does not pin the complete dependency closure; later source changes or reader versions may change the result. The receipt records aggregate errors, not pixel equality or a direct native PDF export.

@@ -1,0 +1,40 @@
+{
+  "schema": "sdocx-inkpen-v4-3x-public-comparison-v1",
+  "scope": "Synthetic host Mesa 3x; absolute alpha error and RGB error over #fcfcfc. Not device or saved-note parity.",
+  "frames_sha256": "1ed0b012a00cbd393fcc301d4869fa88a2a9647ae63b56beea14a95f5d91ba14",
+  "source_sha256": {
+    "crates/sdocx/src/render.rs": "4c1875b7d810931d064506fcc9d20ccdb2f2ef35dcb2d0a1c7c866def8abc8ac",
+    "crates/sdocx/src/ink/inkpen.rs": "987eff7fad1a0f25112768820903172d8134e94609e6402987fce6a2e0a00bf5",
+    "crates/sdocx/Cargo.toml": "efb91861ac8c8c5dae15306f01046e7377a3f9c61f543a64fe756efac47cccaf",
+    "Cargo.lock": "5bd9bda9da7b4d02adc97ae3df5ffcea0b596e8dc02d6428c082c1093bea8153"
+  },
+  "renderer_sha256": "4c1dd5928f75490d6e399c32b3c9fc25029852836ad04de0711c6d761174b980",
+  "versions": {
+    "Pillow": "12.1.1",
+    "PyMuPDF": "1.28.2",
+    "pypdfium2": "5.9.0"
+  },
+  "cases": [
+    {
+      "name": "opaque",
+      "rgba_sha256": "b387ed5dcbed5e6ff8362fce16a82708847f78646de984ae80b12c9da7eeb853",
+      "stream_sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6",
+      "scales": {
+        "1": {
+          "svg_sha256": "f7d06d82200e508c87911c4206820dccebd7aa46a7e2614075a46561188f009e",
+          "pdf_sha256": "504e853e86e8fbada37c142909d9f9f276024d6c1d6e4533248c3eb198905a93",
+          "svg_alpha_error": 52623,
+          "mupdf_rgb_error": 189304,
+          "pdfium_rgb_error": 42741
+        },
+        "3": {
+          "svg_sha256": "e7cadcf50cb44c8c60d950a5b60e048eddcaf4e3abcde8946192eb5b9657e3c9",
+          "pdf_sha256": "b3fdee364705b5d1ccc6f6138f4df3ab5230816cb025de410e2543fd407aa622",
+          "svg_alpha_error": 3480,
+          "mupdf_rgb_error": 146957,
+          "pdfium_rgb_error": 5442
+        }
+      }
+    }
+  ]
+}
