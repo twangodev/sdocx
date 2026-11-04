@@ -1,6 +1,6 @@
 # InkPen V4 3× host comparison
 
-`comparison.json` records absolute errors for five synthetic 3× host-Mesa
+`comparison.json` records historical absolute errors for five synthetic 3× host-Mesa
 readbacks against the public SVG and direct PDF exporters. The 1 and 3 keys
 select the export contour; all outputs are rasterized at 3×. SVG uses resvg
 and alpha-channel error; MuPDF and PDFium use RGB error over #fcfcfc. The
@@ -28,22 +28,7 @@ native runtime dependencies are not fully pinned. Retained frame and stream
 hashes identify bytes, not the complete acquisition environment.
 The `phase` capture was independently rerun with matching stream and RGBA hashes.
 
-To reproduce public comparisons, install the Python imports used by `compare.py`
-and provide the existing resvg helper binary. Coordinate the shared Cargo target
-before running. The script archives `HEAD`, overlays only candidate render files
-and fixtures into a temporary directory, instruments that copy, and cleans it up.
-It never edits the source checkout. For example:
-
-```sh
-python3 tools/inkpen-v4/compare.py --repo /path/to/git-checkout \
-  --source /path/to/candidate-tree \
-  --svg-renderer /tmp/sdocx-agent-target/debug/sdocx-render-svg-047 \
-  --output /tmp/inkpen-v4-3x-comparison.json
-```
-
-Compare the resulting per-case hashes and errors with `comparison.json`; raster
-library versions can change numeric results. The temporary export instrumentation
-uses the retained synthetic inputs and calls the public SVG and PDF APIs.
+The public-export comparator and temporary instrumentation have been retired. `comparison.json` retains historical reader metrics; raster-library versions can change numeric results. Native capture and packing remain available as described above, without promising reproduction of those external-reader measurements.
 
 ## Opaque color control
 

@@ -19,7 +19,7 @@ they are not present in a clean checkout.
 
 ## Reproduce
 
-Use a fresh temporary directory so the capture and exports cannot overwrite
+Use a fresh temporary directory so the capture cannot overwrite
 retained evidence. The native capture writes JSON to stdout. The wrapper pins
 the base script hash and checks the exact substitution counts; the base script
 checks its native dependencies. This command regenerates a native capture:
@@ -32,7 +32,7 @@ export LD_LIBRARY_PATH="$PWD/scratch/apk-analysis-runtime/binutils-aarch64/usr/l
 .venv/bin/python tools/crayon2-independent-control/verify_native.py "$work_dir/native.json"
 ```
 
-The source-derived export generator has been retired. The maintained geometry regression remains available:
+The source-derived export generator and comparison scripts have been retired. The maintained geometry regression remains available:
 
 ```sh
 CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo test -p sdocx --features render --lib independent_source_matches_native_sampled_records
@@ -42,10 +42,9 @@ CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_D
 
 A fresh native replay retained `glUniform2fv` at location 6: both background
 scale components are `1.7066665887832642`. The initial writer used the next
-float value, `1.7066667`, without capturing that uniform. The writer now uses
-the observed value. The native frame and geometry hashes are unchanged.
+float value, `1.7066667`, without capturing that uniform. The corrected historical writer used the observed value. The native frame and geometry hashes are unchanged.
 
-The corrected source API results are 286 / 124 / 5572 for resvg, 647 / 148 /
+The historical corrected source API results were 286 / 124 / 5572 for resvg, 647 / 148 /
 48085 for MuPDF, and 567 / 147 / 36679 for PDFium (differing pixels / maximum
 channel error / total RGB error). The original results and provenance remain in
 `receipt.json`; `corrected-scale-receipt.json` records the new exports. This

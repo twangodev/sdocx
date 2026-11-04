@@ -4,11 +4,11 @@ This fresh host Mesa Model/Drawing capture repeats the independent 160×160
 source described in [the document holdout](../crayon2-document-holdout/README.md)
 with a nonidentity view translation of (13, 9). The native uploaded vector has
 the same SHA-256 as the independently sampled source; the observed clip matrix
-and texture uniforms are recorded in `receipt.json`. The public document SVG
-and direct PDF are produced from source points and pinned texture inputs, not
+and texture uniforms are recorded in `receipt.json`. The historical public document SVG
+and direct PDF were produced from source points and pinned texture inputs, not
 from the captured pixels. The retained frame is bottom-up native RGBA8.
 
-With the Mesa viewport FMA correction, resvg differs from that frame in 342
+In the historical comparison with the Mesa viewport FMA correction, resvg differs from that frame in 342
 pixels, maximum RGB error 3, and total absolute RGB error 478. Direct PDF differs
 in 459/3/1145 for MuPDF and 459/3/1142 for PDFium. The previous receipt
 retains the baseline 347/15/577, 461/14/1237 and 461/14/1235 respectively.
@@ -24,7 +24,7 @@ that operation before triangle interpolation. It selects the diagnostic texel
 `tools/crayon2-f32-interpolation/viewport_verify.py` to repeat the checks.
 This is evidence about the captured host pipeline, not other GPUs.
 
-Capture with `tools/crayon2-transform-control/capture.py` using the document holdout environment, then verify the resulting JSON with `tools/crayon2-transform-control/verify_native.py`. The verifier checks source, clip matrix, texture uniforms and uploads, blend, draw, vector and frame bytes. The historical export generator has been retired.
+Capture with `tools/crayon2-transform-control/capture.py` using the document holdout environment, then verify the resulting JSON with `tools/crayon2-transform-control/verify_native.py`. The verifier checks source, clip matrix, texture uniforms and uploads, blend, draw, vector and frame bytes. The historical export generator and comparator have been retired.
 
 ## Isolated translated stamp intervention
 

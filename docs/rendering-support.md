@@ -616,9 +616,8 @@ For the short V1 host control, PyMuPDF 1.28.2 rasterization of the actual PDF at
 96 dpi differs from native and the matching SVG at eight pixels; its transparent
 RGBA absolute channel error totals 227, versus 489 for generic PDF fallback.
 The [comparison receipt](../conformance/airbrush-v1-pdf-comparison.json) records
-the pixels and the [script](../tools/pen-capture/compare_airbrush_v1_pdf.py) reproduces
-the comparison from PDFs captured by the focused test. This is one viewer and
-resolution, not evidence of general PDF or device parity.
+these historical pixels and metrics; the export comparator has been retired.
+This is one viewer and resolution, not evidence of general PDF or device parity.
 A first-stamp triangle-clip experiment with the second stamp unchanged still rendered center alpha 22 versus native 52 in PyMuPDF at 96 dpi.
 In PyMuPDF alone, higher-resolution center sampling reduced 3×3 alpha error from 81 at 1× to 37 at 8×, while removing both stamps’ masks gave 80 at 1×; sampling and coverage remain possible causes rather than isolated findings.
 A further [texture probe](../conformance/airbrush-v1-pdf-texture-probe.json) found identical MuPDF output with interpolation enabled or disabled and with nearest-neighbor texture upsampling; sampling, transformed coverage, and alpha compositing remain unresolved for this one synthetic control.
