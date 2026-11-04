@@ -990,9 +990,6 @@ fn v113_rotated_filled_mask_from_source() {
             }
         }
     }
-    if let Ok(path) = std::env::var("SDOCX_TAPE_V114_MASK_OUT") {
-        std::fs::write(path, &mask).unwrap();
-    }
     let errors: Vec<_> = mask
         .iter()
         .zip(oracle.as_chunks::<4>().0)
@@ -1098,9 +1095,6 @@ fn v115_translated_source_mask() {
         format!("{:x}", Sha256::digest(&mask)),
         "590fd4f32840d5dad3c218a67881eabe78f06df661732906449b335d9dd38531"
     );
-    if let Ok(path) = std::env::var("SDOCX_TAPE_V115_MASK_OUT") {
-        std::fs::write(path, mask).unwrap();
-    }
 }
 
 #[test]

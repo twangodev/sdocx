@@ -80,7 +80,6 @@ mod tests {
     use super::*;
     use crate::{BoundingBox, Stroke, StrokeProperties, StrokeRendering, StrokeStyle};
     use serde::Deserialize;
-    use std::path::PathBuf;
 
     #[derive(Deserialize)]
     struct Fixture {
@@ -1196,11 +1195,6 @@ mod tests {
             assert!((emitted[index].0 - expected.0).abs() < 1e-4);
             assert!((emitted[index].1 - expected.1).abs() < 1e-4);
         }
-        if let Ok(directory) = std::env::var("SDOCX_MARKER3_DUMP") {
-            let directory = PathBuf::from(directory);
-            std::fs::create_dir_all(&directory).unwrap();
-            std::fs::write(directory.join("marker3-linked.svg"), &svg).unwrap();
-        }
         #[cfg(feature = "pdf")]
         {
             let page = RenderedPage::new(0, 128, 32, svg);
@@ -1222,9 +1216,6 @@ mod tests {
                 image_xobjects, 0,
                 "vector Marker3 PDF must contain no image XObjects"
             );
-            if let Ok(directory) = std::env::var("SDOCX_MARKER3_DUMP") {
-                std::fs::write(PathBuf::from(directory).join("marker3-linked.pdf"), bytes).unwrap();
-            }
         }
     }
 
