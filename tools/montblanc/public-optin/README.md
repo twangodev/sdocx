@@ -1,5 +1,7 @@
-# Experimental public Montblanc comparison
+# Historical public Montblanc comparison
 
-This synthetic probe sets `HostUnitScale` explicitly and compares public SVG and native PDF exports against retained host Mesa frames and the generic renderer. It assumes one output pixel per page unit and a fresh drawable per stroke. It does not establish saved-note, device, or arbitrary-transform parity.
+This retired synthetic probe selected `HostUnitScale` explicitly and compared public SVG and direct PDF exports with retained host-Mesa frames and generic output. It assumed one output pixel per page unit and a fresh drawable per stroke. The measurements in `conformance/montblanc-public-optin-host-comparison.json` do not establish saved-note, device or arbitrary-transform parity.
 
-Run `.venv/bin/python tools/montblanc/public-optin/compare.py` with offline Cargo dependencies, resvg, Pillow, and PyMuPDF. Generated exports are temporary. The native RGB is premultiplied; the comparison adds it to the paper contribution `252 * (1 - alpha)` instead of multiplying it by alpha again. The retained frame does not establish the native fixed-function blend state.
+The native RGB was premultiplied; the comparison added the paper contribution `252 * (1 - alpha)` without multiplying RGB by alpha again. Retained frames do not establish the native fixed-function blend state. Native captures, receipts and maintained Rust tests remain; the standalone Cargo exporter and external-reader comparator have been retired.
+
+Run `python3 tools/montblanc/compare.py` to verify the retained synthetic input, six native captures and frames, four primary triangle streams and the 2× crop controls. This native-only check does not invoke Cargo or external readers. Original script hashes in comparison receipts remain historical provenance.

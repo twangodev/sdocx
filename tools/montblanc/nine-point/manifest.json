@@ -1,5 +1,5 @@
 {
-  "scope": "Source hashes recorded after production admission; they do not attest the isolated comparison build.",
+  "scope": "Historical source hashes recorded after production admission; they do not attest the isolated comparison build. Exporter and reader-script pins are historical, not active dependencies. The native-only compare-expanded.py verifies only the retained capture scripts, native stream fixtures, compressed captures and frames against these original hashes.",
   "versions": {
     "resvg": "0.45.1",
     "pymupdf": "1.28.2",
