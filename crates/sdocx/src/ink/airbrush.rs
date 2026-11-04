@@ -709,46 +709,61 @@ mod tests {
     fn saved_v2_full_state_matches_compact_native_bundle() {
         const BUNDLE_JSON: &str =
             include_str!("../../../../conformance/airbrush-boundary-native.json");
-        const BUNDLE_BIN: &[u8] =
-            include_bytes!("../../../../conformance/airbrush-boundary-native.bin");
         let metadata: Value = serde_json::from_str(BUNDLE_JSON).unwrap();
+        let compressed_hex = metadata["binary_zlib_hex"].as_str().unwrap();
+        assert_eq!(compressed_hex.len() % 2, 0);
+        let compressed: Vec<u8> = compressed_hex
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect();
+        use std::io::Read as _;
+        let mut bundle = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .take(27_519)
+            .read_to_end(&mut bundle)
+            .unwrap();
+        assert_eq!(bundle.len(), 27_518);
+        let bundle_bin: &[u8] = &bundle;
         assert_eq!(metadata["schema"], "sdocx.airbrush-boundary-native.v1");
         use sha2::{Digest, Sha256};
         assert_eq!(
-            format!("{:x}", Sha256::digest(BUNDLE_BIN)),
+            format!("{:x}", Sha256::digest(bundle_bin)),
             metadata["binary_sha256"].as_str().unwrap(),
             "compact AirBrush bundle digest"
         );
-        assert_eq!(&BUNDLE_BIN[..4], b"ABN1");
-        assert_eq!(u16::from_le_bytes(BUNDLE_BIN[4..6].try_into().unwrap()), 1);
-        let case_count = u16::from_le_bytes(BUNDLE_BIN[6..8].try_into().unwrap()) as usize;
+        assert_eq!(&bundle_bin[..4], b"ABN1");
+        assert_eq!(u16::from_le_bytes(bundle_bin[4..6].try_into().unwrap()), 1);
+        let case_count = u16::from_le_bytes(bundle_bin[6..8].try_into().unwrap()) as usize;
         let cases = metadata["cases"].as_array().unwrap();
         assert_eq!(cases.len(), case_count);
 
         let mut offset = 8;
         for (case_index, case) in cases.iter().enumerate() {
-            let native_index = read_u16_le(BUNDLE_BIN, &mut offset) as usize;
-            let stamp_count = read_u16_le(BUNDLE_BIN, &mut offset) as usize;
-            let call_count = read_u16_le(BUNDLE_BIN, &mut offset) as usize;
-            let state_present = read_u16_le(BUNDLE_BIN, &mut offset) != 0;
+            let native_index = read_u16_le(bundle_bin, &mut offset) as usize;
+            let stamp_count = read_u16_le(bundle_bin, &mut offset) as usize;
+            let call_count = read_u16_le(bundle_bin, &mut offset) as usize;
+            let state_present = read_u16_le(bundle_bin, &mut offset) != 0;
             assert_eq!(native_index, case_index, "{} bundle index", case["id"]);
             assert_eq!(state_present, case["state_capture"].as_bool().unwrap());
 
             let native_redraw_states = if state_present {
                 Some((
-                    read_v2_state(BUNDLE_BIN, &mut offset),
-                    read_v2_state(BUNDLE_BIN, &mut offset),
-                    read_v2_state(BUNDLE_BIN, &mut offset),
+                    read_v2_state(bundle_bin, &mut offset),
+                    read_v2_state(bundle_bin, &mut offset),
+                    read_v2_state(bundle_bin, &mut offset),
                 ))
             } else {
                 None
             };
             let expected_rows: Vec<[u32; 4]> = (0..stamp_count)
-                .map(|_| std::array::from_fn(|_| read_u32_le(BUNDLE_BIN, &mut offset)))
+                .map(|_| std::array::from_fn(|_| read_u32_le(bundle_bin, &mut offset)))
                 .collect();
             let expected_calls: Vec<V2CallState> = (0..call_count)
                 .map(|_| {
-                    let kind = match BUNDLE_BIN[offset] {
+                    let kind = match bundle_bin[offset] {
                         0 => V2CallKind::DrawLine,
                         1 => V2CallKind::EndPen,
                         other => panic!("unknown native AirBrush call kind {other}"),
@@ -756,8 +771,8 @@ mod tests {
                     offset += 1;
                     V2CallState {
                         kind,
-                        entry: read_v2_state(BUNDLE_BIN, &mut offset),
-                        returned: read_v2_state(BUNDLE_BIN, &mut offset),
+                        entry: read_v2_state(bundle_bin, &mut offset),
+                        returned: read_v2_state(bundle_bin, &mut offset),
                     }
                 })
                 .collect();
@@ -798,7 +813,7 @@ mod tests {
         }
         assert_eq!(
             offset,
-            BUNDLE_BIN.len(),
+            bundle_bin.len(),
             "compact AirBrush bundle has trailing bytes"
         );
     }
