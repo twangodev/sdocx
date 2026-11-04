@@ -49,6 +49,13 @@ pub(crate) fn receipt() -> Receipt {
     .unwrap()
 }
 
+pub(crate) fn page_context_receipt() -> Receipt {
+    serde_json::from_str(include_str!(
+        "../../../../../conformance/pencil2-v14-page-context-native.json"
+    ))
+    .unwrap()
+}
+
 pub(crate) fn control_records(name: &str) -> Vec<[f32; 14]> {
     if name == "inverse_half" {
         return device_raster::records(include_bytes!(
