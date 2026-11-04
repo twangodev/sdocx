@@ -156,8 +156,7 @@ fn profile_improves_varied_native_controls_and_falls_back_for_unsupported_metada
             long["cases"][1]["input"]["source_arrays_hex"]["points"]
                 .as_str()
                 .unwrap(),
-            include_bytes!("../../../conformance/legacy-marker-long-turns-sparse-rgba8.bin")
-                .as_slice(),
+            sparse_fixtures::bytes("conformance/legacy-marker-long-turns-sparse-rgba8.bin"),
         ),
     ];
     let fallback = sdocx::RenderOptions::default();

@@ -42,7 +42,7 @@
       "queue_count": 12,
       "draw_counts": [104,6,112,112,6],
       "frame_sha256": "99041997f323842cbbb09c945f5061aad03af74568ac566a24cd151b53bfc694",
-      "sparse_sha256": "31b2eef95c27631089fb85dcfe79b98a48fad5f166fc26ffa9a59b0d4dc59a77",
+      "sparse_sha256": "31b2eef95c27631089fb85dcfe79b98a48fad5f166fc26ffa9a59b0d4dc59a77", "sparse_storage": {"container":"conformance/legacy-marker-sparse-runs.json","case":"conformance/legacy-marker-long-turns-sparse-rgba8.bin","format":"sdocx-native-sparse-rgba-runs-v1","path_role":"materialized legacy path"},
       "sparse_bytes": 4016,
       "native_mesh_vector_outputs": [
         {"method": "SPen::MarkerStrokeDrawableRTV1::addStartEndTexMesh(SPen::Vector2<float> const&, SPen::Vector2<float> const&, SPen::Vector2<float> const&, SPen::Vector2<float> const&, std::__ndk1::vector<SPen::Vector4<float>, std::__ndk1::allocator<SPen::Vector4<float> > >&)","phase": "native_queue_run_sequence_7","geometry_inputs": [[4.0,24.799999237060547],[16.0,24.799999237060547],[4.0,20.0],[16.0,20.0]],"before_hex": "","after_hex": "000080406666c6410000000000000000000080400000a0410000803f00000000000080416666c641000000000000803f000080400000a0410000803f00000000000080410000a0410000803f0000803f000080416666c641000000000000803f","after_sha256": "64d4aac36e0054b01ac5dacc961dec55383df4ecf3481b84694e613b27704823","stride": 16},

@@ -41,13 +41,15 @@ fn legacy_marker_argb_alpha_survives_svg_and_pdf() {
         ),
         (
             "alpha01",
-            include_bytes!("../../../../conformance/legacy-marker-alpha01-sparse-rgba8.bin")
-                .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-alpha01-sparse-rgba8.bin",
+            ),
         ),
         (
             "alphac8",
-            include_bytes!("../../../../conformance/legacy-marker-alphac8-sparse-rgba8.bin")
-                .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-alphac8-sparse-rgba8.bin",
+            ),
         ),
         (
             "size2",

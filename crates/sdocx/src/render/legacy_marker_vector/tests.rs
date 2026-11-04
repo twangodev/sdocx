@@ -380,8 +380,9 @@ fn self_overlap_native_control_uses_bounded_vector_paint() {
     .into_iter()
     .map(|[x, y]| Point { x, y })
     .collect();
-    let native =
-        include_bytes!("../../../../../conformance/legacy-marker-self-overlap-sparse-rgba8.bin");
+    let native = crate::legacy_marker_sparse_fixtures::bytes(
+        "conformance/legacy-marker-self-overlap-sparse-rgba8.bin",
+    );
     let svg = crate::render_document_svg(&doc, &options()).remove(0).svg;
     let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
         .remove(0)
@@ -492,8 +493,9 @@ fn identical_top_layer_strokes_improve_against_native_two_draws() {
     let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
         .remove(0)
         .svg;
-    let native =
-        include_bytes!("../../../../../conformance/legacy-marker-two-drawing-sparse-rgba8.bin");
+    let native = crate::legacy_marker_sparse_fixtures::bytes(
+        "conformance/legacy-marker-two-drawing-sparse-rgba8.bin",
+    );
     let actual = error(&candidate, native);
     let generic = error(&fallback, native);
     assert!(
@@ -543,8 +545,9 @@ fn distinct_top_layer_strokes_match_native_order() {
         b: 255,
     });
     stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x800060ff);
-    let native =
-        include_bytes!("../../../../../conformance/legacy-marker-two-distinct-sparse-rgba8.bin");
+    let native = crate::legacy_marker_sparse_fixtures::bytes(
+        "conformance/legacy-marker-two-distinct-sparse-rgba8.bin",
+    );
     let candidate = crate::render_document_svg(&doc, &options()).remove(0).svg;
     let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
         .remove(0)
@@ -575,8 +578,9 @@ fn low_alpha_second_stroke_improves_against_native() {
         b: 255,
     });
     stroke.rendering.as_mut().unwrap().style.color_argb = Some(0x200060ff);
-    let native =
-        include_bytes!("../../../../../conformance/legacy-marker-two-alpha20-sparse-rgba8.bin");
+    let native = crate::legacy_marker_sparse_fixtures::bytes(
+        "conformance/legacy-marker-two-alpha20-sparse-rgba8.bin",
+    );
     let candidate = crate::render_document_svg(&doc, &options()).remove(0).svg;
     let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
         .remove(0)
@@ -600,8 +604,9 @@ fn zero_alpha_retains_native_caps_in_svg_and_pdf() {
     let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
         .remove(0)
         .svg;
-    let native =
-        include_bytes!("../../../../../conformance/legacy-marker-alpha00-sparse-rgba8.bin");
+    let native = crate::legacy_marker_sparse_fixtures::bytes(
+        "conformance/legacy-marker-alpha00-sparse-rgba8.bin",
+    );
     let actual = error(&candidate, native);
     let generic = error(&fallback, native);
     assert!(

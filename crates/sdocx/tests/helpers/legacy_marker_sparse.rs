@@ -36,10 +36,26 @@ pub fn bytes(name: &str) -> &'static [u8] {
                 "../../../../conformance/legacy-marker-width-controls.json"
             ))
             .unwrap();
+            let vector: Value = serde_json::from_str(include_str!(
+                "../../../../conformance/legacy-marker-vector-public-comparison.json"
+            ))
+            .unwrap();
+            let alpha01: Value = serde_json::from_str(include_str!(
+                "../../../../conformance/legacy-marker-alpha01-control.json"
+            ))
+            .unwrap();
+            let alphac8: Value = serde_json::from_str(include_str!(
+                "../../../../conformance/legacy-marker-alphac8-control.json"
+            ))
+            .unwrap();
+            let long: Value = serde_json::from_str(include_str!(
+                "../../../../conformance/legacy-marker-long-native-controls.json"
+            ))
+            .unwrap();
             assert_eq!(fixture["schema"], "sdocx-native-sparse-rgba-runs-v1");
             let cases = fixture["cases"].as_object().unwrap();
-            assert_eq!(cases.len(), 8);
-            let mut width_cases = 0;
+            assert_eq!(cases.len(), 16);
+            let mut frame_cases = 0;
             let mut total_slices = 0;
             let decoded = cases
                 .iter()
@@ -120,14 +136,84 @@ pub fn bytes(name: &str) -> &'static [u8] {
                     );
                     if case.get("row_runs").is_some() {
                         let control = case["control"].as_str().unwrap();
-                        assert!(matches!(
-                            control,
-                            "size2" | "size3" | "size6" | "size24" | "size48"
-                        ));
-                        let receipt = &widths["controls"][control];
-                        assert_eq!(receipt["sparse_path"].as_str().unwrap(), name);
-                        assert_eq!(case["sha256"], receipt["sparse_sha256"]);
-                        assert_eq!(case["frame_sha256"], receipt["frame_sha256"]);
+                        assert_eq!(
+                            name,
+                            &format!("conformance/legacy-marker-{control}-sparse-rgba8.bin")
+                        );
+                        let (sparse_sha, frame_sha, nonzero) = match control {
+                            "size2" | "size3" | "size6" | "size24" | "size48" => {
+                                let receipt = &widths["controls"][control];
+                                assert_eq!(receipt["sparse_path"].as_str().unwrap(), name);
+                                (
+                                    &receipt["sparse_sha256"],
+                                    &receipt["frame_sha256"],
+                                    receipt["nonzero_channel_bytes"].as_u64(),
+                                )
+                            }
+                            "alpha00" => (
+                                vector
+                                    .pointer("/zero_alpha_cap_fix/fixture_sha256")
+                                    .unwrap(),
+                                vector
+                                    .pointer("/zero_alpha_cap_fix/cases/0/native_frame_sha256")
+                                    .unwrap(),
+                                None,
+                            ),
+                            "alpha01" => (
+                                alpha01.pointer("/sparse_sha256").unwrap(),
+                                alpha01.pointer("/final_frame_sha256").unwrap(),
+                                None,
+                            ),
+                            "alphac8" => (
+                                alphac8.pointer("/sparse_sha256").unwrap(),
+                                alphac8.pointer("/final_frame_sha256").unwrap(),
+                                None,
+                            ),
+                            "two-alpha20" => (
+                                vector
+                                    .pointer("/two_drawing_low_alpha_second/fixture_sha256")
+                                    .unwrap(),
+                                vector
+                                    .pointer("/two_drawing_low_alpha_second/native_frame_sha256")
+                                    .unwrap(),
+                                None,
+                            ),
+                            "two-distinct" => (
+                                vector
+                                    .pointer("/two_distinct_drawing_submissions/fixture_sha256")
+                                    .unwrap(),
+                                vector
+                                    .pointer(
+                                        "/two_distinct_drawing_submissions/native_frame_sha256",
+                                    )
+                                    .unwrap(),
+                                None,
+                            ),
+                            "two-drawing" => (
+                                vector
+                                    .pointer("/two_identical_drawing_submissions/fixture_sha256")
+                                    .unwrap(),
+                                vector
+                                    .pointer(
+                                        "/two_identical_drawing_submissions/native_frame_sha256",
+                                    )
+                                    .unwrap(),
+                                None,
+                            ),
+                            "self-overlap" => (
+                                vector.pointer("/self_overlap_fixture/sha256").unwrap(),
+                                vector.pointer("/cases/2/native_frame_sha256").unwrap(),
+                                None,
+                            ),
+                            "long-turns" => (
+                                long.pointer("/cases/1/sparse_sha256").unwrap(),
+                                long.pointer("/cases/1/frame_sha256").unwrap(),
+                                None,
+                            ),
+                            _ => panic!("unknown native single-frame control"),
+                        };
+                        assert_eq!(&case["sha256"], sparse_sha);
+                        assert_eq!(&case["frame_sha256"], frame_sha);
                         let mut frame = vec![0_u8; 1920 * 1080 * 4];
                         for record in raw.as_chunks::<8>().0 {
                             let index =
@@ -136,13 +222,12 @@ pub fn bytes(name: &str) -> &'static [u8] {
                         }
                         assert_eq!(
                             format!("{:x}", Sha256::digest(&frame)),
-                            receipt["frame_sha256"].as_str().unwrap()
+                            frame_sha.as_str().unwrap()
                         );
-                        assert_eq!(
-                            frame.iter().filter(|&&v| v != 0).count() as u64,
-                            receipt["nonzero_channel_bytes"].as_u64().unwrap()
-                        );
-                        width_cases += 1;
+                        if let Some(nonzero) = nonzero {
+                            assert_eq!(frame.iter().filter(|&&v| v != 0).count() as u64, nonzero);
+                        }
+                        frame_cases += 1;
                         return (name.clone(), raw);
                     }
                     let rows: Vec<&Value> = match name.as_str() {
@@ -196,7 +281,7 @@ pub fn bytes(name: &str) -> &'static [u8] {
                 })
                 .collect();
             assert_eq!(total_slices, 12);
-            assert_eq!(width_cases, 5);
+            assert_eq!(frame_cases, 13);
             decoded
         })
         .get(name)
