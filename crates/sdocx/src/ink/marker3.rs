@@ -669,6 +669,262 @@ mod tests {
     }
 
     #[test]
+    fn size_nine_diverse_retained_provenance_and_frames() {
+        use serde_json::{Value, json};
+        use sha2::{Digest, Sha256};
+        use std::{collections::BTreeMap, io::Read};
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let read = |path: &str| std::fs::read(root.join(path)).unwrap();
+        let hash = |bytes: &[u8]| format!("{:x}", Sha256::digest(bytes));
+        fn canonical(value: &Value) -> String {
+            match value {
+                Value::Object(map) => format!(
+                    "{{{}}}",
+                    map.iter()
+                        .collect::<BTreeMap<_, _>>()
+                        .into_iter()
+                        .map(|(k, v)| format!(
+                            "{}:{}",
+                            serde_json::to_string(k).unwrap(),
+                            canonical(v)
+                        ))
+                        .collect::<Vec<_>>()
+                        .join(",")
+                ),
+                Value::Array(values) => format!(
+                    "[{}]",
+                    values.iter().map(canonical).collect::<Vec<_>>().join(",")
+                ),
+                _ => serde_json::to_string(value).unwrap(),
+            }
+        }
+        let canon_hash = |value: &Value| hash(canonical(value).as_bytes());
+        let receipt: Value =
+            serde_json::from_slice(&read("tools/marker3-size9-diverse/receipt.json")).unwrap();
+        for path in [
+            "conformance/marker3-size9-diverse-native.json",
+            "tools/marker3-size9-diverse/capture.py",
+            "tools/marker3-size9-diverse/caller-provenance.json",
+        ] {
+            assert_eq!(
+                hash(&read(path)),
+                receipt["input_sha256"][path].as_str().unwrap(),
+                "{path}"
+            );
+        }
+        let fixture: Value =
+            serde_json::from_slice(&read("conformance/marker3-size9-diverse-native.json")).unwrap();
+        let provenance: Value =
+            serde_json::from_slice(&read("tools/marker3-size9-diverse/caller-provenance.json"))
+                .unwrap();
+        assert_eq!(
+            provenance["schema"],
+            "marker3-size9-caller-provenance-extraction-v1"
+        );
+        assert_eq!(
+            provenance["canonical_fixture"]["path"],
+            "conformance/marker3-size9-diverse-native.json"
+        );
+        assert_eq!(
+            hash(&read("conformance/marker3-size9-diverse-native.json")),
+            provenance["canonical_fixture"]["sha256"].as_str().unwrap()
+        );
+        type Control<'a> = (&'a str, &'a [[f32; 2]], &'a [f32], &'a str);
+        let controls: [Control<'_>; 3] = [
+            (
+                "reverse",
+                &[[14.25, 20.5], [44.5, 20.5], [17.5, 22.5], [48.25, 24.5]],
+                &[1.0, 0.15, 1.0, 0.15],
+                "0x80cc331a",
+            ),
+            (
+                "cross",
+                &[[18.25, 12.5], [45.5, 41.25], [18.25, 41.25], [45.5, 12.5]],
+                &[0.2, 0.9, 0.4, 1.0],
+                "0xff3366cc",
+            ),
+            (
+                "short",
+                &[[12.5, 18.25], [15.25, 20.5], [18.5, 17.75]],
+                &[0.1, 0.8, 0.4],
+                "0x6633aa55",
+            ),
+        ];
+        for (name, points, pressures, color) in controls {
+            let retained = &provenance["cases"][name];
+            assert_eq!(
+                retained["historical_gzip_sha256"],
+                receipt["caller_gzip_sha256"][name]
+            );
+            let mut case = provenance["common_case_fields"].clone();
+            case.as_object_mut()
+                .unwrap()
+                .extend(retained["case_fields"].as_object().unwrap().clone());
+            case["input"] = fixture[name]["input"].clone();
+            case["phase_final_vectors"] = fixture[name]["phase_final_vectors"].clone();
+            case["native_calls"]["source_ObjectStroke_arrays"] =
+                fixture[name]["native_calls"]["source_ObjectStroke_arrays"].clone();
+            let mut vectors = BTreeMap::new();
+            for (phase, vector) in case["phase_final_vectors"].as_object().unwrap() {
+                let raw = bytes_from_hex(vector["vector_bytes"].as_str().unwrap());
+                assert_eq!(
+                    raw.len(),
+                    8 * usize::try_from(vector["vector_count"].as_u64().unwrap()).unwrap()
+                );
+                assert_eq!(hash(&raw), vector["sha256"].as_str().unwrap());
+                let xy: Vec<Value> = raw
+                    .as_chunks::<8>()
+                    .0
+                    .iter()
+                    .map(|pair| {
+                        json!([
+                            f32::from_le_bytes(pair[..4].try_into().unwrap()) as f64,
+                            f32::from_le_bytes(pair[4..].try_into().unwrap()) as f64
+                        ])
+                    })
+                    .collect();
+                vectors.insert(phase.clone(), xy);
+            }
+            let mut state = serde_json::Map::new();
+            let mut callbacks = Vec::new();
+            for changes in retained["callback_changes"].as_array().unwrap() {
+                state.extend(changes.as_object().unwrap().clone());
+                let mut callback = Value::Object(state.clone());
+                let count = usize::try_from(callback["vector_count"].as_u64().unwrap()).unwrap();
+                let vector = &vectors[callback["phase"].as_str().unwrap()];
+                assert!(count <= vector.len());
+                callback["xy"] = Value::Array(vector[..count].to_vec());
+                callbacks.push(callback);
+            }
+            case["callback_add_point_calls"] = Value::Array(callbacks);
+            let mut state = json!({"regs": {}});
+            let mut lifecycle = Vec::new();
+            for changes in retained["lifecycle_changes"].as_array().unwrap() {
+                for (key, value) in changes.as_object().unwrap() {
+                    if key != "regs_changes" && key != "removed_fields" {
+                        state[key] = value.clone();
+                    }
+                }
+                for key in changes["removed_fields"].as_array().unwrap() {
+                    assert!(
+                        state
+                            .as_object_mut()
+                            .unwrap()
+                            .remove(key.as_str().unwrap())
+                            .is_some()
+                    );
+                }
+                state["regs"]
+                    .as_object_mut()
+                    .unwrap()
+                    .extend(changes["regs_changes"].as_object().unwrap().clone());
+                lifecycle.push(state.clone());
+            }
+            case["native_calls"]["selected_drawable_redraw_lifecycle_method_entries"] =
+                Value::Array(lifecycle);
+            let mut cases = serde_json::Map::new();
+            cases.insert(
+                provenance["case_key"].as_str().unwrap().to_owned(),
+                case.clone(),
+            );
+            let document = json!({"schema": provenance["root_schema"], "cases": cases});
+            assert_eq!(
+                canon_hash(&document),
+                retained["original_structured_sha256"].as_str().unwrap(),
+                "{name}"
+            );
+            assert_eq!(
+                fixture[name],
+                json!({"input": case["input"], "native_calls": {"source_ObjectStroke_arrays": case["native_calls"]["source_ObjectStroke_arrays"]}, "phase_final_vectors": case["phase_final_vectors"]})
+            );
+            let expected_points: Vec<u8> = points
+                .iter()
+                .flatten()
+                .flat_map(|v| v.to_le_bytes())
+                .collect();
+            assert_eq!(
+                bytes_from_hex(
+                    case["native_calls"]["source_ObjectStroke_arrays"]["points"]["data_hex"]
+                        .as_str()
+                        .unwrap()
+                ),
+                expected_points
+            );
+            let fields = json!({
+                "input_sha256": canon_hash(&case["input"]),
+                "source_arrays_sha256": canon_hash(&case["native_calls"]["source_ObjectStroke_arrays"]),
+                "drawing_vector_sha256": canon_hash(&case["phase_final_vectors"]["draw_object_stroke"]),
+                "saved_redraw_vector_sha256": canon_hash(&case["phase_final_vectors"]["saved_redraw"]),
+            });
+            for suffix in ["", "1", "4"] {
+                assert_eq!(
+                    fields,
+                    receipt["cross_scale_caller_fields_sha256"][format!("{name}{suffix}")]
+                );
+            }
+            let input = &case["input"];
+            assert_eq!(
+                bytes_from_hex(input["pen_size_f32_bits"].as_str().unwrap()),
+                9_f32.to_le_bytes()
+            );
+            assert_eq!(
+                input["pressure_f32_bits"].as_array().unwrap().len(),
+                pressures.len()
+            );
+            for (actual, expected) in input["pressure_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .zip(pressures)
+            {
+                assert_eq!(
+                    bytes_from_hex(actual.as_str().unwrap()),
+                    expected.to_le_bytes()
+                );
+            }
+            assert_eq!(input["color_argb"], color);
+            assert_eq!(input["advanced_setting"], "5;");
+            assert_eq!(input["tool_type"], 1);
+            assert_eq!(input["curve_enabled"], true);
+            assert_eq!(input["stroke_type"], 0);
+            assert_eq!(
+                input["timestamps_i32"],
+                json!((0..points.len()).map(|i| 8 * i).collect::<Vec<_>>())
+            );
+            for key in ["tilt_f32_bits", "orientation_f32_bits"] {
+                assert_eq!(input[key], json!(vec!["00000000"; points.len()]));
+            }
+        }
+        let frame_hashes = receipt["native_rgba_sha256"].as_object().unwrap();
+        assert_eq!(frame_hashes.len(), 9);
+        for (name, expected) in frame_hashes {
+            assert!(matches!(
+                name.as_str(),
+                "reverse"
+                    | "cross"
+                    | "short"
+                    | "reverse1"
+                    | "cross1"
+                    | "short1"
+                    | "reverse4"
+                    | "cross4"
+                    | "short4"
+            ));
+            let compressed = read(&format!("tools/marker3-size9-diverse/{name}.rgba.zlib"));
+            let mut decoder = flate2::read::ZlibDecoder::new(compressed.as_slice());
+            let mut frame = Vec::new();
+            decoder
+                .by_ref()
+                .take(256 * 256 * 4 + 1)
+                .read_to_end(&mut frame)
+                .unwrap();
+            assert_eq!(frame.len(), 256 * 256 * 4);
+            assert_eq!(decoder.total_in(), compressed.len() as u64);
+            assert_eq!(hash(&frame), expected.as_str().unwrap(), "{name}");
+        }
+    }
+
+    #[test]
     fn size_nine_diverse_native_vectors_and_gate() {
         let cases: serde_json::Value = serde_json::from_str(include_str!(
             "../../../../conformance/marker3-size9-diverse-native.json"
