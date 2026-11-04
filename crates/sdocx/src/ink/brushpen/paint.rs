@@ -1674,6 +1674,22 @@ mod tests {
         .read_to_end(&mut native_color)
         .unwrap();
             assert_eq!(color_pixels, native_color);
+            for (name, canvas) in [
+                ("overlap", &overlap_canvas),
+                ("pressure", &pressure_canvas),
+                ("color", &color_canvas),
+            ] {
+                let page = canvas.rendered_page(0).unwrap();
+                let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
+                let mut image = resvg::tiny_skia::Pixmap::new(321, 228).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut image.as_mut(),
+                );
+                let expected: Vec<u8> = canvas.pixels().iter().flatten().copied().collect();
+                assert_eq!(image.data(), expected, "{name} SVG raster");
+            }
         }
         for (case_index, (receipt, compressed)) in [
             (
