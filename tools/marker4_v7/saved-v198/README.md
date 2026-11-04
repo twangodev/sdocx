@@ -4,8 +4,18 @@ Quiz stroke 70 supplies 641 original samples and 499 native redraw stamps, tool 
 
 Against the native white composite, public SVG via resvg and direct PDF via MuPDF / PDFium have RGB L1 errors 43,642 / 60,617 / 95,757, versus 2,654,134 / 2,643,096 / 2,650,040 for the forced generic control. Source coordinates are translated for export and may round differently from the native matrix. The interior includes 18,440 pixels with identical native and resvg RGB `(163,208,255)`; edge differences reflect native filtered mask coverage and reader rasterization. This control does not establish a general correction or pixel parity.
 
-The historical script hashes remain in the receipt. `replay.py` reconstructs the original second-control scripts from the pinned first-control scripts and verifies both sets of hashes before execution, avoiding duplicated capture code. Use the Python paths in `../saved-v197/README.md` and run `replay.py verify PARSER`, `replay.py capture --case saved70 --capture-output /tmp/marker4-v198.json`, and `replay.py compare OUTPUT_DIR`. Generate the exporter source with `replay.py export > /tmp/marker4-v198-export.rs` and use the temporary Cargo harness described there. The exporter was rebuilt from clean commit `d0f7e8906e21a8e2f2fad0223677f6741a1f1f67` and reproduced the recorded output hashes and scores; the comparison depends on installed resvg, PyMuPDF, pypdfium2 and Pillow.
+The historical script hashes remain in the receipt. `replay.py` reconstructs
+and verifies the original second-control capture and source-verification scripts
+from the pinned first-control scripts. Use the Python paths in
+`../saved-v197/README.md` and run `replay.py verify PARSER` or
+`replay.py capture --case saved70 --capture-output /tmp/marker4-v198.json`.
+The experimental exporter and comparator have been retired; their identities
+and results remain in the receipt. The exporter was rebuilt from clean commit
+`d0f7e8906e21a8e2f2fad0223677f6741a1f1f67` and reproduced the recorded
+output hashes and scores.
 
 The retained source still contains original stroke geometry, pressures, orientations, tilts and sample timestamps; metadata removal does not anonymize these samples. The original note and private source archive are not included.
 
-The replay validation used resvg 0.45.1, MuPDF 1.28.2, pypdfium2 5.9.0 and Pillow 12.1.1. These are the versions used for this replay, separate from the historical receipt; all recorded comparison scores matched. Use a Python environment with these reader dependencies for `compare`; the native capture environment alone may not include them. Optimized Python (`-O`) is rejected because the replay and historical scripts use assertions for validation.
+The historical comparison used resvg 0.45.1, MuPDF 1.28.2, pypdfium2 5.9.0
+and Pillow 12.1.1. Optimized Python (`-O`) is rejected because replay and the
+historical scripts use assertions for validation.

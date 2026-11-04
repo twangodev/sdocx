@@ -36,11 +36,5 @@ PYTHONPATH=scratch/apk-analysis-runtime/python:tmp/conformance-cleanup/native-ca
 ```
 
 The capture requires a new output path and checks the pinned native DSOs and
-helpers. For exports, put `export.rs` in a temporary Cargo binary depending on
-this repository's `sdocx` with `serde`, `render`, `pdf` and on `serde_json`.
-Run the binary once with a caller-selected new output directory as its only
-argument; it exclusively creates that directory and writes `public.svg`,
-`public.pdf`, `generic.svg`, and `generic.pdf`. Use the shared agent Cargo
-settings. Run `compare.py OUTPUT_DIR` with Pillow, PyMuPDF, pypdfium2 and
-resvg; its PNG intermediates use a private temporary directory. The comparator verifies the native receipt, frame, and export hashes and checks
-every raster dimension and byte length against the retained receipt. No production change follows from this one control.
+helpers. The experimental exporter and comparator have been retired; the
+receipt retains their historical identities and results.

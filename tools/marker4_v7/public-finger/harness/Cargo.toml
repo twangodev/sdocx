@@ -1,9 +1,0 @@
-[package]
-name = "marker4-public"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-sdocx = { path = "SDOCX_CRATE_PATH", features = ["serde", "render", "pdf"] }
-serde_json = "1"
-sha2 = "0.10"
