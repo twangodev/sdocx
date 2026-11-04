@@ -47,12 +47,7 @@ pub(super) fn standalone_face(data: &[u8], index: u32) -> Result<Cow<'_, [u8]>, 
 mod tests {
     use super::*;
 
-    mod fixtures {
-        include!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/tests/helpers/font_collection.rs"
-        ));
-    }
+    use crate::fonts::collection_fixture as fixtures;
 
     const REGULAR: &[u8] = include_bytes!("../../../assets/fonts/Roboto-Regular.ttf");
     const MONO: &[u8] = include_bytes!("../../../assets/fonts/RobotoMono-Regular.ttf");

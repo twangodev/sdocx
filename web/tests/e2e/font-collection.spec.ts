@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { zipSync } from 'fflate';
+import { fontCollection } from '../fixtures/font-collection';
 import { PDFDocument, PDFRawStream } from 'pdf-lib';
 import { expect, test } from '../fixtures/browser';
 import { join, zero, u16, u32, f32, f64, frame } from '../fixtures/wdoc';
@@ -28,11 +29,11 @@ function collectionNote(): Buffer {
 
 test('standalone SVG paints the selected second face of a font collection', async ({ page, browserName }) => {
 	test.skip(browserName !== 'chromium', 'Chromium preview and vector exports are the immediate target.');
-	const [collection, selected, first] = await Promise.all([
-		readFile(resolve('../crates/sdocx/tests/assets/fonts/Roboto-DejaVuSans.ttc')),
+	const [selected, first] = await Promise.all([
 		readFile(resolve('../crates/sdocx/tests/assets/fonts/DejaVuSans.ttf')),
 		readFile(resolve('../crates/sdocx/assets/fonts/Roboto-Regular.ttf'))
 	]);
+	const collection = fontCollection([first, selected]);
 	expect(collection.subarray(0, 4).toString('ascii')).toBe('ttcf');
 	expect(collection.readUInt32BE(8)).toBe(2);
 	expect(createHash('sha256').update(collection).digest('hex')).toBe('05b90eb2586360bca28ff1852a12e0bda9933f344b0ae75b3465f22b73ed63ba');

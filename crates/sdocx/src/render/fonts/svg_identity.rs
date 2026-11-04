@@ -78,16 +78,14 @@ mod tests {
 
     #[test]
     fn physical_family_keeps_collection_faces_distinct() {
-        let data = include_bytes!("../../../tests/assets/fonts/Roboto-DejaVuSans.ttc");
-        assert_ne!(family(data, 0), family(data, 1));
+        let data = super::super::collection_fixture::roboto_dejavu();
+        assert_ne!(family(&data, 0), family(&data, 1));
     }
 
     #[test]
     fn changing_public_collection_index_keeps_current_physical_identity() {
         let mut database = fontdb::Database::new();
-        database.load_font_data(
-            include_bytes!("../../../tests/assets/fonts/Roboto-DejaVuSans.ttc").to_vec(),
-        );
+        database.load_font_data(super::super::collection_fixture::roboto_dejavu());
         let book = FontBook::new(Arc::new(database));
         let mut first = book.resolve("Roboto", false, false).unwrap();
         let second = book.resolve("DejaVu Sans", false, false).unwrap();

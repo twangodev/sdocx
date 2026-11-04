@@ -1,3 +1,10 @@
+pub fn roboto_dejavu() -> Vec<u8> {
+    collection(&[
+        include_bytes!("../../assets/fonts/Roboto-Regular.ttf"),
+        include_bytes!("../assets/fonts/DejaVuSans.ttf"),
+    ])
+}
+
 pub fn collection(fonts: &[&[u8]]) -> Vec<u8> {
     let mut output = b"ttcf\0\x01\0\0".to_vec();
     output.extend_from_slice(&u32::try_from(fonts.len()).unwrap().to_be_bytes());

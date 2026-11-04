@@ -600,6 +600,10 @@ impl ShapedRun {
 }
 
 #[cfg(test)]
+#[path = "../../tests/helpers/font_collection.rs"]
+pub(crate) mod collection_fixture;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -669,7 +673,7 @@ mod tests {
 
     #[test]
     fn bitmap_gate_uses_selected_collection_face() {
-        let collection = include_bytes!("../../tests/assets/fonts/Roboto-DejaVuSans.ttc");
+        let collection = super::collection_fixture::roboto_dejavu();
         for selected in [0, 1] {
             let mut bytes = collection.to_vec();
             retag_optional_table(&mut bytes, selected, *b"CBDT");

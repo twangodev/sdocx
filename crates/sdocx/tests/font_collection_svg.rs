@@ -15,7 +15,6 @@ mod fixtures;
 
 const ROBOTO: &[u8] = include_bytes!("../assets/fonts/Roboto-Regular.ttf");
 const DEJAVU: &[u8] = include_bytes!("assets/fonts/DejaVuSans.ttf");
-const COLLECTION: &[u8] = include_bytes!("assets/fonts/Roboto-DejaVuSans.ttc");
 
 fn document(family: &str) -> Document {
     let mut payload = vec![0; 8];
@@ -67,6 +66,7 @@ fn document(family: &str) -> Document {
 
 #[test]
 fn shared_browser_collection_has_pinned_sources_and_reproducible_bytes() {
+    let collection = fixtures::roboto_dejavu();
     for (bytes, expected) in [
         (
             ROBOTO,
@@ -77,19 +77,19 @@ fn shared_browser_collection_has_pinned_sources_and_reproducible_bytes() {
             "57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e",
         ),
         (
-            COLLECTION,
+            collection.as_slice(),
             "05b90eb2586360bca28ff1852a12e0bda9933f344b0ae75b3465f22b73ed63ba",
         ),
     ] {
         assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected);
     }
-    assert_eq!(fixtures::collection(&[ROBOTO, DEJAVU]), COLLECTION);
+    assert_eq!(fixtures::collection(&[ROBOTO, DEJAVU]), collection);
 }
 
 #[test]
 fn svg_and_replay_embed_the_selected_collection_face_with_identical_glyphs() {
     let mut database = fontdb::Database::new();
-    database.load_font_data(COLLECTION.to_vec());
+    database.load_font_data(fixtures::roboto_dejavu());
     database.set_sans_serif_family("Roboto");
     let fonts = FontBook::new(Arc::new(database));
     for (family, index) in [("Roboto", 0), ("DejaVu Sans", 1)] {
