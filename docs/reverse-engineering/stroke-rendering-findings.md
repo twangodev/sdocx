@@ -379,6 +379,8 @@ of commit `2ffac9f` into a temporary `conformance` directory, with `scratch`
 linked to the native inputs. Its output is a full capture, of which the receipt
 retains the color and selection evidence.
 
+A [paired native control](../../conformance/chinesebrush-v5-paired-native.json) and [seven additional controls](../../tools/chinesebrush-v5-matrix/receipt.json) select GLV3 and produce identical streams for settings `4;` and `5;`. The additional controls vary pressure, size, display, duplicate and short paths, and an eight-point path. The explicit renderer maps both settings to GLV3, extrapolating from these synthetic host-Unicorn controls; they do not establish saved-note or device parity.
+
 The imported shared `Pen::SetSize` clamps finite sizes to 0.4–800 before storing
 them (PenCommon RVA `0x45fdc`, SHA-256
 `afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d`).
