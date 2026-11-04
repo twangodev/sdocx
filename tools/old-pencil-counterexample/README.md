@@ -34,3 +34,6 @@ CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_D
 
 
 The experimental shading, shifted-image-mask and diagnostic dot exporters/comparators have been retired. Their bounded measurements are preserved in [the historical findings](../../docs/reverse-engineering/old-pencil-color-findings.md#retired-pdf-and-svg-diagnostics), not offered as replay workflows. Red-on-green and shifted-phase SVG comparisons composited separately rendered transparent layers over native priors; they do not establish in-process canvas parity. The original-phase red PDF counterexample does not justify removing the single-stamp fallback.
+
+The phase and red/green dot-12 capture observations are retained under
+`receipt.json` → `dot12_controls.phase` and `dot12_controls.red_green`.

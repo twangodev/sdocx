@@ -24,5 +24,54 @@
     "vbo_sha256": "c45f9b1de5e46f5ab47d1016407ee8ec5fc1a1bfe97cee7375919b3a9932bb5b",
     "pre_sha256": "e8cd122936cb856e0165931cdf763ac27c3e62d52e200ee379caea65d252323c",
     "post_sha256": "a8b67db78d8300cbc5fb6e2d3d04cbff99329c06e2023bebafd0d686d65cf4af"
+  },
+  "dot12_controls": {
+    "phase": {
+      "script_sha256": "b9e3688a2d5ac567a79a763f703622feea711a6ea15050f0551cd86080b2931a",
+      "drawing_return": 1,
+      "instances": 1,
+      "vbo_sha256": "ef0bcfc864de7c74483954bde1f9259e71947a95820f638cce4132902cf39d42",
+      "errors": {
+        "gl_error_before_queries": 0,
+        "gl_error_after_queries": 0,
+        "gl_error_after_native_draw": 0,
+        "gl_error_after_post_readback": 0,
+        "native_task_gl_error_after_return": 0
+      },
+      "pre_draw_rgba8_sha256": "daff2a0b3b64e84516023fe291c3e5ad4b0103478e27af64d33f94968050c035",
+      "post_draw_rgba8_sha256": "057159d665e223e7d0040aaa1f783361464aa747f5797893841460d084cbeb4d"
+    },
+    "red_green": {
+      "1": {
+        "script_sha256": "d108f5eec9472d05b2dd37a997b25dc7809e2d942b2d9da33429c7f7411651b0",
+        "drawing_return": 1,
+        "instances": 1,
+        "vbo_sha256": "0d2db7f1d764537cfba5238a5f07f4e95f7911379ca538fbaac075156cf5695d",
+        "errors": {
+          "gl_error_before_queries": 0,
+          "gl_error_after_queries": 0,
+          "gl_error_after_native_draw": 0,
+          "gl_error_after_post_readback": 0,
+          "native_task_gl_error_after_return": 0
+        },
+        "pre_draw_rgba8_sha256": "daff2a0b3b64e84516023fe291c3e5ad4b0103478e27af64d33f94968050c035",
+        "post_draw_rgba8_sha256": "034f7797cddba34696ec3013270231ee774c9fea903bdf7215ff9f225533d3dc"
+      },
+      "2": {
+        "script_sha256": "6e78061bb05c85f0a2ae6a91c4ec9df98522f17c509d3b5cddeea05d652822f0",
+        "drawing_return": 1,
+        "instances": 1,
+        "vbo_sha256": "0d2db7f1d764537cfba5238a5f07f4e95f7911379ca538fbaac075156cf5695d",
+        "errors": {
+          "gl_error_before_queries": 0,
+          "gl_error_after_queries": 0,
+          "gl_error_after_native_draw": 0,
+          "gl_error_after_post_readback": 0,
+          "native_task_gl_error_after_return": 0
+        },
+        "pre_draw_rgba8_sha256": "daff2a0b3b64e84516023fe291c3e5ad4b0103478e27af64d33f94968050c035",
+        "post_draw_rgba8_sha256": "2c5534a5e0d0d4ab894fc762df2b6166a9523ea4024652041e3785a0a788501d"
+      }
+    }
   }
 }
