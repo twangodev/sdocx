@@ -1127,7 +1127,7 @@
   "geometry_count": 896,
   "geometry_sha256": "4992390d3737c38aafc8362cc113e1b3870367ed250a0b059b08c10e43297f0b",
   "crop": {
-    "path": "simplebrush-224-8-crop.rgba",
+    "path": "simplebrush-224-8-crop.rgba", "storage": {"format": "rgba-palette-runs-v1", "container": "conformance/simplebrush-native-crop-runs.json", "case": "conformance/simplebrush-224-8-crop.rgba", "path_role": "materialized legacy path"},
     "dimensions": [
       1808,
       32

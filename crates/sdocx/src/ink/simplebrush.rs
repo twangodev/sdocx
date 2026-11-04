@@ -1496,19 +1496,19 @@ mod tests {
                 include_bytes!("../../../../conformance/simplebrush-17-8-crop.rgba")
             }
             _ if probe == 32 => {
-                include_bytes!("../../../../conformance/simplebrush-32-8-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-32-8-crop.rgba")
             }
             _ if probe == 64 => {
-                include_bytes!("../../../../conformance/simplebrush-64-8-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-64-8-crop.rgba")
             }
             _ if probe == 128 => {
-                include_bytes!("../../../../conformance/simplebrush-128-8-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-128-8-crop.rgba")
             }
             _ if probe == 224 => {
-                include_bytes!("../../../../conformance/simplebrush-224-8-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-224-8-crop.rgba")
             }
             _ if probe == 192 => {
-                include_bytes!("../../../../conformance/simplebrush-192-8-crop.rgba")
+                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-192-8-crop.rgba")
             }
             _ if probe == 16 => {
                 include_bytes!("../../../../conformance/simplebrush-16-8-crop.rgba")

@@ -34,9 +34,15 @@ The tool-0 alternate 32-point size-20 capture uses the [retained receipt](tool0-
 
 ## Retained sparse native crops
 
-`conformance/simplebrush-native-crop-runs.json` losslessly stores 31 native crops
-as `[pixel_count, "rrggbbaa"]` runs, with original byte lengths, hashes and receipt
+`conformance/simplebrush-native-crop-runs.json` losslessly stores 36 native crops
+as `[pixel_count, "rrggbbaa"]` runs or `[pixel_count, palette_index]` runs with an
+explicit RGBA palette, with original byte lengths, hashes and receipt
 links. Rust checks decoded bytes before comparison. Receipt `crop.path` values
 are legacy materialized paths; `crop.storage` locates the retained data.
 
-Historical comparison scripts expect loose crop files; materialize the recorded runs in a temporary directory before using them. Recapture remains separate and can be checked against the retained raw hashes.
+Historical comparisons need loose files: decode runs (resolve palette indexes when
+present), verify byte lengths and SHA-256, and write the original basenames in a
+fresh temporary `conformance/` directory. Symlink unchanged receipts and crops,
+including the 17-point control, into that mirror; run scripts by absolute path
+from its parent. Never overwrite repository files. Recapture remains separate
+and can be checked against the retained raw hashes.
