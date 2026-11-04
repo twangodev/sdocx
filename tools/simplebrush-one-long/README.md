@@ -20,3 +20,5 @@ For the paired tool-3 control, repeat the 256-point capture and export with `--t
 A 320-point reversed size-8 tool-2 control extends the 1× gate to 320 for tool 2. The complete native vector matches the sampler; SVG alpha error falls from 707,892 to 10,010, matched-paper MuPDF RGB error from 779,807 to 78,058, and PDFium RGB error from 774,571 to 143,015. PDFium uses an unshifted grid. The retained frame, vector and [receipt](320-receipt.json) support this synthetic host comparison; other newly admitted inputs extrapolate. Reproduce with the commands above substituting `320` for `256`.
 
  The profile SVG and PDF are 467,629 and 2,265,187 bytes, versus 36,528 and 3,756 for fallback.
+
+The historical v62 case d captured geometry identical to `256.vector.zlib`; its tool, frame and scale belong to a separate capture.
