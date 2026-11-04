@@ -11165,6 +11165,8 @@ mod tests {
         };
         let (control, control_document) = render_pair(None);
         let (rotated, rotated_document) = render_pair(Some(30.0));
+        #[cfg(not(feature = "pdf"))]
+        let _ = (&control_document, &rotated_document);
         for page in [&control, &rotated] {
             assert!(page.paint_diagnostics.is_empty());
         }
