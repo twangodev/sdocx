@@ -202,7 +202,62 @@ mod tests {
             );
             pixmap
         };
-        let native = include_bytes!("../../../../conformance/marker3-tool1-host-crop.rgba");
+        use sha2::{Digest, Sha256};
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-tool1-paint-comparison.json"
+        ))
+        .unwrap();
+        let crop = &receipt["retained_crop"];
+        assert_eq!(crop["format"], "rgba-palette-runs-v1");
+        assert_eq!(crop["byte_length"], 4800);
+        assert_eq!(crop["frame_dimensions"], serde_json::json!([256, 256]));
+        assert_eq!(crop["crop_bounds"], serde_json::json!([30, 30, 70, 60]));
+        let colors = crop["palette"].as_array().unwrap();
+        assert!(!colors.is_empty() && colors.len() <= 30);
+        let palette: Vec<[u8; 4]> = colors
+            .iter()
+            .map(|value| {
+                let hex = value.as_str().unwrap();
+                assert_eq!(hex.len(), 8);
+                assert!(hex.bytes().all(|byte| byte.is_ascii_hexdigit()));
+                std::array::from_fn(|i| u8::from_str_radix(&hex[i * 2..i * 2 + 2], 16).unwrap())
+            })
+            .collect();
+        let runs = crop["runs"].as_array().unwrap();
+        assert!(!runs.is_empty() && runs.len() <= 1200);
+        let mut native = Vec::with_capacity(4800);
+        for run in runs {
+            let run = run.as_array().unwrap();
+            assert_eq!(run.len(), 2);
+            let count = usize::try_from(run[0].as_u64().unwrap()).unwrap();
+            assert!(count > 0 && count <= (4800 - native.len()) / 4);
+            let index = usize::try_from(run[1].as_u64().unwrap()).unwrap();
+            let pixel = palette
+                .get(index)
+                .expect("invalid native crop palette index");
+            for _ in 0..count {
+                native.extend_from_slice(pixel);
+            }
+        }
+        assert_eq!(native.len(), 4800);
+        let crop_sha = format!("{:x}", Sha256::digest(&native));
+        assert_eq!(
+            crop_sha,
+            "150d0a5645b5a255734ed5cabea50d1be9b1554f6e7d5500670fc1dff5a7ea58"
+        );
+        assert_eq!(crop_sha, crop["sha256"].as_str().unwrap());
+        // Restore native readback row order over the transparent target.
+        let mut frame = vec![0_u8; 256 * 256 * 4];
+        for (row, bytes) in native.chunks_exact(40 * 4).enumerate() {
+            let offset = ((row + 30) * 256 + 30) * 4;
+            frame[offset..offset + bytes.len()].copy_from_slice(bytes);
+        }
+        let frame_sha = format!("{:x}", Sha256::digest(&frame));
+        assert_eq!(
+            frame_sha,
+            "6d060d974f69e905765321e6258195f79ae5f2ecd9b957ac2dc97236b775fabc"
+        );
+        assert_eq!(frame_sha, receipt["readback"]["sha256"].as_str().unwrap());
         let error = |pixels: &resvg::tiny_skia::Pixmap| -> u64 {
             let mut sum = 0_u64;
             for y in 0..30 {

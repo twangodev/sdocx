@@ -1201,7 +1201,7 @@ versus fallback 33,950 and 33,482. The native RTV1 uses a color uniform in the
 same mask/composite pipeline for these tool-1 controls. This supports the
 explicit ARGB gate but is not exhaustive paint or device parity.
 
-The retained [40×30 RGBA crop](../../conformance/marker3-tool1-host-crop.rgba)
+The retained [40×30 RGBA crop stored as palette runs](../../conformance/marker3-tool1-paint-comparison.json)
 is rows 30–59 and columns 30–69 of the size-8 opaque host readback. Its
 SHA-256 is `150d0a5645b5a255734ed5cabea50d1be9b1554f6e7d5500670fc1dff5a7ea58`;
 the full readback identity is recorded in the first paint receipt. The Rust
