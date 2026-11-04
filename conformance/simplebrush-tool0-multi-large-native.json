@@ -69,7 +69,7 @@
     }
   },
   "crop": {
-    "path": "conformance/simplebrush-tool0-multi-large-crop.rgba",
+    "path": "conformance/simplebrush-tool0-multi-large-crop.rgba", "storage": {"format": "rgba-runs-v1", "container": "conformance/simplebrush-native-crop-runs.json", "case": "conformance/simplebrush-tool0-multi-large-crop.rgba", "path_role": "materialized legacy path"},
     "width": 48,
     "height": 48,
     "origin": "OpenGL bottom-left; rows bottom-up",

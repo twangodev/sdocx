@@ -31,3 +31,12 @@ POINT_COUNT=33 PROBE_SIZE=8 python3 tools/simplebrush-points/capture.py fraction
 For the 64-point control use `POINT_COUNT=64 PROBE_SIZE=20`; add `VARIANT=reverse` for the reverse case. Select `--tool 0` or `--tool 3` for their matching controls. The export generators and comparators have been retired; their reader measurements are historical.
 
 The tool-0 alternate 32-point size-20 capture uses the [retained receipt](tool0-alternate-size20-receipt.json): set `VARIANT=alternate POINT_COUNT=32 PROBE_SIZE=20` and pass `--tool 0`. Its measurements are synthetic host observations.
+
+## Retained sparse native crops
+
+`conformance/simplebrush-native-crop-runs.json` losslessly stores 31 native crops
+as `[pixel_count, "rrggbbaa"]` runs, with original byte lengths, hashes and receipt
+links. Rust checks decoded bytes before comparison. Receipt `crop.path` values
+are legacy materialized paths; `crop.storage` locates the retained data.
+
+Historical comparison scripts expect loose crop files; materialize the recorded runs in a temporary directory before using them. Recapture remains separate and can be checked against the retained raw hashes.

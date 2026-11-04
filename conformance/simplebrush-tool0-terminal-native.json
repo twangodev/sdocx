@@ -158,7 +158,7 @@
         }
       },
       "crop": {
-        "path": "conformance/simplebrush-tool0-short-terminal-crop.rgba",
+        "path": "conformance/simplebrush-tool0-short-terminal-crop.rgba", "storage": {"format": "rgba-runs-v1", "container": "conformance/simplebrush-native-crop-runs.json", "case": "conformance/simplebrush-tool0-short-terminal-crop.rgba", "path_role": "materialized legacy path"},
         "width": 48,
         "height": 48,
         "origin": "native readback (0,0), rows in readback order",
@@ -319,7 +319,7 @@
         }
       },
       "crop": {
-        "path": "conformance/simplebrush-tool0-boundary-crop.rgba",
+        "path": "conformance/simplebrush-tool0-boundary-crop.rgba", "storage": {"format": "rgba-runs-v1", "container": "conformance/simplebrush-native-crop-runs.json", "case": "conformance/simplebrush-tool0-boundary-crop.rgba", "path_role": "materialized legacy path"},
         "width": 48,
         "height": 48,
         "origin": "native readback (0,0), rows in readback order",
