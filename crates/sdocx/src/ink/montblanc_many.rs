@@ -398,6 +398,83 @@ fn many_point_rejects_excessive_records() {
 }
 
 #[test]
+fn nine_point_retained_native_capture_integrity() {
+    use base64::Engine;
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let directory = "tools/montblanc/nine-point";
+    let manifest: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/montblanc/nine-point/manifest.json"
+    ))
+    .unwrap();
+    let checked_bytes = |path: &str| {
+        let bytes = std::fs::read(root.join(path)).unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            manifest["sha256"][path],
+            "{path}"
+        );
+        bytes
+    };
+    // Historical exporter pins remain in the manifest; only live native inputs
+    // are required by this retained-capture check.
+    for name in [
+        "capture.py",
+        "capture-expanded-1x.py",
+        "capture-expanded-2x.py",
+        "expanded-streams.json",
+    ] {
+        checked_bytes(&format!("{directory}/{name}"));
+    }
+    for path in [
+        "conformance/montblanc-nine-point-native.json",
+        "crates/sdocx/src/ink/montblanc_nine_streams.json",
+    ] {
+        checked_bytes(path);
+    }
+    let mut pairs = vec![("capture.json.gz".to_owned(), "frame.rgba.zlib".to_owned())];
+    for scale in ["1x", "2x"] {
+        for case in ["loop", "reverse"] {
+            pairs.push((
+                format!("{case}-{scale}.json.gz"),
+                format!("{case}-{scale}.rgba.zlib"),
+            ));
+        }
+    }
+    for (capture_name, frame_name) in pairs {
+        let capture_bytes = checked_bytes(&format!("{directory}/{capture_name}"));
+        let capture: serde_json::Value =
+            serde_json::from_reader(flate2::read::GzDecoder::new(capture_bytes.as_slice()))
+                .unwrap();
+        let compressed = checked_bytes(&format!("{directory}/{frame_name}"));
+        let mut frame = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut frame)
+            .unwrap();
+        assert_eq!(frame.len(), 256 * 256 * 4, "{frame_name}");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&frame)),
+            capture["post_readback"]["sha256"],
+            "{frame_name}"
+        );
+        let embedded = base64::engine::general_purpose::STANDARD
+            .decode(
+                capture["post_readback"]["rgba8_zlib_base64"]
+                    .as_str()
+                    .unwrap(),
+            )
+            .unwrap();
+        let mut original = Vec::new();
+        flate2::read::ZlibDecoder::new(embedded.as_slice())
+            .read_to_end(&mut original)
+            .unwrap();
+        assert_eq!(frame, original, "{frame_name}");
+    }
+}
+
+#[test]
 fn nine_point_investigative_native_stream() {
     let cases: serde_json::Value =
         serde_json::from_str(include_str!("montblanc_nine_streams.json")).unwrap();
