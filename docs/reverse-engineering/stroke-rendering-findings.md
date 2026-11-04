@@ -1235,3 +1235,12 @@ This does not establish saved-note, PDF, or device parity or justify enabling it
 Three synthetic native Drawing/host-Mesa controls at widths 3, 6 and 12 with opaque, half-alpha and low-alpha colors show lower candidate RGB error than generic output in SVG, MuPDF and PDFium over #fcfcfc ([native frames](../../conformance/inkpen-v1-fixed-width-color-native.json), [export comparison](../../conformance/inkpen-v1-fixed-width-color-export-comparison.json)). The generic route uses an unsupported setting and does not preserve fixed-width behavior.
 
 MuPDF renders the nominal background as (251, 252, 251), adding a full-page error baseline. A historical reader-relative comparison accounted for that background but not ink color conversion; it does not prove parity. These synthetic controls do not establish saved-note or device parity. Capture and replay prerequisites are documented in [FIXED_WIDTH.md](../../tools/inkpen-v1/FIXED_WIDTH.md).
+
+## Historical AirBrush PDF diagnostics
+
+Synthetic PDF controls showed reader-dependent sensitivity to texture sampling,
+opacity and mask changes. Some interventions reduced error for individual paths
+but worsened others; none established a general correction. Native-frame image
+transport also left RGB differences and is not an independent paint reconstruction.
+These host observations do not establish device, saved-note or arbitrary-scale
+parity.
