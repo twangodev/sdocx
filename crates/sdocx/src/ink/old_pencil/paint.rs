@@ -29,7 +29,7 @@ const NATIVE_ATLAS_SHA256: &str =
     "5149e5daea6e172fb1798904209904676bcb49da168993657868c0ef4858d440";
 
 const INSTANCE_VBO: &[u8] = include_bytes!(
-    "../../../../../conformance/old-pencil-native-paint-v1/native-instance-vbo-v17.bin"
+    "../../../../../conformance/old-pencil-color/alpha.vbo"
 );
 const NATIVE_SPARSE_RGBA8: &[u8] = include_bytes!(
     "../../../../../conformance/old-pencil-native-paint-v1/native-sparse-readback-u16xy-rgba8.bin"
@@ -516,7 +516,7 @@ mod tests {
             (
                 include_bytes!("../../../../../conformance/old-pencil-color/red-pre.rgba.zlib"),
                 include_bytes!("../../../../../conformance/old-pencil-color/red-post.rgba.zlib"),
-                include_bytes!("../../../../../conformance/old-pencil-color/red.vbo"),
+                include_bytes!("../../../../../conformance/old-pencil-color/alpha.vbo"),
                 [221, 68, 17, 255],
             ),
             (
@@ -532,7 +532,7 @@ mod tests {
                 include_bytes!(
                     "../../../../../conformance/old-pencil-color/backdrop-post.rgba.zlib"
                 ),
-                include_bytes!("../../../../../conformance/old-pencil-color/backdrop.vbo"),
+                include_bytes!("../../../../../conformance/old-pencil-color/alpha.vbo"),
                 [221, 68, 17, 128],
             ),
             (

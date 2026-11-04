@@ -142,7 +142,7 @@ fn drawing_public_comparison() {
     compare(
         [6., 9.],
         [6., 9.],
-        include_bytes!("test_assets/drawing/public-replay/drawing-native-target-6-9.rgba.zlib"),
+        include_bytes!("test_assets/drawing/origin-offset/bottom-1.zlib"),
         InkRasterOrigin::BottomLeft,
         1,
     );

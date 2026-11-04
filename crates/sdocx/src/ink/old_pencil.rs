@@ -462,7 +462,7 @@ mod tests {
     const NATIVE_RECORDS: &[u8] =
         include_bytes!("../../../../conformance/old-pencil-glv1-v9-native.bin");
     const V17_NATIVE_RECORDS: &[u8] = include_bytes!(
-        "../../../../conformance/old-pencil-native-paint-v1/native-instance-vbo-v17.bin"
+        "../../../../conformance/old-pencil-color/alpha.vbo"
     );
 
     fn public_stroke(size: f32, pressure: &[f32]) -> crate::Stroke {

@@ -27,5 +27,5 @@ for name in ('red', 'alpha', 'backdrop', 'varied'):
     draw = case['native_vertex_input_observer']['draw_snapshots'][0]
     attr = next(item for item in draw['enabled_attribute_arrays'] if item['index'] == 1)
     vbo = bytes.fromhex(attr['buffer_contents_hex'])
-    assert vbo == (args.fixtures / f'{name}.vbo').read_bytes(), f'{name} vbo differs'
+    assert vbo == (args.fixtures / f'{"alpha" if name in ("red", "backdrop") else name}.vbo').read_bytes(), f'{name} vbo differs'
     print(name, 'full pre/post frame and VBO match')

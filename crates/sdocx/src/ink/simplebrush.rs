@@ -1939,7 +1939,7 @@ mod tests {
                     include_bytes!("../../../../conformance/simplebrush-short-large-geometry.bin")
                 }
                 _ if probe == 209 => {
-                    include_bytes!("../../../../conformance/simplebrush-two-short-geometry.bin")
+                    include_bytes!("../../../../conformance/simplebrush-tool0-short-geometry.bin")
                 }
                 _ if probe == 208 => include_bytes!(
                     "../../../../conformance/simplebrush-terminal-vertical-geometry.bin"
@@ -1960,10 +1960,10 @@ mod tests {
                     include_bytes!("../../../../conformance/simplebrush-two-reversed-geometry.bin")
                 }
                 _ if probe == 203 => {
-                    include_bytes!("../../../../conformance/simplebrush-two-short-geometry.bin")
+                    include_bytes!("../../../../conformance/simplebrush-tool0-short-geometry.bin")
                 }
                 _ if probe == 204 => {
-                    include_bytes!("../../../../conformance/simplebrush-two-zero-geometry.bin")
+                    include_bytes!("../../../../conformance/simplebrush-tool0-short-geometry.bin")
                 }
 
                 (4.0, 2) => {

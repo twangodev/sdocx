@@ -74,7 +74,7 @@ fn compare() {
         (
             [6., 9.],
             [6., 9.],
-            include_bytes!("test_assets/drawing/mixed-drawing/first.zlib").as_slice(),
+            include_bytes!("test_assets/drawing/independent-drawing/first.zlib").as_slice(),
         ),
         (
             [12., 12.],

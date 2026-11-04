@@ -140,7 +140,7 @@ const drawingStroke = {
 };
 const nextF32After32 = 32 + 2 ** -18;
 for (const [file, tx, ty, gx, gy] of [
-  ['drawing-native-target-6-9.rgba.zlib', 6, 9, 6, 9],
+  ['../origin-offset/bottom-1.zlib', 6, 9, 6, 9],
   ['drawing-native-target-translated.rgba.zlib', 32, 32, nextF32After32, nextF32After32],
 ]) {
   const frame = zlib.inflateSync(fs.readFileSync(path.join(
