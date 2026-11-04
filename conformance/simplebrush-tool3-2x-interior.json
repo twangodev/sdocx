@@ -35,7 +35,13 @@
       "nonzero_alpha": 625,
       "crop": {
         "file": "simplebrush-tool3-interior-a.rgba",
-        "sha256": "ff07fc9dfeb9775312a15fbb1fa7ccb1d8ccb48dfd88fe3852fe749b047b909b"
+        "sha256": "ff07fc9dfeb9775312a15fbb1fa7ccb1d8ccb48dfd88fe3852fe749b047b909b",
+        "storage": {
+          "format": "rgba-palette-runs-v1",
+          "container": "conformance/simplebrush-native-crop-runs.json",
+          "case": "conformance/simplebrush-tool3-interior-a.rgba",
+          "path_role": "materialized legacy path"
+        }
       },
       "svg_alpha_l1_generic_one_two": [
         113956,
@@ -82,7 +88,13 @@
       "nonzero_alpha": 2126,
       "crop": {
         "file": "simplebrush-tool3-interior-b.rgba",
-        "sha256": "4d741750e7909240c9b3509fe9d03c943cbe38b9a7025fec2edecd94b5f8271a"
+        "sha256": "4d741750e7909240c9b3509fe9d03c943cbe38b9a7025fec2edecd94b5f8271a",
+        "storage": {
+          "format": "rgba-palette-runs-v1",
+          "container": "conformance/simplebrush-native-crop-runs.json",
+          "case": "conformance/simplebrush-tool3-interior-b.rgba",
+          "path_role": "materialized legacy path"
+        }
       },
       "svg_alpha_l1_generic_one_two": [
         390923,
@@ -129,7 +141,13 @@
       "nonzero_alpha": 4328,
       "crop": {
         "file": "simplebrush-tool3-interior-c.rgba",
-        "sha256": "e813895be81817621c4831b42f61405dddd36d47c95f690c87020bc8bb68c82f"
+        "sha256": "e813895be81817621c4831b42f61405dddd36d47c95f690c87020bc8bb68c82f",
+        "storage": {
+          "format": "rgba-palette-runs-v1",
+          "container": "conformance/simplebrush-native-crop-runs.json",
+          "case": "conformance/simplebrush-tool3-interior-c.rgba",
+          "path_role": "materialized legacy path"
+        }
       },
       "svg_alpha_l1_generic_one_two": [
         865764,
