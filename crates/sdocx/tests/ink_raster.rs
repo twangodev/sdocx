@@ -744,9 +744,18 @@ fn pencil2_colored_tilted_overlapping_strokes_match_host_and_svg() {
         "assets/pencil2-overlap/bottom1-opaque-receipt.json"
     ))
     .unwrap();
-    let delta = include_bytes!("assets/pencil2-overlap/bottom1-opaque.delta");
+    let mut delta = Vec::new();
+    for row in receipt["delta_rows"].as_array().unwrap() {
+        let row = row.as_array().unwrap();
+        assert_eq!(row.len(), 5);
+        let index = u32::try_from(row[0].as_u64().unwrap()).unwrap();
+        delta.extend_from_slice(&index.to_le_bytes());
+        for channel in &row[1..] {
+            delta.push(u8::try_from(channel.as_u64().unwrap()).unwrap());
+        }
+    }
     assert_eq!(
-        format!("{:x}", Sha256::digest(delta)),
+        format!("{:x}", Sha256::digest(&delta)),
         receipt["delta_sha256"]
     );
     let (records, remainder) = delta.as_chunks::<8>();

@@ -175,7 +175,7 @@ const assets = path.join(__dirname, '../../sdocx/tests/assets');
 const readReceipt = name => JSON.parse(fs.readFileSync(path.join(assets, name), 'utf8'));
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 function nativeFrame(prior, deltaPath, expectedHash, deltaHash) {
-  const delta = fs.readFileSync(path.join(assets, deltaPath));
+  const delta = Buffer.isBuffer(deltaPath) ? deltaPath : fs.readFileSync(path.join(assets, deltaPath));
   if (deltaHash !== undefined) assert.equal(sha256(delta), deltaHash);
   assert.equal(delta.length % 8, 0);
   const expected = Buffer.from(prior);
@@ -219,7 +219,18 @@ try {
 } finally { overlap.free(); }
 
 const coloredReceipt = readReceipt('pencil2-overlap/bottom1-opaque-receipt.json');
-const coloredExpected = nativeFrame(prior, 'pencil2-overlap/bottom1-opaque.delta',
+assert.equal(coloredReceipt.delta_rows.length, coloredReceipt.changed_pixels);
+const coloredDelta = Buffer.alloc(coloredReceipt.delta_rows.length * 8);
+coloredReceipt.delta_rows.forEach((row, i) => {
+  assert.equal(row.length, 5);
+  assert.ok(Number.isInteger(row[0]) && row[0] >= 0 && row[0] <= 0xffffffff);
+  coloredDelta.writeUInt32LE(row[0], i * 8);
+  row.slice(1).forEach((channel, j) => {
+    assert.ok(Number.isInteger(channel) && channel >= 0 && channel <= 255);
+    coloredDelta[i * 8 + 4 + j] = channel;
+  });
+});
+const coloredExpected = nativeFrame(prior, coloredDelta,
   coloredReceipt.native_rgba_sha256, coloredReceipt.delta_sha256);
 const colored = new sdk.InkRasterCanvas({width: 192, height: 192, pixels_per_unit: 1, origin: 'BottomLeft'}, prior);
 try {
