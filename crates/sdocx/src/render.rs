@@ -5602,60 +5602,6 @@ const MAX_INKPEN2_ESTIMATED_MARKUP_BYTES: usize = 32 * 1024 * 1024;
 const INKPEN2_MARKUP_BUDGET_PER_RECORD: usize = 1024;
 const INKPEN2_MARKUP_FIXED_OVERHEAD_BYTES: usize = 4096;
 
-// Test-only admission for paired native experiments. Thread-local scope prevents
-// unrelated tests from observing it; the guard restores even during unwinding.
-#[cfg(test)]
-thread_local! {
-    static INKPEN2_EXPERIMENTAL_AA_RAINBOW: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-}
-
-#[cfg(test)]
-struct InkPen2ExperimentalAaGuard(bool);
-
-#[cfg(test)]
-impl InkPen2ExperimentalAaGuard {
-    fn enter() -> Self {
-        Self(INKPEN2_EXPERIMENTAL_AA_RAINBOW.with(|flag| flag.replace(true)))
-    }
-}
-
-#[cfg(test)]
-impl Drop for InkPen2ExperimentalAaGuard {
-    fn drop(&mut self) {
-        INKPEN2_EXPERIMENTAL_AA_RAINBOW.with(|flag| flag.set(self.0));
-    }
-}
-
-#[cfg(test)]
-thread_local! {
-    static INKPEN2_POSITIVE_Y_CHART: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-}
-
-#[cfg(test)]
-struct InkPen2PositiveYChartGuard(bool);
-
-#[cfg(test)]
-impl InkPen2PositiveYChartGuard {
-    fn enter() -> Self {
-        Self(INKPEN2_POSITIVE_Y_CHART.with(|flag| flag.replace(true)))
-    }
-}
-
-#[cfg(test)]
-impl Drop for InkPen2PositiveYChartGuard {
-    fn drop(&mut self) {
-        INKPEN2_POSITIVE_Y_CHART.with(|flag| flag.set(self.0));
-    }
-}
-
-fn inkpen2_reject_active_rainbow_aa(enabled: bool) -> bool {
-    #[cfg(test)]
-    if INKPEN2_EXPERIMENTAL_AA_RAINBOW.with(|flag| flag.get()) {
-        return false;
-    }
-    enabled
-}
-
 /// Prepare the bounded V1 vector approximation for an explicitly selected output scale.
 fn prepare_inkpen2_v1(
     stroke: &Stroke,
@@ -5791,7 +5737,7 @@ fn prepare_inkpen2_internal(
         return None;
     }
     let rainbow = if active_rainbow {
-        if inkpen2_reject_active_rainbow_aa(profile.enhanced_antialias)
+        if profile.enhanced_antialias
             || profile.screen_width.min(profile.screen_height) != 1080
             || rendering.style.color_type_raw != Some(1)
             || rendering.style.first_unparsed_field.is_some()
@@ -5869,8 +5815,7 @@ fn prepare_inkpen2_internal(
     } else {
         MAX_INKPEN2_OUTPUT_RECORDS
     };
-    #[allow(unused_mut)]
-    let mut output = if let Some(scale) = v1_scale {
+    let output = if let Some(scale) = v1_scale {
         let mut output = crate::ink::inkpen2::redraw_v1_bounded(input, output_budget)?;
         output.sample_ends.push(output.terminal.start);
         for record in &mut output.vertices {
@@ -5920,12 +5865,6 @@ fn prepare_inkpen2_internal(
     }
     if output.vertices.is_empty() {
         return None;
-    }
-    #[cfg(test)]
-    if INKPEN2_POSITIVE_Y_CHART.with(|flag| flag.get()) {
-        for record in &mut output.vertices {
-            record[1] = 96.0 - record[1];
-        }
     }
     let mut sample_ends = output.sample_ends;
     *sample_ends.last_mut()? = output.terminal.end;
@@ -7115,7 +7054,6 @@ mod tests {
         ink: &crate::PreparedInkPen2V9,
         transform: [f64; 6],
         options: &crate::PdfOptions,
-        artifact: Option<(&std::path::Path, &str)>,
     ) {
         use super::vector::{Group, Scene, Styled, Svg, Transform};
 
@@ -7128,9 +7066,36 @@ mod tests {
         let text = scene.take_native_text();
         let registered = scene.take_native_ink();
         assert_eq!(registered.len(), usize::from(ink.opacity != 0.));
+        if ink.opacity != 0. {
+            let (_, retained) = registered.iter().next().unwrap();
+            assert_eq!(retained.bounds, ink.bounds);
+            match &retained.payload {
+                super::NativeInkPayload::Radial {
+                    records,
+                    enhanced_antialias,
+                    ..
+                } => {
+                    assert_eq!(records, &ink.records);
+                    assert_eq!(*enhanced_antialias, ink.enhanced_antialias);
+                }
+                _ => panic!("expected retained radial atlas"),
+            }
+        }
         let text_error = scene.take_native_text_error();
         assert!(text_error.is_none(), "{text_error:?}");
         let svg = scene.finish();
+        if ink.opacity != 0. {
+            let (native_id, _) = registered.iter().next().unwrap();
+            assert!(
+                svg.contains(&native_id.svg_id()),
+                "native atlas marker required"
+            );
+        }
+        if ink.opacity != 0. && ink.enhanced_antialias {
+            assert!(svg.contains("<mask") && svg.contains(r#"mask=""#));
+            assert!(svg.contains("<filter") && svg.contains(r#"filter=""#));
+        }
+
         let retained = super::RenderedScene {
             page: super::RenderedPage {
                 source_page_index: 0,
@@ -7159,10 +7124,6 @@ mod tests {
                     .get(b"Subtype")
                     .is_ok_and(|v| v.as_name().is_ok_and(|name| name == b"Image"))))
         );
-        if let Some((dir, name)) = artifact {
-            write_new_artifact(&dir.join(format!("{name}.pdf")), &pdf);
-            write_new_artifact(&dir.join(format!("{name}.svg")), svg.as_bytes());
-        }
     }
 
     #[cfg(feature = "pdf")]
@@ -7204,56 +7165,12 @@ mod tests {
     }
 
     #[cfg(feature = "pdf")]
-    fn decode_hex(value: &str) -> Vec<u8> {
-        assert_eq!(value.len() % 2, 0, "capture hex has odd length");
-        value
-            .as_bytes()
-            .as_chunks::<2>()
-            .0
-            .iter()
-            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
-            .collect()
-    }
-
-    #[cfg(feature = "pdf")]
-    fn captured_inkpen2_records(bytes: &[u8]) -> Vec<[f32; 9]> {
-        assert_eq!(
-            bytes.len(),
-            25 * 9 * 4,
-            "unexpected captured native VBO size"
-        );
-        bytes
-            .as_chunks::<36>()
-            .0
-            .iter()
-            .map(|record| {
-                std::array::from_fn(|index| {
-                    let start = index * 4;
-                    f32::from_le_bytes(record[start..start + 4].try_into().unwrap())
-                })
-            })
-            .collect()
-    }
-
-    #[cfg(feature = "pdf")]
     fn record_bytes(records: &[[f32; 9]]) -> Vec<u8> {
         records
             .iter()
             .flatten()
             .flat_map(|value| value.to_le_bytes())
             .collect()
-    }
-
-    #[cfg(feature = "pdf")]
-    fn write_new_artifact(path: &std::path::Path, bytes: &[u8]) {
-        use std::{fs::OpenOptions, io::Write};
-
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(path)
-            .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
-        file.write_all(bytes).unwrap();
     }
 
     #[cfg(feature = "pdf")]
@@ -7374,188 +7291,67 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
-    #[ignore = "writes baseline and reflected-chart SVG/PDF pairs from the six captured native frames"]
-    fn write_inkpen2_reflection_chart_artifact_pairs() {
-        use serde_json::{Value, json};
-        use std::path::PathBuf;
-
-        let output_dir = std::env::var_os("SDOCX_INKPEN2_REFLECTION_ARTIFACT_DIR")
-            .expect("set SDOCX_INKPEN2_REFLECTION_ARTIFACT_DIR to a fresh output directory");
-        let output_dir = PathBuf::from(output_dir);
-        std::fs::create_dir_all(&output_dir).unwrap();
-        assert!(
-            std::fs::read_dir(&output_dir).unwrap().next().is_none(),
-            "artifact output directory must be empty"
+    fn inkpen2_native_records_preserve_reflected_chart_transport() {
+        let stroke = inkpen2_active_rainbow_hybrid_stroke();
+        let profile = InkPen2RenderProfile {
+            screen_width: 1920,
+            screen_height: 1080,
+            enhanced_antialias: false,
+        };
+        let native =
+            prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false)).unwrap();
+        let bytes = record_bytes(&native.records);
+        assert_eq!(bytes.len(), 900);
+        assert_eq!(
+            sha256_hex(&bytes),
+            "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987"
         );
-        let capture_dir = std::env::var_os("SDOCX_INKPEN2_CAPTURE_DIR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                    .join("../..")
-                    .join("tmp/vector-parity-plan/inkpen2-rainbow-paint/captures")
-            });
-        let cases = [
-            ("scale1_aa1_alpha128", 1.0_f32, 128_u8),
-            ("scale1_aa1_alpha255", 1.0, 255),
-            ("scale2_aa1_alpha128", 2.0, 128),
-            ("scale2_aa1_alpha255", 2.0, 255),
-            ("scale4_aa1_alpha128", 4.0, 128),
-            ("scale4_aa1_alpha255", 4.0, 255),
-        ];
-        let options =
-            crate::PdfOptions::new(std::sync::Arc::new(crate::pdf::fontdb::Database::new()));
-        let mut manifest_cases = Vec::new();
-        for (case_id, scale, alpha) in cases {
-            let capture_path = capture_dir.join(format!("{case_id}.json"));
-            let capture_bytes = std::fs::read(&capture_path)
-                .unwrap_or_else(|error| panic!("{}: {error}", capture_path.display()));
-            let capture: Value = serde_json::from_slice(&capture_bytes).unwrap();
-            let producer = &capture["joined_native_paint"]["producer"];
-            let vbo = decode_hex(
-                producer["native_AddPoint_vector_bytes_hex"]
-                    .as_str()
-                    .expect("native AddPoint VBO bytes"),
-            );
-            assert_eq!(vbo.len(), 25 * 9 * 4);
-            let vbo_sha256 = sha256_hex(&vbo);
-            assert_eq!(
-                vbo_sha256,
-                "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987"
-            );
-            assert_eq!(producer["sha256"].as_str(), Some(vbo_sha256.as_str()));
-            let stages = capture["joined_native_paint"]["native_stage_readbacks_before_invalidate"]
-                .as_array()
-                .expect("native mask, color and final frame captures");
-            assert_eq!(stages.len(), 3);
-            let native_stage_sha256 = stages
-                .iter()
-                .map(|stage| stage["rgba_sha256"].as_str().unwrap())
-                .collect::<Vec<_>>();
-            assert_eq!(
-                capture["input"]["color_argb_u32"].as_u64().unwrap() >> 24,
-                u64::from(alpha)
-            );
-            let source_records = captured_inkpen2_records(&vbo);
-            let baseline_bounds = inkpen2_bounds(&source_records);
+        assert!(
+            prepare_inkpen2_v9(
+                &stroke,
+                Some(InkPen2RenderProfile {
+                    enhanced_antialias: true,
+                    ..profile
+                }),
+                RenderTheme::for_canvas(false)
+            )
+            .is_none()
+        );
+        // Exercise field transport directly; public rainbow AA remains rejected.
+        let options = crate::PdfOptions::default();
+        for alpha in [128_u8, 255] {
             let baseline = crate::PreparedInkPen2V9 {
-                per_stamp_rgb: true,
                 enhanced_antialias: true,
-                records: source_records,
-                sample_ends: vec![0, 25],
-                color: Color {
-                    r: 51,
-                    g: 102,
-                    b: 153,
-                },
                 opacity: f64::from(f32::from(alpha) / 255.0),
-                bounds: baseline_bounds,
+                ..native.clone()
             };
             let reflected = inkpen2_reflected_chart(&baseline, 96.0);
-            let baseline_matrix = [f64::from(scale), 0.0, 0.0, -f64::from(scale), 0.0, 96.0];
-            let reflected_matrix = [
-                f64::from(scale),
-                0.0,
-                0.0,
-                f64::from(scale),
-                0.0,
-                96.0 - 96.0 * f64::from(scale),
-            ];
-            let physical_geometry_max_delta = inkpen2_chart_geometry_max_delta(
-                &baseline.records,
-                &reflected.records,
-                baseline_matrix,
-                reflected_matrix,
-            );
-            assert!(
-                physical_geometry_max_delta <= 1e-4,
-                "{case_id}: chart reflection moved geometry by {physical_geometry_max_delta} page points"
-            );
-            let baseline_name = format!("{case_id}.baseline-reflected");
-            let reflected_name = format!("{case_id}.positive-y-chart");
-            assert_inkpen2_pdf_export(
-                &baseline,
-                baseline_matrix,
-                &options,
-                Some((&output_dir, &baseline_name)),
-            );
-            assert_inkpen2_pdf_export(
-                &reflected,
-                reflected_matrix,
-                &options,
-                Some((&output_dir, &reflected_name)),
-            );
-            let baseline_svg =
-                std::fs::read(output_dir.join(format!("{baseline_name}.svg"))).unwrap();
-            let candidate_svg =
-                std::fs::read(output_dir.join(format!("{reflected_name}.svg"))).unwrap();
-            let baseline_pdf =
-                std::fs::read(output_dir.join(format!("{baseline_name}.pdf"))).unwrap();
-            let candidate_pdf =
-                std::fs::read(output_dir.join(format!("{reflected_name}.pdf"))).unwrap();
-            manifest_cases.push(json!({
-                "case_id": case_id,
-                "scale": scale,
-                "alpha": alpha,
-                "source_profile": capture["profile"],
-                "native_input_fields": {
-                    "pen_name": capture["input"]["pen_name"],
-                    "stroke_type": capture["input"]["stroke_type"],
-                    "tool_type": capture["input"]["tool_type"],
-                    "curve_enabled": capture["input"]["curve_enabled"],
-                    "advanced_setting": capture["input"]["advanced_setting"],
-                    "color_argb_u32": capture["input"]["color_argb_u32"],
-                    "points_f32_bits": capture["input"]["points_f32_bits"],
-                    "pressure_f32_bits": capture["input"]["pressure_f32_bits"],
-                    "timestamps_i32": capture["input"]["timestamps_i32"]
-                },
-                "native_scope": capture["joined_native_paint"]["boundaries"],
-                "native_draw_matrix": capture["joined_native_paint"]["paint"]["readback"]["draw_matrix_f32_row_major"],
-                "native_final_rgba_sha256": capture["joined_native_paint"]["paint"]["readback"]["sha256"],
-                "native_capture_sha256": sha256_hex(&capture_bytes),
-                "native_vbo_sha256": vbo_sha256,
-                "native_stage_sha256": native_stage_sha256,
-                "source_vbo_unchanged": true,
-                "records_sha256": {
-                    "baseline": sha256_hex(&record_bytes(&baseline.records)),
-                    "positive_y_chart": sha256_hex(&record_bytes(&reflected.records)),
-                },
-                "page": [128, 96],
-                "physical_transform_pair": {
-                    "baseline_reflected": baseline_matrix,
-                    "positive_y_chart": reflected_matrix,
-                    "coordinate_relation": "candidate cy = 96 - source cy; candidate page y = scale * candidate cy + 96 * (1 - scale) = 96 - scale * source cy"
-                },
-                "physical_geometry_max_delta_page_points": physical_geometry_max_delta,
-                "physical_geometry_max_delta_bound_page_points": 0.0001,
-                "bounds": {
-                    "baseline": [baseline.bounds.x_min, baseline.bounds.y_min, baseline.bounds.x_max, baseline.bounds.y_max],
-                    "positive_y_chart": [reflected.bounds.x_min, reflected.bounds.y_min, reflected.bounds.x_max, reflected.bounds.y_max]
-                },
-                "artifacts": {
-                    "baseline_svg": {"path": format!("{baseline_name}.svg"), "sha256": sha256_hex(&baseline_svg)},
-                    "positive_y_chart_svg": {"path": format!("{reflected_name}.svg"), "sha256": sha256_hex(&candidate_svg)},
-                    "baseline_pdf": {"path": format!("{baseline_name}.pdf"), "sha256": sha256_hex(&baseline_pdf)},
-                    "positive_y_chart_pdf": {"path": format!("{reflected_name}.pdf"), "sha256": sha256_hex(&candidate_pdf)}
+            assert_eq!(reflected.sample_ends, baseline.sample_ends);
+            assert_eq!(reflected.bounds.x_min, baseline.bounds.x_min);
+            assert_eq!(reflected.bounds.x_max, baseline.bounds.x_max);
+            assert!((reflected.bounds.y_min + baseline.bounds.y_max - 96.0).abs() <= 1e-4);
+            assert!((reflected.bounds.y_max + baseline.bounds.y_min - 96.0).abs() <= 1e-4);
+
+            for scale in [1.0, 2.0, 4.0] {
+                let original_matrix = [scale, 0.0, 0.0, -scale, 0.0, 96.0];
+                let reflected_matrix = [scale, 0.0, 0.0, scale, 0.0, 96.0 - 96.0 * scale];
+                assert!(
+                    inkpen2_chart_geometry_max_delta(
+                        &baseline.records,
+                        &reflected.records,
+                        original_matrix,
+                        reflected_matrix
+                    ) <= 1e-4
+                );
+                for y in [baseline.bounds.y_min, baseline.bounds.y_max] {
+                    let a = transformed_point(original_matrix, [baseline.bounds.x_min, y]);
+                    let b = transformed_point(reflected_matrix, [baseline.bounds.x_min, 96.0 - y]);
+                    assert!((a[1] - b[1]).abs() <= 1e-4);
                 }
-            }));
+                assert_inkpen2_pdf_export(&baseline, original_matrix, &options);
+                assert_inkpen2_pdf_export(&reflected, reflected_matrix, &options);
+            }
         }
-        let manifest = json!({
-            "schema": "sdocx-inkpen2-reflection-chart-pairs-v1",
-            "purpose": "test-only comparison of the same physical field under a reflected baseline CTM and conjugated positive-Y record chart",
-            "admission_changed": false,
-            "native_vbo_or_phase_changed": false,
-            "svg_phase_fit": false,
-            "reader_comparison": "compare complete 128x96 premultiplied RGBA from emitted SVG/PDF artifacts against the same captured native frame; reverse native GL rows once; no phase fitting",
-            "writer": {
-                "test_filter": "render::tests::write_inkpen2_reflection_chart_artifact_pairs",
-                "environment": "SDOCX_INKPEN2_REFLECTION_ARTIFACT_DIR",
-                "capture_override": "SDOCX_INKPEN2_CAPTURE_DIR",
-                "source_sha256": sha256_hex(include_bytes!("render.rs"))
-            },
-            "cases": manifest_cases
-        });
-        let manifest_bytes = serde_json::to_vec_pretty(&manifest).unwrap();
-        write_new_artifact(&output_dir.join("manifest.json"), &manifest_bytes);
     }
 
     #[cfg(feature = "pdf")]
@@ -7613,17 +7409,11 @@ mod tests {
             bounds.x_max = bounds.x_max.max(f64::from(x) + f64::from(rx));
             bounds.y_max = bounds.y_max.max(f64::from(y) + f64::from(ry));
         }
-        // Optional paired-export artifacts; ordinary tests stay entirely in memory.
-        let artifact_dir = std::env::var_os("SDOCX_INKPEN2_PDF_DIR").map(std::path::PathBuf::from);
-        if let Some(dir) = &artifact_dir {
-            std::fs::create_dir(dir).unwrap();
-        }
         let options =
             crate::PdfOptions::new(std::sync::Arc::new(crate::pdf::fontdb::Database::new()));
         for enhanced in [false, true] {
             for alpha in [0_u8, 128, 255] {
                 for scale in [1, 2, 4] {
-                    let name = format!("scale{scale}_aa{}_alpha{alpha}", u8::from(enhanced));
                     let ink = crate::PreparedInkPen2V9 {
                         per_stamp_rgb: true,
                         enhanced_antialias: enhanced,
@@ -7641,7 +7431,6 @@ mod tests {
                         &ink,
                         [f64::from(scale), 0., 0., -f64::from(scale), 0., 96.],
                         &options,
-                        artifact_dir.as_deref().map(|dir| (dir, name.as_str())),
                     );
                 }
             }
@@ -7672,14 +7461,9 @@ mod tests {
                 "021014a354c5f65195836a8c7a0ba017884a422dacf91813f73455914a4591b4",
             ),
         ];
-        let artifact_dir =
-            std::env::var_os("SDOCX_INKPEN2_THIN_PDF_DIR").map(std::path::PathBuf::from);
-        if let Some(dir) = &artifact_dir {
-            std::fs::create_dir(dir).unwrap();
-        }
         let options =
             crate::PdfOptions::new(std::sync::Arc::new(crate::pdf::fontdb::Database::new()));
-        for (size, size_tag, expected_hash) in cases {
+        for (size, _size_tag, expected_hash) in cases {
             let output = redraw(Input {
                 points: &points,
                 times: &[0, 10, 20, 30],
@@ -7727,10 +7511,6 @@ mod tests {
             }
             for enhanced in [false, true] {
                 for scale in [1, 4] {
-                    let name = format!(
-                        "thin_size{size_tag}_scale{scale}_aa{}_alpha128",
-                        u8::from(enhanced)
-                    );
                     let ink = crate::PreparedInkPen2V9 {
                         per_stamp_rgb: true,
                         enhanced_antialias: enhanced,
@@ -7748,7 +7528,6 @@ mod tests {
                         &ink,
                         [f64::from(scale), 0., 0., f64::from(scale), 16., 16.],
                         &options,
-                        artifact_dir.as_deref().map(|dir| (dir, name.as_str())),
                     );
                 }
             }
@@ -13613,214 +13392,6 @@ mod tests {
         })
         .resolve(&mut stroke);
         stroke
-    }
-
-    #[cfg(feature = "pdf")]
-    #[test]
-    #[ignore = "writes public-dispatch experimental AA rainbow artifacts"]
-    fn write_public_inkpen2_gradient_aa_artifacts() {
-        use serde_json::{Value, json};
-        use std::path::PathBuf;
-
-        let output = PathBuf::from(
-            std::env::var_os("SDOCX_INKPEN2_PUBLIC_AA_DIR")
-                .expect("set SDOCX_INKPEN2_PUBLIC_AA_DIR to a fresh directory"),
-        );
-        std::fs::create_dir_all(&output).unwrap();
-        assert!(
-            std::fs::read_dir(&output).unwrap().next().is_none(),
-            "output directory must be empty"
-        );
-        let captures = std::env::var_os("SDOCX_INKPEN2_CAPTURE_DIR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                    .join("../..")
-                    .join("tmp/vector-parity-plan/inkpen2-rainbow-paint/captures")
-            });
-        let profile = InkPen2RenderProfile {
-            screen_width: 1920,
-            screen_height: 1080,
-            enhanced_antialias: true,
-        };
-        let options = RenderOptions {
-            inkpen2_profile: Some(profile),
-            ..RenderOptions::default()
-        };
-        let mut cases = Vec::new();
-        let _guard = super::InkPen2ExperimentalAaGuard::enter();
-        for scale in [1, 2, 4] {
-            for alpha in [128_u8, 255] {
-                let id = format!("scale{scale}_aa1_alpha{alpha}");
-                let capture_bytes = std::fs::read(captures.join(format!("{id}.json"))).unwrap();
-                let capture: Value = serde_json::from_slice(&capture_bytes).unwrap();
-                let producer = &capture["joined_native_paint"]["producer"];
-                let native = decode_hex(
-                    producer["native_AddPoint_vector_bytes_hex"]
-                        .as_str()
-                        .unwrap(),
-                );
-                let expected = "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987";
-                assert_eq!(native.len(), 25 * 9 * 4);
-                assert_eq!(sha256_hex(&native), expected);
-                assert_eq!(producer["sha256"].as_str(), Some(expected));
-                assert_eq!(
-                    capture["input"]["color_argb_u32"].as_u64().unwrap() >> 24,
-                    u64::from(alpha)
-                );
-                let stages =
-                    capture["joined_native_paint"]["native_stage_readbacks_before_invalidate"]
-                        .as_array()
-                        .unwrap();
-                assert_eq!(stages.len(), 3);
-                let mut stroke = inkpen2_active_rainbow_hybrid_stroke();
-                stroke.rendering.as_mut().unwrap().style.color_argb = Some(
-                    u32::try_from(capture["input"]["color_argb_u32"].as_u64().unwrap()).unwrap(),
-                );
-                let prepared =
-                    prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
-                        .unwrap();
-                assert!(prepared.enhanced_antialias && prepared.per_stamp_rgb);
-                assert_eq!(record_bytes(&prepared.records), native);
-                let mut page = page_with_uncolored_stroke();
-                page.width = 128;
-                page.height = 96;
-                page.objects = vec![stroke.clone().into()];
-                let doc = document(page);
-                let layout = layout_document(&doc);
-                assert_eq!(layout.pages.len(), 1);
-                for positive_chart in [false, true] {
-                    let _chart_guard =
-                        positive_chart.then(super::InkPen2PositiveYChartGuard::enter);
-                    let chart_prepared =
-                        prepare_inkpen2_v9(&stroke, Some(profile), RenderTheme::for_canvas(false))
-                            .unwrap();
-                    let expected_chart = if positive_chart {
-                        inkpen2_reflected_chart(&prepared, 96.0)
-                    } else {
-                        prepared.clone()
-                    };
-                    assert_eq!(chart_prepared.records, expected_chart.records);
-                    assert_eq!(chart_prepared.sample_ends, prepared.sample_ends);
-                    assert_eq!(chart_prepared.bounds, expected_chart.bounds);
-                    if positive_chart {
-                        let s = f64::from(scale);
-                        assert!(
-                            inkpen2_chart_geometry_max_delta(
-                                &prepared.records,
-                                &chart_prepared.records,
-                                [s, 0.0, 0.0, -s, 0.0, 96.0],
-                                [s, 0.0, 0.0, s, 0.0, 96.0 - 96.0 * s],
-                            ) <= 1e-4,
-                            "{id}: chart changed physical stamp geometry"
-                        );
-                    }
-                    let mut cache = super::DocumentTextCache::default();
-                    let mut scene = cache
-                        .render_layout_page_scenes(
-                            &doc,
-                            &[&layout.pages[0]],
-                            &options,
-                            &super::fonts::FontBook::default(),
-                            &mut |_| {},
-                        )
-                        .remove(0);
-                    assert_eq!(scene.ink.len(), 1, "public dispatch must retain native ink");
-                    assert!(scene.text_error.is_none());
-                    let (native_id, retained) = scene.ink.iter().next().unwrap();
-                    assert_eq!(retained.bounds, chart_prepared.bounds);
-                    match &retained.payload {
-                        super::NativeInkPayload::Radial {
-                            records,
-                            enhanced_antialias,
-                            ..
-                        } => {
-                            assert_eq!(records, &chart_prepared.records);
-                            assert!(*enhanced_antialias);
-                        }
-                        _ => panic!("expected retained radial atlas"),
-                    }
-                    let source = &scene.page.svg;
-                    assert!(
-                        source.contains(&native_id.svg_id()),
-                        "native atlas marker required"
-                    );
-                    assert!(
-                        source.contains("<mask") && source.contains(r#"mask=""#),
-                        "active mask required"
-                    );
-                    assert!(
-                        source.contains("<filter") && source.contains(r#"filter=""#),
-                        "active filter required"
-                    );
-                    // The public scene is in document coordinates. Apply the capture
-                    // chart after the background, while keeping the sidecar intact;
-                    // the PDF renderer associates its retained ink with the SVG node.
-                    let open_end = source.find('>').unwrap() + 1;
-                    let close_start = source.rfind("</svg>").unwrap();
-                    let body = &source[open_end..close_start];
-                    let (background, content) = if let Some(start) = body.find("<rect") {
-                        let end = start + body[start..].find("/>").unwrap() + 2;
-                        (&body[..end], &body[end..])
-                    } else {
-                        ("", body)
-                    };
-                    let transform = if positive_chart {
-                        format!("matrix({scale},0,0,{scale},0,{})", 96 - 96 * scale)
-                    } else {
-                        format!("matrix({scale},0,0,-{scale},0,96)")
-                    };
-                    let svg = format!(
-                        r#"{}{}<g transform="{transform}">{}</g></svg>"#,
-                        &source[..open_end],
-                        background,
-                        content
-                    );
-                    scene.page.svg = svg.clone();
-                    let pdf = crate::pdf::render_native_scene_pdf_for_test(
-                        &scene,
-                        &crate::PdfOptions::default(),
-                    )
-                    .unwrap();
-                    let parsed = lopdf::Document::load_mem(&pdf).unwrap();
-                    assert_eq!(parsed.get_pages().len(), 1);
-                    assert!(
-                        !parsed
-                            .objects
-                            .values()
-                            .any(|object| object
-                                .as_stream()
-                                .is_ok_and(|stream| stream.dict.get(b"Subtype").is_ok_and(|v| v
-                                    .as_name()
-                                    .is_ok_and(|name| name == b"Image"))))
-                    );
-                    let artifact_id = if positive_chart {
-                        format!("{id}_positive_y")
-                    } else {
-                        id.clone()
-                    };
-                    write_new_artifact(&output.join(format!("{artifact_id}.svg")), svg.as_bytes());
-                    write_new_artifact(&output.join(format!("{artifact_id}.pdf")), &pdf);
-                    cases.push(json!({
-                    "case_id": artifact_id, "scale": scale, "alpha": alpha, "positive_y_chart": positive_chart,
-                    "native_capture_sha256": sha256_hex(&capture_bytes), "native_vbo_sha256": expected,
-                    "native_stage_sha256": stages.iter().map(|stage| stage["rgba_sha256"].as_str().unwrap()).collect::<Vec<_>>(),
-                    "native_draw_matrix": capture["joined_native_paint"]["paint"]["readback"]["draw_matrix_f32_row_major"],
-                    "comparison_transform": if positive_chart { [scale, 0, 0, scale, 0, 96 - 96 * scale] } else { [scale, 0, 0, -scale, 0, 96] },
-                    "svg_sha256": sha256_hex(svg.as_bytes()), "pdf_sha256": sha256_hex(&pdf)
-                }));
-                }
-            }
-        }
-        let manifest = json!({
-            "schema": "sdocx-inkpen2-public-aa-gradient-v1", "admission_changed": false,
-            "coordinate_note": "The original chart uses [scale, 0, 0, -scale, 0, 96]. The positive-Y chart reflects records before atlas and sidecar registration and uses [scale, 0, 0, scale, 0, 96-96*scale]. Compare 128x96 outputs after reversing native GL rows once. Parity is not established by this writer.",
-            "cases": cases
-        });
-        write_new_artifact(
-            &output.join("manifest.json"),
-            &serde_json::to_vec_pretty(&manifest).unwrap(),
-        );
     }
 
     #[test]
