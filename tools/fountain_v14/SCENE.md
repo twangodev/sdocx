@@ -59,5 +59,14 @@ Rebuild the test artifacts after changing either fixture; do not reuse prior PDF
 The fresh-canvas regression uses crate-local `fountain-v14-fresh-canvas-native.json`
 and `fountain-v14-fresh-drawing-native.json` receipts beside the lifecycle fixture.
 After recapturing with `fresh_canvas_capture.py` or `fresh_drawing_capture.py`,
-copy its matching conformance JSON to `crates/sdocx/tests/assets/fountain-v14/`
-and run `cargo test -p sdocx --features "render serde" --test fountain_v14_cache_lifecycle`.
+copy the matching receipt and verify its bytes before replay:
+
+```sh
+cp conformance/fountain-v14-fresh-canvas-native.json crates/sdocx/tests/assets/fountain-v14/fountain-v14-fresh-canvas-native.json
+cp conformance/fountain-v14-fresh-drawing-native.json crates/sdocx/tests/assets/fountain-v14/fountain-v14-fresh-drawing-native.json
+```
+
+Run `cargo test -p sdocx --features "render serde" --test fountain_v14_cache_lifecycle`
+with the shared Cargo settings in [README.md](README.md). The scene export
+comparator reads the crate-local assets. Historical scripts requiring generated
+conformance paths need temporary copies of the corresponding retained assets.
