@@ -1495,6 +1495,185 @@ mod tests {
                 image.data(),
                 prior.iter().flatten().copied().collect::<Vec<_>>()
             );
+            let mut overlap_canvas = crate::InkRasterCanvas::new(
+                crate::InkRasterContext {
+                    width: 321,
+                    height: 228,
+                    pixels_per_unit: 1,
+                    origin: crate::InkRasterOrigin::TopLeft,
+                },
+                [0; 4],
+            )
+            .unwrap();
+            let mut shifted = stroke.clone();
+            for point in &mut shifted.points {
+                point.x += 5.0;
+                point.y += 3.0;
+            }
+            for (object, offset) in [(&stroke, [125.0, 30.0]), (&shifted, [130.0, 33.0])] {
+                overlap_canvas
+                    .paint_brushpen_glv10_host(
+                        object,
+                        crate::BrushPenPaintContext {
+                            screen_width: 1920,
+                            screen_height: 1080,
+                            projection: values("location", 0).try_into().unwrap(),
+                            rgb: color[..3].try_into().unwrap(),
+                            grain_period: [321.0, 228.0],
+                            grain_offset: offset,
+                            num_tiles: 3.0,
+                            atlas: crate::BrushPenTexture {
+                                width: 144,
+                                height: 144,
+                                rgba: &atlas_rgba,
+                            },
+                            grain: crate::BrushPenTexture {
+                                width: 321,
+                                height: 228,
+                                rgba: &grain_rgba,
+                            },
+                        },
+                    )
+                    .unwrap();
+            }
+            let actual_overlap: Vec<u8> = overlap_canvas
+                .pixels()
+                .as_chunks::<321>()
+                .0
+                .iter()
+                .rev()
+                .flatten()
+                .flatten()
+                .copied()
+                .collect();
+            let mut native_overlap = Vec::new();
+            ZlibDecoder::new(
+                &include_bytes!("../../../tests/assets/brushpen-overlap/overlap.rgba.zlib")[..],
+            )
+            .read_to_end(&mut native_overlap)
+            .unwrap();
+            assert_eq!(actual_overlap, native_overlap);
+            let mut pressure_canvas = crate::InkRasterCanvas::new(
+                crate::InkRasterContext {
+                    width: 321,
+                    height: 228,
+                    pixels_per_unit: 1,
+                    origin: crate::InkRasterOrigin::TopLeft,
+                },
+                [0; 4],
+            )
+            .unwrap();
+            shifted.pressures = vec![0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1];
+            for (object, offset) in [(&stroke, [125.0, 30.0]), (&shifted, [130.0, 33.0])] {
+                pressure_canvas
+                    .paint_brushpen_glv10_host(
+                        object,
+                        crate::BrushPenPaintContext {
+                            screen_width: 1920,
+                            screen_height: 1080,
+                            projection: values("location", 0).try_into().unwrap(),
+                            rgb: color[..3].try_into().unwrap(),
+                            grain_period: [321.0, 228.0],
+                            grain_offset: offset,
+                            num_tiles: 3.0,
+                            atlas: crate::BrushPenTexture {
+                                width: 144,
+                                height: 144,
+                                rgba: &atlas_rgba,
+                            },
+                            grain: crate::BrushPenTexture {
+                                width: 321,
+                                height: 228,
+                                rgba: &grain_rgba,
+                            },
+                        },
+                    )
+                    .unwrap();
+            }
+            let pressure_pixels: Vec<u8> = pressure_canvas
+                .pixels()
+                .as_chunks::<321>()
+                .0
+                .iter()
+                .rev()
+                .flatten()
+                .flatten()
+                .copied()
+                .collect();
+            let mut native_pressure = Vec::new();
+            ZlibDecoder::new(
+                &include_bytes!(
+                    "../../../tests/assets/brushpen-overlap/pressure-overlap.rgba.zlib"
+                )[..],
+            )
+            .read_to_end(&mut native_pressure)
+            .unwrap();
+            assert_eq!(pressure_pixels, native_pressure);
+            let mut color_canvas = crate::InkRasterCanvas::new(
+                crate::InkRasterContext {
+                    width: 321,
+                    height: 228,
+                    pixels_per_unit: 1,
+                    origin: crate::InkRasterOrigin::TopLeft,
+                },
+                [32, 160, 96, 255],
+            )
+            .unwrap();
+            shifted.pressures = stroke.pressures.clone();
+            for (object, offset, rgb) in [
+                (
+                    &stroke,
+                    [124.999_99, 30.000_002],
+                    [0.815_686_3, 0.250_980_4, 0.125_490_2],
+                ),
+                (
+                    &shifted,
+                    [130.0, 32.999_996],
+                    [0.125_490_2, 0.501_960_8, 0.878_431_4],
+                ),
+            ] {
+                color_canvas
+                    .paint_brushpen_glv10_host(
+                        object,
+                        crate::BrushPenPaintContext {
+                            screen_width: 1920,
+                            screen_height: 1080,
+                            projection: values("location", 0).try_into().unwrap(),
+                            rgb,
+                            grain_period: [321.0, 228.0],
+                            grain_offset: offset,
+                            num_tiles: 3.0,
+                            atlas: crate::BrushPenTexture {
+                                width: 144,
+                                height: 144,
+                                rgba: &atlas_rgba,
+                            },
+                            grain: crate::BrushPenTexture {
+                                width: 321,
+                                height: 228,
+                                rgba: &grain_rgba,
+                            },
+                        },
+                    )
+                    .unwrap();
+            }
+            let color_pixels: Vec<u8> = color_canvas
+                .pixels()
+                .as_chunks::<321>()
+                .0
+                .iter()
+                .rev()
+                .flatten()
+                .flatten()
+                .copied()
+                .collect();
+            let mut native_color = Vec::new();
+            ZlibDecoder::new(
+            &include_bytes!("../../../tests/assets/brushpen-overlap/color-overlap.rgba.zlib")[..],
+        )
+        .read_to_end(&mut native_color)
+        .unwrap();
+            assert_eq!(color_pixels, native_color);
         }
         for (case_index, (receipt, compressed)) in [
             (

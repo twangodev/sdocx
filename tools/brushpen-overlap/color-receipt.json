@@ -1,0 +1,221 @@
+{
+  "scope": "Synthetic ObjectStroke Drawing to queued host Unicorn/Mesa tasks; no app lifecycle, saved note or device claim. Transitive adapter closure and toolchain are not pinned.",
+  "input_sha256": {
+    "tools/brushpen-overlap/build_capture.py": "0b1cf519ed24538b244f6f2079c27c6f9aefeb2e786cdbf4c5b3496743d8a1e2",
+    "tools/brushpen-transform/second_mapdraw.py": "9e9632df53c725b6018ba6892edc3605649762f7eba6e7b7098f25af6a8d185f",
+    "tools/brushpen-transform/long_probe.py": "77e48b4625361cd14eb5aa4637e31af5e7e3da52794547e93681f5b0e6bbeb40",
+    "conformance/brushpen-second-native/geometry-221x44.bin": "9c0e7c402e7bd064b37612b6bcaf8718f4475771cbecb98503afbabb69c61b3d",
+    "scratch/apk-analysis-native/arm64-v8a/libSPenBrushPen.so": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce"
+  },
+  "source_color_getters": [
+    "SOURCE_COLOR 0x100e5af0 0xffd04020",
+    "SOURCE_COLOR 0x10158f40 0xff2080e0"
+  ],
+  "background_rgba": [
+    32,
+    160,
+    96,
+    255
+  ],
+  "background_readback_verified": true,
+  "first_frame": "1f525344203c3db1e4a17a7b37045f321782a61e7d2b099df8116043bcd9cbd6 73188 framebuffer 2 texture 4 first_object 0x100e5af0 tasks 0x100f1df0 0x100f1e30 0x100f1ec0 vector 0x100e9ce0",
+  "second_submission": {
+    "source": {
+      "callback_count": 221,
+      "canvas": "0x100e5870",
+      "draw_result": 1,
+      "drawing": "0x10032560",
+      "object": "0x10158f40"
+    },
+    "tasks": [
+      {
+        "name": "vtable for SPen::WorkerTask::Member2<SPen::PenDrawableRT, void (SPen::PenDrawableRT::*)(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*), std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*>",
+        "task": "0x10163810",
+        "words": [
+          "0x10774f8",
+          "0x0",
+          "0x100e99e0",
+          "0x104a5c4",
+          "0x0",
+          "0x1015b780",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0"
+        ]
+      },
+      {
+        "name": "vtable for SPen::PenGLRenderMsg",
+        "task": "0x10163850",
+        "words": [
+          "0x10774c8",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x100e99e0",
+          "0x100e5870",
+          "0x0",
+          "0x41c000004283a25e",
+          "0x428fae544303f680",
+          "0x3f800000",
+          "0x0",
+          "0x3f80000000000000"
+        ]
+      },
+      {
+        "name": "vtable for SPen::WorkerTask::Delete<std::__ndk1::vector<float, std::__ndk1::allocator<float> > >",
+        "task": "0x101638e0",
+        "words": [
+          "0x1077528",
+          "0x0",
+          "0x1015b780",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0"
+        ]
+      }
+    ]
+  },
+  "second_task_returns": [
+    "SECOND_TASK_END 0x200f1000 framebuffer 1 attachment 3 draws 2",
+    "SECOND_TASK_END 0x200f1000 framebuffer 2 attachment 4 draws 3",
+    "SECOND_TASK_END 0x200f1000 framebuffer 2 attachment 4 draws 3"
+  ],
+  "uniforms": [
+    {
+      "location": 0,
+      "count": 1,
+      "transpose": 0,
+      "values": [
+        0.006230529397726059,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.008771929889917374,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "uniform4fv_location": 4,
+      "count": 1,
+      "values": [
+        0.8156862854957581,
+        0.250980406999588,
+        0.125490203499794,
+        1.0
+      ],
+      "raw_f32_le": "d1d0503f8180803e8180003e0000803f",
+      "phase": "native PenGLRenderMsg task2"
+    },
+    {
+      "uniform2fv_location": 5,
+      "count": 1,
+      "values": [
+        321.0,
+        228.0
+      ]
+    },
+    {
+      "uniform2fv_location": 6,
+      "count": 1,
+      "values": [
+        124.99999237060547,
+        30.000001907348633
+      ]
+    },
+    {
+      "uniform1f_location": 1,
+      "value": 3.0
+    },
+    {
+      "uniform1i_location": 2,
+      "value": 0
+    },
+    {
+      "uniform1i_location": 3,
+      "value": 1
+    },
+    {
+      "location": 0,
+      "count": 1,
+      "transpose": 0,
+      "values": [
+        0.006230529397726059,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.008771929889917374,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "uniform4fv_location": 4,
+      "count": 1,
+      "values": [
+        0.125490203499794,
+        0.501960813999176,
+        0.8784313797950745,
+        1.0
+      ],
+      "raw_f32_le": "8180003e8180003fe1e0603f0000803f",
+      "phase": "native PenGLRenderMsg task2"
+    },
+    {
+      "uniform2fv_location": 5,
+      "count": 1,
+      "values": [
+        321.0,
+        228.0
+      ]
+    },
+    {
+      "uniform2fv_location": 6,
+      "count": 1,
+      "values": [
+        130.0,
+        32.999996185302734
+      ]
+    },
+    {
+      "uniform1f_location": 1,
+      "value": 3.0
+    },
+    {
+      "uniform1i_location": 2,
+      "value": 0
+    },
+    {
+      "uniform1i_location": 3,
+      "value": 1
+    }
+  ],
+  "second_frame": "af7d8012258818efe9635d80b70b5b337076618813398df6455bf3b364302a5f 73188 gl_error 0"
+}

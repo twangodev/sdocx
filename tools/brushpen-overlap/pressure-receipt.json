@@ -1,0 +1,99 @@
+{
+  "scope": "Synthetic sequential ObjectStroke submissions to one host Unicorn/Mesa canvas; no device, saved-note, or application lifecycle claim.",
+  "second_points_translation": [
+    5,
+    3
+  ],
+  "second_pressures": [
+    0.8,
+    0.7,
+    0.6,
+    0.5,
+    0.4,
+    0.3,
+    0.2,
+    0.1
+  ],
+  "first_sha256": "39fa1443113fdeaca78173613ba7c87282407609527763993b37dc6fdd924da2",
+  "second_sha256": "ea65a8507a23dc8d75e1693789b8cf3bee5bd6a8e2d401e7772c3fa13e34ea48",
+  "covered_pixels": 868,
+  "previously_covered_changed_pixels": 88,
+  "task_return_pc": "0x200f1000",
+  "second_draw_framebuffer": 2,
+  "second_draw_attachment": 4,
+  "gl_error": 0,
+  "capture_builder_sha256": "435f1ee2dfddbe050ee81a694f88aa45f55be9357246477a719990391c9fbc58",
+  "source_runner_second_mapdraw_sha256": "9e9632df53c725b6018ba6892edc3605649762f7eba6e7b7098f25af6a8d185f",
+  "first_frame": "FIRST_FRAME 39fa1443113fdeaca78173613ba7c87282407609527763993b37dc6fdd924da2 539 framebuffer 2 texture 4 first_object 0x100e5af0 tasks 0x100f1df0 0x100f1e30 0x100f1ec0 vector 0x100e9ce0",
+  "second_source_and_tasks": {
+    "source": {
+      "callback_count": 250,
+      "canvas": "0x100e5870",
+      "draw_result": 1,
+      "drawing": "0x10032560",
+      "object": "0x10158f40"
+    },
+    "tasks": [
+      {
+        "name": "vtable for SPen::WorkerTask::Member2<SPen::PenDrawableRT, void (SPen::PenDrawableRT::*)(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*), std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*>",
+        "task": "0x10163810",
+        "words": [
+          "0x10774f8",
+          "0x0",
+          "0x100e99e0",
+          "0x104a5c4",
+          "0x0",
+          "0x1015b780",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0"
+        ]
+      },
+      {
+        "name": "vtable for SPen::PenGLRenderMsg",
+        "task": "0x10163850",
+        "words": [
+          "0x10774c8",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x100e99e0",
+          "0x100e5870",
+          "0x0",
+          "0x41c000004286850a",
+          "0x428e9f0b4303f680",
+          "0x3f800000",
+          "0x0",
+          "0x3f80000000000000"
+        ]
+      },
+      {
+        "name": "vtable for SPen::WorkerTask::Delete<std::__ndk1::vector<float, std::__ndk1::allocator<float> > >",
+        "task": "0x101638e0",
+        "words": [
+          "0x1077528",
+          "0x0",
+          "0x1015b780",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0"
+        ]
+      }
+    ]
+  },
+  "task_returns": [
+    "SECOND_TASK_END 0x200f1000 framebuffer 1 attachment 3 draws 2",
+    "SECOND_TASK_END 0x200f1000 framebuffer 2 attachment 4 draws 3",
+    "SECOND_TASK_END 0x200f1000 framebuffer 2 attachment 4 draws 3"
+  ],
+  "second_frame": "SECOND_FRAME ea65a8507a23dc8d75e1693789b8cf3bee5bd6a8e2d401e7772c3fa13e34ea48 868 gl_error 0"
+}

@@ -1,0 +1,81 @@
+{
+  "scope": "Synthetic ObjectDrawing source and captured queue execution in Unicorn with host adapters and Mesa, sequential submissions to one native SPPenCanvas; not device, saved-note, or application lifecycle evidence.",
+  "inputs": "First 221-record synthetic motion in tools/brushpen-transform/second_mapdraw.py; second fresh ObjectStroke uses identical inputs and points translated (+5,+3).",
+  "first": "FIRST_FRAME 39fa1443113fdeaca78173613ba7c87282407609527763993b37dc6fdd924da2 539 framebuffer 2 texture 4 first_object 0x100e5af0 tasks 0x100f1df0 0x100f1e30 0x100f1ec0 vector 0x100e9ce0",
+  "second_source_and_tasks": {
+    "source": {
+      "callback_count": 221,
+      "canvas": "0x100e5870",
+      "draw_result": 1,
+      "drawing": "0x10032560",
+      "object": "0x10158f40"
+    },
+    "tasks": [
+      {
+        "name": "vtable for SPen::WorkerTask::Member2<SPen::PenDrawableRT, void (SPen::PenDrawableRT::*)(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*), std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*>",
+        "task": "0x10163810",
+        "words": [
+          "0x10774f8",
+          "0x0",
+          "0x100e99e0",
+          "0x104a5c4",
+          "0x0",
+          "0x1015b780",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0"
+        ]
+      },
+      {
+        "name": "vtable for SPen::PenGLRenderMsg",
+        "task": "0x10163850",
+        "words": [
+          "0x10774c8",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x100e99e0",
+          "0x100e5870",
+          "0x0",
+          "0x41c000004283a25e",
+          "0x428fae544303f680",
+          "0x3f800000",
+          "0x0",
+          "0x3f80000000000000"
+        ]
+      },
+      {
+        "name": "vtable for SPen::WorkerTask::Delete<std::__ndk1::vector<float, std::__ndk1::allocator<float> > >",
+        "task": "0x101638e0",
+        "words": [
+          "0x1077528",
+          "0x0",
+          "0x1015b780",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0"
+        ]
+      }
+    ]
+  },
+  "task_returns": [
+    "SECOND_TASK_END 0x200f1000 framebuffer 1 attachment 3 draws 2",
+    "SECOND_TASK_END 0x200f1000 framebuffer 2 attachment 4 draws 3",
+    "SECOND_TASK_END 0x200f1000 framebuffer 2 attachment 4 draws 3"
+  ],
+  "second_frame": "SECOND_FRAME a34320c8fa03ae65e831de718e76f353e70e819abcb190abe1837176c057e0e1 934 gl_error 0",
+  "pixels_first_covered_and_changed": 134,
+  "pixels_first_covered_and_alpha_increased": 127,
+  "capture_builder_sha256": "435f1ee2dfddbe050ee81a694f88aa45f55be9357246477a719990391c9fbc58",
+  "source_runner_second_mapdraw_sha256": "9e9632df53c725b6018ba6892edc3605649762f7eba6e7b7098f25af6a8d185f",
+  "capture_builder_hash_note": "Builder subsequently extended with an opt-in distinct-pressure mode; baseline mode and retained baseline frame unchanged."
+}
