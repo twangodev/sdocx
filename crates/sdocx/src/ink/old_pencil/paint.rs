@@ -2219,52 +2219,67 @@ mod serialized_interval_tests {
 
 #[test]
 fn synthetic_transparent_backdrops_match_full_native_frames() {
+    use base64::Engine as _;
     use std::io::Read;
-    let cases: [(&[u8], &[u8], f32); 4] = [
-        (
-            include_bytes!(
-                "../../../../../conformance/old-pencil-counterexample/transparent-clear-pre.z"
-            ),
-            include_bytes!(
-                "../../../../../conformance/old-pencil-counterexample/transparent-clear1-post.z"
-            ),
-            1.0,
-        ),
-        (
-            include_bytes!(
-                "../../../../../conformance/old-pencil-counterexample/transparent-clear-pre.z"
-            ),
-            include_bytes!(
-                "../../../../../conformance/old-pencil-counterexample/transparent-clear2-post.z"
-            ),
-            2.0,
-        ),
-        (
-            include_bytes!(
-                "../../../../../conformance/old-pencil-counterexample/transparent-translucent1-pre.z"
-            ),
-            include_bytes!(
-                "../../../../../conformance/old-pencil-counterexample/transparent-translucent1-post.z"
-            ),
-            1.0,
-        ),
-        (
-            include_bytes!(
-                "../../../../../conformance/old-pencil-counterexample/transparent-translucent2-pre.z"
-            ),
-            include_bytes!(
-                "../../../../../conformance/old-pencil-counterexample/transparent-translucent2-post.z"
-            ),
-            2.0,
-        ),
-    ];
-    let decode = |bytes: &[u8]| {
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../tools/old-pencil-counterexample/receipt.json"
+    ))
+    .unwrap();
+    let retained = &receipt["retained_transparent_frames"];
+    assert_eq!(retained["encoding"], "base64-zlib-zlib-rgba8-v1");
+    assert_eq!(retained["frames"].as_object().unwrap().len(), 7);
+    let inflate = |bytes: &[u8]| {
         let mut output = Vec::new();
         flate2::read::ZlibDecoder::new(bytes)
             .read_to_end(&mut output)
             .unwrap();
         output
     };
+    let decode = |name: &str| {
+        let frame = &retained["frames"][name];
+        let outer = base64::engine::general_purpose::STANDARD
+            .decode(frame["zlib_base64"].as_str().unwrap())
+            .unwrap();
+        let compressed = inflate(&outer);
+        assert_eq!(
+            compressed.len() as u64,
+            frame["compressed_bytes"].as_u64().unwrap()
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&compressed)),
+            frame["compressed_sha256"].as_str().unwrap()
+        );
+        let rgba = inflate(&compressed);
+        assert_eq!(rgba.len(), WIDTH * HEIGHT * 4);
+        assert_eq!(rgba.len() as u64, frame["rgba_bytes"].as_u64().unwrap());
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&rgba)),
+            frame["rgba_sha256"].as_str().unwrap()
+        );
+        rgba
+    };
+    let cases = [
+        (
+            "transparent-clear-pre.z",
+            "transparent-clear1-post.z",
+            1.0_f32,
+        ),
+        (
+            "transparent-clear-pre.z",
+            "transparent-clear2-post.z",
+            2.0_f32,
+        ),
+        (
+            "transparent-translucent1-pre.z",
+            "transparent-translucent1-post.z",
+            1.0_f32,
+        ),
+        (
+            "transparent-translucent2-pre.z",
+            "transparent-translucent2-post.z",
+            2.0_f32,
+        ),
+    ];
     let records: Vec<[f32; 4]> = include_bytes!(
         "../../../../../conformance/old-pencil-counterexample/serialized-pencil.vbo"
     )
@@ -2274,9 +2289,9 @@ fn synthetic_transparent_backdrops_match_full_native_frames() {
     .map(|chunk| std::array::from_fn(|i| read_f32_le(&chunk[i * 4..i * 4 + 4])))
     .collect();
     let atlas = decode_atlas().unwrap();
-    for (case, (prior, expected, scale)) in cases.into_iter().enumerate() {
-        let prior = decode(prior);
-        let expected = decode(expected);
+    for (case, (prior_name, post_name, scale)) in cases.into_iter().enumerate() {
+        let prior = decode(prior_name);
+        let expected = decode(post_name);
         assert_eq!(prior.len(), WIDTH * HEIGHT * 4);
         assert_eq!(expected.len(), WIDTH * HEIGHT * 4);
         if case < 2 {

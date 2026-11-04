@@ -6,6 +6,9 @@ pypdfium2 5.9.0, PDFium 150.0.7869.0, and Pillow (not version-pinned).
 The Rust test supplies paths.
 """
 
+import base64
+import hashlib
+import json
 import os
 import re
 import struct
@@ -21,6 +24,20 @@ WHITE_PAGE = re.compile(
     rb"q 0\.75 0 0 -0\.75 0 810 cm 1 g 0 0 m 1920 0 l "
     rb"1920 1080 l 0 1080 l\nh\nf\nQ\n"
 )
+
+
+def retained_transparent_frame(receipt, name):
+    retained = receipt["retained_transparent_frames"]
+    assert retained["encoding"] == "base64-zlib-zlib-rgba8-v1"
+    assert len(retained["frames"]) == 7
+    frame = retained["frames"][name]
+    compressed = zlib.decompress(base64.b64decode(frame["zlib_base64"], validate=True))
+    assert len(compressed) == frame["compressed_bytes"]
+    assert hashlib.sha256(compressed).hexdigest() == frame["compressed_sha256"]
+    pixels = zlib.decompress(compressed)
+    assert len(pixels) == frame["rgba_bytes"] == 1920 * 1080 * 4
+    assert hashlib.sha256(pixels).hexdigest() == frame["rgba_sha256"]
+    return pixels
 
 
 def inflate(path: Path) -> bytes:
@@ -390,6 +407,10 @@ def main() -> None:
             assert measured == expected, (name, scale, enabled, measured, expected)
 
 
+    transparent_receipt = json.loads(
+        (Path(__file__).resolve().parents[3]
+         / "tools/old-pencil-counterexample/receipt.json").read_text()
+    )
     alpha_cases = [
         ("clear", 1, "transparent-clear-pre.z", (422,[6134,27330,36919,43609],[34,152,205,242]), (479,[3268,13416,18000,21317],[18,89,119,141]), (423,[6121,27202,36733,43353],[34,153,206,243]), (485,[3026,13511,18219,21558],[28,127,170,201])),
         ("clear", 2, "transparent-clear-pre.z", (1661,[25652,114275,154328,182270],[36,160,216,255]), (1813,[10720,43946,58873,69760],[23,108,144,174]), (1661,[25700,114181,154169,182029],[36,160,216,255]), (1814,[9333,41710,56327,66944],[28,123,166,196])),
@@ -397,9 +418,8 @@ def main() -> None:
         ("translucent", 2, "transparent-translucent2-pre.z", (1661,[8882,91885,118135,113856],[15,148,191,192]), (1821,[3532,34736,45002,44193],[11,91,119,121]), (1661,[9023,91443,118216,113451],[15,147,191,191]), (1814,[3602,33424,43029,41836],[12,111,146,148])),
     ]
     for name, scale, pre_fixture, mu_fallback, mu_profile, pdfium_fallback, pdfium_profile in alpha_cases:
-        directory = fixtures / "old-pencil-counterexample"
-        prior = flip_rows(inflate(directory / pre_fixture))
-        native = flip_rows(inflate(directory / f"transparent-{name}{scale}-post.z"))
+        prior = flip_rows(retained_transparent_frame(transparent_receipt, pre_fixture))
+        native = flip_rows(retained_transparent_frame(transparent_receipt, f"transparent-{name}{scale}-post.z"))
         prior_png = straight_alpha_png(prior)
         baseline = render_transparent_pdf(pdfs / "blue-false.pdf", prior_png, scale, reader, blank=True)
         for enabled, expected in [(False, mu_fallback if reader == "mupdf" else pdfium_fallback), (True, mu_profile if reader == "mupdf" else pdfium_profile)]:
