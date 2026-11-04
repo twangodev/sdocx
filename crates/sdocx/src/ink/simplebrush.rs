@@ -1912,6 +1912,45 @@ mod tests {
             .flat_map(|value| value.to_le_bytes())
             .collect();
         if extra || probe != 0 {
+            let retained_geometry = if matches!(probe, 128 | 192 | 224) {
+                use std::io::Read;
+                let storage = &receipt["geometry_storage"];
+                assert_eq!(storage["format"], "zlib-hex");
+                let expected_length = probe * 48;
+                assert_eq!(
+                    storage["byte_length"].as_u64().unwrap(),
+                    expected_length as u64
+                );
+                let chunks = storage["zlib_hex"].as_array().unwrap();
+                assert!(!chunks.is_empty() && chunks.len() <= 73);
+                let mut compressed = Vec::new();
+                for chunk in chunks {
+                    let hex = chunk.as_str().unwrap();
+                    assert!(!hex.is_empty() && hex.len() <= 96 && hex.len() % 2 == 0);
+                    assert!(hex.bytes().all(|b| b.is_ascii_hexdigit()));
+                    compressed.extend(
+                        (0..hex.len())
+                            .step_by(2)
+                            .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap()),
+                    );
+                }
+                let mut decoder = flate2::read::ZlibDecoder::new(compressed.as_slice());
+                let mut bytes = Vec::with_capacity(expected_length);
+                decoder
+                    .by_ref()
+                    .take(expected_length as u64 + 1)
+                    .read_to_end(&mut bytes)
+                    .unwrap();
+                assert_eq!(bytes.len(), expected_length);
+                assert_eq!(decoder.total_in(), compressed.len() as u64);
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(&bytes)),
+                    receipt["geometry_sha256"].as_str().unwrap()
+                );
+                bytes
+            } else {
+                Vec::new()
+            };
             let native_geometry: &[u8] = match (size, probe) {
                 _ if tool == 0 && probe == 218 => {
                     include_bytes!(
@@ -2011,15 +2050,9 @@ mod tests {
                 (_, 17) => include_bytes!("../../../../conformance/simplebrush-17-8-geometry.bin"),
                 (_, 32) => include_bytes!("../../../../conformance/simplebrush-32-8-geometry.bin"),
                 (_, 64) => include_bytes!("../../../../conformance/simplebrush-64-8-geometry.bin"),
-                (_, 128) => {
-                    include_bytes!("../../../../conformance/simplebrush-128-8-geometry.bin")
-                }
-                (_, 224) => {
-                    include_bytes!("../../../../conformance/simplebrush-224-8-geometry.bin")
-                }
-                (_, 192) => {
-                    include_bytes!("../../../../conformance/simplebrush-192-8-geometry.bin")
-                }
+                (_, 128) => &retained_geometry,
+                (_, 224) => &retained_geometry,
+                (_, 192) => &retained_geometry,
                 (_, 16) => include_bytes!("../../../../conformance/simplebrush-16-8-geometry.bin"),
                 _ => unreachable!(),
             };
