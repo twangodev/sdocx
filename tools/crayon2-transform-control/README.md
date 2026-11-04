@@ -24,15 +24,7 @@ that operation before triangle interpolation. It selects the diagnostic texel
 `tools/crayon2-f32-interpolation/viewport_verify.py` to repeat the checks.
 This is evidence about the captured host pipeline, not other GPUs.
 
-Run the capture and exports using the prerequisites and environment in the
-document holdout README, replacing its capture with
-`tools/crayon2-transform-control/capture.py` and test name with
-`write_translated_document_grid`; use `tools/crayon2-transform-control/compare.py`
-for comparison. Verify the fresh native JSON with
-`tools/crayon2-transform-control/verify_native.py "$work_dir/native.json"`;
-this checks the source, clip matrix, texture uniforms, texture uploads, blend
-and draw evidence, and retained vector and frame bytes. The comparator checks the retained frame, vector, metrics and
-export hashes. Native texture inputs and emulation dependencies remain local.
+Capture with `tools/crayon2-transform-control/capture.py` using the document holdout environment, then verify the resulting JSON with `tools/crayon2-transform-control/verify_native.py`. The verifier checks source, clip matrix, texture uniforms and uploads, blend, draw, vector and frame bytes. The historical export generator has been retired.
 
 ## Isolated translated stamp intervention
 

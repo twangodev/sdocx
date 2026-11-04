@@ -11,9 +11,6 @@ work_dir=$(mktemp -d /tmp/sdocx-crayon-mixed.XXXXXX)
 .venv/bin/python tools/crayon2-mixed-holdout/capture.py > "$work_dir/native.json"
 .venv/bin/python tools/crayon2-mixed-holdout/verify_native.py "$work_dir/native.json"
 export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
-SDOCX_CRAYON2_DOCUMENT_DIR="$work_dir" cargo test -p sdocx --features pdf,serde --lib write_mixed_document_grid -- --ignored
-cargo run -p sdocx --features pdf --example crayon2_host_export -- "$work_dir/document.svg" "$work_dir/document.png" "$work_dir/svg-page.pdf"
-PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-mixed-holdout/compare.py "$work_dir/document.svg" "$work_dir/document.png" "$work_dir/document.pdf"
 ```
 
-The helper-generated SVG-page PDF is discarded; the comparison uses the direct document PDF. Native texture inputs and emulation dependencies are local, hash-gated prerequisites and are not supplied by a clean checkout.
+The historical comparison used direct document PDF; its export generator has been retired. Native texture inputs and emulation dependencies are local, hash-gated prerequisites and are not supplied by a clean checkout.

@@ -9,7 +9,7 @@ scale from the previous 192- and 256-pixel controls; this is not a nonidentity
 view-transform control. The capture and its pinned native dependencies are
 host-only, not evidence of Android or saved-note parity.
 
-The ignored `write_fresh_document_grid` test independently samples this source,
+A historical export experiment independently sampled this source,
 asserts that its vector SHA-256 matches the native vector, and renders the
 actual public document SVG and direct document PDF with the opt-in profile.
 The retained native frame is not passed to the renderer. Against that frame,
@@ -29,14 +29,6 @@ export LD_LIBRARY_PATH="$PWD/scratch/apk-analysis-runtime/binutils-aarch64/usr/l
 .venv/bin/python tools/crayon2-document-holdout/capture.py > "$work_dir/native.json"
 .venv/bin/python tools/crayon2-document-holdout/verify_native.py "$work_dir/native.json"
 export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
-SDOCX_CRAYON2_DOCUMENT_DIR="$work_dir" cargo test -p sdocx --features pdf,serde --lib write_fresh_document_grid -- --ignored
-cargo run -p sdocx --features pdf --example crayon2_host_export -- "$work_dir/document.svg" "$work_dir/document.png" "$work_dir/svg-page.pdf"
-PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-document-holdout/compare.py "$work_dir/document.svg" "$work_dir/document.png" "$work_dir/document.pdf"
 ```
 
-The comparator uses the retained frame and verifies its hash; it checks reader
-metrics and verifies the export hashes against the receipt. The native verifier
-checks source, uniforms, texture uploads, blend and draw evidence as well as
-the frame and vector bytes. The helper-generated SVG-page PDF is discarded;
-the comparison uses the direct document PDF. The texture and helper inputs are
-local, hash-gated native dependencies, not supplied by a clean checkout.
+The native verifier checks source, uniforms, texture uploads, blend and draw evidence, and the retained frame and vector bytes. Texture and helper inputs are local, hash-gated dependencies, not supplied by a clean checkout. The export generator has been retired.

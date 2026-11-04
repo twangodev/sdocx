@@ -130,26 +130,7 @@ the prior filter transport, but errors remain; the SVG has more differing
 pixels than before. This does not establish device, arbitrary source, scaled
 output, or direct `render_document_pdf` fidelity.
 
-The generator requires the ignored local directory
-`tmp/vector-parity-plan/crayon2-native-next/native-uploads` and its two files:
-`g_Crayon2PointPtn.source.bin` (SHA-256
-`673423c6fdae1ba344c452deefeb51b7b11365fead0bfbdd4b345eed4027f405`)
-and `g_Crayon2BgPtn.source.bin` (SHA-256
-`2df7013777862212381e424903db7b1194379db9c6fe6bb3dafa71a56573b2f3`).
-They are local native capture dependencies, absent from a clean checkout. The
-script verifies both hashes. Reproduce with these inputs and the readers as in
-the independent control; receipt hashes use semantic SVG, PNG, and PDF keys
-independent of the temporary filenames:
-
-```sh
-work_dir=$(mktemp -d /tmp/sdocx-crayon-grid.XXXXXX)
-export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
-export SDOCX_CRAYON2_RECORDS="$work_dir/records.bin"
-cargo test -p sdocx --features render --lib write_independent_source_records -- --ignored
-.venv/bin/python tools/crayon2-precision-model/output_grid.py "$work_dir/records.bin" "$work_dir/grid.svg"
-cargo run -p sdocx --features pdf --example crayon2_host_export -- "$work_dir/grid.svg" "$work_dir/grid.png" "$work_dir/grid.pdf"
-PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-precision-model/compare_output_grid.py "$work_dir/grid.svg" "$work_dir/grid.png" "$work_dir/grid.pdf"
-```
+The historical generator used hash-checked local native textures; its source-record writer has been retired.
 
 ## Rust fixed-grid control
 
@@ -164,7 +145,7 @@ The generator reads source stroke inputs and the two hash-checked texture
 planes, never the captured native vector or framebuffer; only the comparison
 script reads the native framebuffer.
 
-The ignored `write_independent_rust_grid` test produces the independent 192 ×
+The historical Rust grid experiment produced the independent 192 ×
 192 source control with the same hash-checked local texture inputs above.
 The [receipt](rust-output-grid-receipt.json) compares resvg, MuPDF and PDFium
 against the native frame: respectively 287 / 128 / 1239, 410 / 128 / 1869,
@@ -175,13 +156,7 @@ is the SVG-page export, not the direct document PDF.
 The checked readers are resvg 0.47, PyMuPDF 1.28.2 and pypdfium2 5.9.0
 (PDFium 150.0.7869.0); the export example and dependency lockfile are tracked.
 
-```sh
-export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
-export SDOCX_CRAYON2_GRID_SVG=/tmp/crayon-grid-rust.svg
-cargo test -p sdocx --features render --lib write_independent_rust_grid -- --ignored
-cargo run -p sdocx --features pdf --example crayon2_host_export -- /tmp/crayon-grid-rust.svg /tmp/crayon-grid-rust.png /tmp/crayon-grid-rust.pdf
-PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-precision-model/compare_output_grid.py /tmp/crayon-grid-rust.svg /tmp/crayon-grid-rust.png /tmp/crayon-grid-rust.pdf
-```
+
 
 A controlled arithmetic comparison identifies the Rust/Python discrepancy:
 Python promotes each already-rounded binary32 texture coordinate to binary64
@@ -261,14 +236,7 @@ differing pixels / maximum channel error / total RGB absolute error. The
 readers and scope are as above; neither comparison establishes arbitrary
 output scaling, device, or saved-page fidelity.
 
-The matched control is generated with the same inputs and limits as the
-independent control above, replacing the test with `write_matched_rust_grid`.
-Export the resulting SVG using `crayon2_host_export`, then run
-`PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-varied-path/compare_host.py <svg> <png> <pdf> --grid`.
-The independent control uses `compare_output_grid.py` as above. Both source
-writers verify the input texture hashes and do not read native framebuffers.
-`cargo test -p sdocx --features render --lib ink::crayon2::grid_test` checks
-repeat boundary examples and input bounds.
+The matched and independent source writers have been retired. `cargo test -p sdocx --features render --lib ink::crayon2::grid_test` checks repeat boundary examples and input bounds.
 
 ## Explicit source API
 
@@ -278,8 +246,7 @@ bytes, axis-aligned clip viewport, effective color and optional opaque backgroun
 caller supplies a sample budget; the implementation also enforces a 100,000
 sample ceiling. Output comprises per-sample rectangles and is tied to that exact
 resolution, so scaling the SVG is not a new native render. It is not wired into
-normal document rendering or direct document PDF. The ignored writers above now
-exercise this public API. The two native comparisons were rerun through it and
+normal document rendering or direct document PDF. The historical writers exercised this public API. The two native comparisons were rerun through it and
 retain exactly the normalized-repeat reader metrics above; the [public-route receipt](public-grid-receipt.json) records their hashes. PDF figures use SVG-page
 conversion; they do not validate direct document PDF or arbitrary prior content.
 
@@ -304,32 +271,9 @@ budget use the ordinary renderer. The 100,000 sample-visit ceiling applies to
 the whole page. This is a fixed-resolution experiment, not a scalable material.
 
 The retained independent 192×192 native opaque-background frame was compared to
-actual document exports using `write_independent_document_grid` with matching
+actual document exports with matching
 native texture hashes. The [receipt](document-grid-receipt.json) reports
 resvg 282/2/406, MuPDF 410/6/1044 and PDFium 411/6/1038 (differing pixels /
 maximum channel error / total RGB absolute error). These match the earlier
 standalone grid metrics for this source and prior; they do not establish
-arbitrary composition, saved-note or device fidelity. Reproduce using the ignored
-test with `SDOCX_CRAYON2_DOCUMENT_DIR` set to an existing directory, then
-rasterize the SVG with `crayon2_host_export` and run
-`compare_output_grid.py` with the direct document PDF as its third input.
-
-For the document control, keep the direct PDF separate from the SVG-page PDF
-produced by the rasterization helper:
-
-```sh
-export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
-work_dir=$(mktemp -d /tmp/sdocx-crayon-document.XXXXXX)
-SDOCX_CRAYON2_DOCUMENT_DIR="$work_dir" cargo test -p sdocx --features pdf,serde --lib write_independent_document_grid -- --ignored
-cargo run -p sdocx --features pdf --example crayon2_host_export -- "$work_dir/document.svg" "$work_dir/document.png" "$work_dir/svg-page.pdf"
-PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-precision-model/compare_output_grid.py "$work_dir/document.svg" "$work_dir/document.png" "$work_dir/document.pdf"
-```
-
-Compare `readers_vs_native` and `sha256` with the document receipt. The shared
-comparator's legacy scope string describes its original SVG-page use; this
-command deliberately passes the direct document PDF. Native capture uses the
-[independent control instructions](../crayon2-independent-control/README.md).
-The ignored writer requires the local native textures at
-`tmp/vector-parity-plan/crayon2-native-next/native-uploads`; it verifies their
-hashes before rendering. Reader packages and `/tmp/pdfium-lib` remain local
-prerequisites. Remove the temporary output directory after verification.
+arbitrary composition, saved-note or device fidelity. The historical export writer has been retired. Native capture uses the [independent control instructions](../crayon2-independent-control/README.md).

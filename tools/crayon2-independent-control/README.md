@@ -7,7 +7,7 @@ compressed native vector and framebuffer. The Rust regression samples those
 source channels independently and compares all 479 records; the retained
 vector and pixels are never supplied to the renderer.
 
-The ignored `write_independent_stroke_material_svg` test calls the public
+A historical export experiment called the public
 standalone source API using host phase tables and external native textures.
 The resulting SVG and SVG-page PDF were rasterized with resvg, MuPDF and
 PDFium. Their nonzero comparisons against the native framebuffer are recorded
@@ -32,23 +32,11 @@ export LD_LIBRARY_PATH="$PWD/scratch/apk-analysis-runtime/binutils-aarch64/usr/l
 .venv/bin/python tools/crayon2-independent-control/verify_native.py "$work_dir/native.json"
 ```
 
-Regenerate the source-derived exports and compare against the retained frame:
+The source-derived export generator has been retired. The maintained geometry regression remains available:
 
 ```sh
-export CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
-export SDOCX_CRAYON2_TEXTURE_DIR="$PWD/tmp/vector-parity-plan/crayon2-native-next/native-uploads"
-export SDOCX_CRAYON2_SVG="$work_dir/host.svg"
-cargo test -p sdocx --features render --lib write_independent_stroke_material_svg -- --ignored
-cargo run -p sdocx --features pdf --example crayon2_host_export -- "$work_dir/host.svg" "$work_dir/host.png" "$work_dir/host.pdf"
-PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-independent-control/compare.py "$work_dir/host.svg" "$work_dir/host.png" "$work_dir/host.pdf"
-cargo test -p sdocx --features render --lib independent_source_matches_native_sampled_records
+CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo test -p sdocx --features render --lib independent_source_matches_native_sampled_records
 ```
-
-The comparator checks input and export hashes, reader versions, image dimensions,
-the native framebuffer hash, and all three recorded metrics. Its exact export
-hashes make this a check of the recorded toolchain; changed encoders or source
-require a reviewed receipt update. On the fresh rerun the native vector and
-compressed framebuffer matched the retained artifacts byte for byte.
 
 ## Corrected native texture scale
 
@@ -85,26 +73,7 @@ instructions above and run:
 .venv/bin/python tools/crayon2-independent-control/capture-stamp.py 1 > "$work_dir/stamp-1.json"
 ```
 
-It depends on the same local native helpers and preserves the other wrapper
-hash checks. Generate the source SVG with the source-derived export command above, then run
-the strict comparator (the native capture is never passed to the renderer):
-
-```sh
-.venv/bin/python tools/crayon2-independent-control/verify-stamp.py \
-  "$work_dir/stamp-1.json" "$work_dir/host.svg" \
-  /tmp/sdocx-agent-target/debug/sdocx-render-svg-047
-```
-
-The comparator checks the source SVG digest and full stamp sequence, retains
-only painted rectangle 1, verifies native vector and framebuffer against the
-retained compressed frame, rasterizes the isolated SVG in a temporary directory,
-and compares RGBA readback after flipping GL rows. It requires the same local
-resvg 0.47 helper, and verifies its binary SHA-256 against the receipt. The
-helper is a local dependency: its temporary source and Cargo manifest/lock hashes
-are recorded in the receipt; the version is a manifest claim because the helper
-has no runtime version interface. The result is one differing RGB pixel, maximum channel
-error 42, total 93. This comparison is a host intervention, not a device or
-saved-note fidelity result.
+It depends on the same local native helpers and preserves the other wrapper hash checks. The historical SVG comparator required a generated source SVG; its generator has been retired. The retained comparison differed at one RGB pixel, with maximum channel error 42 and total 93. This intervention does not establish device or saved-note fidelity.
 
 ## Isolated fragment sampling diagnostic
 
@@ -118,8 +87,6 @@ the same environment and native capture dependencies above:
 for stage in point background alpha xfrac xcoord ycoord; do
   .venv/bin/python tools/crayon2-independent-control/shader-sample-probe.py "$stage" > "$work_dir/$stage.json"
 done
-.venv/bin/python tools/crayon2-independent-control/verify-shader-samples.py \
-  "$work_dir" "$work_dir/host.svg" /tmp/sdocx-agent-target/debug/sdocx-render-svg-047
 ```
 
 At top-down pixel (36,143), the instrumented point and background samples are
