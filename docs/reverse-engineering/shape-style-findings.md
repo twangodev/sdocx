@@ -180,6 +180,16 @@ types, saved values 2 and 3 are normalized to 1 before calling
 `GetDrawLineInfo` (`0xa0310–0xa031c`). The SDK names 2/3 as thick-thin and
 thin-thick, but this drawing route does not preserve that distinction.
 
+A [synthetic native dispatch control](../../tools/arrow-compound-native/replay.sh) now executes `DrawEffect` with original Model compound and arrow getters and original `GetDrawLineInfo`. For type 8, saved compounds 0–4 and 255 all select effective 0 and one width-3.5 pass. Type-7 controls select effective 1 with two passes for 1–3, and effective 4 with three passes for 4. The [receipt](../../tools/arrow-compound-native/receipt.txt) records each case. The style and path are synthetic; `ConvertToPath` returns stubbed success, the solid color getter is stubbed, and path constructors, `DrawLine`, the width setter and canvas calls are intercepted. The source path pointer is null, so no arrow placement executes. This verifies dispatch and pass selection under these substitutions, not parsed-document behavior, native pixels or PDF. Type-7 compound 255 is omitted because native error reporting needs additional imports. Replay takes absolute native-library and Unicorn-library directory paths and pins Model, Drawing, Unicorn and selected source files; other included modules, indirect calls and the compiler are not comprehensively audited.
+
+The Rust straight-line arrow projection follows this type-8 override: a saved
+compound byte does not reject otherwise supported arrows. SVG regressions
+compare compound values 1–4 and 255 with simple output, and PDF vector tests
+exercise selected values. This follows the traced Drawing dispatch and does not
+establish paired native pixel parity for compound-arrow scenes. Lines without
+arrows keep their existing path. Parsing retains the conservative compound-style
+warning, including for arrowed lines, because arrow geometry can be rejected later.
+
 `GetDrawLineInfo` (`0xa0810`) accepts only the following effective values;
 other values return false after setting a native error.
 
