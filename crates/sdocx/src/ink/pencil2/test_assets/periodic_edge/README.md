@@ -24,11 +24,5 @@ compare it with the corresponding `DSO_PINS` entry in the restored base source;
 proceed only when all match. Recapture also requires the historical inputs
 listed by the base source and the local emulator runtime.
 
-The capture writes the plain JSON at `conformance/pencil2-v14-periodic-edge-native.json`
-as a temporary output; the compressed asset is the retained copy. To restore
-the plain file for checking the historical `tools/marker2-scale-investigation/fresh-source-manifest.sha256`
-without recapturing, run:
-
-```sh
-gzip -dc crates/sdocx/src/ink/pencil2/test_assets/periodic_edge/native.json.gz > conformance/pencil2-v14-periodic-edge-native.json
-```
+The capture writes `conformance/pencil2-v14-periodic-edge-native.json` as a
+temporary output; the compressed asset is the retained copy.
