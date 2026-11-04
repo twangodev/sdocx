@@ -121,3 +121,5 @@ For one coincident two-stroke host control, independently constructed colored
 drawables composite in order over transparent and opaque backgrounds. The
 [receipt](../../tools/marker4_v7/independent-colors-receipt.json) and compact
 pixel fixture do not establish arbitrary-color or device parity.
+
+Synthetic host finger capture metadata is retained in [native-captures.zip](../../tools/marker4_v7/public-finger/native-captures.zip). Its members keep the original relative paths and gzip bytes; extract it into `tools/marker4_v7/public-finger/` to restore historical receipt paths.
