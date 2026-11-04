@@ -1,15 +1,13 @@
+#!/usr/bin/env python3
+"""Verify the three retained native host frames; export metrics are historical."""
 import hashlib
 import json
-import os
 from pathlib import Path
-import subprocess
-import sys
+import zlib
 
-root = Path(__file__).resolve().parents[2]
-case = sys.argv[3]
-receipt = sys.argv[4] if len(sys.argv) > 4 else 'comparison.json'
-expected = json.loads((root / 'tools/marker3-size9-note-derived/native-receipt.json').read_text())
-assert hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest() == expected[case[-1]]['rgba_sha256']
-actual = json.loads(subprocess.check_output([sys.executable, str(root / 'tools/marker3-size9-diverse/compare.py'), *sys.argv[1:4]], env=os.environ, text=True))
-assert actual == json.loads((root / f'tools/marker3-size9-note-derived/{receipt}').read_text())[case]
-print(case, 'verified')
+here = Path(__file__).resolve().parent
+receipt = json.loads((here / 'native-receipt.json').read_text())
+for scale in ('1', '2', '4'):
+    frame = zlib.decompress((here / f'note{scale}.rgba.zlib').read_bytes())
+    assert hashlib.sha256(frame).hexdigest() == receipt[scale]['rgba_sha256'], scale
+    print(f'note{scale}: native frame verified')

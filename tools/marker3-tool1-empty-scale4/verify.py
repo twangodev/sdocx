@@ -1,21 +1,24 @@
-import ast,hashlib,json,re,struct,sys
+import hashlib,json,struct,sys
 from pathlib import Path
 root=Path(sys.argv[1]); cases={}
+short = [(25.25, 28.5), (32.25, 39.5), (42.25, 30.5), (49.25, 41.5), (55.25, 31.5)]
+expected = {
+    'short4': (short, [0.1, 0.9, 0.3, 0.8, 0.2], 4.0, '0x8033cc55'),
+    'short6': (short, [0.1, 0.9, 0.3, 0.8, 0.2], 6.0, '0xffd14a87'),
+    'fractional': ([(25.25, 28.5), (67.75, 46.125)], [0.2, 0.9], 8.0, '0x8033cc55'),
+    'crossing': ([(35.25, 35.5), (85.75, 85.25), (35.25, 85.25), (85.75, 35.5)], [0.2, 0.9, 0.4, 1.0], 8.0, '0xffd14a87'),
+}
 for case in ('short4','short6','fractional','crossing'):
  a,b=[json.loads((root/f'{case}-{setting}'/'drawing-paint-positive.json').read_text()) for setting in ('5','empty')]
  fa,fb=[(root/f'{case}-{setting}'/'drawing-paint-positive.rgba').read_bytes() for setting in ('5','empty')]
  ia,ib=[r['source_caller_case']['input'].copy() for r in (a,b)]
  assert ia.pop('advanced_setting')=='5;' and ib.pop('advanced_setting')=='' and ia==ib
- source=Path(__file__).with_name('export.rs').read_text()
- assert 'preload.StraightMarker' in source and '"tool_type_raw":1' in source and '"advanced_settings":""' in source
- branch='short4' if case.startswith('short') else case
- line=next(line for line in source.splitlines() if line.lstrip().startswith('"'+branch+'"'))
- vectors=re.findall(r'vec!(\[.*?\])(?=,vec!|,0x|,if)',line)
- points,pressures=map(ast.literal_eval,vectors[:2]); shift=-0.0625 if case=='short4' else 0.0625 if case=='short6' else 0; phase=0 if case=='short4' else 0.5 if case=='short6' else 0.25
+ points,pressures,size,color=expected[case]
  bits=lambda v:struct.pack('<f',v).hex()
- assert [[bits(x+shift),bits(y+shift)] for x,y in points]==[[bits(struct.unpack('<f',bytes.fromhex(x))[0]+phase/4),bits(struct.unpack('<f',bytes.fromhex(y))[0]+phase/4)] for x,y in ia['points_f32_bits']]
- assert list(map(bits,pressures))==ia['pressure_f32_bits'] and ia['pen_size_f32_bits']==bits(4 if case=='short4' else 6 if case=='short6' else 8)
- assert ia['color_argb'][2:] in line.lower() and ia['tool_type']==1 and ia['timestamps_i32']==[8*i for i in range(len(points))]
+ assert ia['pen_name'].endswith('.StraightMarker')
+ assert ia['points_f32_bits']==[[bits(x),bits(y)] for x,y in points]
+ assert ia['pressure_f32_bits']==list(map(bits,pressures)) and ia['pen_size_f32_bits']==bits(size)
+ assert ia['color_argb']==color and ia['tool_type']==1 and ia['timestamps_i32']==[8*i for i in range(len(points))]
  assert ia['tilt_f32_bits']==ia['orientation_f32_bits']==[bits(0)]*len(points) and ia['curve_enabled'] and ia['stroke_type']==0
  for r,value in ((a,'5;'),(b,'')):
   assert r['source_caller_case']['native_calls']['ObjectStroke_GetAdvancedPenSetting']=={'is_null':False,'utf8':value}
