@@ -14,7 +14,7 @@ const MAX_BROWSER_ENTRY_SIZE: u64 = 256 * 1024 * 1024;
 const MAX_BROWSER_TOTAL_UNCOMPRESSED_SIZE: u64 = 1024 * 1024 * 1024;
 
 /// Rasterize the restricted TapePen pattern SVG to straight RGBA8 pixels.
-/// Only the documented 120×120 pattern structure and sizes 64 and 128 are accepted.
+/// Only the documented 120×120 pattern structure and sizes 64, 128 and 256 are accepted.
 #[wasm_bindgen]
 pub fn rasterize_tapepen_pattern(source: &str, size: usize) -> Result<Vec<u8>, JsError> {
     sdocx::tapepen_pattern::rasterize(source, size)
