@@ -900,6 +900,25 @@ mod tests {
         assert!(render_crayon2_host_svg(&stroke, &material).is_err());
     }
 
+    #[test]
+    #[ignore = "writes source-derived Crayon2 records for the vector experiment"]
+    fn write_matched_source_vector() {
+        let points = [
+            P { x: 64.0, y: 64.0 },
+            P { x: 72.0, y: 70.0 },
+            P { x: 82.0, y: 60.0 },
+        ];
+        let pressure = [0.3, 0.6, 1.0];
+        let stroke = matched_stroke(&points, &pressure);
+        let profile = parse_profile(&fixture());
+        let output = sample_stroke(&stroke, &profile).unwrap();
+        std::fs::write(
+            std::env::var_os("SDOCX_CRAYON2_SOURCE_VECTOR").expect("output path"),
+            output_bytes(&output),
+        )
+        .unwrap();
+    }
+
     #[cfg(feature = "render")]
     #[test]
     #[ignore = "requires local native texture inputs and writes candidate SVG"]
