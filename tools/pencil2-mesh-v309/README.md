@@ -1,30 +1,52 @@
-# Pencil2 Rust-sampled descriptor and vector controls
+# Pencil2 native geometry controls
 
-This continuation samples both strokes using the current Rust `prepare_stroke`: an in-tree unit-test module in a temporary copy generates descriptor bytes from `Stroke` inputs. The synthetic first and second stroke descriptors are asserted byte-for-byte against separately retained native captures. The independent 231-point input is decoded from Fountain source row 7 in `conformance/fountain-v14-saved-scene-inputs.json`, normalized to a fresh Pencil2 V14 style, and is **not** a saved Pencil2. Its 124 Rust records differ from the captured native pre-Update descriptor at exactly two known one-ULP orientation-component lanes; the test asserts those exact differences. The native descriptor was not independently confirmed as the uploaded GPU buffer. The first stroke is the same synthetic four-point stroke in each scene.
+The maintained Rust tests in
+[`independent_drawing_tests.rs`](../../crates/sdocx/src/ink/pencil2/independent_drawing_tests.rs)
+check both synthetic descriptor streams byte-for-byte. The note-derived test in
+[`second_source_tests.rs`](../../crates/sdocx/src/ink/pencil2/second_source_tests.rs)
+checks 231 source points and 124 native records, allowing only two known one-ULP
+lane differences (or their disappearance as fidelity improves).
 
-`scene.py` produces a diagnostic source-space PDF mesh using both generated descriptor streams, packaged point and grain textures, and native captured grain offsets. It clips source cells to the page, creates one ordered PDF luminosity mask per stamp, and asserts that the full-scene PDF embeds no images. Its SVG approximation paints source-cell rectangles with the mean of the four corner opacities, in stamp order. These rectangles are source-space texture regions, not output pixels. They approximate the nonlinear opacity field differently from the linearly shaded PDF triangles. Both have significant unbounded approximation and reader effects. `synthetic.py` uses the v308 two-stroke experiment with the Rust-generated streams; its results are identical to the captured-geometry v308 receipt. Neither diagnostic is the public exporter or a production implementation.
+The note source reuses already tracked Fountain coordinates, pressure, tilt,
+orientation and timestamps. These are real note-derived data, **not anonymous**;
+normalizing pen metadata does not anonymize handwriting. The source is mapped to
+a fresh Pencil2 V14 host profile, not an original saved Pencil2 stroke. The
+native fixture is a pre-Update descriptor, not independently verified GPU upload.
 
-The retained native controls use synthetic queues, explicit Update and Draw, ARM64 emulation and host Mesa, with not all runtime dependencies pinned. The synthetic source 2× matrix transforms generated geometry; in the generic comparisons the source coordinates and width are rendered through a matching 2× output scale. The note-derived native target is available here at 1× and two solid backdrop colors only. No claims are made about saved pages, other transforms, devices, or any quality guarantee. Native frames are used only for verification, never to construct either output. Local /tmp frame captures are removed after the run; no PDF/SVG render artifacts are retained.
+The retired Rust exporter and mesh comparators produced these historical RGB
+absolute error sums:
 
-RGB absolute error sum / max / differing channels, with MuPDF 1.28.2, PDFium 156.0.8076.0, resvg 0.45.1 and Pillow 12.1.1:
+| Note backdrop | Mesh PDF MuPDF | Mesh PDF PDFium | Source-cell SVG resvg | Generic PDF MuPDF | Generic PDF PDFium | Generic SVG resvg |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Blue | 3,525 | 3,675 | 22,656 | 25,887 | 28,395 | 29,572 |
+| White | 7,696 | 9,106 | 16,911 | 48,690 | 56,229 | 54,929 |
 
-| Scene | Source mesh PDF MuPDF | Source mesh PDF PDFium | Source-cell SVG resvg | Generic PDF MuPDF | Generic PDF PDFium | Generic SVG resvg |
-|---|---:|---:|---:|---:|---:|---:|
-| Note-derived, blue | 3,525 / 21 / 641 | 3,675 / 21 / 694 | 22,656 / 64 / 819 | 25,887 / 190 / 719 | 28,395 / 191 / 736 | 29,572 / 191 / 716 |
-| Note-derived, white | 7,696 / 90 / 784 | 9,106 / 86 / 958 | 16,911 / 128 / 610 | 48,690 / 230 / 661 | 56,229 / 229 / 674 | 54,929 / 229 / 643 |
+The measurements used MuPDF 1.28.2, PDFium 156.0.8076.0 and resvg 0.45.1.
+The mesh used 166,156 triangles; its SVG approximation was about 9.4 MB. A lossy
+coarse control reduced the mesh to 24,416 triangles without an error bound.
+These are historical experiments, not production rendering or maintained reader
+pixel checks. The original receipt retains measurements and provenance. The
+manifest labels the archived exporter revision separately from native input pins.
 
-The stride-1 PDF has 166,156 triangles and approximately 857,117 / 857,101 bytes (blue / white); the SVG has 9,409,616 / 9,409,613 bytes. Both use generated first geometry; the PDF byte count varied by a few bytes between runs. resvg reported and skipped some rectangles whose widths rounded to zero in the five-decimal SVG serialization, and also warned on degenerate shapes; the displayed SVG errors include that behavior. Generic SVG/PDF size is 26,723 / 3,229 bytes on blue and 26,723 / 3,211 on white. Generic and experimental routes reconstruct from the same source stroke inputs and native target, but use different stroke-generation and shading approaches. The SVG is an actual source-space approximation, not equivalent to the PDF mesh interpolation.
+From the repository root, check retained inputs without emitting note data:
 
-For the white 1× **first prefix alone** (the retained mixed-scene white-1 first frame, whose hash matches the white note recapture), the full-source PDF MuPDF result was 4,505 / 90 / 301 and PDFium 5,012 / 86 / 325; source-cell SVG resvg was 2,773 / 44 / 335. The worst PDF location (30,179) has native RGB (153,178,205), MuPDF (243,246,247), PDFium (239,241,245); the native first and second prefixes are identical there. An independent floating-point pixel-center calculation of the source functions gives first-prefix error 344 / 29 / 139 and RGB (182,201,219) at that location. Its center is exactly on both grain texel boundaries. Shifting only the horizontal sampling coordinate by minus 0.00001 texel reproduces the native RGB there, but worsens full-frame sum to 2,134; it is a diagnostic intervention, not a correction. These observations implicate phase/coverage and reader transport but do not separate these from shader precision, interpolation, or repeated-stamp compositing.
+```sh
+python3 tools/pencil2-mesh-v309/verify_inputs.py
+python3 tools/pencil2-mesh-v309/verify_inputs.py --native-local
+```
 
-The explicitly lossy `PENCIL_MESH_POINT_STRIDE=20` drops intermediate point-gate boundaries and samples at the midpoint; it has **no error bound**. For white note, it reduced the PDF to 24,416 triangles / 212,166 bytes and SVG to 1,378,538 bytes; PDF MuPDF was 7,481 / 90 / 764, PDFium 9,012 / 71 / 924, and SVG 13,433 / 114 / 611. This is not evidence that it preserves fine texture or generalizes.
+Native recapture uses the unchanged `capture.py`. On a host with its local
+native dependencies, set `SDOCX_PENCIL2_FRESH_FRAME_DIR` to a fresh local directory
+and run that script; set `SDOCX_PENCIL2_CLEAR_RGBA=255,255,255,255` for white
+instead of the default blue backdrop. The output directory contains note-derived
+frames and geometry: keep them local. Native note frames are not retained here.
+The capture requires the independent-Drawing harness, mixed-Drawing patch,
+local `tmp/vector-parity-plan` helpers, native ARM64 libraries, emulation and Mesa.
+The verifier checks recorded direct adapter hashes, not every transitive
+runtime dependency. Recapture uses synthetic queues and explicit Update/Draw;
+it establishes neither normal saved-page scheduling nor device parity.
 
-## Replay and recapture prerequisites
-
-The outputs above were reproduced against clean archived source revision `ef6a2e2ee2fff6e54af1eed0648cd23d5393e68b`. The three Rust-generated descriptor SHA-256 values, both note-scene SVG/PDF error triples, generic SVG/PDF error triples, and all three synthetic mesh PDF error triples matched the recorded results. A PDF byte count varied by five bytes; pixel metrics matched. The original measurements used a dirty workspace, but these clean-source reruns remove dependence on its untracked or modified Rust files for the results reported here. The input manifest pins the clean archived crate through a sorted-path aggregate SHA-256 and file count, plus individual retained-fixture hashes; `verify_inputs.py --workspace` checks that archived tree. Default verification checks only the diagnostic and fixture inputs and does not test crate sources.
-
-From the repository root, run `bash tools/pencil2-mesh-v309/clean_replay.sh`. It uses `git archive` of the pinned revision, overlays the retained v309 scripts and small native descriptor, generates descriptors and public exports against that clean source, checks descriptor hashes and all reported synthetic and note-scene RGB error triples against the receipt, and removes its temporary archive, frames, SVG and PDF intermediates on exit. A mismatch causes the helper to fail; file sizes may vary slightly and are reported without being asserted. It uses `/tmp/sdocx-agent-target` with the project agent build settings and builds offline. The source revision must be present in the local Git object database. `PENCIL_MESH_READERS` can override the historical `/tmp/sdocx-marker3-v133-readers` Python reader directory; the repository `.venv` must provide Pillow, PyMuPDF and pypdfium2, and `resvg` must be on PATH. The Rust toolchain and offline crate cache are external.
-
-Native recapture is separate from the clean Rust checkout. It requires the local `tools/pencil2-independent-drawing/capture.py`, `tools/pencil2-mixed-drawing/capture.patch`, and `tmp/vector-parity-plan` harness inputs, plus native ARM64 libraries, emulation runtime and host Mesa. `verify_inputs.py --native-local` checks direct local adapter hashes, but transitive native harness files, runtime binaries, drivers, and libraries are not fully pinned. The clean replay helper invokes recapture from the original workspace before creating the archived checkout. Both note comparators reject frames and native descriptors whose hashes differ from the receipt. These external recapture dependencies remain necessary because native note frames are not retained here.
-
-`first_probe.py` uses the retained mixed-scene white-1 first frame, whose hash matches the white note recapture. Run it from the pinned archived checkout with the reader environment to reproduce the boundary test; set `PENCIL_GRAIN_DX=-0.00001` for the coordinate intervention. Set `PENCIL_MESH_FIRST_ONLY=1` in the note scene for the first-prefix comparison, or `PENCIL_MESH_POINT_STRIDE=20` for the unbounded coarse-gate experiment. The Rust sampler is accessed through a temporary private-module test, not a new public API. Further work must bound resources and approximation, support arbitrary valid transforms and clipping, reproduce native host sampling boundaries, and prove reader behavior on independent scenes before production use.
+`first_probe.py` remains because the separate precision control consumes its
+pinned source. It approximates a retained synthetic frame; it does not acquire
+native data. Its historical horizontal grain shift matched one pixel but
+worsened whole-frame error from 344 to 2,134, so it is not a production correction.
