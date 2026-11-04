@@ -582,3 +582,119 @@ fn pencil2_translated_overlapping_strokes_match_host_and_svg() {
     );
     assert_eq!(image.data(), expected);
 }
+
+#[test]
+fn changed_input_native_grain_offset_and_canvas_match() {
+    use std::io::Read;
+    // Saved-derived coordinates with synthetic Pencil2 metadata, not a saved Pencil2 note.
+    let data: Value = serde_json::from_str(include_str!(
+        "../../../conformance/fountain-v14-saved-scene-inputs.json"
+    ))
+    .unwrap();
+    let receipt: Value = serde_json::from_str(include_str!(
+        "../../../tools/pencil2-control/native-receipt.json"
+    ))
+    .unwrap();
+    let mut stroke: Stroke = serde_json::from_value(data["strokes"][1]["stroke"].clone()).unwrap();
+    for point in &mut stroke.points {
+        point.x += 3.25;
+        point.y -= 2.5;
+    }
+    for pressure in &mut stroke.pressures {
+        *pressure *= 0.75;
+    }
+    stroke.pen_width = f32::from_bits(0x4111de6a) as _;
+    stroke.rendering.as_mut().unwrap().style.color_argb = Some(4294425088);
+    stroke.rendering.as_mut().unwrap().pen_name =
+        Some("com.samsung.android.sdk.pen.pen.preload.Pencil2".into());
+    {
+        let source_rendering = stroke.rendering.as_ref().unwrap();
+        let mut style = serde_json::to_value(sdocx::StrokeStyle::default()).unwrap();
+        style["pen_size"] = serde_json::json!(stroke.pen_width);
+        style["color_argb"] = serde_json::json!(source_rendering.style.color_argb);
+        style["size_level"] = serde_json::json!(0);
+        style["stroke_type_raw"] = serde_json::json!(0);
+        style["color_type_raw"] = serde_json::json!(0);
+        let props = serde_json::json!({"compressed":true,"stylus_channels":true,"replay_only":false,"eraser":false,"fixed_width":false,"millisecond_timestamps":false,"top_layer_pen":false,"alpha_lock":false,"binary_added":false,"generated":false,"fixed_opacity":false,"rainbow_effect":false,"straighten":false,"reveal_mode":false});
+        stroke.rendering = Some(serde_json::from_value(serde_json::json!({"metadata":null,"pen_name":"com.samsung.android.sdk.pen.pen.preload.Pencil2","advanced_settings":"14;","tool_type_raw":2,"properties":props,"style":style})).unwrap());
+    }
+
+    let decode = |packed: &[u8], key: &str| {
+        let mut raw = Vec::new();
+        flate2::read::ZlibDecoder::new(packed)
+            .read_to_end(&mut raw)
+            .unwrap();
+        assert_eq!(raw.len(), 192 * 192 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&raw)),
+            receipt[key].as_str().unwrap()
+        );
+        raw.chunks_exact(192 * 4)
+            .rev()
+            .flat_map(|row| row.chunks_exact(4).map(|p| [p[0], p[1], p[2], p[3]]))
+            .collect::<Vec<_>>()
+    };
+    let prior = decode(
+        include_bytes!("../../../tools/pencil2-control/first.rgba.zlib"),
+        "first_sha256",
+    );
+    let expected = decode(
+        include_bytes!("../../../tools/pencil2-control/second.rgba.zlib"),
+        "second_sha256",
+    );
+    let mut canvas =
+        InkRasterCanvas::from_pixels(context(InkRasterOrigin::BottomLeft, 1), prior).unwrap();
+    let projection = [
+        0x3c2aaaab, 0, 0, 0, 0, 0x3c2aaaab, 0, 0, 0, 0, 0xb8000100, 0, 0xbf800000, 0xbf800000,
+        0x80000000, 0x3f800000,
+    ]
+    .map(f32::from_bits);
+    let mut matrix = [0.; 16];
+    for i in 0..4 {
+        matrix[5 * i] = 1.;
+    }
+    matrix[12] = 12.;
+    matrix[13] = 12.;
+    let mut grain = sdocx::Pencil2V14HostGrainState::default();
+    grain.set_start_point([stroke.points[0].x as f32, stroke.points[0].y as f32]);
+    let offset = grain.draw(projection, matrix, [192, 192]).unwrap();
+
+    let uniform = receipt["uniforms"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|call| {
+            call[0].as_str() == Some("glUniform2fv")
+                && call[1].as_u64() == Some(4)
+                && call[2].as_u64() == Some(1)
+        })
+        .last()
+        .unwrap();
+    let values = uniform[3].as_array().unwrap();
+    assert_eq!(values.len(), 2);
+    assert_eq!(
+        offset.map(f32::to_bits),
+        std::array::from_fn(|i| (values[i].as_f64().unwrap() as f32).to_bits())
+    );
+    canvas
+        .paint_pencil2_with_grain_offset(&stroke, InkRasterInverseScale::One, [12., 12.], offset)
+        .unwrap();
+    assert_eq!(canvas.pixels(), expected);
+    let png = resvg::tiny_skia::Pixmap::decode_png(&canvas.to_png().unwrap()).unwrap();
+    assert_eq!(png.data().as_chunks::<4>().0, expected);
+    let page = canvas.rendered_page(0).unwrap();
+    let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
+    let mut pixels = resvg::tiny_skia::Pixmap::new(192, 192).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pixels.as_mut(),
+    );
+    assert_eq!(pixels.data().as_chunks::<4>().0, expected);
+    #[cfg(feature = "pdf")]
+    {
+        let mut options = sdocx::PdfOptions::default();
+        options.dpi = 72.;
+        canvas.to_pdf(&options).unwrap();
+    }
+}
