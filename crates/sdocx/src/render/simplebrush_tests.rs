@@ -783,13 +783,17 @@ fn tool_zero_large_curve_svg_improves_against_native_frame() {
     for (size, native, max_error, support) in [
         (
             20.0,
-            crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-tool0-multi-large-crop.rgba"),
+            crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-tool0-multi-large-crop.rgba",
+            ),
             1_200,
             462,
         ),
         (
             32.0,
-            crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-tool0-size32-crop.rgba"),
+            crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-tool0-size32-crop.rgba",
+            ),
             1_500,
             698,
         ),
@@ -866,13 +870,17 @@ fn tool_zero_short_terminal_svg_improves_against_native_frame() {
             20.0,
             20.5,
             10.5,
-            crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-tool0-short-terminal-crop.rgba"),
+            crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-tool0-short-terminal-crop.rgba",
+            ),
         ),
         (
             11.5,
             12.0,
             10.0,
-            crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-tool0-boundary-crop.rgba"),
+            crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-tool0-boundary-crop.rgba",
+            ),
         ),
     ] {
         let mut input = stroke();

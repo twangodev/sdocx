@@ -234,7 +234,9 @@ fn worker_v259_geometry_probe() {
         "a0230ba18bf716851b4079facb415b265ade62b80ef28bbfcaa0b1853776672e"
     );
     let native: Vec<u8> = bottom
-        .chunks_exact(192 * 4)
+        .as_chunks::<{ 192 * 4 }>()
+        .0
+        .iter()
         .rev()
         .flatten()
         .copied()
@@ -243,7 +245,15 @@ fn worker_v259_geometry_probe() {
         hash(&native),
         "44e57b9754e76dd9883c7a9944a9015f0ccb0c11e788dd71d8c5f1a889174e36"
     );
-    assert_eq!(native.chunks_exact(4).filter(|p| p[3] != 0).count(), 87);
+    assert_eq!(
+        native
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .filter(|p| p[3] != 0)
+            .count(),
+        87
+    );
     let projection = [
         0x3c2aaaab, 0, 0, 0, 0, 0x3c2aaaab, 0, 0, 0, 0, 0xb8000100, 0, 0xbf800000, 0xbf800000,
         0x80000000, 0x3f800000,
@@ -290,10 +300,17 @@ fn worker_v259_geometry_probe() {
         assert_eq!(
             image
                 .data()
-                .chunks_exact(4)
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .map(|p| p[3])
                 .collect::<Vec<_>>(),
-            native.chunks_exact(4).map(|p| p[3]).collect::<Vec<_>>()
+            native
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|p| p[3])
+                .collect::<Vec<_>>()
         );
     }
     #[cfg(feature = "pdf")]

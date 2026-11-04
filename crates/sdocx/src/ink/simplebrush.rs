@@ -1405,120 +1405,130 @@ mod tests {
                 (10, 0) | (55, 7) | (20, 16) | (3 | 24, 7 | 16)
             );
         let native: &[u8] = match (four, size) {
-            _ if tool == 0 && probe == 218 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-tool0-accumulated-crop.rgba")
-            }
-            _ if tool == 0 && probe == 203 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-tool0-short-crop.rgba")
-            }
-            _ if tool == 0 && probe == 6 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-tool0-six-crop.rgba")
-            }
-            _ if probe == 216 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-size32-crop.rgba")
-            }
-            _ if probe == 217 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-size28-crop.rgba")
-            }
-            _ if probe == 215 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-fractional-crop.rgba")
-            }
-            _ if probe == 214 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-manyskip-crop.rgba")
-            }
-            _ if probe == 211 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-threshold-below-crop.rgba")
-            }
-            _ if probe == 212 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-threshold-equal-crop.rgba")
-            }
-            _ if probe == 213 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-threshold-above-crop.rgba")
-            }
-            _ if probe == 210 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-short-large-crop.rgba")
-            }
-            _ if probe == 209 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-two-short-crop.rgba")
-            }
-            _ if probe == 208 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-terminal-vertical-crop.rgba")
-            }
-            _ if probe == 207 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-terminal-crop.rgba")
-            }
-            _ if probe == 205 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-first-skip-crop.rgba")
-            }
-            _ if probe == 206 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-repeat-skip-crop.rgba")
-            }
-            _ if probe == 201 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-two-vertical-crop.rgba")
-            }
-            _ if probe == 202 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-two-reversed-crop.rgba")
-            }
-            _ if probe == 203 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-two-short-crop.rgba")
-            }
-            _ if probe == 204 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-two-zero-crop.rgba")
-            }
+            _ if tool == 0 && probe == 218 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-tool0-accumulated-crop.rgba",
+            ),
+            _ if tool == 0 && probe == 203 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-tool0-short-crop.rgba",
+            ),
+            _ if tool == 0 && probe == 6 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-tool0-six-crop.rgba",
+            ),
+            _ if probe == 216 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-size32-crop.rgba",
+            ),
+            _ if probe == 217 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-size28-crop.rgba",
+            ),
+            _ if probe == 215 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-fractional-crop.rgba",
+            ),
+            _ if probe == 214 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-manyskip-crop.rgba",
+            ),
+            _ if probe == 211 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-threshold-below-crop.rgba",
+            ),
+            _ if probe == 212 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-threshold-equal-crop.rgba",
+            ),
+            _ if probe == 213 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-threshold-above-crop.rgba",
+            ),
+            _ if probe == 210 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-short-large-crop.rgba",
+            ),
+            _ if probe == 209 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-two-short-crop.rgba",
+            ),
+            _ if probe == 208 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-terminal-vertical-crop.rgba",
+            ),
+            _ if probe == 207 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-terminal-crop.rgba",
+            ),
+            _ if probe == 205 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-first-skip-crop.rgba",
+            ),
+            _ if probe == 206 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-repeat-skip-crop.rgba",
+            ),
+            _ if probe == 201 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-two-vertical-crop.rgba",
+            ),
+            _ if probe == 202 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-two-reversed-crop.rgba",
+            ),
+            _ if probe == 203 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-two-short-crop.rgba",
+            ),
+            _ if probe == 204 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-two-zero-crop.rgba",
+            ),
 
-            (_, 4) if probe == 2 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-two-4-crop.rgba")
-            }
-            (_, 8) if probe == 2 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-two-8-crop.rgba")
-            }
-            (_, 16) if probe == 2 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-two-16-crop.rgba")
-            }
-            (_, 3) if probe == 7 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-edge-7-3-crop.rgba")
-            }
-            (_, 3) if probe == 16 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-edge-16-3-crop.rgba")
-            }
-            (_, 24) if probe == 7 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-edge-7-24-crop.rgba")
-            }
-            (_, 24) if probe == 16 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-edge-16-24-crop.rgba")
-            }
-            (_, 10) => crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-size-3-10-crop.rgba"),
-            (_, 55) => crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-size-7-55-crop.rgba"),
-            (_, 20) => crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-size-16-20-crop.rgba"),
-            _ if probe == 5 => crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-5-8-crop.rgba"),
-            _ if probe == 7 => crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-7-12-crop.rgba"),
-            _ if probe == 17 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-17-8-crop.rgba")
-            }
-            _ if probe == 32 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-32-8-crop.rgba")
-            }
-            _ if probe == 64 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-64-8-crop.rgba")
-            }
-            _ if probe == 128 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-128-8-crop.rgba")
-            }
-            _ if probe == 224 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-224-8-crop.rgba")
-            }
-            _ if probe == 192 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-192-8-crop.rgba")
-            }
-            _ if probe == 16 => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-16-8-crop.rgba")
-            }
-            (_, 4) if six => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-six-size4-crop.rgba")
-            }
-            (_, 16) if six => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-six-size16-crop.rgba")
-            }
+            (_, 4) if probe == 2 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-two-4-crop.rgba",
+            ),
+            (_, 8) if probe == 2 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-two-8-crop.rgba",
+            ),
+            (_, 16) if probe == 2 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-two-16-crop.rgba",
+            ),
+            (_, 3) if probe == 7 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-edge-7-3-crop.rgba",
+            ),
+            (_, 3) if probe == 16 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-edge-16-3-crop.rgba",
+            ),
+            (_, 24) if probe == 7 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-edge-7-24-crop.rgba",
+            ),
+            (_, 24) if probe == 16 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-edge-16-24-crop.rgba",
+            ),
+            (_, 10) => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-size-3-10-crop.rgba",
+            ),
+            (_, 55) => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-size-7-55-crop.rgba",
+            ),
+            (_, 20) => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-size-16-20-crop.rgba",
+            ),
+            _ if probe == 5 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-5-8-crop.rgba",
+            ),
+            _ if probe == 7 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-7-12-crop.rgba",
+            ),
+            _ if probe == 17 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-17-8-crop.rgba",
+            ),
+            _ if probe == 32 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-32-8-crop.rgba",
+            ),
+            _ if probe == 64 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-64-8-crop.rgba",
+            ),
+            _ if probe == 128 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-128-8-crop.rgba",
+            ),
+            _ if probe == 224 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-224-8-crop.rgba",
+            ),
+            _ if probe == 192 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-192-8-crop.rgba",
+            ),
+            _ if probe == 16 => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-16-8-crop.rgba",
+            ),
+            (_, 4) if six => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-six-size4-crop.rgba",
+            ),
+            (_, 16) if six => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-six-size16-crop.rgba",
+            ),
             (true, 16) if alt => include_bytes!(
                 "../../../../conformance/simplebrush-paint-v25-four-size16-alt-crop.rgba"
             ),
@@ -1528,21 +1538,21 @@ mod tests {
             (true, 4) if alt => include_bytes!(
                 "../../../../conformance/simplebrush-paint-v25-four-size4-alt-crop.rgba"
             ),
-            (false, 4) => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-paint-v25-size4-crop.rgba")
-            }
+            (false, 4) => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-paint-v25-size4-crop.rgba",
+            ),
             (false, 8) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-crop.rgba")
             }
             (false, 12) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-size12-crop.rgba")
             }
-            (false, 16) => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-paint-v25-size16-crop.rgba")
-            }
-            (true, 4) => {
-                crate::ink::simplebrush::crop_fixtures::pixels("conformance/simplebrush-paint-v25-four-size4-crop.rgba")
-            }
+            (false, 16) => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-paint-v25-size16-crop.rgba",
+            ),
+            (true, 4) => crate::ink::simplebrush::crop_fixtures::pixels(
+                "conformance/simplebrush-paint-v25-four-size4-crop.rgba",
+            ),
             (true, 8) => {
                 include_bytes!("../../../../conformance/simplebrush-paint-v25-four-crop.rgba")
             }

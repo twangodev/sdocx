@@ -28,9 +28,7 @@ const NATIVE_SPARSE_SHA256: &str =
 const NATIVE_ATLAS_SHA256: &str =
     "5149e5daea6e172fb1798904209904676bcb49da168993657868c0ef4858d440";
 
-const INSTANCE_VBO: &[u8] = include_bytes!(
-    "../../../../../conformance/old-pencil-color/alpha.vbo"
-);
+const INSTANCE_VBO: &[u8] = include_bytes!("../../../../../conformance/old-pencil-color/alpha.vbo");
 const NATIVE_SPARSE_RGBA8: &[u8] = include_bytes!(
     "../../../../../conformance/old-pencil-native-paint-v1/native-sparse-readback-u16xy-rgba8.bin"
 );

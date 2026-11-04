@@ -461,9 +461,8 @@ mod tests {
 
     const NATIVE_RECORDS: &[u8] =
         include_bytes!("../../../../conformance/old-pencil-glv1-v9-native.bin");
-    const V17_NATIVE_RECORDS: &[u8] = include_bytes!(
-        "../../../../conformance/old-pencil-color/alpha.vbo"
-    );
+    const V17_NATIVE_RECORDS: &[u8] =
+        include_bytes!("../../../../conformance/old-pencil-color/alpha.vbo");
 
     fn public_stroke(size: f32, pressure: &[f32]) -> crate::Stroke {
         let point_pairs = [(0.0, 0.0), (10.0, 0.0), (20.0, 0.0), (30.0, 10.0)];

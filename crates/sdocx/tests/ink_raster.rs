@@ -666,9 +666,11 @@ fn changed_input_native_grain_offset_and_canvas_match() {
             format!("{:x}", Sha256::digest(&raw)),
             receipt[key].as_str().unwrap()
         );
-        raw.chunks_exact(192 * 4)
+        raw.as_chunks::<{ 192 * 4 }>()
+            .0
+            .iter()
             .rev()
-            .flat_map(|row| row.chunks_exact(4).map(|p| [p[0], p[1], p[2], p[3]]))
+            .flat_map(|row| row.as_chunks::<4>().0.iter().copied())
             .collect::<Vec<_>>()
     };
     let prior = decode(
@@ -700,12 +702,11 @@ fn changed_input_native_grain_offset_and_canvas_match() {
         .as_array()
         .unwrap()
         .iter()
-        .filter(|call| {
+        .rfind(|call| {
             call[0].as_str() == Some("glUniform2fv")
                 && call[1].as_u64() == Some(4)
                 && call[2].as_u64() == Some(1)
         })
-        .last()
         .unwrap();
     let values = uniform[3].as_array().unwrap();
     assert_eq!(values.len(), 2);
