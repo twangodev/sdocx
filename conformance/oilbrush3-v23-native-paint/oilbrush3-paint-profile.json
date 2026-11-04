@@ -48,7 +48,7 @@
     },
     "p3_vbo": {
       "bytes": 96,
-      "fixture": "oilbrush3-p3-vbo-6x4-f32le.bin",
+      "fixture": "../../crates/sdocx/src/ink/oilbrush3/p3-vbo-6x4-f32le.bin",
       "role": "Actual six-vertex P3 VBO bytes; same captured bytes as repeated P4 vertex input.",
       "sha256": "818bdaddffdbdd6e1cad09a1dac74a1da79ee482bf8b86ee601ccd93c0af3f39"
     },

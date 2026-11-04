@@ -526,8 +526,7 @@ mod long_geometry_tests {
                 256,
                 8.0,
                 true,
-                &include_bytes!("../../../../conformance/simplebrush-long-audit/256-geometry.bin")
-                    [..],
+                &include_bytes!("simplebrush_assets/256.bin")[..],
             ),
         ] {
             let mut points: Vec<_> = (0..count)

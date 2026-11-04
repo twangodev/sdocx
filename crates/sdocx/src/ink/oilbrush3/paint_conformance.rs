@@ -29,9 +29,7 @@ const STATE_BYTES: usize = 1564;
 const ADDPOINTS: &[u8] = include_bytes!(
     "../../../../../conformance/oilbrush3-v23-native-paint/oilbrush3-addpoint-records-15x28-f32le.bin"
 );
-const P3_VBO: &[u8] = include_bytes!(
-    "../../../../../conformance/oilbrush3-v23-native-paint/oilbrush3-p3-vbo-6x4-f32le.bin"
-);
+const P3_VBO: &[u8] = include_bytes!("p3-vbo-6x4-f32le.bin");
 const STATE: &[u8] = include_bytes!(
     "../../../../../conformance/oilbrush3-v23-native-paint/oilbrush3-captured-draw-state-f32le.bin"
 );
@@ -56,7 +54,7 @@ const MASK_ZLIB_SHA256: &str = "88e2c40eda7057f95a35a2b80f4d1e95da5ca72267651e4f
 const MASK_R8_SHA256: &str = "fc277b78270fbee42ba6cc96ff4050f5a76c595e9ec841de36e3b7fbe1e368dc";
 const DEPTH_ZLIB_SHA256: &str = "dcfb7a42804115addcc085a729abbd5ba6915ee262363063be1f8c741ed65da5";
 const DEPTH_R8_SHA256: &str = "8188e033fffc6513cc997deb014033e7de1aacd8e27f5c6b464d491c7efaa27a";
-const PROFILE_SHA256: &str = "560837b7cc189e849c19d332894a88868066dc1fe8478b7028a376f4f57387a8";
+const PROFILE_SHA256: &str = "b6f0c4ad991aebc503b9bebb7aa3b38c09a47205c94c8e4b3363b81b8192df4b";
 const NATIVE_PREFIX_BUNDLE_SHA256: &str =
     "20f504f2780d7d82feafe5ea5970e8a10a4919cd87ee6c2652c64d0229ab7028";
 const V17_STATE: &[u8] = include_bytes!(
