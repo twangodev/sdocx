@@ -1525,21 +1525,11 @@ mod tests {
             );
             let page = canvas.rendered_page(0).unwrap();
             #[cfg(feature = "pdf")]
-            if let Some(directory) = std::env::var_os("SDOCX_BRUSHPEN_CANVAS_EXPORT") {
-                let directory = std::path::PathBuf::from(directory);
-                std::fs::create_dir_all(&directory).unwrap();
+            {
                 let mut options = crate::PdfOptions::default();
                 options.dpi = 72.0;
-                std::fs::write(
-                    directory.join("direct.pdf"),
-                    canvas.to_pdf(&options).unwrap(),
-                )
-                .unwrap();
-                std::fs::write(
-                    directory.join("svg.pdf"),
-                    crate::render_svg_pages_pdf(std::slice::from_ref(&page), &options).unwrap(),
-                )
-                .unwrap();
+                canvas.to_pdf(&options).unwrap();
+                crate::render_svg_pages_pdf(std::slice::from_ref(&page), &options).unwrap();
             }
             let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
             let mut image = resvg::tiny_skia::Pixmap::new(321, 228).unwrap();
