@@ -5,6 +5,7 @@ use sdocx::{
     InkRasterOrigin, InkRasterProfile, Point, Stroke, StrokeRendering, StrokeStyle,
 };
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 
 fn stroke(case_id: &str, argb: u32) -> Stroke {
     let fixture: Value =
@@ -247,4 +248,125 @@ fn public_raster_page_round_trips_through_svg_preview() {
         let bytes = sdocx::render_svg_pages_pdf(&[page], &options).unwrap();
         assert!(bytes.starts_with(b"%PDF-"));
     }
+}
+
+fn native(id: &str) -> (Vec<[u8; 4]>, [u8; 4]) {
+    let mut receipt: Value = serde_json::from_str(include_str!(
+        "../../../conformance/pencil2-v14-page-context-native.json"
+    ))
+    .unwrap();
+    let old: Value = serde_json::from_str(include_str!(
+        "../../../conformance/pencil2-v14-mixed-rgb-native.json"
+    ))
+    .unwrap();
+    if receipt["results"][id].is_null() {
+        let suffix = id.strip_prefix("colored_bottom_scale1").unwrap();
+        receipt["results"][id] = old["results"][format!("colored{suffix}")].clone();
+    }
+    let frame = &receipt["results"][id];
+    let background = std::array::from_fn(|i| frame["background"][i].as_u64().unwrap() as u8);
+    let mut image = vec![background; 192 * 192];
+    for row in frame["pixels"].as_array().unwrap() {
+        let x = row[0].as_u64().unwrap() as usize;
+        let y = row[1].as_u64().unwrap() as usize;
+        image[(191 - y) * 192 + x] = std::array::from_fn(|i| row[i + 2].as_u64().unwrap() as u8);
+    }
+    let bytes: Vec<_> = image
+        .as_chunks::<192>()
+        .0
+        .iter()
+        .rev()
+        .flatten()
+        .flatten()
+        .copied()
+        .collect();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(bytes)),
+        frame["sha256"].as_str().unwrap()
+    );
+    (image, background)
+}
+
+fn errors(image: &[[u8; 4]], expected: &[[u8; 4]]) -> (usize, u64, u8) {
+    assert_eq!(image.len(), expected.len());
+    image.iter().flatten().zip(expected.iter().flatten()).fold(
+        (0, 0, 0),
+        |(count, sum, maximum), (&a, &b)| {
+            let error = a.abs_diff(b);
+            (
+                count + usize::from(error != 0),
+                sum + u64::from(error),
+                maximum.max(error),
+            )
+        },
+    )
+}
+
+#[test]
+fn public_raster_canvas_joins_saved_source_to_native_page_pixels() {
+    for (case, name, inverse) in [
+        ("channel_baseline", "colored", InkRasterInverseScale::One),
+        (
+            "v5_exact_combined",
+            "inverse_half",
+            InkRasterInverseScale::Half,
+        ),
+    ] {
+        let stroke = stroke(
+            case,
+            if name == "colored" {
+                0x80336699
+            } else {
+                0xff000000
+            },
+        );
+        for origin in [InkRasterOrigin::TopLeft, InkRasterOrigin::BottomLeft] {
+            for scale in [1, 2] {
+                for suffix in ["", "_background", "_white", "_paper"] {
+                    let axis = if origin == InkRasterOrigin::TopLeft {
+                        "top"
+                    } else {
+                        "bottom"
+                    };
+                    let id = format!("{name}_{axis}_scale{scale}{suffix}");
+                    let (expected, background) = native(&id);
+                    let mut canvas =
+                        InkRasterCanvas::new(context(origin, scale), background).unwrap();
+                    canvas.paint(&stroke, profile(inverse)).unwrap();
+                    let error = errors(canvas.pixels(), &expected);
+                    let expected = match (name, origin, scale, suffix) {
+                        ("colored", InkRasterOrigin::TopLeft, 2, "_background" | "_paper") => {
+                            (1, 1, 1)
+                        }
+                        ("colored", InkRasterOrigin::TopLeft, 2, _) => (2, 2, 1),
+                        _ => (0, 0, 0),
+                    };
+                    assert_eq!(error, expected, "{id}");
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn pencil2_transparent_page_exports_native_frame() {
+    let (expected, background) = native("colored_top_scale1");
+    let mut canvas =
+        InkRasterCanvas::new(context(InkRasterOrigin::TopLeft, 1), background).unwrap();
+    canvas
+        .paint(
+            &stroke("channel_baseline", 0x80336699),
+            profile(InkRasterInverseScale::One),
+        )
+        .unwrap();
+    assert_eq!(canvas.pixels(), expected);
+    let page = canvas.rendered_page(0).unwrap();
+    let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
+    let mut pixels = resvg::tiny_skia::Pixmap::new(192, 192).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pixels.as_mut(),
+    );
+    assert_eq!(pixels.data().as_chunks::<4>().0, expected);
 }
