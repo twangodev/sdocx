@@ -26,7 +26,7 @@ For the paired tool-0 and tool-3 2× controls, pass `--tool 0` or `--tool 3`
 to `capture.py` with `fraction12` and `reverse20`. The wrapper validates each
 frame and geometry against the corresponding tool-2 control. See
 `conformance/simplebrush-scale-2x-tools-host.json` for the paired results. The
-comparator reuses the tool-2 crop because the paired native geometry and full
+historical comparator reused the tool-2 crop because the paired native geometry and full
 frames match tool 2 exactly.
 
 The case names are `fraction3`, `fraction4`, `fraction32`, `reverse3`, and
@@ -40,3 +40,5 @@ The 2× setting-alias controls use `--advanced-setting empty` or `--advanced-set
 with `fraction12` and `reverse20`, and each `--tool` value 0, 2, and 3.
 The wrapper checks native geometry and complete frames against the null-setting
 control. The compact matrix is `conformance/simplebrush-scale-2x-settings-native.json`.
+
+The boundary capture wrapper also accepts `--tool 0` and `--tool 3` and verifies the captured geometry and frame against the retained tool-2 case hashes. These are synthetic host checks and do not establish device or saved-note parity.

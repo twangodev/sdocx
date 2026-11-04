@@ -21,8 +21,8 @@ def main():
     parser.add_argument("output", type=Path)
     parser.add_argument("--tool", type=int, choices=[0, 2, 3], default=2)
     args = parser.parse_args()
-    if args.case != "fraction12" or args.tool != 2:
-        raise ValueError("point-count controls use fraction12 and tool 2")
+    if args.case != "fraction12" or (args.tool != 2 and not ((args.tool == 0 and int(os.environ["POINT_COUNT"]) in (32, 33, 64)) or (args.tool == 3 and int(os.environ["POINT_COUNT"]) in (33, 64)))):
+        raise ValueError("point-count controls use fraction12; tool 0 supports 32, 33 and 64 points; tool 3 supports 33 and 64 points")
     original = SOURCE / "simplebrush-source-capture.py"
     receipt = json.loads(
         (
@@ -96,12 +96,12 @@ def main():
             1,
         )
         count = int(os.environ["POINT_COUNT"])
-        if count not in (2, 4, 7, 16, 32): raise ValueError("unsupported point count")
-        points = [[25.0 + i * 2, 40.0 + [0, 2, 5, 7, 8, 7, 5, 2][i % 8]] for i in range(count)] if count >= 16 else [[32.0 + i * 6, 32.0 + (i % 3) * 3] for i in range(count)]
+        if count not in (2, 4, 7, 16, 32, 33, 64): raise ValueError("unsupported point count")
+        points = [[25.0 + i * (0.75 if count in (33, 64) else 2), 40.0 + [0, 2, 5, 7, 8, 7, 5, 2][i % 8]] for i in range(count)] if count >= 16 else [[32.0 + i * 6, 32.0 + (i % 3) * 3] for i in range(count)]
         pressures = [[0.25, 0.5, 0.75, 1.0][i % 4] for i in range(count)] if count >= 16 else [0.5] * count
         variant = os.environ.get("VARIANT")
-        if variant is not None and (variant not in ("reverse", "alternate") or count != 32):
-            raise ValueError("expected VARIANT=reverse|alternate and POINT_COUNT=32")
+        if variant is not None and (variant not in ("reverse", "alternate") or count not in (32, 64) or (count == 64 and variant != "reverse")):
+            raise ValueError("variants require 32 points, or 64 points for reverse")
         if variant == "reverse":
             points = points[::-1]
             pressures = pressures[::-1]
@@ -125,7 +125,7 @@ def main():
             "256",
         ]
         if args.case in ("fraction12", "reverse20"):
-            command += ["--pen-size", "12" if args.case == "fraction12" else "20"]
+            command += ["--pen-size", os.environ.get("PROBE_SIZE", "12") if args.case == "fraction12" else "20"]
         command += ["--tool-type", str(args.tool)]
         for seq in range(8):
             command += ["--dispatch-task-seq", str(seq)]
@@ -133,16 +133,27 @@ def main():
             subprocess.run(command, cwd=ROOT, env=env, stdout=output, check=True)
         captured = json.loads(args.output.read_text())
         frame = captured.get("native_draw_target_readback") or {}
-        if variant is None:
-            points_receipt = json.loads((ROOT / "conformance/simplebrush-scale-2x-points.json").read_text())
-            expected = next(c for c in points_receipt["cases"] if c["count"] == count)
+        if count in (33, 64):
+            expected = next(c for c in json.loads((ROOT / "conformance/simplebrush-long-controls.json").read_text())["cases"] if c["count"] == count and c["reverse"] == (variant == "reverse"))
+            if args.tool == 3:
+                identity = next(c for c in json.loads((ROOT / "conformance/simplebrush-tool3-long-identity.json").read_text())["cases"] if c["count"] == count and c["size"] == expected["size"] and c["reverse"] == expected["reverse"])
+                if any(identity[key] != expected[key] for key in ("frame_sha256", "geometry_sha256")):
+                    raise RuntimeError("tool-3 identity receipt differs from long controls")
+            if not captured.get("native_gl_error_verdict", {}).get("paint_clean") or frame.get("sha256") != expected["frame_sha256"] or captured["drawing_vector"]["sha256"] != expected["geometry_sha256"]:
+                raise RuntimeError("native frame or geometry differs from receipt")
         else:
-            points_receipt = json.loads((ROOT / "conformance/simplebrush-scale-2x-points-32-variants.json").read_text())
-            expected = points_receipt["cases"][variant]
-        if (not captured.get("native_gl_error_verdict", {}).get("paint_clean")
-            or frame.get("sha256") != expected["frame_sha256"]
-            or captured["drawing_vector"]["sha256"] != expected["geometry_sha256"]):
-            raise RuntimeError("native frame or geometry differs from receipt")
+            if args.tool == 0 and variant == "alternate" and count == 32 and os.environ.get("PROBE_SIZE", "12") == "20":
+                expected = json.loads((ROOT / "tools/simplebrush-points/tool0-alternate-size20-receipt.json").read_text())
+            elif variant is None:
+                points_receipt = json.loads((ROOT / "conformance/simplebrush-scale-2x-points.json").read_text())
+                expected = next(c for c in points_receipt["cases"] if c["count"] == count)
+            else:
+                points_receipt = json.loads((ROOT / "conformance/simplebrush-scale-2x-points-32-variants.json").read_text())
+                expected = points_receipt["cases"][variant]
+            if (not captured.get("native_gl_error_verdict", {}).get("paint_clean")
+                or frame.get("sha256") != expected["frame_sha256"]
+                or captured["drawing_vector"]["sha256"] != expected["geometry_sha256"]):
+                raise RuntimeError("native frame or geometry differs from receipt")
         # Capture scripts write pixels inside work; keep them beside requested receipt.
         pixels = work / "captures"
         if pixels.exists():

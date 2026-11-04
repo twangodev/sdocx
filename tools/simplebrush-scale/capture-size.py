@@ -19,7 +19,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("case", choices=["fraction3", "fraction4", "fraction32", "reverse3", "reverse32"])
     parser.add_argument("output", type=Path)
-    parser.add_argument("--tool", type=int, choices=[2], default=2)
+    parser.add_argument("--tool", type=int, choices=[0, 2, 3], default=2)
     args = parser.parse_args()
     original = SOURCE / "simplebrush-source-capture.py"
     receipt = json.loads(
