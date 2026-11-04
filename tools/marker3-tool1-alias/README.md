@@ -13,10 +13,6 @@ The `*-default-export.json` receipts compare default admitted output against a g
 
 The incremental-commit validation uses identical inputs before and after admission. `same-input-export.json` compares an exporter built from the previous production sources against the isolated candidate, for both default and explicit 2× options. All twelve reader comparisons improve. `validation.json` pins the base commit, relevant build sources, harness and receipts; it records the test-only change present in the before build. The freshly reproduced twelve native alias captures match `native.json` exactly. The two compressed native frames are retained for export replay.
 
-To reproduce the export comparison, build `export.rs` as a temporary example against the base commit in `validation.json` and against this commit, with `serde,pdf` enabled. Run each exporter for `fractional` and `crossing`, writing to `<exports>/<case>/before` and `<exports>/<case>/after`. Then run:
+The optional paired comparator has been retired. `validation.json` retains its historical script hash as provenance, not a current executable dependency.
 
-```sh
-PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/marker3-tool1-alias/compare-exports.py <exports> <receipt.json>
-```
-
-The comparator requires the reader versions recorded in the receipt (resvg, PyMuPDF, pypdfium2), NumPy and Pillow. The native controls establish synthetic host alias equivalence at size 8; existing admitted size bounds remain 4–8. StraightMarker 4× is admitted by the [separate 4× controls](../marker3-tool1-scale4-alias/README.md).
+The native controls establish synthetic host alias equivalence at size 8; existing admitted size bounds remain 4–8. StraightMarker 4× is admitted by the [separate 4× controls](../marker3-tool1-scale4-alias/README.md).
