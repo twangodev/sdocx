@@ -10,10 +10,8 @@ On the prepared host, reproduce the native capture (it checks the frame and stre
 BRUSHPEN_CAPTURE_ROOT="$PWD" PYTHONPATH="$PWD/scratch/apk-analysis-runtime/python" /tmp/sdocx-unicorn-venv/bin/python tools/brushpen-color-pressure/capture.py
 ```
 
-Replay the public renderer from the pinned clean Git commit with resvg, NumPy, Pillow, PyMuPDF and pypdfium2 available:
-
-```sh
-PYTHONPATH=/tmp/sdocx-marker3-v133-readers PYTHON="$PWD/.venv/bin/python" .venv/bin/python tools/brushpen-color-pressure/replay.py
-```
-
-The replay checks retained input, script and native hashes, inserts the focused test into a temporary clean archive, checks all geometry bytes, exports SVG and PDFs, and asserts raster metrics. It uses the shared agent Cargo target. The replay asserts the recorded reader versions and output hashes. It does not install or lock the compiler, dependency closure, or native host adapters.
+The experimental exporter, replay driver and reader comparator have been retired.
+`serialized_mutations_match_native_geometry` checks all 37 native records in
+memory using the retained pressure cycle and stream. Export hashes and reader
+metrics above are historical observations; the Rust geometry check does not
+revalidate external PDF reader pixels. Native acquisition and receipts remain.

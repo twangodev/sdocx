@@ -330,6 +330,64 @@ mod tests {
     use sha2::{Digest, Sha256};
     use std::io::Read;
 
+    #[cfg(feature = "render")]
+    #[test]
+    fn serialized_mutations_match_native_geometry() {
+        let payload =
+            include_bytes!("../../../../../conformance/brushpen-serialized/v10-payload.bin");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(payload)),
+            "28b0848cb3aa9dadc700bf425fd390281c8de0d222e46f7126d0bcbcd527b60f"
+        );
+        // Synthetic mutations after native attachment, not saved BrushPen-note parity.
+        for (vary_pressure, count, digest, compressed) in [
+            (
+                false,
+                33,
+                "023ea87c21108cf8303c7af3475bf6884ae810e094478ce3f4a7dcb590610b00",
+                include_bytes!("../../../../../tools/brushpen-size16-duplicate/stream.zlib")
+                    .as_slice(),
+            ),
+            (
+                true,
+                37,
+                "c56fa6c74818d3174e2e20062086f17dcf48341b09a4af0c5429f99cfb787ab0",
+                include_bytes!("../../../../../tools/brushpen-color-pressure/stream.zlib")
+                    .as_slice(),
+            ),
+        ] {
+            let mut native = Vec::new();
+            ZlibDecoder::new(compressed)
+                .read_to_end(&mut native)
+                .unwrap();
+            assert_eq!(native.len(), count * 11 * 4);
+            assert_eq!(format!("{:x}", Sha256::digest(&native)), digest);
+            let mut stroke =
+                crate::decode::decode_stroke(payload, &crate::ParseLimits::default()).unwrap();
+            assert_eq!(stroke.points.len(), 204);
+            assert_eq!(stroke.pressures.len(), 204);
+            stroke.pen_width = 16.0;
+            stroke.points[2] = stroke.points[0];
+            if vary_pressure {
+                for (i, pressure) in stroke.pressures.iter_mut().enumerate() {
+                    *pressure = [0.15, 0.35, 0.65, 0.9][i % 4];
+                }
+            }
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.BrushPen".into());
+            rendering.advanced_settings = Some("10;".into());
+            rendering.style.pen_size = Some(16.0);
+            let records = crate::sample_brushpen_glv10_host(&stroke, 1920, 1080).unwrap();
+            assert_eq!(records.len(), count);
+            let actual: Vec<u8> = records
+                .iter()
+                .flatten()
+                .flat_map(|value| value.to_le_bytes())
+                .collect();
+            assert_eq!(actual, native, "vary_pressure={vary_pressure}");
+        }
+    }
+
     #[test]
     fn invalid_projection_or_late_record_leaves_destination_unchanged() {
         let bytes = [255; 4];
@@ -2820,19 +2878,13 @@ mod tests {
         assert_eq!(actual.len(), native.len());
         assert_eq!(sum, 0);
         #[cfg(feature = "pdf")]
-        if let Some(dir) = std::env::var_os("SDOCX_BRUSHPEN_INDEPENDENT_EXPORT") {
-            let dir = std::path::PathBuf::from(dir);
+        {
             let page = canvas.rendered_page(0).unwrap();
             let mut options = crate::PdfOptions::default();
             options.dpi = 72.0;
-            std::fs::write(dir.join("canvas.png"), canvas.to_png().unwrap()).unwrap();
-            std::fs::write(dir.join("canvas.svg"), &page.svg).unwrap();
-            std::fs::write(dir.join("direct.pdf"), canvas.to_pdf(&options).unwrap()).unwrap();
-            std::fs::write(
-                dir.join("svg.pdf"),
-                crate::render_svg_pages_pdf(&[page], &options).unwrap(),
-            )
-            .unwrap();
+            canvas.to_png().unwrap();
+            canvas.to_pdf(&options).unwrap();
+            crate::render_svg_pages_pdf(&[page], &options).unwrap();
         }
     }
     #[cfg(feature = "render")]
@@ -2973,19 +3025,13 @@ mod tests {
         assert_eq!(actual.len(), native.len());
         assert_eq!(sum, 0);
         #[cfg(feature = "pdf")]
-        if let Some(dir) = std::env::var_os("SDOCX_BRUSHPEN_THIRD_EXPORT") {
-            let dir = std::path::PathBuf::from(dir);
+        {
             let page = canvas.rendered_page(0).unwrap();
             let mut options = crate::PdfOptions::default();
             options.dpi = 72.0;
-            std::fs::write(dir.join("canvas.png"), canvas.to_png().unwrap()).unwrap();
-            std::fs::write(dir.join("canvas.svg"), &page.svg).unwrap();
-            std::fs::write(dir.join("direct.pdf"), canvas.to_pdf(&options).unwrap()).unwrap();
-            std::fs::write(
-                dir.join("svg.pdf"),
-                crate::render_svg_pages_pdf(&[page], &options).unwrap(),
-            )
-            .unwrap();
+            canvas.to_png().unwrap();
+            canvas.to_pdf(&options).unwrap();
+            crate::render_svg_pages_pdf(&[page], &options).unwrap();
         }
     }
 }

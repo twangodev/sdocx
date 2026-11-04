@@ -19,17 +19,10 @@ BRUSHPEN_CAPTURE_ROOT="$PWD" PYTHONPATH="$PWD/scratch/apk-analysis-runtime/pytho
 
 The capture requires the pinned DSOs and ignored helpers listed in the base
 capture and writes `/tmp/brush-variant-{frame,stream}.bin`. Compare their hashes
-to the receipt. To replay the public exporter from the pinned clean Git commit,
-run with resvg, NumPy, Pillow, PyMuPDF and pypdfium2 available:
+to the receipt.
 
-```sh
-PYTHON="$PWD/.venv/bin/python" .venv/bin/python tools/brushpen-size16-duplicate/replay.py
-```
-
-The replay checks the source payload, table, frame, paint source, scripts and
-native fixture hashes, adds the retained focused test to a temporary Git archive,
-checks its complete geometry against the native stream, exports SVG and direct
-PDF, and asserts reader metrics. It uses the shared agent target and removes the
-temporary source checkout. The lockfile is from the pinned commit; installed
-compiler and reader dependency closures are not pinned. The comparator reads
-the compressed frame directly and checks its digest.
+The experimental exporter, replay driver and reader comparator have been retired.
+`serialized_mutations_match_native_geometry` checks all 33 native records in
+memory using the retained stream. Export hashes and reader metrics above are
+historical observations; the Rust geometry check does not revalidate external
+PDF reader pixels. Native inputs, capture scripts and receipts remain retained.
