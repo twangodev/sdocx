@@ -266,3 +266,47 @@ try {
   top2.paint_pencil2_translated(second, 'One', 9, -9);
   assert.deepEqual(Buffer.from(top2.pixels()), top2Expected, 'native top2 translucent colored overlap');
 } finally { top2.free(); }
+
+// Exercise every retained Fountain frame through the WASM bindings.
+let fountainFrames = 0;
+for (const [label, profileName, expectedFrames, expectedOpaque] of [
+  ['scaled-source-rgba', 'FountainPenV14Host', 36, 12],
+  ['clipping', 'FountainPenV14Host', 216, 72],
+  ['drawing-paint', 'FountainPenV14DirectHost', 108, 36],
+]) {
+  const fixture = require(`../../../conformance/fountain-v14-${label}-native.json`);
+  function topPixels(row) {
+    const raw = zlib.inflateSync(Buffer.from(row.rgba_zlib_base64, 'base64'));
+    assert.equal(raw.length, 64 * 64 * 4);
+    assert.equal(createHash('sha256').update(raw).digest('hex'), row.sha256);
+    const top = Buffer.alloc(raw.length);
+    for (let y = 0; y < 64; y++) raw.copy(top, (63 - y) * 256, y * 256, (y + 1) * 256);
+    return top;
+  }
+  assert.equal(Object.keys(fixture.cases).length, expectedFrames, label);
+  let opaque = 0;
+  for (const [name, row] of Object.entries(fixture.cases)) {
+    fountainFrames++;
+    const canvas = new sdk.InkRasterCanvas({width: 64, height: 64,
+      pixels_per_unit: row.scale, origin: row.origin === 'top' ? 'TopLeft' : 'BottomLeft'},
+      topPixels(fixture.prior_inputs[row.prior]));
+    try {
+      canvas.paint(fixture.source_stroke, {[profileName]: {
+        source_origin: row.source_origin, paint_argb: row.argb}});
+      const pixels = Buffer.from(canvas.pixels());
+      assert.deepEqual(pixels, topPixels(row.output), `${label}/${name}`);
+      assert.throws(() => canvas.paint(fixture.source_stroke, {[profileName]: {
+        source_origin: [-2147483648, 0], paint_argb: row.argb}}));
+      assert.deepEqual(Buffer.from(canvas.pixels()), pixels, 'Fountain rejection must be atomic');
+      if (row.prior === 'white') {
+        opaque++;
+        assert.ok(canvas.render_svg().length);
+        assert.ok(canvas.to_png().length);
+        assert.ok(canvas.render_pdf().length);
+      }
+    } finally { canvas.free(); }
+  }
+  assert.equal(opaque, expectedOpaque, label);
+}
+assert.equal(fountainFrames, 360);
+console.log(`Fountain: ${fountainFrames} native WASM frames passed`);
