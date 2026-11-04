@@ -10,8 +10,9 @@ saved-note rendering, native scheduling, or device fidelity.
 Run `python3 tools/pencil2-offset-trace/lifecycle-probe.py` or
 `python3 tools/pencil2-offset-trace/lifecycle-sized-probe.py` in the original
 capture workspace. Each writes its corresponding `*-receipt.json`; inspect
-that receipt before replacing the crate fixture. Fixture tests need only
-`cargo test -p sdocx --features render,serde --lib ink::pencil2::offset`.
+that receipt before replacing the crate fixture. These output files are temporary
+recapture copies; remove them after inspection if they match the retained fixtures.
+Fixture tests need only `cargo test -p sdocx --features render,serde --lib ink::pencil2::offset`.
 
 Native recapture is not standalone: the scripts require the existing Drawing
 capture harness, scratch native libraries, and temporary capture helpers listed
