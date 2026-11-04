@@ -1,0 +1,44 @@
+{
+  "scope": "Host Mesa RTV4 replay of production-generated sampled records; conditional raster comparison, not independent native sampler, saved-note or device parity.",
+  "inputs": "pressure_ramp ARGB 80336699 tilt 0.4, then channel_baseline ARGB ffdd4411 tilt 0.8; translations [6,9], [9,11], bottom-left origin, scale 1, opaque patterned prior.",
+  "frame_bytes": 147456,
+  "native_rgba_sha256": "9701a2238a661925b3b46d62e6d36cc4dff2400b6388c11f521855cdde661347",
+  "changed_pixels": 156,
+  "delta_format": "Little-endian u32 top-down pixel index followed by RGBA; reconstruct over the deterministic opaque prior in the test. Derived from the native frame, not a new capture.",
+  "delta_sha256": "e01c7cb885fa6d8f337fb108fceeb437eb148f9063a11bb4abd13c2e9bea2818",
+  "input_stream_sha256": {
+    "colored-ramp.bin": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8",
+    "colored-flat.bin": "8a12e28a8946b273996d12f5bbb45bc9948c7dc23b169f1ab2a11ff27a22e5c3"
+  },
+  "historical_capture_script": {
+    "path": "tools/pencil2-public-replay/colored_overlap_capture.py",
+    "sha256": "eaa9b28ac0d4fb1b38e942449dbba3a721e8c528099cba71136275abb8c3bd0c",
+    "limitation": "Original script uses the local ignored capture_candidate.py harness and Samsung native libraries; this compact fixture is not a clean-checkout recapture recipe. Input streams are retained beside this receipt."
+  },
+  "native_capture": {
+    "gl": {
+      "vendor": "Mesa",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1",
+      "shading_language": "OpenGL ES GLSL ES 3.20"
+    },
+    "dso_pins": {
+      "libSPenPencil2.so": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f",
+      "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "libSPenAirBrushPen.so": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "source_pins": {
+      "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+      "airbrush_saved_native.py": "cad2bd9ec88a393f0b0b4a7dbe58c7b469f9b00b283d4c544f491a8ab190999a",
+      "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+      "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b"
+    },
+    "baseline_sha256": "7f3f33fb462ba24e7f57ce9229ff182766807d21f4be417b7e0a63deb7c7f971"
+  }
+}

@@ -726,3 +726,88 @@ fn changed_input_native_grain_offset_and_canvas_match() {
         canvas.to_pdf(&options).unwrap();
     }
 }
+
+#[test]
+fn pencil2_colored_tilted_overlapping_strokes_match_host_and_svg() {
+    let prior: Vec<[u8; 4]> = (0..192 * 192)
+        .map(|i| {
+            let (x, y) = (i % 192, i / 192);
+            [
+                (x * 3 + y) as u8,
+                (x + y * 5) as u8,
+                (x * 7 + y * 3) as u8,
+                255,
+            ]
+        })
+        .collect();
+    let receipt: Value = serde_json::from_str(include_str!(
+        "assets/pencil2-overlap/bottom1-opaque-receipt.json"
+    ))
+    .unwrap();
+    let delta = include_bytes!("assets/pencil2-overlap/bottom1-opaque.delta");
+    assert_eq!(
+        format!("{:x}", Sha256::digest(delta)),
+        receipt["delta_sha256"]
+    );
+    let (records, remainder) = delta.as_chunks::<8>();
+    assert!(remainder.is_empty());
+    assert_eq!(
+        records.len(),
+        receipt["changed_pixels"].as_u64().unwrap() as usize
+    );
+    let mut expected: Vec<u8> = prior.iter().flatten().copied().collect();
+    let mut previous = None;
+    for record in records {
+        let index = u32::from_le_bytes(record[..4].try_into().unwrap()) as usize;
+        assert!(index < prior.len());
+        assert!(previous.is_none_or(|last| index > last));
+        previous = Some(index);
+        expected[index * 4..index * 4 + 4].copy_from_slice(&record[4..]);
+    }
+    assert_eq!(expected.len(), 192 * 192 * 4);
+    assert_eq!(
+        expected.len(),
+        receipt["frame_bytes"].as_u64().unwrap() as usize
+    );
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&expected)),
+        receipt["native_rgba_sha256"]
+    );
+    let mut canvas =
+        InkRasterCanvas::from_pixels(context(InkRasterOrigin::BottomLeft, 1), prior).unwrap();
+    for (case, translation, argb, tilt) in [
+        ("pressure_ramp", [6., 9.], 0x80336699, 0.4),
+        ("channel_baseline", [9., 11.], 0xffdd4411, 0.8),
+    ] {
+        let mut input = stroke(case, argb);
+        input.tilts.fill(tilt);
+        canvas
+            .paint_pencil2_translated(&input, InkRasterInverseScale::One, translation)
+            .unwrap();
+    }
+    assert_eq!(
+        canvas
+            .pixels()
+            .iter()
+            .flatten()
+            .copied()
+            .collect::<Vec<_>>(),
+        expected
+    );
+    let page = canvas.rendered_page(0).unwrap();
+    let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
+    let mut image = resvg::tiny_skia::Pixmap::new(192, 192).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut image.as_mut(),
+    );
+    assert_eq!(image.data(), expected);
+    #[cfg(feature = "pdf")]
+    {
+        let mut options = sdocx::PdfOptions::default();
+        options.dpi = 72.;
+        sdocx::render_svg_pages_pdf(&[page], &options).unwrap();
+        canvas.to_pdf(&options).unwrap();
+    }
+}
