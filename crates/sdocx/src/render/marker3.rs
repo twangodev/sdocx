@@ -248,7 +248,7 @@ mod tests {
         assert_eq!(crop_sha, crop["sha256"].as_str().unwrap());
         // Restore native readback row order over the transparent target.
         let mut frame = vec![0_u8; 256 * 256 * 4];
-        for (row, bytes) in native.chunks_exact(40 * 4).enumerate() {
+        for (row, bytes) in native.as_chunks::<{ 40 * 4 }>().0.iter().enumerate() {
             let offset = ((row + 30) * 256 + 30) * 4;
             frame[offset..offset + bytes.len()].copy_from_slice(bytes);
         }
