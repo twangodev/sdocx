@@ -87,7 +87,7 @@ the whole stroke. Pressure does not change that radius. The saved ARGB alpha
 is one `fill-opacity` on the path. V1 and V2 share this geometry; the V2
 thin-edge shader is not ported. `Marker` stays on the pressure fallback.
 `Marker3` and `StraightMarker` use the bounded V5 page route with empty or `5;`
-settings and tool types 2 or 3; tool 1 is admitted only for the captured Marker3 `5;`, sizes 4–8 and explicit ARGB. Other settings remain generic. Marker4 and `StraightHighlighter`
+settings and tool types 2 or 3; tool 1 admits Marker3 or StraightMarker with empty or `5;` settings, sizes 4–9 and explicit ARGB. Size-9 host controls use Marker3 `5;`; aliases and empty settings extrapolate. Other settings remain generic. Marker4 and `StraightHighlighter`
 settings `7;` and `8;` use rounded rectangular stamps; see [V7 findings](marker4-v7.md)
 and [V8 findings](marker4-rendering-findings.md). Other Marker4 settings remain
 on the fallback.
@@ -183,6 +183,12 @@ The optional post-input coordinate smoother is a separate mechanism:
 [stroke finalization](stroke-finalization-findings.md) documents that the
 ordinary constructor selects no transformer. Input prediction and optional
 beautification are distinct from saved-stroke redraw.
+
+A historical synthetic zigzag comparison reduced SVG and PDF reader errors
+against a native host frame, while covering more pixels than native. Opaque
+comparisons composited the transparent frame over paper rather than capturing
+an opaque native backdrop. The export report was retired; these observations do
+not establish device, saved-note or arbitrary-viewer parity.
 
 ### Marker3 fragment coverage
 
@@ -379,7 +385,17 @@ of commit `2ffac9f` into a temporary `conformance` directory, with `scratch`
 linked to the native inputs. Its output is a full capture, of which the receipt
 retains the color and selection evidence.
 
-A [paired native control](../../conformance/chinesebrush-v5-paired-native.json) and [seven additional controls](../../tools/chinesebrush-v5-matrix/receipt.json) select GLV3 and produce identical streams for settings `4;` and `5;`. The additional controls vary pressure, size, display, duplicate and short paths, and an eight-point path. The explicit renderer maps both settings to GLV3, extrapolating from these synthetic host-Unicorn controls; they do not establish saved-note or device parity.
+A [paired native control](../../conformance/chinesebrush-v5-paired-native.json)
+records a synthetic three-point Model/Drawing case: settings `4;` and `5;`
+select GLV3 and produce identical streams. A separate five-point queued RTV1
+host-Mesa paint pair has identical uploads and frames, though its trace does not
+independently identify the selected drawable class. Seven additional
+[Drawing controls](../../tools/chinesebrush-v5-matrix/receipt.json) match paired
+streams across sizes, pressure, display and path variants. A further shifted
+size-0.4 paint pair had identical frame hashes with two nonzero pixels; its
+capture evidence for this historical local control is not packaged in the tracked repository. The explicit
+profile treats `5;` as GLV3 based on these bounded synthetic controls, not device
+or saved-note evidence.
 
 The imported shared `Pen::SetSize` clamps finite sizes to 0.4–800 before storing
 them (PenCommon RVA `0x45fdc`, SHA-256

@@ -8,13 +8,16 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-CALLER = ROOT / "conformance/brushpen_saved_caller_native.py"
+ARCHIVE = ROOT / "tmp/conformance-cleanup/native-capture-a241793/conformance"
+CALLER = ARCHIVE / "brushpen_saved_caller_native.py"
 CALLER_SHA256 = "66f4790e8eeb1ca867f3273a796303b6ffb108286916e1e245fc063cbd744ae0"
 OBLIQUE_HELPER_SHA256 = "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
 ELF_PLT_SHA256 = "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b"
 FOUNTAIN_HELPER_SHA256 = "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30"
 CHINESE_SHA256 = "25d06b71e525f129e53c3734b957cdc9279ff9bd8dbca19948351c5e5ad237f5"
 FIXTURE = ROOT / "conformance/chinesebrush-saved-caller-native.json"
+REFERENCE = ARCHIVE / "chinesebrush-saved-caller-native.json"
+REFERENCE_SHA256 = "2073c622b1cbf3c8f3249844e7a4a5d09c3d545abdcfb764c237be842cb4a77e"
 CASES = [("omitted", None, 1, "V1"), ("empty", "", 3, "V3"), ("zero", "0;", 1, "V1"), ("one", "1;", 1, "V1"), ("two", "2;", 2, "V2"), ("three", "3;", 3, "V3"), ("four", "4;", 4, "V3")]
 LIBRARY_PINS = {"Base":"e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb", "ChineseBrush":CHINESE_SHA256, "Composer":"52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f", "Drawing":"788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd", "FountainPen":"1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec", "Graphics":"aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621", "Model":"4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a", "PenCommon":"afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d", "libc++_shared.so":"4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"}
 HELPER_PINS = {"oblique_canvas_native.py":OBLIQUE_HELPER_SHA256,"elf_plt.py":ELF_PLT_SHA256,"fountain_native.py":FOUNTAIN_HELPER_SHA256}
@@ -22,14 +25,43 @@ NATIVE_HELPER_PINS = {"oblique_canvas_native":OBLIQUE_HELPER_SHA256,"elf_plt":EL
 
 
 def _sha(path):
+    if not path.is_file() and path.is_relative_to(ARCHIVE):
+        raise SystemExit(f"missing archived capture input {path}; see conformance/README.md for restore instructions")
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def _semantic_case(case):
+    inputs = case["input"]
+    selection = case["native_selection"]
+    producer = case["producer"]
+    getter = dict(inputs["native_model_getter_snapshot"])
+    getter.pop("color_argb_u32")
+    return {
+        "schema": case["schema"], "case_id": case["case_id"], "profile": case["profile"],
+        "input": {key: inputs[key] for key in ("advanced_setting_ascii", "curve_enabled", "pen_name", "point_count", "size_f32_bits", "size_level", "source_arrays", "stroke_type", "tool_type")},
+        "model_getters_except_color": getter,
+        "selection": {key: selection[key] for key in ("factory_symbol", "loader_calls", "native_path_entry_counts", "redraw_target_symbols", "screen_resolution_calls", "size_f32_bits", "version")},
+        "producer": {key: producer[key] for key in ("append_rows", "buffer_bytes", "buffer_hex", "buffer_sha256", "callback_count", "instance_float_count")},
+        "libraries": case["native_libraries_sha256"],
+    }
+
+def _check_reference(captures, reference):
+    if set(captures) != set(reference["cases"]):
+        raise RuntimeError("ChineseBrush reference case set differs")
+    for name, case in captures.items():
+        if case["input"]["color_argb_u32"] is not None or case["input"]["native_model_getter_snapshot"]["color_argb_u32"] != "0xff000000":
+            raise RuntimeError(f"{name}: omitted color did not resolve to native black")
+        if _semantic_case(case) != _semantic_case(reference["cases"][name]):
+            raise RuntimeError(f"{name}: native semantic evidence differs from historical reference")
 
 def _run_matrix():
     parser = __import__("argparse").ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--write-fixture", action="store_true", help="explicitly write or refresh the native fixture")
-    mode.add_argument("--check-fixture", action="store_true", help="check all seven native captures (the default)")
+    mode.add_argument("--check-fixture", action="store_true", help="compare all captures with the current fixture (the default)")
+    mode.add_argument("--check-reference", action="store_true", help="compare stable native evidence with the pinned historical receipt")
     args = parser.parse_args()
+    if not args.write_fixture and not args.check_reference and not FIXTURE.is_file():
+        raise SystemExit("ChineseBrush saved-caller fixture missing; use --write-fixture to intentionally refresh")
     captures = {}
     for name, setting, _, _ in CASES:
         argv = [sys.executable, str(Path(__file__).resolve()), "--_capture", name]
@@ -68,8 +100,13 @@ def _run_matrix():
     if args.write_fixture:
         FIXTURE.write_text(encoded)
         print(f"wrote {FIXTURE.relative_to(ROOT)} ({len(captures)} cases)")
+    elif args.check_reference:
+        if _sha(REFERENCE) != REFERENCE_SHA256:
+            raise SystemExit("pinned historical ChineseBrush receipt changed")
+        _check_reference(captures, json.loads(REFERENCE.read_text()))
+        print(f"verified stable native evidence for {len(captures)} ChineseBrush cases against the pinned historical receipt")
     elif not FIXTURE.exists() or json.loads(FIXTURE.read_text()) != manifest:
-        raise SystemExit("ChineseBrush saved-caller fixture mismatch; use --write-fixture to intentionally refresh")
+        raise SystemExit("ChineseBrush saved-caller fixture mismatch or missing; use --write-fixture to intentionally refresh")
     else:
         print(f"verified {len(captures)} ChineseBrush saved-caller cases")
 
@@ -103,16 +140,19 @@ def remove_between(source: str, begin: str, end: str) -> str:
     return source[:left] + source[right:]
 
 
-if hashlib.sha256(CALLER.read_bytes()).hexdigest() != CALLER_SHA256:
+if _sha(CALLER) != CALLER_SHA256:
     raise SystemExit("pinned canonical BrushPen caller changed")
-if hashlib.sha256((ROOT / "conformance/oblique_canvas_native.py").read_bytes()).hexdigest() != OBLIQUE_HELPER_SHA256:
+if _sha(ARCHIVE / "oblique_canvas_native.py") != OBLIQUE_HELPER_SHA256:
     raise SystemExit("pinned oblique canvas helper changed")
-if hashlib.sha256((ROOT / "conformance/elf_plt.py").read_bytes()).hexdigest() != ELF_PLT_SHA256:
+if _sha(ARCHIVE / "elf_plt.py") != ELF_PLT_SHA256:
     raise SystemExit("pinned PLT helper changed")
-if hashlib.sha256((ROOT / "conformance/fountain_native.py").read_bytes()).hexdigest() != FOUNTAIN_HELPER_SHA256:
+if _sha(ARCHIVE / "fountain_native.py") != FOUNTAIN_HELPER_SHA256:
     raise SystemExit("pinned Fountain helper changed")
 
 source = CALLER.read_text()
+source = replace_once(source, "ROOT=pathlib.Path(__file__).resolve().parents[1]", "ROOT=pathlib.Path(__file__).resolve().parents[4]")
+source = replace_once(source, "sys.path.insert(0,str(ROOT/'conformance'))", "sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent))")
+source = replace_once(source, "import oblique_canvas_native as oc", "import oblique_canvas_native as oc\noc.ROOT=ROOT\noc.LIBRARY_DIR=ROOT/'scratch/apk-analysis-native/arm64-v8a'\noc.OBJDUMP=ROOT/'scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump'")
 source = source.replace("p.call('SPen::ObjectStroke::SetColor(unsigned int)',[obj,0xff6cdd8f]); ", "")
 source = source.replace("'color_argb_u32':'0xff6cdd8f'", "'color_argb_u32':None")
 source = source.replace("phase='setup'", "for _name,_address in p.syms.items():\n if _name.startswith('SPen::SmPath::') and any(token in _name for token in ('::moveTo(', '::quadTo(', '::cubicTo(', '::lineTo(', '::getLength(', '::getPosTan(')):\n  method_trace_names_by_pc.setdefault(_address,[]).append(_name)\nphase='setup'", 1)
