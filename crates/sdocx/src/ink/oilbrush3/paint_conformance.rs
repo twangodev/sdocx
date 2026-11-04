@@ -13,6 +13,62 @@ use flate2::read::ZlibDecoder;
 use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, io::Read};
 
+// Decode storage only: the original compressed bytes and all native prefixes
+// remain independent of the paint model exercised below.
+fn retained_native_prefixes(
+    text: &str,
+    length: usize,
+    original_sha: &str,
+    count: usize,
+) -> (Vec<u8>, serde_json::Value) {
+    let receipt: serde_json::Value = serde_json::from_str(text).unwrap();
+    let storage = &receipt["prefix_storage"];
+    assert_eq!(storage["format"], "zlib-hex-of-original-zlib");
+    assert!(length <= 143119 && count <= 17);
+    assert_eq!(
+        storage["original_byte_length"].as_u64().unwrap(),
+        length as u64
+    );
+    assert_eq!(storage["original_sha256"].as_str().unwrap(), original_sha);
+    let chunks = storage["zlib_hex"].as_array().unwrap();
+    assert!(!chunks.is_empty() && chunks.len() <= 158);
+    let mut compressed = Vec::new();
+    for chunk in chunks {
+        let hex = chunk.as_str().unwrap();
+        assert!(!hex.is_empty() && hex.len() <= 96 && hex.len() % 2 == 0);
+        assert!(hex.bytes().all(|b| b.is_ascii_hexdigit()));
+        compressed.extend(
+            (0..hex.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap()),
+        );
+    }
+    let mut outer = ZlibDecoder::new(compressed.as_slice());
+    let mut original = Vec::with_capacity(length);
+    outer
+        .by_ref()
+        .take(length as u64 + 1)
+        .read_to_end(&mut original)
+        .unwrap();
+    assert_eq!(original.len(), length);
+    assert_eq!(outer.total_in(), compressed.len() as u64);
+    assert_eq!(format!("{:x}", Sha256::digest(&original)), original_sha);
+    let hashes = receipt["prefix_sha256"].as_array().unwrap();
+    assert_eq!(hashes.len(), count);
+    let mut inner = ZlibDecoder::new(original.as_slice());
+    let mut frame = vec![0_u8; V17_PIXELS * 4];
+    for hash in hashes {
+        inner.read_exact(&mut frame).unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&frame)),
+            hash.as_str().unwrap()
+        );
+    }
+    assert_eq!(inner.read(&mut [0]).unwrap(), 0);
+    assert_eq!(inner.total_in(), original.len() as u64);
+    (original, receipt)
+}
+
 const PAGE: usize = 192;
 const PIXELS: usize = PAGE * PAGE;
 const V17_PAGE_WIDTH: usize = 1920;
@@ -1667,13 +1723,14 @@ mod tests {
         let mask = decode_zlib(MASK_ZLIB, MASK_W * MASK_H, MASK_R8_SHA256);
         let depth = decode_zlib(DEPTH_ZLIB, DEPTH_W * DEPTH_H, DEPTH_R8_SHA256);
         let mut brush = vec![Rgba([68, 170, 238, 255]); FEEDBACK * FEEDBACK];
-        let mut decoder = ZlibDecoder::new(
-            &include_bytes!("../../../../../conformance/oilbrush3-caller-page/prefixes.zlib")[..],
+        let (native_prefixes, receipt) = retained_native_prefixes(
+            include_str!("../../../../../conformance/oilbrush3-caller-page/receipt.json"),
+            125935,
+            "6cad9a8ed6aa37ca7ee4a48181539cb56d5b5965f5c7d2318faf968ffb1ad138",
+            15,
         );
-        let receipt: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../../../conformance/oilbrush3-caller-page/receipt.json"
-        ))
-        .unwrap();
+        let mut decoder = ZlibDecoder::new(native_prefixes.as_slice());
+
         let mut expected = vec![0; page.width * page.height * 4];
         for stamp in 0..ADDPOINT_COUNT {
             let record = &bytes[stamp * ADDPOINT_STRIDE..(stamp + 1) * ADDPOINT_STRIDE];
@@ -2532,9 +2589,13 @@ fn oilbrush3_opaque_page_public_export() {
     canvas
         .paint_oilbrush3_opaque_host(&stroke, &mask, &depth)
         .unwrap();
-    let mut decoder = ZlibDecoder::new(
-        &include_bytes!("../../../../../conformance/oilbrush3-overlap/prefixes.zlib")[..],
+    let (native_prefixes, _) = retained_native_prefixes(
+        include_str!("../../../../../conformance/oilbrush3-overlap/receipt.json"),
+        123329,
+        "5ab637f3730023a09a3ef0db16579de887c3b6bc76f50fe1f8992059f3d179d4",
+        15,
     );
+    let mut decoder = ZlibDecoder::new(native_prefixes.as_slice());
     let mut native = vec![0u8; V17_PIXELS * 4];
     for _ in 0..15 {
         decoder.read_exact(&mut native).unwrap();
@@ -2601,9 +2662,13 @@ fn oilbrush3_opaque_fresh_public_export() {
     canvas
         .paint_oilbrush3_opaque_host(&stroke, &mask, &depth)
         .unwrap();
-    let mut decoder = ZlibDecoder::new(
-        &include_bytes!("../../../../../conformance/oilbrush3-opaque-fresh/prefixes.zlib")[..],
+    let (native_prefixes, _) = retained_native_prefixes(
+        include_str!("../../../../../conformance/oilbrush3-opaque-fresh/receipt.json"),
+        143119,
+        "e8ccd320e0adfa472b2146bb427e9176148eb3e94acc728e2a90f22204c915b8",
+        17,
     );
+    let mut decoder = ZlibDecoder::new(native_prefixes.as_slice());
     let mut native = vec![0u8; V17_PIXELS * 4];
     for _ in 0..17 {
         decoder.read_exact(&mut native).unwrap();

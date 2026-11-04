@@ -149,12 +149,19 @@ with tempfile.TemporaryDirectory(prefix="oil-init-") as td:
             }
         print("caller page verified, clear =", clear, flush=True)
 
-# Publish only after both controls passed. Each replacement is atomic, although
-# the two files are not a single atomic transaction.
+# Publish the receipt atomically only after both controls passed.
 dest = root / "conformance/oilbrush3-overlap"
 dest.mkdir(exist_ok=True)
+# Preserve the exact original zlib stream and every native frame hash in text.
+compressed_hex = zlib.compress(fixture_bytes, 9).hex()
+receipt["prefix_storage"] = {
+    "format": "zlib-hex-of-original-zlib",
+    "original_path": "prefixes.zlib",
+    "original_byte_length": len(fixture_bytes),
+    "original_sha256": hashlib.sha256(fixture_bytes).hexdigest(),
+    "zlib_hex": [compressed_hex[i:i + 96] for i in range(0, len(compressed_hex), 96)],
+}
 for name, data in (
-    ("prefixes.zlib", fixture_bytes),
     ("receipt.json", (json.dumps(receipt, indent=2) + "\n").encode()),
 ):
     with tempfile.NamedTemporaryFile(dir=dest, prefix=".capture-", delete=False) as out:
