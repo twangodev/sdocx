@@ -842,6 +842,13 @@ page's dimensions do not determine it; an experimental centerline profile would
 need an explicit source for the PenData resolution rather than infer it from
 page export size.
 
+The three retained empty-setting, omitted-color and two-point sparse bundles
+are stored losslessly in [readable palette runs](../../conformance/legacy-marker-sparse-runs.json).
+Tests verify original record order and all twelve receipt slice hashes. Historical
+raw readers require decoded original filenames in a temporary conformance mirror;
+keep receipt offsets and capture scripts unchanged. This is storage conversion,
+not a fresh native replay.
+
 The opt-in Marker centerline route also accepts explicit empty advanced settings
 with saved ARGB or omitted color. In five [paired host controls](../../conformance/legacy-marker-empty-setting-host-pairs.json),
 null settings select native GLV1 and empty settings select GLV2; all draw-prefix

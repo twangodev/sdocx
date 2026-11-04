@@ -1,5 +1,8 @@
 #![cfg(feature = "pdf")]
 
+#[path = "helpers/legacy_marker_sparse.rs"]
+mod sparse_fixtures;
+
 fn points(hex: &str) -> Vec<sdocx::Point> {
     let bytes: Vec<u8> = hex
         .as_bytes()
@@ -386,7 +389,7 @@ fn explicit_empty_setting_uses_only_opt_in_profile_for_observed_colors() {
         "../../../conformance/legacy-marker-empty-setting-host-pairs.json"
     ))
     .unwrap();
-    let blob = include_bytes!("../../../conformance/legacy-marker-empty-setting-sparse-rgba8.bin");
+    let blob = sparse_fixtures::bytes("conformance/legacy-marker-empty-setting-sparse-rgba8.bin");
     let doc = sdocx::parse_bytes(include_bytes!(
         "assets/legacy-marker/synthetic-serialized.sdocx"
     ))
@@ -488,7 +491,7 @@ fn empty_setting_missing_color_uses_native_black_only_in_opt_in_profile() {
         "../../../conformance/legacy-marker-empty-setting-host-pairs.json"
     ))
     .unwrap();
-    let blob = include_bytes!("../../../conformance/legacy-marker-empty-omitted-sparse-rgba8.bin");
+    let blob = sparse_fixtures::bytes("conformance/legacy-marker-empty-omitted-sparse-rgba8.bin");
     let doc = sdocx::parse_bytes(include_bytes!(
         "assets/legacy-marker/synthetic-serialized.sdocx"
     ))
