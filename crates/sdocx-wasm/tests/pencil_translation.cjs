@@ -174,8 +174,7 @@ for (const [file, tx, ty, gx, gy] of [
 const assets = path.join(__dirname, '../../sdocx/tests/assets');
 const readReceipt = name => JSON.parse(fs.readFileSync(path.join(assets, name), 'utf8'));
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
-function nativeFrame(prior, deltaPath, expectedHash, deltaHash) {
-  const delta = Buffer.isBuffer(deltaPath) ? deltaPath : fs.readFileSync(path.join(assets, deltaPath));
+function nativeFrame(prior, delta, expectedHash, deltaHash) {
   if (deltaHash !== undefined) assert.equal(sha256(delta), deltaHash);
   assert.equal(delta.length % 8, 0);
   const expected = Buffer.from(prior);
@@ -199,8 +198,9 @@ for (const [name, origin, pixels_per_unit, dy] of [
   ['bottom2', 'BottomLeft', 2, 9],
   ['top2', 'TopLeft', 2, -7],
 ]) {
-  const expected = nativeFrame(prior, `pencil2-translation/${name}.delta`,
-    translationReceipt.results[name].native_sha256);
+  const frame = translationReceipt.results[name];
+  const expected = nativeFrame(prior, deltaFromRows(frame.delta_rows),
+    frame.native_sha256, frame.historical_delta_sha256);
   const canvas = new sdk.InkRasterCanvas({width: 192, height: 192, pixels_per_unit, origin}, prior);
   try {
     canvas.paint_pencil2_translated(ramp, 'One', 6, dy);
@@ -208,8 +208,9 @@ for (const [name, origin, pixels_per_unit, dy] of [
   } finally { canvas.free(); }
 }
 
-const overlapExpected = nativeFrame(prior, 'pencil2-overlap-black/overlap.delta',
-  readReceipt('pencil2-overlap-black/overlap-receipt.json').native_rgba_sha256);
+const overlapReceipt = readReceipt('pencil2-overlap-black/overlap-receipt.json');
+const overlapExpected = nativeFrame(prior, deltaFromRows(overlapReceipt.delta_rows),
+  overlapReceipt.native_rgba_sha256, overlapReceipt.historical_delta_sha256);
 const overlap = new sdk.InkRasterCanvas({width: 192, height: 192, pixels_per_unit: 1, origin: 'BottomLeft'}, prior);
 try {
   overlap.paint_pencil2_translated(ramp, 'One', 6, 9);

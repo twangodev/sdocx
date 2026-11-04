@@ -378,6 +378,36 @@ fn pencil2_transparent_page_exports_native_frame() {
     }
 }
 
+fn native_frame_from_rows(prior: &[[u8; 4]], receipt: &Value, hash_key: &str) -> Vec<u8> {
+    let mut expected: Vec<u8> = prior.iter().flatten().copied().collect();
+    let mut delta = Vec::new();
+    let mut previous = None;
+    for row in receipt["delta_rows"].as_array().unwrap() {
+        let row = row.as_array().unwrap();
+        assert_eq!(row.len(), 5);
+        let index = u32::try_from(row[0].as_u64().unwrap()).unwrap();
+        assert!((index as usize) < prior.len());
+        assert!(previous.is_none_or(|last| index > last));
+        previous = Some(index);
+        delta.extend_from_slice(&index.to_le_bytes());
+        for (i, channel) in row[1..].iter().enumerate() {
+            let channel = u8::try_from(channel.as_u64().unwrap()).unwrap();
+            delta.push(channel);
+            expected[index as usize * 4 + i] = channel;
+        }
+    }
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&delta)),
+        receipt["historical_delta_sha256"]
+    );
+    assert_eq!(expected.len(), 192 * 192 * 4);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&expected)),
+        receipt[hash_key]
+    );
+    expected
+}
+
 #[test]
 fn pencil2_translation_matrix_and_nonuniform_prior_match_host() {
     let prior: Vec<[u8; 4]> = (0..192 * 192)
@@ -391,44 +421,16 @@ fn pencil2_translation_matrix_and_nonuniform_prior_match_host() {
             ]
         })
         .collect();
-    for (name, origin, scale, dy, compressed) in [
-        (
-            "bottom1",
-            InkRasterOrigin::BottomLeft,
-            1,
-            9.,
-            &include_bytes!("assets/pencil2-translation/bottom1.delta")[..],
-        ),
-        (
-            "bottom2",
-            InkRasterOrigin::BottomLeft,
-            2,
-            9.,
-            &include_bytes!("assets/pencil2-translation/bottom2.delta")[..],
-        ),
-        (
-            "top2",
-            InkRasterOrigin::TopLeft,
-            2,
-            -7.,
-            &include_bytes!("assets/pencil2-translation/top2.delta")[..],
-        ),
+    let receipt: Value = serde_json::from_str(include_str!(
+        "assets/pencil2-translation/translation-matrix-receipt.json"
+    ))
+    .unwrap();
+    for (name, origin, scale, dy) in [
+        ("bottom1", InkRasterOrigin::BottomLeft, 1, 9.),
+        ("bottom2", InkRasterOrigin::BottomLeft, 2, 9.),
+        ("top2", InkRasterOrigin::TopLeft, 2, -7.),
     ] {
-        let mut expected: Vec<u8> = prior.iter().flatten().copied().collect();
-        let (records, remainder) = compressed.as_chunks::<8>();
-        for record in records {
-            let index = u32::from_le_bytes(record[..4].try_into().unwrap()) as usize;
-            expected[index * 4..index * 4 + 4].copy_from_slice(&record[4..]);
-        }
-        assert!(remainder.is_empty());
-        let receipt: Value = serde_json::from_str(include_str!(
-            "assets/pencil2-translation/translation-matrix-receipt.json"
-        ))
-        .unwrap();
-        assert_eq!(
-            format!("{:x}", Sha256::digest(&expected)),
-            receipt["results"][name]["native_sha256"].as_str().unwrap()
-        );
+        let expected = native_frame_from_rows(&prior, &receipt["results"][name], "native_sha256");
         let mut canvas =
             InkRasterCanvas::from_pixels(context(origin, scale), prior.clone()).unwrap();
         canvas
@@ -575,22 +577,11 @@ fn pencil2_translated_overlapping_strokes_match_host_and_svg() {
             ]
         })
         .collect();
-    let mut expected: Vec<u8> = prior.iter().flatten().copied().collect();
-    let (records, remainder) =
-        include_bytes!("assets/pencil2-overlap-black/overlap.delta").as_chunks::<8>();
-    assert!(remainder.is_empty());
-    for record in records {
-        let index = u32::from_le_bytes(record[..4].try_into().unwrap()) as usize;
-        expected[index * 4..index * 4 + 4].copy_from_slice(&record[4..]);
-    }
     let receipt: Value = serde_json::from_str(include_str!(
         "assets/pencil2-overlap-black/overlap-receipt.json"
     ))
     .unwrap();
-    assert_eq!(
-        format!("{:x}", Sha256::digest(&expected)),
-        receipt["native_rgba_sha256"].as_str().unwrap()
-    );
+    let expected = native_frame_from_rows(&prior, &receipt, "native_rgba_sha256");
     let mut canvas =
         InkRasterCanvas::from_pixels(context(InkRasterOrigin::BottomLeft, 1), prior).unwrap();
     for (case, translation) in [("pressure_ramp", [6., 9.]), ("channel_baseline", [9., 11.])] {
