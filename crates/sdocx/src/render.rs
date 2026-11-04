@@ -21998,6 +21998,25 @@ mod tests {
             eprintln!("{name}: public={a}, generic={g}");
             assert!(a <= 1_500, "{name}: public={a}");
             assert!(a * 4 < g, "{name}: public={a}, generic={g}");
+            if let Some(directory) = std::env::var_os("SDOCX_V1_PRESSURE_PDF_CAPTURE") {
+                use std::io::Write as _;
+                for (kind, source) in [("candidate", &actual), ("generic", &generic)] {
+                    let pdf = crate::render_svg_pages_pdf(
+                        &[crate::RenderedPage::new(0, 128, 96, source.clone())],
+                        &Default::default(),
+                    )
+                    .unwrap();
+                    let path = std::path::Path::new(&directory)
+                        .join(format!("v1-pressure-{name}-{kind}.pdf"));
+                    std::fs::OpenOptions::new()
+                        .write(true)
+                        .create_new(true)
+                        .open(path)
+                        .unwrap()
+                        .write_all(&pdf)
+                        .unwrap();
+                }
+            }
         }
     }
     #[cfg(feature = "pdf")]

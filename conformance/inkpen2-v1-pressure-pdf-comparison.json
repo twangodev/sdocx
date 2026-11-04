@@ -1,0 +1,68 @@
+{
+  "scope": "Alpha-byte absolute-error sums against transparent host Mesa frames; synthetic controls only.",
+  "readers": {
+    "mupdf": "1.28.2",
+    "pdfium": "150.0.7869.0"
+  },
+  "cases": {
+    "zero": {
+      "mupdf": {
+        "candidate": 5737,
+        "generic": 16591
+      },
+      "pdfium": {
+        "candidate": 4626,
+        "generic": 16495
+      }
+    },
+    "full": {
+      "mupdf": {
+        "candidate": 5737,
+        "generic": 16482
+      },
+      "pdfium": {
+        "candidate": 4626,
+        "generic": 16337
+      }
+    },
+    "alternating": {
+      "mupdf": {
+        "candidate": 5737,
+        "generic": 20758
+      },
+      "pdfium": {
+        "candidate": 4626,
+        "generic": 18973
+      }
+    },
+    "diagonal": {
+      "mupdf": {
+        "candidate": 6649,
+        "generic": 28295
+      },
+      "pdfium": {
+        "candidate": 2086,
+        "generic": 26882
+      }
+    }
+  },
+  "native_receipt_sha256": "93e76d2f006b123c1f96be1543bfce11195c6f7263e789a88542ad06fe401a79",
+  "pdf_sha256": {
+    "zero": {
+      "candidate": "6c65b0ba730b7249b10a5b60fc7200424094965a8e149f99eae6a9f4e13365a4",
+      "generic": "278b58c2d551f522a942676f5edb049faf168e7b8c1992ad357c515ecad2fa87"
+    },
+    "full": {
+      "candidate": "6c65b0ba730b7249b10a5b60fc7200424094965a8e149f99eae6a9f4e13365a4",
+      "generic": "5428fd818352071fc30fbf55f5e708db950251cf60058b73eb2024bfa42ac059"
+    },
+    "alternating": {
+      "candidate": "6c65b0ba730b7249b10a5b60fc7200424094965a8e149f99eae6a9f4e13365a4",
+      "generic": "2f5a04f0dd261be5ecb43439e6e0b3d0fcaf2f27c0862428c64bc304959d3319"
+    },
+    "diagonal": {
+      "candidate": "203c42bd5300ef9915d49123d60c2bcf6e99d5cc159a5fbbb36dd519f985478e",
+      "generic": "e3066e4a803f0a47f2af5c051becfc107a67a10c6250c489daa24aa6e3fb8113"
+    }
+  }
+}

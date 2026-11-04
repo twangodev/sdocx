@@ -80,12 +80,19 @@ compares zero, full, and alternating pressure on the same four-point stroke,
 and a diagonal stroke at unit scale. All three pressure controls produce the
 same native frame; the diagonal produces a different frame. The existing public
 profile has lower alpha-byte L1 error than generic output in all four SVG and
-PDF comparisons recorded in the receipt. SVG uses resvg and PDF uses PyMuPDF
-at 4/3 pixels per point. These are synthetic transparent host-Mesa controls,
+SVG-derived PDF comparisons recorded in the receipt. SVG uses resvg; the separate
+[PDF comparison](../../conformance/inkpen2-v1-pressure-pdf-comparison.json)
+also checks MuPDF 1.28.2 and PDFium 150.0.7869.0 at 4/3 pixels per point,
+and both readers improve in all four cases. These are synthetic transparent host-Mesa controls,
 not saved-note or device parity; they do not justify a change to the existing
 profile. Recapture the native inputs with
 `python3 tools/inkpen-capture/inkpen2_v1_pressure_paint_capture.py` using the local
-prerequisites above. The public comparisons used a temporary test harness
-adapted from `inkpen2_v1_distinct_native_shapes_public_svg`.
+prerequisites above. To replay the public comparison, run the focused
+`inkpen2_v1_pressure_and_diagonal_native_pixels` Rust test with
+`SDOCX_V1_PRESSURE_PDF_CAPTURE` pointing to an empty directory, then run
+`tools/inkpen-capture/inkpen2_v1_pressure_pdf_compare.py` with that directory.
+The comparator requires PyMuPDF, pypdfium2 and Pillow. It checks the pinned
+reader versions, source receipt and role-specific PDF hashes, and exact error
+totals against the retained comparison receipt.
 
 The [experimental half-grid viewport](../../tools/inkpen2-v1-tablet-half/README.md) opt-in covers an asserted fixed 0.5× raster grid on the tablet host profile, with per-stroke fallback and page work limits. Retained native frames and public SVG/direct-PDF comparisons cover synthetic host controls; device and saved-note parity remain unverified.
