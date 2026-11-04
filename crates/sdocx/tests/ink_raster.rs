@@ -522,3 +522,63 @@ fn pencil2_colored_tilted_top2_translucent_overlap_matches_host() {
     );
     assert_eq!(image.data(), expected);
 }
+
+#[test]
+fn pencil2_translated_overlapping_strokes_match_host_and_svg() {
+    let prior: Vec<[u8; 4]> = (0..192 * 192)
+        .map(|i| {
+            let (x, y) = (i % 192, i / 192);
+            [
+                (x * 3 + y) as u8,
+                (x + y * 5) as u8,
+                (x * 7 + y * 3) as u8,
+                255,
+            ]
+        })
+        .collect();
+    let mut expected: Vec<u8> = prior.iter().flatten().copied().collect();
+    let (records, remainder) =
+        include_bytes!("assets/pencil2-overlap-black/overlap.delta").as_chunks::<8>();
+    assert!(remainder.is_empty());
+    for record in records {
+        let index = u32::from_le_bytes(record[..4].try_into().unwrap()) as usize;
+        expected[index * 4..index * 4 + 4].copy_from_slice(&record[4..]);
+    }
+    let receipt: Value = serde_json::from_str(include_str!(
+        "assets/pencil2-overlap-black/overlap-receipt.json"
+    ))
+    .unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&expected)),
+        receipt["native_rgba_sha256"].as_str().unwrap()
+    );
+    let mut canvas =
+        InkRasterCanvas::from_pixels(context(InkRasterOrigin::BottomLeft, 1), prior).unwrap();
+    for (case, translation) in [("pressure_ramp", [6., 9.]), ("channel_baseline", [9., 11.])] {
+        canvas
+            .paint_pencil2_translated(
+                &stroke(case, 0xff000000),
+                InkRasterInverseScale::One,
+                translation,
+            )
+            .unwrap();
+    }
+    assert_eq!(
+        canvas
+            .pixels()
+            .iter()
+            .flatten()
+            .copied()
+            .collect::<Vec<_>>(),
+        expected
+    );
+    let page = canvas.rendered_page(0).unwrap();
+    let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
+    let mut image = resvg::tiny_skia::Pixmap::new(192, 192).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut image.as_mut(),
+    );
+    assert_eq!(image.data(), expected);
+}

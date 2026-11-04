@@ -1,0 +1,31 @@
+{
+  "scope": "Host Mesa GLV14/RTV4 replay of two independently public-sampled black strokes on a 192x192 opaque patterned prior; controlled host draw, not Android or saved-note parity.",
+  "inputs": "First pressure_ramp, then channel_baseline (constant 0.5 pressure), from pencil2-v14-native.json; identical points and sizes. RT_UPDATE is called for each stream.",
+  "translation": "Bottom-left scale 1; ramp [6,9], baseline [9,11] framebuffer pixels.",
+  "ramp_stream_sha256": "615a0db61e6654a58c63f2d0c9822c11096582557162b9ce889d137ecaa3e3f9",
+  "baseline_stream_sha256": "33026ad32ab277696f01a2948ad62d06b9790cd1f7ef2de225bd7830ba998942",
+  "capture_script_sha256": "db73d68ca1abac5e7e1486a496949ab8f95d346c59ae39d1e6ea48339e29a9d3",
+  "base_capture_source_sha256": "34d5874cb86e27b619c01e9902b0aacf743619be560d8a4ca5ee65789ca8193d",
+  "native_rgba_sha256": "5d04837171a905778c2a084bd688105ed6fee47b3b088642d3e802c5e7e6e016",
+  "native_changed_pixels": 137,
+  "canvas_svg_wasm": "Complete RGBA frames match native exactly.",
+  "pdf_method": "SVG-page and direct canvas PDFs rendered at 72 DPI and compared to native RGB by overlap_pdf_compare.py.",
+  "pdf": {
+    "reader": "1.28.2",
+    "results": {
+      "svg": {
+        "pdf_sha256": "8953e98263a42995d2c920b3ebdea5d6000e0d5f062f37f17773db29fbaf6842",
+        "absolute_error_sum": 0,
+        "maximum_channel_error": 0,
+        "different_channels": 0
+      },
+      "direct": {
+        "pdf_sha256": "2dc1363267c89ad786730b86e0ae1ac499ce74b1b7af8d3b001aa371fa4ef528",
+        "absolute_error_sum": 0,
+        "maximum_channel_error": 0,
+        "different_channels": 0
+      }
+    }
+  },
+  "environment": "See overlap-capture-info.json for GL, DSO, and source pins."
+}
