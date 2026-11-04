@@ -370,3 +370,89 @@ fn pencil2_transparent_page_exports_native_frame() {
     );
     assert_eq!(pixels.data().as_chunks::<4>().0, expected);
 }
+
+#[test]
+fn pencil2_translation_matrix_and_nonuniform_prior_match_host() {
+    let prior: Vec<[u8; 4]> = (0..192 * 192)
+        .map(|i| {
+            let (x, y) = (i % 192, i / 192);
+            [
+                (x * 3 + y) as u8,
+                (x + y * 5) as u8,
+                (x * 7 + y * 3) as u8,
+                255,
+            ]
+        })
+        .collect();
+    for (name, origin, scale, dy, compressed) in [
+        (
+            "bottom1",
+            InkRasterOrigin::BottomLeft,
+            1,
+            9.,
+            &include_bytes!("assets/pencil2-translation/bottom1.delta")[..],
+        ),
+        (
+            "bottom2",
+            InkRasterOrigin::BottomLeft,
+            2,
+            9.,
+            &include_bytes!("assets/pencil2-translation/bottom2.delta")[..],
+        ),
+        (
+            "top2",
+            InkRasterOrigin::TopLeft,
+            2,
+            -7.,
+            &include_bytes!("assets/pencil2-translation/top2.delta")[..],
+        ),
+    ] {
+        let mut expected: Vec<u8> = prior.iter().flatten().copied().collect();
+        let mut records = compressed.chunks_exact(8);
+        for record in &mut records {
+            let index = u32::from_le_bytes(record[..4].try_into().unwrap()) as usize;
+            expected[index * 4..index * 4 + 4].copy_from_slice(&record[4..]);
+        }
+        assert!(records.remainder().is_empty());
+        let receipt: Value = serde_json::from_str(include_str!(
+            "assets/pencil2-translation/translation-matrix-receipt.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&expected)),
+            receipt["results"][name]["native_sha256"].as_str().unwrap()
+        );
+        let mut canvas =
+            InkRasterCanvas::from_pixels(context(origin, scale), prior.clone()).unwrap();
+        canvas
+            .paint_pencil2_translated(
+                &stroke("pressure_ramp", 0xff000000),
+                InkRasterInverseScale::One,
+                [6., dy],
+            )
+            .unwrap();
+        let actual: Vec<u8> = canvas.pixels().iter().flatten().copied().collect();
+        assert_eq!(actual.len(), expected.len(), "native frame length {name}");
+        let errors: Vec<_> = actual
+            .iter()
+            .zip(&expected)
+            .enumerate()
+            .filter(|(_, (a, b))| a != b)
+            .collect();
+        assert!(
+            errors.is_empty(),
+            "{name}: {} differing channels, first {:?}",
+            errors.len(),
+            errors.first()
+        );
+        let page = canvas.rendered_page(0).unwrap();
+        let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
+        let mut image = resvg::tiny_skia::Pixmap::new(192, 192).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut image.as_mut(),
+        );
+        assert_eq!(image.data(), expected, "SVG {name}");
+    }
+}

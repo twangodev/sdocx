@@ -1,0 +1,145 @@
+{
+  "scope": "Host Mesa GLV14/RTV4 replay of public pressure ramp records on a 192x192 RGBA8 target; controlled native draw, not Android or saved-note parity. Geometry inverse scale is One in all cases, including 2x output.",
+  "coordinates": "Public arrays are top-origin. For top row y, prior RGBA is ((3*x+y)%256,(x+5*y)%256,(7*x+3*y)%256,255). Native GL readback is bottom-origin and is row-reversed. Translation is in framebuffer pixels, positive X right and positive Y up. Native matrix maps source to GL framebuffer: bottom1 (x+6,y+9), bottom2 (2*x+6,2*y+9), top2 (2*x+6,192-2*y-7).",
+  "prior": "Deterministic opaque nonuniform pixel pattern uploaded into native target and verified byte-for-byte before each Draw.",
+  "stream_sha256": "615a0db61e6654a58c63f2d0c9822c11096582557162b9ce889d137ecaa3e3f9",
+  "capture_source_sha256": "34d5874cb86e27b619c01e9902b0aacf743619be560d8a4ca5ee65789ca8193d",
+  "native_changed_pixels": {
+    "bottom1": 90,
+    "bottom2": 404,
+    "top2": 393
+  },
+  "canvas_and_svg": "All RGBA channels equal native for each complete frame.",
+  "pdf_method": "Public SVG-page PDF and direct canvas PDF rasterized at 72 DPI with PyMuPDF and PDFium, compared RGB against native opaque frame.",
+  "results": {
+    "bottom1": {
+      "native_sha256": "7ed1a4a898ffab3840850ddde453a78dc1f9e98f7a6675443fc2dccaf6baa869",
+      "pdf": {
+        "svg": {
+          "sha256": "9a31eb7af1f6c09108a161a7615935ffc5a67e89c5b1ac633a66140b0498da02",
+          "mupdf": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          },
+          "pdfium": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          }
+        },
+        "direct": {
+          "sha256": "7a7d39641bfb70b3ad92e0c63bdf0aef9f1c696d9ee5651e8dea9ace5d17a8fb",
+          "mupdf": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          },
+          "pdfium": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          }
+        }
+      },
+      "native_gl_bottom_origin_sha256": "9c23e8cc9445fc3109dd1832d9dd9aca0e5bf47b093ed9776ceb9be806735e6f"
+    },
+    "bottom2": {
+      "native_sha256": "f64a8ebbfc0c4bff30f40c2a6d6c105176be561f2e432bbd7bdd1a57d74f4317",
+      "pdf": {
+        "svg": {
+          "sha256": "e8507b5b87b1d2a722da2fa22482bbe8411c1a7212acbf860d3f7071957a5f14",
+          "mupdf": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          },
+          "pdfium": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          }
+        },
+        "direct": {
+          "sha256": "93e7f77cd54b344333cd315b0617d9727942b359d1e6f4565e304e55b8a6fc66",
+          "mupdf": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          },
+          "pdfium": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          }
+        }
+      },
+      "native_gl_bottom_origin_sha256": "d87ceab390f76e7034fe4fff935cb1db01796f8510020490b93f2a414465974f"
+    },
+    "top2": {
+      "native_sha256": "d9839a28bf7e55d5df5c1da40a13a8a726e473bb46a7117c3efe2e46292d45f4",
+      "pdf": {
+        "svg": {
+          "sha256": "57811a1483166ca4a80894c14bd3f2b1e0d6a4d330d62072205d058c098c7227",
+          "mupdf": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          },
+          "pdfium": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          }
+        },
+        "direct": {
+          "sha256": "f80cc898db0be1991e1cfeba1f03fcdbc0c149f51e29c63cd9e3274416d1c0b4",
+          "mupdf": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          },
+          "pdfium": {
+            "absolute_error_sum": 0,
+            "maximum_channel_error": 0,
+            "different_channels": 0
+          }
+        }
+      },
+      "native_gl_bottom_origin_sha256": "e5e1ce4d041d1b84a94b091b9b936f21b25e746850dd4b853efe7cb75a727d83"
+    }
+  },
+  "capture_info": {
+    "gl": {
+      "vendor": "Mesa",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1",
+      "shading_language": "OpenGL ES GLSL ES 3.20"
+    },
+    "dso_pins": {
+      "libSPenPencil2.so": "3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f",
+      "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "libSPenAirBrushPen.so": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+      "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "source_pins": {
+      "airbrush_texture_native.py": "76bb130daef795be53296cff4f778be6e7be5f487c8b1d4c4b6d159bb688e470",
+      "airbrush_saved_native.py": "cad2bd9ec88a393f0b0b4a7dbe58c7b469f9b00b283d4c544f491a8ab190999a",
+      "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+      "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b"
+    },
+    "baseline_sha256": "e5e1ce4d041d1b84a94b091b9b936f21b25e746850dd4b853efe7cb75a727d83"
+  },
+  "readers": {
+    "PyMuPDF": "1.27.2.3",
+    "pypdfium2": "5.9.0",
+    "PDFium": "150.0.7869.0"
+  },
+  "capture_script_sha256": "4846a002cda6c21bf0fb7fd171c96a24d94f96729a8e56a6082c42272c7a7a95",
+  "comparison_script_sha256": "967e62baa75e91c79f5c279404ce0b63c7df1c1a49c77a609473cf3e54685e20"
+}
