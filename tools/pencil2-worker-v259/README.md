@@ -1,9 +1,44 @@
 # Matched factory handoff control
 
-The v258 Rust input did not match the native handoff: `drawing_native_target_translated_probe.py` sets pressure `[0.25, 0.5, 0.75, 1.0]`, tilt `[0.4; 4]`, and ARGB `0x80336699`, whereas v258 uses constant pressure 0.5, zero tilt, and opaque black. The v258 metrics are retained as a historical comparison of different strokes. The sampled geometry differed in 83 alpha lanes and all 84 RGB triples, while all other numeric lanes matched. This identifies the input discrepancy as sufficient to explain that comparison; it does not establish the origin of other possible mismatches.
+The v258 Rust input differed from the native handoff: pressure 0.5, zero tilt
+and opaque black versus native pressures `[0.25, 0.5, 0.75, 1.0]`, tilt
+`[0.4; 4]` and ARGB `0x80336699`. Geometry differed in 83 alpha lanes and all
+84 RGB triples; other numeric lanes matched. Its retained metrics compare
+different strokes and do not isolate every possible mismatch.
 
-`python3 tools/pencil2-worker-v259/probe.py` replays the pinned v257 native capture, intercepts its 4,704-byte GL instance buffer upload, and compares it to `native-geometry.vbo` (SHA-256 `be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8`). The Rust `worker_v259_geometry_probe` test compares all 84 14-float records byte for byte to that upload. `python3 tools/pencil2-worker-v259/compare.py` paints the matched input to a transparent 192×192 Rust canvas and compares every RGBA byte with the retained v256 native frame after row flipping. They are identical; Rust frame SHA-256 is `44e57b9754e76dd9883c7a9944a9015f0ccb0c11e788dd71d8c5f1a889174e36`.
+On the prepared native host, run:
 
-`export_compare.py` renders the actual Rust canvas SVG with resvg and its direct PDF with MuPDF and PDFium, against native alpha. With Pillow 12.1.1, MuPDF 1.28.2 and PDFium 156.0.8076.0, resvg and PDFium match all 36,864 alpha pixels; MuPDF differs at 80 pixels by one alpha level (sum 80). The inputs use a transparent prior and 72 dpi. This check compares alpha, not full color export fidelity. It requires Python packages Pillow, PyMuPDF and pypdfium2, plus resvg and cached Cargo dependencies.
+```sh
+python3 tools/pencil2-worker-v259/probe.py
+```
 
-The native frame uses the synthetic queue, manual canvas handoff, emulated ARM64, host Mesa and the v256 RGBA8 substitution for the factory's R8 attachment. It does not prove normal factory attachment output, saved-page lifecycle, or device behavior. These results justify no production change. The framebuffer comparison also reproduced against source archived from commit `0ec11639ef0f5e35d1baac493f49c3b34e6a28a8`, with this diagnostic copied into the archive.
+This replays the pinned v257 capture and compares its 4,704-byte GL instance
+upload with `native-geometry.vbo` (SHA-256
+`be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8`).
+The maintained Rust test compares all 84 14-float records, verifies grain-offset
+bits for `[6, 183]`, and matches every canvas RGBA byte to the native frame.
+It also checks PNG/SVG alpha and constructs a 72-dpi PDF in memory:
+
+```sh
+CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 \
+CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 \
+cargo test -p sdocx --all-features --lib worker_v259_geometry_probe --offline
+```
+
+Historically, the matched input painted a transparent 192×192 Rust canvas
+identical to the v256 native frame after row flipping. Its top-row-first SHA-256
+was `44e57b9754e76dd9883c7a9944a9015f0ccb0c11e788dd71d8c5f1a889174e36`.
+The comparison also reproduced from revision
+`0ec11639ef0f5e35d1baac493f49c3b34e6a28a8` with the diagnostic copied in.
+At 72 dpi, SVG/resvg and direct-PDF/PDFium matched all 36,864 alpha pixels;
+MuPDF differed at 80 pixels by one alpha level (sum 80). Reader environment:
+Pillow 12.1.1, MuPDF 1.28.2 and PDFium 156.0.8076.0.
+
+The standalone Rust harness and both comparators were retired. External PDF-reader results remain historical; they are not rerun by Rust. Alpha equality does not establish full
+color export fidelity.
+
+Native acquisition retains the synthetic queue, manual canvas handoff, emulated
+ARM64, host Mesa and v256 RGBA8 substitution for the factory's R8 attachment.
+It requires the existing local native dependencies and proves neither normal
+factory attachment output, saved-page lifecycle nor device behavior. These
+controls justify no production change.

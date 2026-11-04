@@ -216,4 +216,90 @@ fn worker_v259_geometry_probe() {
         data,
         include_bytes!("../../../../../tools/pencil2-worker-v259/native-geometry.vbo")
     );
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let hash = |bytes: &[u8]| format!("{:x}", Sha256::digest(bytes));
+    let compressed = include_bytes!("../../../../../tools/pencil2-worker-v256/rgba8-frame.zlib");
+    assert_eq!(
+        hash(compressed),
+        "4f33e63b6c260b7fecc281ccf5891b19b3a96403b552da3a757e6faf2ca8e983"
+    );
+    let mut bottom = Vec::new();
+    flate2::read::ZlibDecoder::new(compressed.as_slice())
+        .read_to_end(&mut bottom)
+        .unwrap();
+    assert_eq!(bottom.len(), 192 * 192 * 4);
+    assert_eq!(
+        hash(&bottom),
+        "a0230ba18bf716851b4079facb415b265ade62b80ef28bbfcaa0b1853776672e"
+    );
+    let native: Vec<u8> = bottom
+        .chunks_exact(192 * 4)
+        .rev()
+        .flatten()
+        .copied()
+        .collect();
+    assert_eq!(
+        hash(&native),
+        "44e57b9754e76dd9883c7a9944a9015f0ccb0c11e788dd71d8c5f1a889174e36"
+    );
+    assert_eq!(native.chunks_exact(4).filter(|p| p[3] != 0).count(), 87);
+    let projection = [
+        0x3c2aaaab, 0, 0, 0, 0, 0x3c2aaaab, 0, 0, 0, 0, 0xb8000100, 0, 0xbf800000, 0xbf800000,
+        0x80000000, 0x3f800000,
+    ]
+    .map(f32::from_bits);
+    let mut matrix = [0.; 16];
+    for i in 0..4 {
+        matrix[5 * i] = 1.;
+    }
+    matrix[5] = -1.;
+    matrix[12] = 6.;
+    matrix[13] = 183.;
+    let mut grain = crate::Pencil2V14HostGrainState::default();
+    grain.set_start_point([s.points[0].x as f32, s.points[0].y as f32]);
+    let offset = grain.draw(projection, matrix, [192, 192]).unwrap();
+    assert_eq!(offset.map(f32::to_bits), [0x40c00000, 0x43370000]);
+    let mut canvas = InkRasterCanvas::new(
+        InkRasterContext {
+            width: 192,
+            height: 192,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        },
+        [0; 4],
+    )
+    .unwrap();
+    canvas
+        .paint_pencil2_with_grain_offset(&s, InkRasterInverseScale::One, [6., -9.], offset)
+        .unwrap();
+    let actual: Vec<u8> = canvas.pixels().iter().flatten().copied().collect();
+    assert_eq!(actual, native);
+    let png = resvg::tiny_skia::Pixmap::decode_png(&canvas.to_png().unwrap()).unwrap();
+    assert_eq!((png.width(), png.height()), (192, 192));
+    let page = canvas.rendered_page(0).unwrap();
+    let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
+    let mut svg = resvg::tiny_skia::Pixmap::new(192, 192).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut svg.as_mut(),
+    );
+    // Readers may premultiply RGB differently; the historical export control checked alpha.
+    for image in [&png, &svg] {
+        assert_eq!(
+            image
+                .data()
+                .chunks_exact(4)
+                .map(|p| p[3])
+                .collect::<Vec<_>>(),
+            native.chunks_exact(4).map(|p| p[3]).collect::<Vec<_>>()
+        );
+    }
+    #[cfg(feature = "pdf")]
+    {
+        let mut options = crate::PdfOptions::default();
+        options.dpi = 72.;
+        canvas.to_pdf(&options).unwrap();
+    }
 }
