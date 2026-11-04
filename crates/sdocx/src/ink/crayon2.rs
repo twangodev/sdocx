@@ -1153,15 +1153,11 @@ mod tests {
 
     #[test]
     fn translated_source_paint_capture_matches_source_derived_records() {
-        use std::io::Read;
-        let compressed =
-            include_bytes!("../../tests/assets/crayon2-v2-native/matched-opaque.json.gz");
-        let mut json = Vec::new();
-        flate2::read::GzDecoder::new(&compressed[..])
-            .read_to_end(&mut json)
-            .unwrap();
-        let capture: Value = serde_json::from_slice(&json).unwrap();
-        let case = &capture["source_capture"]["cases"][4];
+        let capture: Value = serde_json::from_slice(include_bytes!(
+            "../../tests/assets/crayon2-v2-native/matched-opaque.json"
+        ))
+        .unwrap();
+        let case = &capture["source_case"];
         let metadata = &case["native_model_metadata"];
         assert_eq!(metadata["tool_type"], 2);
         assert_eq!(metadata["stroke_type"], 0);
@@ -1185,7 +1181,26 @@ mod tests {
             size: 10.0,
         };
         let output = sample(&input, &parse_profile(&fixture())).unwrap();
-        let native = hex_bytes(capture["paint"]["native_vector_hex"].as_str().unwrap());
+        let native: Vec<u8> = capture["paint"]["native_records_f32"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|row| {
+                let row = row.as_array().unwrap();
+                assert_eq!(row.len(), 6);
+                row.iter()
+                    .flat_map(|value| {
+                        let value = value.as_f64().unwrap() as f32;
+                        assert!(value.is_finite());
+                        value.to_le_bytes()
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        assert_eq!(
+            native.len(),
+            capture["paint"]["native_vector_bytes"].as_u64().unwrap() as usize
+        );
         assert_eq!(
             sha(&native),
             capture["paint"]["native_vector_sha256"].as_str().unwrap()

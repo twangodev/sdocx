@@ -29,10 +29,15 @@ export LD_LIBRARY_PATH=scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86
 .venv/bin/python tools/crayon2-varied-path/capture.py --_capture-background opaque --translated-source
 ```
 
-The matched input/vector/frame is retained in `crates/sdocx/tests/assets/crayon2-v2-native/matched-opaque.json.gz`. For generic public comparison, use a new output directory and put `sdocx-render-svg-047` on `PATH`:
+The matched input/vector/frame is retained in `crates/sdocx/tests/assets/crayon2-v2-native/matched-opaque.json`. For generic public comparison, use a new output directory and put `sdocx-render-svg-047` on `PATH`:
 
 ```sh
 cargo run -p sdocx --features pdf,serde --example crayon2_varied_public_probe -- /tmp/crayon2-public
 sdocx-render-svg-047 /tmp/crayon2-public/public.svg /tmp/crayon2-public/public.png
 PYTHONPATH=/tmp/pdfium-lib .venv/bin/python tools/crayon2-varied-path/public_compare.py /tmp/crayon2-public
 ```
+
+The matched fixture is a structured extraction of the original capture, not a
+recapture. Decimal native records and sparse RGBA pixels reconstruct the original
+vector and complete frame hashes. Original gzip and JSON hashes remain historical
+provenance; existing precision-model receipts still identify the historical gzip.
