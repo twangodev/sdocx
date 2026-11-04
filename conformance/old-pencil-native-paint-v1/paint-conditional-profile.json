@@ -8,11 +8,13 @@
     ],
     "format": "RGBA8",
     "native_source_pointer": "0x107ffd50",
-    "path": "fixtures/pencil-atlas-rgba8-144x144.zlib",
+    "historical_path": "fixtures/pencil-atlas-rgba8-144x144.zlib",
+    "path": "crates/sdocx/src/render/old_pencil_atlas.bin",
+    "storage": "Raw RGBA8 shared with the production renderer; compressed_bytes and compressed_sha256 describe the removed compressed acquisition fixture, which decoded to these exact raw bytes.",
     "raw_sha256": "5149e5daea6e172fb1798904209904676bcb49da168993657868c0ef4858d440"
   },
   "fixture_provenance": {
-    "atlas_source": "root.pencil_texture_uploads[0].source_zlib_base64 decompresses to exact native source pointer upload bytes; retained compressed fixture SHA is pinned",
+    "atlas_source": "root.pencil_texture_uploads[0].source_zlib_base64 decompresses to exact native source pointer upload bytes; raw bytes remain pinned in the shared production atlas; compressed fixture size and SHA are retained as historical provenance",
     "instance_vbo_source": "cases[0].native_vertex_input_observer.draw_snapshots[0].enabled_attribute_arrays[index=1].buffer_contents_hex; index=2 fetches alias same buffer at pointer offset 12; exact bytes equal pre-existing 752-byte native sampler fixture",
     "quad_source": "attribute 0 observed actual 64-byte GL buffer payload, values recorded in this receipt and raw payload hash in V17 draw snapshot",
     "sparse_expected_source": "cases[0].pixel_evidence.draw_observations[0].post_draw_rgba8.data_base64; decoded GL lower-left RGBA8 rows and converted to top-origin sparse tuple records; expected pixels are used only in assertions, never paint input"

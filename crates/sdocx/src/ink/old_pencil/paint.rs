@@ -34,9 +34,7 @@ const INSTANCE_VBO: &[u8] = include_bytes!(
 const NATIVE_SPARSE_RGBA8: &[u8] = include_bytes!(
     "../../../../../conformance/old-pencil-native-paint-v1/native-sparse-readback-u16xy-rgba8.bin"
 );
-const ATLAS_ZLIB: &[u8] = include_bytes!(
-    "../../../../../conformance/old-pencil-native-paint-v1/pencil-atlas-rgba8-144x144.zlib"
-);
+const ATLAS: &[u8] = include_bytes!("../../render/old_pencil_atlas.bin");
 
 // Actual attribute-0 GL_TRIANGLE_STRIP payload, V17 buffer object 2, 64 bytes.
 const QUAD: [Corner; 4] = [
@@ -153,16 +151,10 @@ fn hash(bytes: &[u8]) -> String {
 }
 
 fn decode_atlas() -> Result<Vec<u8>, &'static str> {
-    let decoder = ZlibDecoder::new(ATLAS_ZLIB);
-    let mut atlas = Vec::with_capacity(ATLAS_BYTES);
-    decoder
-        .take((ATLAS_BYTES + 1) as u64)
-        .read_to_end(&mut atlas)
-        .map_err(|_| "captured Pencil atlas zlib fixture is invalid")?;
-    if atlas.len() != ATLAS_BYTES || hash(&atlas) != NATIVE_ATLAS_SHA256 {
+    if ATLAS.len() != ATLAS_BYTES || hash(ATLAS) != NATIVE_ATLAS_SHA256 {
         return Err("captured Pencil atlas dimensions or source hash changed");
     }
-    Ok(atlas)
+    Ok(ATLAS.to_vec())
 }
 
 fn read_f32_le(raw: &[u8]) -> f32 {
@@ -1351,10 +1343,8 @@ mod tests {
         assert_eq!(hash(INSTANCE_VBO), NATIVE_INSTANCE_SHA256);
         assert_eq!(NATIVE_SPARSE_RGBA8.len(), 280);
         assert_eq!(hash(NATIVE_SPARSE_RGBA8), NATIVE_SPARSE_SHA256);
-        assert_eq!(
-            hash(ATLAS_ZLIB),
-            "72f21bd4ac7b84a27237a874fd137b50b6cd77c36d98764a3a7f8b11cb73bc6d"
-        );
+        assert_eq!(ATLAS.len(), ATLAS_BYTES);
+        assert_eq!(hash(ATLAS), NATIVE_ATLAS_SHA256);
         let atlas = decode_atlas().unwrap();
         assert_eq!(atlas.len(), ATLAS_BYTES);
         let sparse = expected_native_sparse().unwrap();
