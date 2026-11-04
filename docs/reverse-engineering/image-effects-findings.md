@@ -415,9 +415,12 @@ Saved main cuts/width pass unchanged into `ImageCommon` during fill loading
 (Model `0x3b94ac`–`0x3b94dc`). Border cuts and width likewise remain unscaled
 (`0x3b47ac`–`0x3b47b4`, `0x3b480c`–`0x3b481c`), while the separate float
 border side-width rectangle is magnified (`0x3b47d8`–`0x3b47ec`).
-The SDK currently reads and discards both reference widths in `image.rs`
-(main at 337, border at 221); it reports nonzero main cuts as unsupported.
-Raw page bytes retain these inputs, which are absent from the high-level image.
+The SDK retains the main cuts and reference width on eligible `PlacedImage`
+records and uses them for bounded page and text-embedded nine-patch rendering.
+Active cuts still produce an unsupported diagnostic because sampling and
+other cases remain incomplete. The border cuts and reference width are read
+but discarded. See the [rendering support summary](../rendering-support.md)
+for the admitted cases and synthetic native comparisons.
 
 ## Legacy border drawing remains present despite Java deprecation
 
