@@ -117,20 +117,28 @@ fn public_source_profiles_match_native_rgb_and_svg_at_both_scales() {
             origin: InkRasterOrigin::TopLeft,
         };
         let mut canvas = InkRasterCanvas::new(context, [255; 4]).unwrap();
-        canvas
-            .paint(
-                &stroke(
-                    case["version"].as_u64().unwrap() as u32,
-                    case["argb"].as_u64().unwrap() as u32,
-                ),
-                profile(),
-            )
-            .unwrap();
+        let input = stroke(
+            case["version"].as_u64().unwrap() as u32,
+            case["argb"].as_u64().unwrap() as u32,
+        );
+        canvas.paint(&input, profile()).unwrap();
         assert!(
             canvas.pixels() == expected(case),
             "{name}: native pixels differ"
         );
         let page = canvas.rendered_page(0).unwrap();
+        if let Some(directory) = std::env::var_os("SDOCX_WATERCOLOR_ARTIFACTS") {
+            let directory = std::path::Path::new(&directory);
+            std::fs::create_dir_all(directory).unwrap();
+            std::fs::write(
+                directory.join(format!("{name}.stroke.json")),
+                serde_json::to_vec(&input).unwrap(),
+            )
+            .unwrap();
+            let rgba: Vec<u8> = canvas.pixels().iter().flatten().copied().collect();
+            std::fs::write(directory.join(format!("{name}.rgba")), rgba).unwrap();
+            std::fs::write(directory.join(format!("{name}.svg")), &page.svg).unwrap();
+        }
         #[cfg(feature = "pdf")]
         assert!(
             svg_pixels(&page) == canvas.pixels(),
