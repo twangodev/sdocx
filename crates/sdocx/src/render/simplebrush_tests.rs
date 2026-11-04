@@ -1305,250 +1305,6 @@ fn tool0_long_two_pixel_profile_boundaries() {
     );
 }
 
-#[cfg(feature = "pdf")]
-#[test]
-fn two_pixel_native_export_fixture() {
-    let mut source = stroke();
-    if std::env::var_os("SDOCX_ALT_PRESSURE").is_some() {
-        source.pressures = vec![0.75, 0.25, 1.0];
-    }
-    source.points = vec![
-        Point { x: 32.0, y: 224.0 },
-        Point { x: 42.0, y: 224.0 },
-        Point { x: 52.0, y: 219.0 },
-    ];
-    if std::env::var_os("SDOCX_REVERSE").is_some() {
-        source.points = vec![
-            Point { x: 80.0, y: 186.0 },
-            Point { x: 65.0, y: 178.0 },
-            Point { x: 48.0, y: 189.0 },
-        ];
-    }
-    if let Ok(count) = std::env::var("SDOCX_POINTS_COUNT") {
-        let count: usize = count.parse().unwrap();
-        let heights = [0, 2, 5, 7, 8, 7, 5, 2];
-        source.points = (0..count)
-            .map(|i| {
-                if count > 128 {
-                    Point {
-                        x: 25.0 + (i % 64) as f64,
-                        y: 221.0 - (i / 64) as f64 * 18.0 - heights[i % 8] as f64,
-                    }
-                } else if count >= 16 {
-                    Point {
-                        x: 25.0 + i as f64 * if count >= 33 { 0.75 } else { 2.0 },
-                        y: 216.0 - heights[i % 8] as f64,
-                    }
-                } else {
-                    Point {
-                        x: 32.0 + i as f64 * 6.0,
-                        y: 224.0 - (i % 3) as f64 * 3.0,
-                    }
-                }
-            })
-            .collect();
-        source.pressures = (0..count)
-            .map(|i| {
-                if count >= 16 {
-                    [0.25, 0.5, 0.75, 1.0][i % 4]
-                } else {
-                    0.5
-                }
-            })
-            .collect();
-    }
-    match std::env::var("VARIANT").as_deref() {
-        Ok("reverse") => {
-            source.points.reverse();
-            source.pressures.reverse();
-        }
-        Ok("alternate") => {
-            let heights = [0, -3, -5, -4, 0, 5, 7, 3];
-            let count: usize = std::env::var("SDOCX_POINTS_COUNT")
-                .unwrap_or_else(|_| "32".into())
-                .parse()
-                .unwrap();
-            source.points = (0..count)
-                .map(|i| Point {
-                    x: if count > 128 {
-                        27.0 + (i % 64) as f64
-                    } else {
-                        27.0 + 2.0 * i as f64
-                    },
-                    y: if count > 128 {
-                        221.0 - (i / 64) as f64 * 18.0
-                    } else {
-                        208.0
-                    } - heights[i % 8] as f64,
-                })
-                .collect();
-            source.pressures = (0..count)
-                .map(|i| f64::from([1.0_f32, 0.3, 0.6, 0.8, 0.4][i % 5]))
-                .collect();
-        }
-        _ => {}
-    }
-    if std::env::var_os("SDOCX_SIMPLEBRUSH_NOTE29").is_some() {
-        let saved: serde_json::Value = serde_json::from_str(include_str!(
-            "../../tests/assets/fountain-v14/saved-source-29.json"
-        ))
-        .unwrap();
-        let count = if std::env::var("SDOCX_TOOL").as_deref() == Ok("1") {
-            32
-        } else {
-            57
-        };
-        source.points = saved["points"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .take(count)
-            .map(|p| Point {
-                x: f64::from((p["x"].as_f64().unwrap() - 96.0) as f32),
-                y: f64::from((256.0 - (p["y"].as_f64().unwrap() - 268.0)) as f32),
-            })
-            .collect();
-        source.pressures = saved["pressures"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .take(count)
-            .map(|p| f64::from(p.as_f64().unwrap() as f32))
-            .collect();
-        if std::env::var_os("SDOCX_REVERSE_NOTE").is_some() {
-            source.points.reverse();
-            source.pressures.reverse();
-        }
-        if std::env::var_os("SDOCX_CROSS_NOTE").is_some() {
-            let corners = [[32.0, 32.0], [64.0, 64.0], [32.0, 64.0], [64.0, 32.0]];
-            source.points = (0..57)
-                .map(|i| {
-                    let a = corners[(i / 14) % 4];
-                    let b = corners[(i / 14 + 1) % 4];
-                    let t = (i % 14) as f64 / 14.0;
-                    Point {
-                        x: f64::from((a[0] + (b[0] - a[0]) * t) as f32),
-                        y: f64::from((256.0 - (a[1] + (b[1] - a[1]) * t)) as f32),
-                    }
-                })
-                .collect();
-            if std::env::var_os("SDOCX_CROSS_OPEN").is_none() {
-                source.points[56] = source.points[55];
-            }
-        }
-    }
-    if std::env::var_os("SDOCX_SIMPLEBRUSH_SHORT").is_some() {
-        source.points = [32.0, 32.25, 32.5]
-            .into_iter()
-            .map(|x| Point { x, y: 224.0 })
-            .collect();
-        source.pressures = [0.1_f32, 0.9, 0.2].into_iter().map(f64::from).collect();
-    }
-    let default_size = if std::env::var_os("SDOCX_REVERSE").is_some() {
-        "20"
-    } else {
-        "12"
-    };
-    let size: f32 = std::env::var("PROBE_SIZE")
-        .unwrap_or(default_size.into())
-        .parse()
-        .unwrap();
-    source.pen_width = size;
-    source.rendering.as_mut().unwrap().style.pen_size = Some(size);
-    source.color = Some(Color {
-        r: if std::env::var_os("SDOCX_ALT_COLOR").is_some() {
-            0xe0
-        } else {
-            0x44
-        },
-        g: if std::env::var_os("SDOCX_ALT_COLOR").is_some() {
-            0x40
-        } else {
-            0xaa
-        },
-        b: if std::env::var_os("SDOCX_ALT_COLOR").is_some() {
-            0x20
-        } else {
-            0xee
-        },
-    });
-    source.rendering.as_mut().unwrap().tool_type_raw = std::env::var("SDOCX_TOOL")
-        .unwrap_or("2".into())
-        .parse()
-        .unwrap();
-    if let Ok(native_file) = std::env::var("SDOCX_V62_NATIVE") {
-        let native: serde_json::Value =
-            serde_json::from_slice(&std::fs::read(native_file).unwrap()).unwrap();
-        let points: Vec<[f32; 2]> = source
-            .points
-            .iter()
-            .map(|p| [p.x as f32, (256.0 - p.y) as f32])
-            .collect();
-        let pressures: Vec<f32> = source.pressures.iter().map(|p| *p as f32).collect();
-        let samples = crate::ink::simplebrush::generate(crate::ink::simplebrush::NativeInput {
-            points: &points,
-            pressures: &pressures,
-            size,
-            tool_type: source.rendering.as_ref().unwrap().tool_type_raw.into(),
-            curve_enabled: true,
-            max_samples: 32_768,
-        })
-        .unwrap();
-        let hex: String = samples
-            .iter()
-            .flatten()
-            .flat_map(|v| v.to_le_bytes())
-            .map(|v| format!("{v:02x}"))
-            .collect();
-        assert_eq!(
-            hex,
-            native["drawing_vector"]["vector_bytes"].as_str().unwrap()
-        );
-    }
-    if std::env::var_os("SDOCX_SIMPLEBRUSH_NOTE29").is_some()
-        && let Err(error) =
-            crate::ink::simplebrush::prepare_stroke_for_scale(&source, true, 32_768, true)
-    {
-        panic!("note-derived profile rejected: {error}");
-    }
-    let mut second = source.clone();
-    let mut doc = document(source);
-    if std::env::var_os("SDOCX_SIMPLEBRUSH_OVERLAP").is_some() {
-        for point in &mut second.points {
-            point.x += 1.25;
-            point.y += 1.5;
-        }
-        doc.pages[0].objects.push(second.into());
-    }
-    doc.pages[0].width = 256;
-    doc.pages[0].height = 256;
-    if let Some(directory) = std::env::var_os("SDOCX_SIMPLEBRUSH_TWO_EXPORT") {
-        let directory = std::path::Path::new(&directory);
-        std::fs::create_dir_all(directory).unwrap();
-        let mut blank = doc.clone();
-        blank.pages[0].objects.clear();
-        std::fs::write(
-            directory.join("paper.pdf"),
-            crate::render_document_pdf(&blank, &Default::default(), &Default::default()).unwrap(),
-        )
-        .unwrap();
-        let two = RenderOptions {
-            simplebrush_two_pixels_per_page_unit: true,
-            ..Default::default()
-        };
-        for (name, options) in [
-            ("generic", RenderOptions::default()),
-            ("one", options()),
-            ("two", two),
-        ] {
-            let svg = render_document_svg(&doc, &options).remove(0).svg;
-            let pdf = crate::render_document_pdf(&doc, &options, &Default::default()).unwrap();
-            std::fs::write(directory.join(format!("{name}.svg")), svg).unwrap();
-            std::fs::write(directory.join(format!("{name}.pdf")), pdf).unwrap();
-        }
-    }
-}
-
 #[test]
 fn tool3_two_pixel_interior_sizes_match_native_geometry() {
     let receipt: serde_json::Value = serde_json::from_str(include_str!(
@@ -2782,14 +2538,16 @@ fn tool0_size3_32_point_native_control_and_dispatch_guards() {
 
 #[test]
 fn tool0_size3_endpoint_native_geometry() {
-    for (count, json) in [
+    for (count, json, compressed) in [
         (
             16,
             include_str!("../../../../conformance/simplebrush-size3-16-native.json"),
+            include_bytes!("../../../../tools/simplebrush-size3-32/frame-16.rgba.zlib").as_slice(),
         ),
         (
             64,
             include_str!("../../../../conformance/simplebrush-size3-64-native.json"),
+            include_bytes!("../../../../tools/simplebrush-size3-32/frame-64.rgba.zlib").as_slice(),
         ),
     ] {
         let receipt: serde_json::Value = serde_json::from_str(json).unwrap();
@@ -2819,6 +2577,86 @@ fn tool0_size3_endpoint_native_geometry() {
             .map(|v| format!("{v:02x}"))
             .collect();
         assert_eq!(hex, receipt["geometry"]["vector_bytes"].as_str().unwrap());
+
+        // Retained synthetic host Drawing frame, not native page/device parity.
+        // Historical export hashes are not a pin of the current renderer.
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+        let mut native = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed)
+            .read_to_end(&mut native)
+            .unwrap();
+        assert_eq!(native.len(), 256 * 256 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&native)),
+            receipt["frame_sha256"].as_str().unwrap()
+        );
+        let mut raster_source = stroke();
+        raster_source.points = points
+            .iter()
+            .map(|p| Point {
+                x: f64::from(p[0]),
+                y: 256.0 - f64::from(p[1]),
+            })
+            .collect();
+        raster_source.pressures = pressures.iter().map(|p| f64::from(*p)).collect();
+        raster_source.pen_width = 3.0;
+        raster_source.rendering.as_mut().unwrap().style.pen_size = Some(3.0);
+        raster_source.rendering.as_mut().unwrap().tool_type_raw = 0;
+        raster_source.color = Some(Color {
+            r: 0x44,
+            g: 0xaa,
+            b: 0xee,
+        });
+        let mut doc = document(raster_source);
+        doc.pages[0].width = 256;
+        doc.pages[0].height = 256;
+        let metrics = |opts: &RenderOptions| {
+            let svg = render_document_svg(&doc, opts).remove(0).svg;
+            let mut body =
+                svg[svg.find('>').unwrap() + 1..svg.rfind("</svg>").unwrap()].to_string();
+            let start = body
+                .find("<rect fill=\"#fcfcfc\"")
+                .expect("page background");
+            let end = start + body[start..].find("/>").unwrap() + 2;
+            body.replace_range(start..end, "");
+            // Match the captured fractional 2x transform and framebuffer orientation.
+            let svg = format!(
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"256\" height=\"256\"><g transform=\"matrix(2 0 0 -2 .25 512.5)\">{body}</g></svg>"
+            );
+            let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            let mut error = 0_u64;
+            let mut intersection = 0_usize;
+            let mut union = 0_usize;
+            for (expected, actual) in native
+                .iter()
+                .skip(3)
+                .step_by(4)
+                .zip(pixmap.data().iter().skip(3).step_by(4))
+            {
+                error += u64::from(expected.abs_diff(*actual));
+                intersection += usize::from(*expected != 0 && *actual != 0);
+                union += usize::from(*expected != 0 || *actual != 0);
+            }
+            (error, intersection, union)
+        };
+        let profiled = metrics(&RenderOptions {
+            simplebrush_two_pixels_per_page_unit: true,
+            ..Default::default()
+        });
+        let generic = metrics(&RenderOptions::default());
+        assert!(profiled.1 > 0);
+        assert_eq!(profiled.1, profiled.2);
+        assert!(
+            profiled.0 * 10 < generic.0,
+            "native alpha error/support: profile {profiled:?}, generic {generic:?}"
+        );
     }
 }
 
