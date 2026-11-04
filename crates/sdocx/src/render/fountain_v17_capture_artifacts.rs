@@ -1,7 +1,6 @@
-//! Opt-in paired SVG/PDF export artifacts for the captured Fountain V17 source
-//! producer and Mesa replay. This is test-only and makes no model admission
-//! change. Run with the V7 producer/Mesa directories and a fresh artifact
-//! directory.
+//! In-memory native Fountain V17 geometry, framebuffer and PDF regressions.
+//! The external capture-receipt audit and artifact exporter have been retired;
+//! the compact fixture retains the original producer and Mesa receipt identities.
 
 use super::super::vector::{ColorValue, Rectangle, Styled, Svg, ViewBox};
 use super::{Group, Paint, Scene, Transform, V16Plan, render};
@@ -9,12 +8,7 @@ use crate::{Point, Stroke};
 use base64::Engine as _;
 use flate2::read::ZlibDecoder;
 use sha2::{Digest, Sha256};
-use std::{
-    fs,
-    fs::OpenOptions,
-    io::{Read, Write},
-    path::PathBuf,
-};
+use std::io::Read;
 
 const WIDTH: u32 = 128;
 const HEIGHT: u32 = 96;
@@ -27,20 +21,6 @@ const MESA_SOURCE_RECEIPT_SHA256: &str =
 
 fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
-}
-
-fn write_new(path: PathBuf, bytes: &[u8]) {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)
-        .expect("artifact path must be new");
-    file.write_all(bytes).expect("write bounded artifact");
-    file.sync_all().expect("sync bounded artifact");
-}
-
-fn json_bytes(value: &serde_json::Value) -> Vec<u8> {
-    serde_json::to_vec_pretty(value).expect("serialize bounded artifact manifest")
 }
 
 fn source_stroke(source_input: &serde_json::Value) -> Stroke {
@@ -116,21 +96,6 @@ fn palette(source_input: &serde_json::Value) -> Vec<u32> {
         .collect()
 }
 
-fn decoded_native_records(case: &serde_json::Value) -> Vec<[f32; 10]> {
-    let raw = base64::engine::general_purpose::STANDARD
-        .decode(
-            case["native_update_records_base64"]
-                .as_str()
-                .expect("packed native Update bytes"),
-        )
-        .expect("native Update base64");
-    native_records_from_bytes(
-        &raw,
-        case["native_source_result"]["mesh_bytes"].as_u64().unwrap() as usize,
-        case["native_update_records_sha256"].as_str().unwrap(),
-    )
-}
-
 fn native_records_from_bytes(
     raw: &[u8],
     expected_bytes: usize,
@@ -160,44 +125,11 @@ fn decoded_zlib_base64(value: &str) -> Vec<u8> {
     bytes
 }
 
-fn assert_mesa_source_records(records: &[[f32; 10]], mesa_case: &serde_json::Value) {
-    let mesa_records = mesa_case["source_update_records"]
-        .as_array()
-        .expect("Mesa decoded source Update records");
-    assert_eq!(mesa_records.len(), records.len());
-    for (index, (native, row)) in records.iter().zip(mesa_records).enumerate() {
-        assert_eq!(row["index"].as_u64(), Some(index as u64));
-        let expected = [
-            row["center"][0].as_f64().unwrap() as f32,
-            row["center"][1].as_f64().unwrap() as f32,
-            row["support_extent"][0].as_f64().unwrap() as f32,
-            row["support_extent"][1].as_f64().unwrap() as f32,
-            row["stamp_opacity_input"].as_f64().unwrap() as f32,
-            row["edge"].as_f64().unwrap() as f32,
-            row["coverage_alpha"].as_f64().unwrap() as f32,
-            row["rgb"][0].as_f64().unwrap() as f32,
-            row["rgb"][1].as_f64().unwrap() as f32,
-            row["rgb"][2].as_f64().unwrap() as f32,
-        ];
-        assert_eq!(
-            native.map(f32::to_bits),
-            expected.map(f32::to_bits),
-            "Mesa record {index}"
-        );
-        let alpha_word = native[6]
-            .to_le_bytes()
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>();
-        assert_eq!(row["coverage_alpha_f32_word"], alpha_word);
-    }
-}
-
 fn compare_prepared_to_native<'a>(
     stroke: &'a Stroke,
     source_input: &serde_json::Value,
     native: &[[f32; 10]],
-) -> (crate::ink::PreparedStroke<'a>, serde_json::Value) {
+) -> crate::ink::PreparedStroke<'a> {
     let colors = palette(source_input);
     let period = source_input["period"].as_i64().unwrap() as i32;
     let offset = source_input["offset"].as_f64().unwrap() as f32;
@@ -237,24 +169,7 @@ fn compare_prepared_to_native<'a>(
             "exact Rust/native Update record lane bits at stamp {index}"
         );
     }
-    let summary = serde_json::json!({
-        "prepared_record_count": plan.stamps.len(),
-        "native_record_count": native.len(),
-        "record_lanes_bitwise_equal": true,
-        "inverse_scale": 1.0,
-        "enhanced_aa": false,
-        "profile": {"palette_argb": colors_argb(source_input), "period": period, "initial_offset": offset},
-    });
-    (prepared, summary)
-}
-
-fn colors_argb(source_input: &serde_json::Value) -> Vec<String> {
-    source_input["palette"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|value| value.as_str().unwrap().to_owned())
-        .collect()
+    prepared
 }
 
 fn transformed_scene(prepared: &crate::ink::PreparedStroke<'_>) -> crate::render::RenderedScene {
@@ -511,7 +426,7 @@ fn captured_fountain_v17_partial_alpha_matches_mesa_goldens() {
         );
         assert_eq!(native.len(), 117);
         let stroke = source_stroke(source);
-        let (prepared, _) = compare_prepared_to_native(&stroke, source, &native);
+        let prepared = compare_prepared_to_native(&stroke, source, &native);
         let retained = transformed_scene(&prepared);
         let rust_frame = raster_svg(&retained.page.svg);
 
@@ -552,176 +467,4 @@ fn captured_fountain_v17_partial_alpha_matches_mesa_goldens() {
         assert_eq!(image_count, 0);
         assert!(shading_count > 0);
     }
-}
-
-#[test]
-#[ignore = "writes paired captured Fountain V17 SVG/PDF artifacts when capture/output directories are set"]
-fn write_fountain_v17_capture_svg_pdf_pairs() {
-    let producer_dir = PathBuf::from(
-        std::env::var_os("SDOCX_FOUNTAIN_V17_PRODUCER_DIR")
-            .expect("set SDOCX_FOUNTAIN_V17_PRODUCER_DIR to the V7 producer capture directory"),
-    );
-    let mesa_dir = PathBuf::from(
-        std::env::var_os("SDOCX_FOUNTAIN_V17_MESA_DIR")
-            .expect("set SDOCX_FOUNTAIN_V17_MESA_DIR to the V7 Mesa capture directory"),
-    );
-    let output_dir = PathBuf::from(
-        std::env::var_os("SDOCX_FOUNTAIN_V17_ARTIFACT_DIR")
-            .expect("set SDOCX_FOUNTAIN_V17_ARTIFACT_DIR to a fresh output directory"),
-    );
-    fs::create_dir(&output_dir).expect("artifact output directory must not already exist");
-    let producer_path = producer_dir.join("source-producer-receipt.json");
-    let mesa_path = mesa_dir.join("receipt.json");
-    let producer_bytes = fs::read(&producer_path).expect("V7 producer receipt");
-    let mesa_bytes = fs::read(&mesa_path).expect("V7 Mesa receipt");
-    assert_eq!(sha256(&producer_bytes), PRODUCER_RECEIPT_SHA256);
-    assert_eq!(sha256(&mesa_bytes), MESA_SOURCE_RECEIPT_SHA256);
-    let producer: serde_json::Value = serde_json::from_slice(&producer_bytes).unwrap();
-    let mesa: serde_json::Value = serde_json::from_slice(&mesa_bytes).unwrap();
-    assert_eq!(producer["producer_script_sha256"], PRODUCER_SHA256);
-    assert_eq!(
-        producer["schema"],
-        "sdocx.fountain.v17.source-alpha-producer.v6"
-    );
-    assert_eq!(producer["status"], "captured_source_producer_only");
-    assert_eq!(
-        mesa["source_producer_receipt_sha256"],
-        sha256(&producer_bytes)
-    );
-    assert_eq!(mesa["status"], "captured");
-    assert_eq!(
-        mesa["limits"]["surface_px"],
-        serde_json::json!([WIDTH, HEIGHT])
-    );
-    assert_eq!(
-        mesa["stage_boundary"]["producer_and_draw_are_separate_native_instances"],
-        true
-    );
-    assert_eq!(mesa["stage_boundary"]["producer_GL_Draw"], false);
-    assert_eq!(
-        mesa["stage_boundary"]["exact_40_byte_mesh_hash_and_count_required_before_Draw"],
-        true
-    );
-    assert!(
-        mesa["execution_boundary"]["native_executed"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|stage| stage == "Draw")
-    );
-    assert_eq!(mesa["execution_boundary"]["native_Init_executed"], false);
-    assert_eq!(producer["cases"].as_array().unwrap().len(), 2);
-    assert_eq!(mesa["cases"].as_array().unwrap().len(), 2);
-
-    let mut manifest_cases = Vec::new();
-    for (index, (producer_case, mesa_case)) in producer["cases"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .zip(mesa["cases"].as_array().unwrap())
-        .enumerate()
-    {
-        let name = producer_case["name"].as_str().unwrap();
-        assert_eq!(mesa_case["name"], name);
-        assert_eq!(
-            producer_case["native_update_records_sha256"],
-            mesa_case["source_update_records_sha256"]
-        );
-        assert_eq!(
-            producer_case["native_update_records_sha256"],
-            mesa_case["native_records_sha256"]
-        );
-        assert_eq!(
-            producer_case["source_addpoint_count"],
-            mesa_case["source_update_count"]
-        );
-        assert_eq!(mesa_case["enhanced_aa"], false);
-        assert_eq!(mesa_case["inverse_scale_xy"], serde_json::json!([1.0, 1.0]));
-        assert_eq!(mesa_case["draw_calls"].as_array().unwrap().len(), 1);
-        assert_eq!(mesa_case["gl_error"], 0);
-        assert_eq!(
-            mesa_case["destination"]["dimensions"],
-            serde_json::json!([WIDTH, HEIGHT])
-        );
-        assert_eq!(
-            mesa_case["destination"]["background_premul"],
-            serde_json::json!([0.04, 0.08, 0.12, 0.4])
-        );
-        let native = decoded_native_records(producer_case);
-        assert_eq!(
-            native.len(),
-            mesa_case["source_update_count"].as_u64().unwrap() as usize
-        );
-        assert_mesa_source_records(&native, mesa_case);
-        let stroke = source_stroke(&producer_case["source_input"]);
-        let (prepared, geometry_summary) =
-            compare_prepared_to_native(&stroke, &producer_case["source_input"], &native);
-        let retained = transformed_scene(&prepared);
-        let svg = retained.page.svg.clone();
-        let svg_bytes = svg.as_bytes();
-        let raster = raster_svg(&svg);
-
-        let native_path = PathBuf::from(mesa_case["readback_path"].as_str().unwrap());
-        assert!(native_path.starts_with(&mesa_dir));
-        let native_raw = fs::read(&native_path).expect("captured native Mesa RGBA frame");
-        assert_eq!(native_raw.len(), (WIDTH * HEIGHT * 4) as usize);
-        assert_eq!(sha256(&native_raw), mesa_case["readback_rgba_sha256"]);
-        let native_top_down = reverse_native_rows(&native_raw);
-        assert_eq!(
-            &native_top_down[..4],
-            &[10, 20, 31, 102],
-            "recorded native clear color"
-        );
-        let metrics = frame_metrics(&native_top_down, &raster);
-        assert_eq!(
-            metrics["native_bbox_topdown_xyxy"],
-            serde_json::json!([41, 0, 42, 64])
-        );
-        assert_eq!(&raster[..4], &[10, 20, 31, 102], "Rust SVG clear color");
-
-        let (pdf_bytes, image_count, shading_count) = vector_pdf(&retained);
-
-        let prefix = format!("{index}-{name}");
-        let svg_path = output_dir.join(format!("{prefix}.svg"));
-        let pdf_path = output_dir.join(format!("{prefix}.pdf"));
-        let raster_path = output_dir.join(format!("{prefix}.rust.rgba"));
-        let native_path_out = output_dir.join(format!("{prefix}.native-topdown.rgba"));
-        write_new(svg_path.clone(), svg_bytes);
-        write_new(pdf_path.clone(), &pdf_bytes);
-        write_new(raster_path.clone(), &raster);
-        write_new(native_path_out.clone(), &native_top_down);
-        manifest_cases.push(serde_json::json!({
-            "name": name,
-            "producer_update_sha256": producer_case["native_update_records_sha256"],
-            "mesa_source_update_sha256": mesa_case["source_update_records_sha256"],
-            "prepared_geometry": geometry_summary,
-            "frame_metrics": metrics,
-            "native_full_frame_sha256_raw_gl_rows": mesa_case["readback_rgba_sha256"],
-            "native_full_frame_sha256_topdown": sha256(&native_top_down),
-            "rust_raster_sha256_topdown": sha256(&raster),
-            "svg": {"path": svg_path.file_name().unwrap().to_string_lossy(), "sha256": sha256(svg_bytes)},
-            "pdf": {"path": pdf_path.file_name().unwrap().to_string_lossy(), "sha256": sha256(&pdf_bytes), "pages": 1, "image_objects": image_count, "radial_shadings": shading_count},
-            "native_raster": native_path_out.file_name().unwrap().to_string_lossy(),
-            "rust_raster": raster_path.file_name().unwrap().to_string_lossy(),
-        }));
-    }
-    let manifest = serde_json::json!({
-        "schema": "sdocx.fountain.v17.capture-svg-pdf-artifacts.v1",
-        "scope": "Rust SVG/PDF export checked against captured native Update records and complete 128x96 Mesa readback frames; producer and Draw are separate native stages",
-        "producer_receipt_sha256": sha256(&producer_bytes),
-        "mesa_receipt_sha256": sha256(&mesa_bytes),
-        "producer_executable_sha256": PRODUCER_SHA256,
-        "producer_receipt_schema": producer["schema"],
-        "matrix_f32_words": mesa["cases"][0]["matrix_f32_words"],
-        "svg_projection_after_single_native_row_flip": [1, 0, 0, -1, 32, 64],
-        "background_source_straight_rgba": [0.1, 0.2, 0.3, 0.4],
-        "native_background_premultiplied_rgba8": [10, 20, 31, 102],
-        "native_enhanced_aa": false,
-        "cases": manifest_cases,
-        "native_execution": false,
-        "capture_replay": false,
-        "artifact_generation": true,
-        "root_invocation_required_for_build_and_artifact_render": true,
-    });
-    write_new(output_dir.join("manifest.json"), &json_bytes(&manifest));
 }
