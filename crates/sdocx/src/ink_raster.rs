@@ -926,7 +926,7 @@ mod fountain_snapshot_budget_tests {
     #[test]
     fn scale_change_applies_to_both_fountain_profiles() {
         let inputs: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../conformance/fountain-v14-saved-scene-inputs.json"
+            "../tests/assets/fountain-v14/scene-sources.json"
         ))
         .unwrap();
         let stroke: Stroke = serde_json::from_value(
@@ -973,7 +973,7 @@ mod fountain_snapshot_budget_tests {
     #[test]
     fn scale_change_preserves_budgets_and_rejects_stale_snapshot() {
         let inputs: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../conformance/fountain-v14-saved-scene-inputs.json"
+            "../tests/assets/fountain-v14/scene-sources.json"
         ))
         .unwrap();
         let stroke: Stroke =
