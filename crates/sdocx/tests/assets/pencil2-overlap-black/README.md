@@ -12,8 +12,7 @@ The receipt's readable `delta_rows` contain derived changed pixels, not a new
 native capture. Each row holds a top-down pixel index and RGBA. Rust and Node
 reconstruct historical eight-byte records and verify their hash, then reconstruct
 the complete frame over the deterministic prior and verify the native hash
-before comparing every pixel. The original native frame
-remains in the historical workspace. `flat.bin` is the independently sampled
+before comparing every pixel. The redundant compressed native frame was removed after exact reconstruction. `flat.bin` is the independently sampled
 second input; the first stream is retained at `../pencil2-translation/ramp.bin`.
 The capture script `tools/pencil2-public-replay/overlap_capture.py` now reads
 these canonical streams; its former tool-directory copies were verified

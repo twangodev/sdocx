@@ -12,8 +12,7 @@ The receipt's three result entries retain readable `delta_rows` containing
 [top-down pixel index, R, G, B, A]. These are derived native pixels, not new
 captures. Rust and Node reconstruct the historical eight-byte records in memory
 and verify their hashes, then reconstruct each frame over the deterministic
-opaque prior and check the original native frame hash. Original compressed
-readbacks remain in the historical workspace.
+opaque prior and check the original native frame hash. Redundant compressed readbacks were removed after exact reconstruction; original native frame hashes remain in the receipt.
 
 `tools/pencil2-public-replay/translation_matrix_capture.py` now reads the canonical
 `ramp.bin` retained here. Its former tool-directory copy was verified byte-identical

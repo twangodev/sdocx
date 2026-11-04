@@ -13,8 +13,7 @@ The translucent receipt retains readable `delta_rows` derived from the native
 capture, not a new capture. Each row contains a top-down pixel index and RGBA.
 Tests reconstruct the original eight-byte records in memory and verify their
 SHA-256, then reconstruct the complete frame over the deterministic prior and
-verify its native SHA-256 before comparing canvas and SVG pixels. The original
-compressed native frame remains in the historical workspace.
+verify its native SHA-256 before comparing canvas and SVG pixels. The redundant compressed native frame was removed after exact reconstruction; its compressed hash remains historical metadata.
 
 The capture scripts `tools/pencil2-public-replay/colored_overlap_top2_capture.py`
 and `tools/pencil2-public-replay/colored_overlap_capture.py` now read the canonical
