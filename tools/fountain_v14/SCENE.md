@@ -30,11 +30,11 @@ budgets but does not roll back a successful preparation. Host bounds are
 native limits.
 
 Run `cargo test -p sdocx --features 'render serde pdf' --lib scene_tests`
-with `SDOCX_FOUNTAIN_SCENE_ARTIFACTS` pointing to a temporary directory, then
-run `scene_export_compare.py` on that directory. It compares the direct and
-SVG-derived PDF routes in MuPDF and PDFium against all native frames,
-allowing at most one channel level after premultiplied-alpha conversion.
-The compact export receipt records reader versions and artifact hashes.
+for native-frame/SVG assertions and in-memory direct and SVG-derived PDF
+construction. Historical MuPDF/PDFium comparisons against all 108 native frames
+had at most one channel level of error after premultiplied-alpha conversion.
+The optional artifact exporter and comparator were removed; the historical
+export receipt retains reader versions and artifact hashes.
 
 `scene-native.json` under the crate test assets preserves the native scene receipt.
 The capture script emits `conformance/fountain-v14-saved-scene-native.json`; copy

@@ -182,27 +182,11 @@ fn saved_scene_candidate_replays_original_native_frames() {
                             "SVG {origin} {scale} {prior} step {step} source {id}"
                         );
                         #[cfg(feature = "pdf")]
-                        if let Some(path) = std::env::var_os("SDOCX_FOUNTAIN_SCENE_ARTIFACTS") {
-                            let path = std::path::PathBuf::from(path);
-                            std::fs::create_dir_all(&path).unwrap();
-                            let name = format!("scene_{origin}_{scale}_{prior}_{step}_{id}");
+                        {
                             let mut options = crate::PdfOptions::default();
                             options.dpi = 72.;
-                            std::fs::write(
-                                path.join(format!("{name}.rgba")),
-                                canvas.pixels().as_flattened(),
-                            )
-                            .unwrap();
-                            std::fs::write(
-                                path.join(format!("{name}.svg.pdf")),
-                                crate::render_svg_pages_pdf(&[page], &options).unwrap(),
-                            )
-                            .unwrap();
-                            std::fs::write(
-                                path.join(format!("{name}.direct.pdf")),
-                                canvas.to_pdf(&options).unwrap(),
-                            )
-                            .unwrap();
+                            crate::render_svg_pages_pdf(&[page], &options).unwrap();
+                            canvas.to_pdf(&options).unwrap();
                         }
                     }
                 }
@@ -875,27 +859,11 @@ fn saved_canvas_scale_mutation_replays_native_frames() {
         );
         assert_eq!(image.data(), expected.as_flattened(), "SVG step {step}");
         #[cfg(feature = "pdf")]
-        if let Some(path) = std::env::var_os("SDOCX_FOUNTAIN_SCALE_ARTIFACTS") {
-            let path = std::path::PathBuf::from(path);
-            std::fs::create_dir_all(&path).unwrap();
-            let name = format!("scene_top_scale_clear_{step}_29");
+        {
             let mut options = crate::PdfOptions::default();
             options.dpi = 72.;
-            std::fs::write(
-                path.join(format!("{name}.rgba")),
-                canvas.pixels().as_flattened(),
-            )
-            .unwrap();
-            std::fs::write(
-                path.join(format!("{name}.svg.pdf")),
-                crate::render_svg_pages_pdf(&[page], &options).unwrap(),
-            )
-            .unwrap();
-            std::fs::write(
-                path.join(format!("{name}.direct.pdf")),
-                canvas.to_pdf(&options).unwrap(),
-            )
-            .unwrap();
+            crate::render_svg_pages_pdf(&[page], &options).unwrap();
+            canvas.to_pdf(&options).unwrap();
         }
     }
     let before = canvas.pixels().to_vec();
