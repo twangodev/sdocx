@@ -1,6 +1,6 @@
 # DefaultPen subthreshold loop control
 
-This synthetic tool-0 size-3 path starts with a subthreshold movement, then returns to its fractional starting point: (8.125, 8.375), (9, 9.125), (10.125, 8.375), (8.125, 8.375). Pressures are 0.25, 0.5, 0.75, and 1. Native Drawing callback and bridged stream hashes match, and Mesa reported no GL errors. Public SVG and direct PDF exports from pinned revision 8ef491537f96154099e7c0c4066c25bba0f4aa0a are compared on #fcfcfc paper against native host frames:
+This synthetic tool-0 size-3 path starts with a subthreshold movement, then returns to its fractional starting point: (8.125, 8.375), (9, 9.125), (10.125, 8.375), (8.125, 8.375). Pressures are 0.25, 0.5, 0.75, and 1. Native Drawing callback and bridged stream hashes match, and Mesa reported no GL errors. Public SVG and direct PDF exports from pinned revision 8ef491537f96154099e7c0c4066c25bba0f4aa0a were historically compared on #fcfcfc paper against native host frames:
 
 | Scale | resvg RGB L1 | MuPDF RGB L1 | PDFium RGB L1 |
 | --- | --- | --- | --- |
@@ -16,7 +16,8 @@ On the prepared native capture host, use a fresh output directory:
 .venv/bin/python tools/defaultpen-subthreshold-loop/capture.py --tool 0 /tmp/defaultpen-subthreshold-loop-fresh --case tool0
 python3 tools/defaultpen-scale/retain_tool0_crossing.py /tmp/defaultpen-subthreshold-loop-fresh | sed 's/defaultpen-tool0-crossing-native-control-v1/defaultpen-tool0-subthreshold-loop-native-control-v1/' > /tmp/defaultpen-subthreshold-loop-native.json
 cmp /tmp/defaultpen-subthreshold-loop-native.json tools/defaultpen-subthreshold-loop/native.json
-PYTHONPATH=/path/to/pypdfium2 .venv/bin/python tools/defaultpen-subthreshold-loop/compare.py --verify
 ```
 
 Native recapture needs the pinned Samsung DSOs, Unicorn, AArch64 binutils, Mesa/EGL and the local ignored helpers identified in `tools/defaultpen-scale/hashes.json`. Generated exports and executable are not retained.
+
+Export comparisons are historical; hashes and measurements remain in `export.json`.
