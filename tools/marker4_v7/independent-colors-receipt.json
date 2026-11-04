@@ -29,7 +29,8 @@
   },
   "scope": "single saved geometry and host Mesa GLES setup; not Android device or full application rendering parity",
   "compact_fixture": {
-    "path": "conformance/marker4-v7-independent-colors.rgba",
+    "path": "crates/sdocx/tests/assets/marker4-independent-colors.rgba",
+    "historical_capture_path": "conformance/marker4-v7-independent-colors.rgba",
     "sha256": "a34feb33d90592ba5722856c6cc93efa0cb951b299fa28bb49d4959fcb297853",
     "layout": "282 records in native frame scan order; 6 RGBA8 pixels per record: A, B, AB, BA, background AB, background A; retain pixels with A or B alpha nonzero"
   },
@@ -47,5 +48,5 @@
   },
   "full_frames": "Original full frames were temporary and are not retained; their hashes identify the measured inputs and can be checked by recapture and the extraction script. Capture JSON receipts also were temporary; their old hashes are omitted because their path-dependent content is not retained.",
   "capture_script_base_sha256": "f1ff217a5d835c28078cf22d7fefd9bb1f0d0af1462094d9cbfce587ff402b5f",
-  "regression_dependency": "crates/sdocx/tests/marker4_host_compositing.rs checks the compact captured pixels against shared host arithmetic in crates/sdocx/src/ink/host_rgba8.rs. The crate-local fixture at crates/sdocx/tests/assets/marker4-independent-colors.rgba is byte-identical to compact_fixture.path and is included in the published crate."
+  "regression_dependency": "crates/sdocx/tests/marker4_host_compositing.rs checks the compact captured pixels against shared host arithmetic in crates/sdocx/src/ink/host_rgba8.rs. The canonical compact_fixture.path is included in the published crate; the byte-identical copy at historical_capture_path was removed."
 }

@@ -56,6 +56,8 @@
     "record_count": 268,
     "rand_count": 1262,
     "binary_file": "conformance/crayon2-v2-native.bin",
+    "retained_binary_file": "crates/sdocx/tests/assets/crayon2-v2-native/records.bin",
+    "storage_note": "binary_file identifies the original capture path; its byte-identical duplicate was removed in favor of retained_binary_file. The captured binary_sha256 is unchanged.",
     "binary_sha256": "f401c64b56e64b828247de3434da48d6ca0f45399e59527c86924b96bd916a36",
     "streams": {
       "drawpoint_xy": {

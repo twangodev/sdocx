@@ -2,7 +2,7 @@
 
 #[test]
 fn captured_colors_survive_straight_rgba8_encoding() {
-    let pixels = include_bytes!("../../../conformance/marker4-v7-independent-colors.rgba");
+    let pixels = include_bytes!("assets/marker4-independent-colors.rgba");
     assert_eq!(pixels.len(), 282 * 24);
     let colors = [[255u32, 203, 48], [0, 64, 255]];
     for record in pixels.as_chunks::<24>().0 {

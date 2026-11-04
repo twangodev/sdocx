@@ -40,8 +40,7 @@ const PROJECTION: [f32; 16] = [
 
 const VBO: &[u8] =
     include_bytes!("../../../../conformance/marker-v31-native-paint/native-vbo-f32.bin");
-const CAPS: &[u8] =
-    include_bytes!("../../../../conformance/marker-v31-native-paint/cap-textures-rgba8.bin");
+const CAPS: &[u8] = include_bytes!("../render/legacy_marker_vector/cap-textures-rgba8.bin");
 const NATIVE_PREFIXES: [&[u8]; 5] = [
     include_bytes!(
         "../../../../conformance/marker-v31-native-paint/native-prefix-0.sparse-rgba8.bin"
