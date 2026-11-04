@@ -661,28 +661,6 @@ mod tests {
     }
 
     #[test]
-    fn optionally_dump_actual_adapter_output_for_native_appearance_audit() {
-        let Ok(path) = std::env::var("SDOCX_CALLIGRAPHY_DUMP") else {
-            return;
-        };
-        let fixture = captured_fixture();
-        let mesh = captured_mesh(&fixture["cases"][0]);
-        let mut scene = Scene::new(super::super::vector::Svg::new().width(128).height(64));
-        render(
-            &mut scene,
-            &mesh,
-            Viewport {
-                width: 128,
-                height: 64,
-                origin: [0.0, 0.0],
-                scale: [1.0, 1.0],
-            },
-        )
-        .unwrap();
-        std::fs::write(path, scene.finish()).unwrap();
-    }
-
-    #[test]
     fn saved_object_sampler_addpoint_and_mesh_builder_feed_native_svg_transport() {
         let lanes = crate::ink::calligraphy_saved_native_mesh_for_test()
             .expect("saved channels and AddPoint lifecycle match native geometry capture");

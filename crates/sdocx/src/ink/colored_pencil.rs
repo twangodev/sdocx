@@ -880,16 +880,9 @@ mod tests {
             sampled.stream
         }
 
-        // Experimental reader fixtures only; this does not admit production rendering.
         #[cfg(feature = "pdf")]
         #[test]
-        #[ignore = "writes experimental SVG/PDF artifacts to SDOCX_COLORED_PENCIL_EXPORT_DIR"]
-        fn export_colored_pencil_native_controls() {
-            let output = std::path::PathBuf::from(
-                std::env::var_os("SDOCX_COLORED_PENCIL_EXPORT_DIR")
-                    .expect("set SDOCX_COLORED_PENCIL_EXPORT_DIR to a fresh directory"),
-            );
-            std::fs::create_dir(&output).expect("output directory must not already exist");
+        fn colored_pencil_native_controls_construct_pdf() {
             let fixture: Value = serde_json::from_str(PAINT_FIXTURE).unwrap();
             let stream = sampled_native_stream(&fixture);
             for color_case in fixture["cases"].as_array().unwrap() {
@@ -899,28 +892,17 @@ mod tests {
                     .trim_start_matches("0x");
                 let argb = u32::from_str_radix(color, 16).unwrap();
                 let svg = source_svg(&stream, POINT_R8, argb);
-                let page = crate::RenderedPage::new(0, 256, 256, svg.clone());
-                let pdf = crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default())
-                    .expect("experimental SVG must lower to PDF");
-                std::fs::write(output.join(format!("{color}.svg")), svg).unwrap();
-                std::fs::write(output.join(format!("{color}.pdf")), pdf).unwrap();
-                for (phase, dx) in [("original", 0.0), ("fractional-dx0.375", 0.375)] {
+                let page = crate::RenderedPage::new(0, 256, 256, svg);
+                crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default()).unwrap();
+                for dx in [0.0, 0.375] {
                     for clip in [true, false] {
                         let svg = source_svg_control(&stream[..20], POINT_R8, argb, clip, dx);
-                        let page = crate::RenderedPage::new(0, 256, 256, svg.clone());
-                        let pdf =
-                            crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default())
-                                .unwrap();
-                        let name = format!(
-                            "{color}-first-{phase}-{}",
-                            if clip { "clip" } else { "unclipped" }
-                        );
-                        std::fs::write(output.join(format!("{name}.svg")), svg).unwrap();
-                        std::fs::write(output.join(format!("{name}.pdf")), pdf).unwrap();
+                        let page = crate::RenderedPage::new(0, 256, 256, svg);
+                        crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default())
+                            .unwrap();
                     }
                 }
             }
-            std::fs::write(output.join("provenance.json"), PAINT_FIXTURE).unwrap();
         }
 
         #[test]

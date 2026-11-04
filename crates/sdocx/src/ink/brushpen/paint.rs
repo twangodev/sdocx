@@ -1884,12 +1884,6 @@ mod tests {
                     let svg_pdf = crate::pdf::render_svg_pages_pdf(&[page], &options).unwrap();
                     assert!(direct.starts_with(b"%PDF"));
                     assert!(svg_pdf.starts_with(b"%PDF"));
-                    if let Some(dir) = std::env::var_os("SDOCX_BRUSHPEN_MULTI_EXPORT_DIR") {
-                        let dir = std::path::PathBuf::from(dir);
-                        std::fs::write(dir.join(format!("{case_index}.direct.pdf")), direct)
-                            .unwrap();
-                        std::fs::write(dir.join(format!("{case_index}.svg.pdf")), svg_pdf).unwrap();
-                    }
                 }
             }
         }

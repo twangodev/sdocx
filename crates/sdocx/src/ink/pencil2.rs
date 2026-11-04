@@ -964,33 +964,6 @@ mod tests {
                     },
                 }),
             };
-            if let Some(dir) = std::env::var_os("SDOCX_PENCIL2_RECORD_CAPTURE") {
-                let id = case["id"].as_str().unwrap();
-                if matches!(id, "pressure_ramp" | "channel_baseline") {
-                    let mut variant = stroke.clone();
-                    let argb = if id == "pressure_ramp" {
-                        0x80336699u32
-                    } else {
-                        0xffdd4411u32
-                    };
-                    variant.rendering.as_mut().unwrap().style.color_argb = Some(argb);
-                    variant.color = Some(crate::Color {
-                        r: (argb >> 16) as u8,
-                        g: (argb >> 8) as u8,
-                        b: argb as u8,
-                    });
-                    variant
-                        .tilts
-                        .fill(if id == "pressure_ramp" { 0.4 } else { 0.8 });
-                    let records = public_adapter(&variant).unwrap();
-                    let bytes: Vec<u8> = records
-                        .iter()
-                        .flat_map(|r| r.lanes.iter().flat_map(|f| f.to_le_bytes()))
-                        .collect();
-                    std::fs::write(std::path::Path::new(&dir).join(format!("{id}.bin")), bytes)
-                        .unwrap();
-                }
-            }
             let alpha = native_alpha_state(case).unwrap();
             assert_eq!(alpha.alpha_byte, (input.color_argb >> 24) as u8);
             assert_eq!(alpha.square_pressure_flag, 0);

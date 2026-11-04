@@ -2163,25 +2163,9 @@ mod tests {
             .remove(0)
             .page
             .svg;
-        if let Some(directory) = std::env::var_os("SDOCX_SIMPLEBRUSH_EXPORT_DIR") {
-            let directory = std::path::Path::new(&directory);
-            std::fs::create_dir_all(directory).unwrap();
-            for (name, source) in [
-                ("candidate", &svg),
-                ("fallback", &fallback),
-                ("profiled", &profiled),
-            ] {
-                let page = crate::RenderedPage::new(0, 1920, 1080, source.clone());
-                let pdf = crate::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
-                use std::io::Write as _;
-                let path = directory.join(format!("{name}-{size}-{four}-{alt}-{six}-{probe}.pdf"));
-                let mut file = std::fs::OpenOptions::new()
-                    .write(true)
-                    .create_new(true)
-                    .open(path)
-                    .unwrap();
-                file.write_all(&pdf).unwrap();
-            }
+        for source in [&svg, &fallback, &profiled] {
+            let page = crate::RenderedPage::new(0, 1920, 1080, source.clone());
+            crate::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
         }
         let raster = |source: &str| {
             let tree =
