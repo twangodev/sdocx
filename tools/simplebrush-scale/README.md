@@ -1,6 +1,6 @@
 # SimpleBrush 2× host control
 
-The experimental public-export generator and replay callers have been retired. Export hashes and external SVG/PDF reader measurements below are historical observations, not current reproduction instructions or full source/build attestations. Native capture commands, inputs and receipts remain retained.
+The experimental public-export generator, comparators and replay callers have been retired. Export hashes and external SVG/PDF reader measurements below are historical observations, not current reproduction instructions or full source/build attestations. Native capture commands, inputs and receipts remain retained.
 
 The native control requires the local pinned Samsung libraries, Unicorn runtime,
 Mesa adapter, and ignored scratch scripts identified in the receipt. It is not a
@@ -15,10 +15,10 @@ The wrapper writes a complete host frame next to the requested receipt, under
 other control names are `clipped8` and `reverse20`. Local tools and Mesa versions
 can affect pixels.
 
-The historical comparator required resvg 0.45.1 and MuPDF 1.28.2, validates the retained crop hash,
-and checks SVG alpha and direct-PDF RGB over the matched rendered blank page.
+The historical comparator required resvg 0.45.1 and MuPDF 1.28.2, validated the retained crop hash,
+and checked SVG alpha and direct-PDF RGB over the matched rendered blank page.
 Source, paint runner, and SimpleBrush DSO hashes are checked; dynamically loaded
-helper and renderer inputs are not all independently pinned. It writes a
+helper and renderer inputs are not all independently pinned. It wrote a
 transient SVG and PNG to the supplied export directory. It does not establish
 arbitrary scale, transforms, device rendering, or saved-note parity.
 

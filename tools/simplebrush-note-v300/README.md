@@ -17,4 +17,4 @@ CASE=short POINT_COUNT=57 PROBE_SIZE=8 python3 tools/simplebrush-note-v300/captu
 
 For short12 use `PROBE_SIZE=12`. Boundary controls use `CASE=1.4999961853027344`, `1.5`, or `1.5000038146972656`; each ends with a duplicate point. Use `CASE=two-short` for the two-point control and `CASE=short-terminal` for the nonduplicate terminal. Tool-2 full note input uses `--tool 2` without `CASE`. The script writes native framebuffer bytes under `captures`; compressed three painted control frames remain beside this README. It validates selected capture inputs and GL errors but does not pin all host dependencies.
 
-  The PDF comparator uses blank-paper composition; retained comparison outputs are not native PDF exports.
+  The historical PDF comparator used blank-paper composition; retained comparison outputs are not native PDF exports.
