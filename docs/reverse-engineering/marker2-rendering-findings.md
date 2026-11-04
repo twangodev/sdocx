@@ -294,21 +294,48 @@ captures a 2× alpha 128 drawable over an opaque background, then repeats the
 same draw. Output remains opaque; rounded-alpha source-over differs by at most
 one RGB byte per channel (56 channels on the first draw, 60 on the second).
 Exact rounding and separately constructed overlapping strokes remain unverified.
-The local capture recipe is `tmp/vector-parity-plan/marker2-empty-paint-scale2/background-control.py`.
+Native acquisition used a project-local capture harness; these retained frames
+do not provide clean-checkout native recapture.
 
 Using captured masks, aligned pixel paths reproduced all 20 transparent crops
 exactly with resvg 0.45.1; direct PDF rectangles rendered by PDFium 150 differed
 by at most one RGB byte from those crops composited over white
-(`scratch/marker2-thin-scale-control/{svg,pdf}-pixel-check.py`). These checks
+in historical pixel-path diagnostics. These checks
 use one path per nonzero pixel at the captured grid, not generated stroke masks
 or an integrated exporter.
 
 An [independent synthetic curve](../../conformance/marker2-independent-curve-host-control.json)
 matched the bounded raster model at widths 1–3 and scales 1.5× and 2×. Its
 standalone SVG matched native transparent composites in resvg; PDFium over white
-differed by at most one RGB level. [Scripts](../../scratch/marker2-thin-scale-control/)
-reproduce the controls. These host-Mesa results do not establish public-export or
-device parity; enlarging the raster produces pixelation.
+differed by at most one RGB level. These are historical host-Mesa measurements, not public-export or device
+parity; enlarging the raster produces pixelation.
 
 These controls do not establish direct PDF public export, Android device, or arbitrary
 viewer-scale parity; the finite model is not production paint.
+
+
+## Bounded 2× approximation
+
+`RenderOptions::marker2_output_scale = Some(2)` selects a bounded approximation
+for eligible width-2 and width-3 sources with at least two points, non-null empty
+settings, tool 2, compressed curves, stroke type 0 and finite coordinates within
+±256. Width 2 uses a 0.5 fringe and width 3 uses 0.2. The caller must assert an
+axis-aligned two-pixels-per-page-unit output grid; this option does not apply
+that transform. A shared 65,536-vertex page budget provides atomic fallback.
+Replay, slices and unsupported inputs retain the default renderer.
+
+[Maintained validation](../../tools/marker2-public/README.md) reconstructs paired
+strokes for both widths and verifies native frame hashes and independent
+lifecycle provenance. The Rust regression checks aggregate RGB improvement in
+resvg; separate guard tests cover admission, ordering and budget behavior,
+including direct PDF operators. MuPDF and PDFium pixel measurements are
+historical evidence, not rerun by these tests.
+
+The historical width-3 control regressed in PDFium with a 0.5 fringe, motivating
+the separate width constants. Experimental exporters, patches and generated
+reports were retired. The retained controls use synthetic native objects,
+explicit host bridges and Mesa. Other trajectories, colors, backgrounds, phases
+and transforms remain extrapolations; device and complete saved-page fidelity
+are unverified. Native recapture requires the capture runner's manifest-pinned
+local libraries and helpers, which are not bundled; Rust replay uses retained
+inputs and frames.
