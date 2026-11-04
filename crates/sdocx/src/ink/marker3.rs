@@ -692,12 +692,46 @@ mod tests {
 
     #[test]
     fn size_nine_note_derived_native_vector() {
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+
         let case: serde_json::Value = serde_json::from_str(include_str!(
             "../../../../conformance/marker3-size9-note-derived-native.json"
         ))
         .unwrap();
         let stroke = caller_stroke(&case);
         assert_caller_xy_matches(&prepare_for_page(&stroke).unwrap(), &case);
+        let receipt: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../tools/marker3-size9-note-derived/native-receipt.json"
+        ))
+        .unwrap();
+        for (scale, compressed) in [
+            (
+                "1",
+                include_bytes!("../../../../tools/marker3-size9-note-derived/note1.rgba.zlib")
+                    .as_slice(),
+            ),
+            (
+                "2",
+                include_bytes!("../../../../tools/marker3-size9-note-derived/note2.rgba.zlib")
+                    .as_slice(),
+            ),
+            (
+                "4",
+                include_bytes!("../../../../tools/marker3-size9-note-derived/note4.rgba.zlib")
+                    .as_slice(),
+            ),
+        ] {
+            let mut frame = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed)
+                .read_to_end(&mut frame)
+                .unwrap();
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&frame)),
+                receipt[scale]["rgba_sha256"].as_str().unwrap(),
+                "scale {scale}"
+            );
+        }
     }
 
     #[test]

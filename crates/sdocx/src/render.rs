@@ -21555,6 +21555,37 @@ mod tests {
     #[cfg(feature = "pdf")]
     #[test]
     fn inkpen2_half_grid_mixed_order_exports() {
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+
+        for (compressed, expected) in [
+            (
+                &include_bytes!(
+                    "../../../tools/inkpen2-v1-tablet-half/mixed-scene-order-before.rgba.zlib"
+                )[..],
+                "ef2d94b172caedab5d4047969a2e74fc71c95a8351e718c1c62cf6d22020576a",
+            ),
+            (
+                &include_bytes!(
+                    "../../../tools/inkpen2-v1-tablet-half/mixed-scene-order-line.rgba.zlib"
+                )[..],
+                "5dcb9735e677eafac26f0c4a03c1fab2e2d0f29b602ea98fe2f2da7ccac5bf8a",
+            ),
+            (
+                &include_bytes!(
+                    "../../../tools/inkpen2-v1-tablet-half/mixed-scene-order-final.rgba.zlib"
+                )[..],
+                "77fb3c431261e44d9608c744fe2a09caf0267bb80dda26bd40725d721b7d2234",
+            ),
+        ] {
+            let mut frame = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed)
+                .read_to_end(&mut frame)
+                .unwrap();
+            assert_eq!(frame.len(), 64 * 48 * 4);
+            assert_eq!(format!("{:x}", Sha256::digest(&frame)), expected);
+        }
+
         let mut strokes = Vec::new();
         for (dx, dy) in [(0., 0.), (4., 2.)] {
             let mut stroke = inkpen2_color_stroke(0xffff0000, None);

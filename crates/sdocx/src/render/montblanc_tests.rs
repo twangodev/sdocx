@@ -6,6 +6,83 @@ use crate::{
     StrokeStyle,
 };
 
+// Historical diagnostic receipts only: this does not rerun external PDF readers.
+#[test]
+fn wide_size_diagnostic_retained_receipts() {
+    use base64::Engine;
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+
+    let native: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/montblanc/wide-v275/native.json"
+    ))
+    .unwrap();
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/montblanc/wide-v275/export-receipt.json"
+    ))
+    .unwrap();
+    assert_eq!(native["input"]["pen_size"], 2.4);
+    assert_eq!(native["input"]["points"].as_array().unwrap().len(), 10);
+    assert_eq!(native["stream"].as_array().unwrap().len(), 53);
+    for (scale, capture) in [
+        (
+            1,
+            include_str!("../../../../tools/montblanc/wide-v275/capture-1.json"),
+        ),
+        (
+            2,
+            include_str!("../../../../tools/montblanc/wide-v275/capture-2.json"),
+        ),
+    ] {
+        let capture: serde_json::Value = serde_json::from_str(capture).unwrap();
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(
+                capture["post_readback"]["rgba8_zlib_base64"]
+                    .as_str()
+                    .unwrap(),
+            )
+            .unwrap();
+        let mut frame = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut frame)
+            .unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&frame)),
+            capture["post_readback"]["sha256"]
+        );
+        let case = &receipt["cases"][format!("zigzag-2.4-{scale}")];
+        assert_eq!(case["input"], native["input"]);
+        assert_eq!(case["frame_sha256"], capture["post_readback"]["sha256"]);
+        for reader in ["svg", "pdf", "pdfium"] {
+            let baseline = case["metrics"]["baseline"][reader]
+                .as_array()
+                .unwrap()
+                .last()
+                .unwrap()
+                .as_u64()
+                .unwrap();
+            let candidate = case["metrics"]["candidate"][reader]
+                .as_array()
+                .unwrap()
+                .last()
+                .unwrap()
+                .as_u64()
+                .unwrap();
+            if scale == 1 {
+                assert!(candidate < baseline, "{reader}");
+            } else {
+                assert_eq!(candidate, baseline, "{reader}");
+            }
+        }
+        if scale == 2 {
+            assert_eq!(
+                case["metrics"]["candidate"]["artifacts"],
+                case["metrics"]["baseline"]["artifacts"]
+            );
+        }
+    }
+}
+
 fn source(points: &[[f32; 2]], pressure: &[f32]) -> Stroke {
     Stroke {
         rendering: Some(StrokeRendering {
