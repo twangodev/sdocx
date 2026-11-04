@@ -182,17 +182,6 @@ fn native_mask_pdf_rows_reverse_captured_gl_rows_once() {
     assert_eq!(reverse_r8_rows(&gl_bottom_up, 3, 2), [4, 5, 6, 1, 2, 3]);
 }
 
-fn write_new_file(path: &std::path::Path, bytes: &[u8]) {
-    use std::{fs::OpenOptions, io::Write};
-
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)
-        .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
-    file.write_all(bytes).unwrap();
-}
-
 fn reverse_r8_rows(samples: &[u8], width: usize, height: usize) -> Vec<u8> {
     assert_eq!(samples.len(), width * height);
     let mut output = Vec::with_capacity(samples.len());
@@ -267,484 +256,152 @@ fn native_mask_form_ids(document: &Document) -> (ObjectId, ObjectId) {
     (mask_id, outers[0])
 }
 
-fn expand_native_mask_bboxes_for_test(
-    bytes: &[u8],
-    bounds: BoundingBox,
-    expand_mask: bool,
-    expand_outer: bool,
-) -> Vec<u8> {
-    assert!(expand_mask || expand_outer);
-    let mut document = Document::load_mem(bytes).unwrap();
-    let (mask_id, outer_id) = native_mask_form_ids(&document);
-    let dx = 1.0 / (bounds.x_max - bounds.x_min);
-    let dy = 1.0 / (bounds.y_max - bounds.y_min);
-    for (object_id, expand) in [(mask_id, expand_mask), (outer_id, expand_outer)] {
-        if !expand {
-            continue;
-        }
-        let stream = document
-            .get_object_mut(object_id)
-            .unwrap()
-            .as_stream_mut()
-            .unwrap();
-        let bbox = stream
-            .dict
-            .get_mut(b"BBox")
-            .unwrap()
-            .as_array_mut()
-            .unwrap();
-        assert_eq!(bbox.len(), 4);
-        assert_eq!(bbox[0].as_float().unwrap(), 0.0);
-        assert_eq!(bbox[1].as_float().unwrap(), 0.0);
-        assert_eq!(bbox[2].as_float().unwrap(), 1.0);
-        assert_eq!(bbox[3].as_float().unwrap(), 1.0);
-        *bbox = vec![
-            Object::Real(-dx as f32),
-            Object::Real(-dy as f32),
-            Object::Real((1.0 + dx) as f32),
-            Object::Real((1.0 + dy) as f32),
-        ];
-    }
-    let mut output = Vec::new();
-    document.save_to(&mut output).unwrap();
-    output
-}
-
-fn replace_native_mask_outer_shading_with_fill_for_test(bytes: &[u8]) -> Vec<u8> {
-    let mut document = Document::load_mem(bytes).unwrap();
-    let (_, outer_id) = native_mask_form_ids(&document);
-    let stream = document
-        .get_object_mut(outer_id)
-        .unwrap()
-        .as_stream_mut()
-        .unwrap();
-    stream.decompress().unwrap();
-    assert_eq!(stream.content, b"/GS gs\n/C sh");
-    stream.set_content(b"/GS gs\n0 0 0 rg\n0 0 1 1 re f".to_vec());
-    stream.compress().unwrap();
-    let mut output = Vec::new();
-    document.save_to(&mut output).unwrap();
-    output
-}
-
-/// Opt-in artifact writer consumed by the paired MuPDF/PDFium reader
-/// harness. It routes the paired programs through production marker/Form
-/// plumbing and emits separate mask-only diagnostic controls.
+// Capture metadata beyond the retained VBO/R8 planes remains historical.
 #[test]
-#[ignore = "writes paired experiment PDFs when SDOCX_INKPEN2_QUANT_ARTIFACT_DIR is set"]
-fn write_inkpen2_quantization_pdf_pairs() {
-    use serde_json::{Value, json};
-    use std::path::PathBuf;
+fn native_r8_mask_and_quantized_programs_preserve_pdf_transport() {
+    use base64::Engine as _;
+    use std::io::Read;
 
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../conformance/inkpen2-max-mask-native.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["schema"], "sdocx-inkpen2-native-max-mask-v1");
+    let producer = &fixture["producer"];
+    let vbo = decode_hex(
+        producer["native_AddPoint_vector_bytes_hex"]
+            .as_str()
+            .unwrap(),
+    );
+    assert_eq!(vbo.len(), 900);
+    assert_eq!(producer["byte_count"], 900);
+    assert_eq!(producer["record_count"], 25);
+    let digest = sha256_hex(&vbo);
     assert_eq!(
-        sha256_hex(include_bytes!("radial_artifact_tests.rs")),
-        super::RADIAL_ARTIFACT_TEST_MODULE_SHA256,
-        "artifact writer source differs from the pinned test-module provenance"
+        digest,
+        "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987"
     );
-
-    let output_dir = std::env::var_os("SDOCX_INKPEN2_QUANT_ARTIFACT_DIR")
-        .expect("set SDOCX_INKPEN2_QUANT_ARTIFACT_DIR to an output directory");
-    let output_dir = PathBuf::from(output_dir);
-    std::fs::create_dir_all(&output_dir).unwrap();
-    assert!(
-        std::fs::read_dir(&output_dir).unwrap().next().is_none(),
-        "artifact output directory must be empty; use a fresh path"
-    );
-    let capture_dir = std::env::var_os("SDOCX_INKPEN2_CAPTURE_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../..")
-                .join("tmp/vector-parity-plan/inkpen2-rainbow-paint/captures")
-        });
-    let cases = [
-        ("scale1_aa1_alpha128", 1.0_f32, 128_u8),
-        ("scale1_aa1_alpha255", 1.0, 255),
-        ("scale2_aa1_alpha128", 2.0, 128),
-        ("scale2_aa1_alpha255", 2.0, 255),
-        ("scale4_aa1_alpha128", 4.0, 128),
-        ("scale4_aa1_alpha255", 4.0, 255),
-    ];
-    let mut manifest_cases = Vec::new();
-    for (case_id, scale, alpha_byte) in cases {
-        let capture_path = capture_dir.join(format!("{case_id}.json"));
-        let capture_bytes = std::fs::read(&capture_path)
-            .unwrap_or_else(|error| panic!("{}: {error}", capture_path.display()));
-        let capture: Value = serde_json::from_slice(&capture_bytes).unwrap();
-        let producer = &capture["joined_native_paint"]["producer"];
-        let vbo = decode_hex(
-            producer["native_AddPoint_vector_bytes_hex"]
-                .as_str()
-                .expect("captured VBO bytes"),
-        );
-        let vbo_sha256 = sha256_hex(&vbo);
-        assert_eq!(vbo.len(), 25 * 9 * 4);
-        assert_eq!(
-            vbo_sha256,
-            "570044bb059690f865cfa6f4f99c8ba7801573144242ee0913654973b0d0e987"
-        );
-        assert_eq!(producer["sha256"].as_str(), Some(vbo_sha256.as_str()));
-        assert_eq!(
-            capture["input"]["color_argb_u32"].as_u64().unwrap() >> 24,
-            u64::from(alpha_byte)
-        );
-        let target =
-            &capture["joined_native_paint"]["paint"]["readback"]["attachment"]["texture_level0"];
-        assert_eq!(target["width"].as_u64(), Some(128));
-        assert_eq!(target["height"].as_u64(), Some(96));
-        assert_eq!(target["internal_format"].as_u64(), Some(32856));
-        let stages = capture["joined_native_paint"]["native_stage_readbacks_before_invalidate"]
-            .as_array()
-            .expect("native M/C/final readbacks");
-        assert_eq!(stages.len(), 3);
-        let native_stage_rgba = decode_hex(
-            stages[0]["rgba_bytes_hex"]
-                .as_str()
-                .expect("native R8 stage readback bytes"),
-        );
-        assert_eq!(native_stage_rgba.len(), 128 * 96 * 4);
-        let stage_rgba_hash = sha256_hex(&native_stage_rgba);
-        assert_eq!(
-            Some(stage_rgba_hash.as_str()),
-            stages[0]["rgba_sha256"].as_str()
-        );
-        let mut native_m = Vec::with_capacity(128 * 96);
-        for pixel in native_stage_rgba.as_chunks::<4>().0 {
-            assert_eq!(&pixel[1..], &[0, 0, 255], "R8 M readback expansion");
-            native_m.push(pixel[0]);
-        }
-        let native_m_sha256 = sha256_hex(&native_m);
+    assert_eq!(producer["sha256"].as_str(), Some(digest.as_str()));
+    let captures = fixture["captures"].as_array().unwrap();
+    assert_eq!(captures.len(), 6);
+    assert_eq!(fixture["planes_by_scale"].as_object().unwrap().len(), 3);
+    for scale in [1, 2, 4] {
+        let plane = &fixture["planes_by_scale"][scale.to_string()];
+        assert_eq!(plane["width"], 128);
+        assert_eq!(plane["height"], 96);
+        assert_eq!(plane["internal_format"], 33321);
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(plane["red_zlib_base64"].as_str().unwrap())
+            .unwrap();
+        let mut native_m = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut native_m)
+            .unwrap();
+        assert_eq!(native_m.len(), 128 * 96);
+        let rgba: Vec<u8> = native_m.iter().flat_map(|&r| [r, 0, 0, 255]).collect();
+        let rgba_hash = sha256_hex(&rgba);
+        let red_hash = sha256_hex(&native_m);
+        assert_eq!(plane["rgba_sha256"].as_str(), Some(rgba_hash.as_str()));
         let pdf_mask = reverse_r8_rows(&native_m, 128, 96);
-        let raw_mask_sha256 = sha256_hex(&pdf_mask);
-        let expected_formats = [33321_u64, 32856, 32856];
-        let mut stage_textures = std::collections::HashSet::new();
-        let mut stage_hashes = Vec::new();
-        for (stage, expected_format) in stages.iter().zip(expected_formats) {
-            let texture = stage["attachment_texture"]
-                .as_u64()
-                .expect("stage attachment texture id");
-            assert!(stage_textures.insert(texture));
-            assert_eq!(stage["texture_level0"]["width"].as_u64(), Some(128));
-            assert_eq!(stage["texture_level0"]["height"].as_u64(), Some(96));
-            assert_eq!(
-                stage["texture_level0"]["internal_format"].as_u64(),
-                Some(expected_format)
-            );
-            stage_hashes.push(
-                stage["rgba_sha256"]
-                    .as_str()
-                    .expect("stage readback hash")
-                    .to_owned(),
-            );
-        }
-        assert_eq!(stage_textures.len(), 3);
-
-        let gl_records = captured_radial_records(&vbo, scale);
-        // Captures are GL-up. The production radial compiler consumes
-        // page y-down source records; reflect against the full captured
-        // target, then compute the marker bounds in that coordinate space.
-        let records = gl_up_records_to_svg_down(&gl_records, 96.0);
+        assert_eq!(reverse_r8_rows(&pdf_mask, 128, 96), native_m);
+        let records = gl_up_records_to_svg_down(&captured_radial_records(&vbo, scale as f32), 96.0);
         let bounds = radial_bounds(&records);
-        let saved_alpha = f32::from(alpha_byte) / 255.0;
-        let marker_id = 0x4950_5141_0000_0001;
-        let baseline_field = PdfInkField::radial(
-            marker_id,
-            &records,
-            saved_alpha,
-            PdfRadialCoverage::EnhancedMax,
-            bounds,
-        );
-        let candidate_field = PdfInkField::radial(
-            marker_id,
-            &records,
-            saved_alpha,
-            PdfRadialCoverage::EnhancedMax,
-            bounds,
-        );
         let bounds_array = [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max];
-        let baseline_program = radial::compile(
-            &records,
-            bounds_array,
-            saved_alpha,
-            PdfRadialCoverage::EnhancedMax,
-        )
-        .unwrap();
-        let candidate_program = radial::compile_per_draw_rgba8_for_test(
-            &records,
-            bounds_array,
-            saved_alpha,
-            PdfRadialCoverage::EnhancedMax,
-        )
-        .unwrap();
-        assert_eq!(baseline_program.mask, candidate_program.mask);
-
-        let source_pdf = marker_pdf_with_bounds(marker_id, false, bounds, 128.0, 96.0, saved_alpha);
-        let baseline = replace_markers(&source_pdf, &[baseline_field]).unwrap();
-        let candidate =
-            replace_markers_per_draw_rgba8_for_test(&source_pdf, &[candidate_field]).unwrap();
-        let expanded_bounds = expand_source_bounds_by_page_points(bounds, 1.0);
-        let expanded_bounds_array = [
-            expanded_bounds.x_min,
-            expanded_bounds.y_min,
-            expanded_bounds.x_max,
-            expanded_bounds.y_max,
-        ];
-        let expanded_program = radial::compile(
-            &records,
-            expanded_bounds_array,
-            saved_alpha,
-            PdfRadialCoverage::EnhancedMax,
-        )
-        .unwrap();
-        let expanded_source_pdf =
-            marker_pdf_with_bounds(marker_id, false, expanded_bounds, 128.0, 96.0, saved_alpha);
-        let expanded_vector_pdf = replace_markers(
-            &expanded_source_pdf,
-            &[PdfInkField::radial(
-                marker_id,
+        for alpha in [128_u8, 255] {
+            let id = format!("scale{scale}_aa1_alpha{alpha}");
+            let matching: Vec<_> = captures
+                .iter()
+                .filter(|row| row["id"].as_str() == Some(id.as_str()))
+                .collect();
+            assert_eq!(matching.len(), 1);
+            let capture = matching[0];
+            assert_eq!(capture["scale"], scale);
+            assert_eq!(
+                capture["stage0_rgba_sha256"].as_str(),
+                Some(rgba_hash.as_str())
+            );
+            assert_eq!(
+                capture["stage0_red_sha256"].as_str(),
+                Some(red_hash.as_str())
+            );
+            let saved_alpha = f32::from(alpha) / 255.0;
+            let baseline = radial::compile(
                 &records,
+                bounds_array,
                 saved_alpha,
                 PdfRadialCoverage::EnhancedMax,
-                expanded_bounds,
-            )],
-        )
-        .unwrap();
-        let baseline_name = format!("{case_id}.baseline.pdf");
-        let candidate_name = format!("{case_id}.quantized.pdf");
-        write_new_file(&output_dir.join(&baseline_name), &baseline);
-        write_new_file(&output_dir.join(&candidate_name), &candidate);
-        let expanded_bounds_name = format!("{case_id}.expanded-source-bounds.pdf");
-        write_new_file(
-            &output_dir.join(&expanded_bounds_name),
-            &expanded_vector_pdf,
-        );
-        let native_mask_pdf = replace_markers_with_mask_for_test(
-            &source_pdf,
-            &[PdfInkField::radial(
-                marker_id,
+            )
+            .unwrap();
+            let quantized = radial::compile_per_draw_rgba8_for_test(
+                &records,
+                bounds_array,
+                saved_alpha,
+                PdfRadialCoverage::EnhancedMax,
+            )
+            .unwrap();
+            assert_eq!(baseline.mask, quantized.mask);
+            let marker = 0x4950_5141_0000_0001;
+            let field = PdfInkField::radial(
+                marker,
                 &records,
                 saved_alpha,
                 PdfRadialCoverage::EnhancedMax,
                 bounds,
-            )],
-            RadialMaskOverride::NativeGrayImage(pdf_mask),
-        )
-        .unwrap();
-        let opaque_mask_pdf = replace_markers_with_mask_for_test(
-            &source_pdf,
-            &[PdfInkField::radial(
-                marker_id,
-                &records,
-                saved_alpha,
-                PdfRadialCoverage::EnhancedMax,
-                bounds,
-            )],
-            RadialMaskOverride::Opaque,
-        )
-        .unwrap();
-        let native_mask_name = format!("{case_id}.native-m-image.pdf");
-        let opaque_mask_name = format!("{case_id}.opaque-mask.pdf");
-        write_new_file(&output_dir.join(&native_mask_name), &native_mask_pdf);
-        write_new_file(&output_dir.join(&opaque_mask_name), &opaque_mask_pdf);
-        let mut bbox_controls = Vec::new();
-        if scale >= 2.0 {
-            let dx = 1.0 / (bounds.x_max - bounds.x_min);
-            let dy = 1.0 / (bounds.y_max - bounds.y_min);
-            for (suffix, expanded_form, expand_mask, expand_outer) in [
-                ("mask-bbox-plus1", "mask", true, false),
-                ("outer-bbox-plus1", "outer", false, true),
-                ("both-bbox-plus1", "both", true, true),
+            );
+            let fields = [field];
+            let source = marker_pdf_with_bounds(marker, false, bounds, 128.0, 96.0, saved_alpha);
+            let baseline_pdf = replace_markers(&source, &fields).unwrap();
+            let quantized_pdf = replace_markers_per_draw_rgba8_for_test(&source, &fields).unwrap();
+            let native_pdf = replace_markers_with_mask_for_test(
+                &source,
+                &fields,
+                RadialMaskOverride::NativeGrayImage(pdf_mask.clone()),
+            )
+            .unwrap();
+            let opaque_pdf =
+                replace_markers_with_mask_for_test(&source, &fields, RadialMaskOverride::Opaque)
+                    .unwrap();
+            for (bytes, expected_images) in [
+                (&baseline_pdf, 0),
+                (&quantized_pdf, 0),
+                (&native_pdf, 1),
+                (&opaque_pdf, 0),
             ] {
-                let diagnostic_pdf = expand_native_mask_bboxes_for_test(
-                    &native_mask_pdf,
-                    bounds,
-                    expand_mask,
-                    expand_outer,
-                );
-                let name = format!("{case_id}.{suffix}.pdf");
-                write_new_file(&output_dir.join(&name), &diagnostic_pdf);
-                let expected_bbox = |expand: bool| {
-                    if expand {
-                        [
-                            -dx as f32 as f64,
-                            -dy as f32 as f64,
-                            (1.0 + dx) as f32 as f64,
-                            (1.0 + dy) as f32 as f64,
-                        ]
-                    } else {
-                        [0.0, 0.0, 1.0, 1.0]
-                    }
-                };
-                bbox_controls.push(json!({
-                    "expanded_form": expanded_form,
-                    "expansion_sides": "outward on all four sides",
-                    "path": name,
-                    "sha256": sha256_hex(&diagnostic_pdf),
-                    "baseline_native_m_image_pdf": {
-                        "path": native_mask_name.clone(),
-                        "sha256": sha256_hex(&native_mask_pdf)
-                    },
-                    "mask_form_graph_path": "outer Form /Resources /ExtGState /GS -> state /SMask /G; mask Form /Resources /XObject /M -> Image",
-                    "outer_form_graph_path": "marker-replaced radial Form /Resources /ExtGState /GS; its state /SMask /G references the selected mask Form",
-                    "mask_bbox_before": [0, 0, 1, 1],
-                    "mask_bbox_after": expected_bbox(expand_mask),
-                    "outer_form_bbox_before": [0, 0, 1, 1],
-                    "outer_form_bbox_after": expected_bbox(expand_outer),
-                    "device_pixel_expansion": 1,
-                    "mask_bbox_delta_form_units": if expand_mask { [dx, dy] } else { [0.0, 0.0] },
-                    "outer_form_bbox_delta_form_units": if expand_outer { [dx, dy] } else { [0.0, 0.0] },
-                    "image_unit_to_mask_form_unit_ctm": native_mask_image_to_field_matrix(bounds).unwrap(),
-                    "raw_mask_sha256": raw_mask_sha256,
-                    "rgb_program_sha256": sha256_hex(&baseline_program.rgb),
-                    "outer_opacity": saved_alpha,
-                    "page": [128, 96],
-                    "image_count": 1
-                }));
-            }
-        }
-        let solid_outer_fill = if scale >= 2.0 {
-            let solid_pdf = replace_native_mask_outer_shading_with_fill_for_test(&native_mask_pdf);
-            let name = format!("{case_id}.solid-outer-fill.pdf");
-            write_new_file(&output_dir.join(&name), &solid_pdf);
-            Some(json!({
-                "path": name,
-                "sha256": sha256_hex(&solid_pdf),
-                "baseline_native_m_image_pdf": {
-                    "path": native_mask_name.clone(),
-                    "sha256": sha256_hex(&native_mask_pdf)
-                },
-                "outer_content_before": "/GS gs\n/C sh",
-                "outer_content_before_sha256": sha256_hex(b"/GS gs\n/C sh"),
-                "outer_content_after": "/GS gs\n0 0 0 rg\n0 0 1 1 re f",
-                "outer_content_after_sha256": sha256_hex(b"/GS gs\n0 0 0 rg\n0 0 1 1 re f"),
-                "rgb_program_sha256": sha256_hex(&baseline_program.rgb),
-                "raw_mask_sha256": raw_mask_sha256,
-                "outer_opacity": saved_alpha,
-                "page": [128, 96],
-                "image_count": 1,
-                "alpha_diagnostic_only": true,
-                "rgb_comparable": false
-            }))
-        } else {
-            None
-        };
-        let mut case_manifest = json!({
-            "case_id": case_id,
-            "scale": scale,
-            "alpha": alpha_byte,
-            "coverage": "EnhancedMax",
-            "outer_opacity": saved_alpha,
-            "source_y_conversion": "captured GL-up centers reflected about full 96px page height before marker bounds and compiler PDF flip",
-            "native_capture_sha256": sha256_hex(&capture_bytes),
-            "native_vbo_sha256": vbo_sha256,
-            "native_stage_sha256": stage_hashes,
-            "bounds": [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max],
-            "page": [128, 96],
-            "pdfs": {
-                "baseline": {"path": baseline_name, "sha256": sha256_hex(&baseline)},
-                "quantized": {"path": candidate_name, "sha256": sha256_hex(&candidate)},
-            },
-            "program_sha256": {
-                "baseline": {
-                    "rgb": sha256_hex(&baseline_program.rgb),
-                    "mask": sha256_hex(&baseline_program.mask),
-                },
-                "quantized": {
-                    "rgb": sha256_hex(&candidate_program.rgb),
-                    "mask": sha256_hex(&candidate_program.mask),
-                },
-            },
-            "mask_controls": {
-                "native_m_image": {
-                    "path": native_mask_name,
-                    "sha256": sha256_hex(&native_mask_pdf),
-                    "native_m_sha256": native_m_sha256,
-                    "raw_mask_sha256": raw_mask_sha256,
-                    "raw_mask_orientation": "PDF top-down rows; captured GL bottom-up R8 rows reversed once",
-                    "width": 128,
-                    "height": 96,
-                    "bits_per_component": 8,
-                    "colorspace": "DeviceGray",
-                    "interpolate": false,
-                    "image_count": 1,
-                    "page": [128, 96],
-                    "outer_opacity": saved_alpha,
-                    "rgb_program_sha256": sha256_hex(&baseline_program.rgb),
-                    "image_unit_to_mask_form_unit_ctm": native_mask_image_to_field_matrix(bounds).unwrap(),
-                },
-                "opaque_mask": {
-                    "path": opaque_mask_name,
-                    "sha256": sha256_hex(&opaque_mask_pdf),
-                    "mask_program_sha256": sha256_hex(b"{ 1 }"),
-                    "image_count": 0,
-                    "page": [128, 96],
-                    "outer_opacity": saved_alpha,
-                    "rgb_program_sha256": sha256_hex(&baseline_program.rgb),
+                let document = Document::load_mem(bytes).unwrap();
+                assert_eq!(document.get_pages().len(), 1);
+                let images: Vec<_> = document
+                    .objects
+                    .values()
+                    .filter_map(|object| object.as_stream().ok())
+                    .filter(|stream| {
+                        stream
+                            .dict
+                            .get(b"Subtype")
+                            .and_then(Object::as_name)
+                            .is_ok_and(|name| name == b"Image")
+                    })
+                    .collect();
+                assert_eq!(images.len(), expected_images);
+                if expected_images == 1 {
+                    native_mask_form_ids(&document);
+                    let image = images[0];
+                    assert_eq!(
+                        image.dict.get(b"ColorSpace").unwrap().as_name().unwrap(),
+                        b"DeviceGray"
+                    );
+                    assert_eq!(
+                        image
+                            .dict
+                            .get(b"BitsPerComponent")
+                            .unwrap()
+                            .as_i64()
+                            .unwrap(),
+                        8
+                    );
+                    let decoded = image.decompressed_content().unwrap();
+                    assert_eq!(decoded, pdf_mask);
                 }
             }
-        });
-        case_manifest["expanded_source_bounds"] = json!({
-            "path": expanded_bounds_name,
-            "sha256": sha256_hex(&expanded_vector_pdf),
-            "baseline_vector_pdf": {
-                "path": baseline_name,
-                "sha256": sha256_hex(&baseline)
-            },
-            "original_bounds_source_y_down": [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max],
-            "expanded_bounds_source_y_down": [
-                expanded_bounds.x_min,
-                expanded_bounds.y_min,
-                expanded_bounds.x_max,
-                expanded_bounds.y_max
-            ],
-            "expansion_source_y_down_page_points": [1, 1],
-            "page_points_per_output_pixel": 1,
-            "unchanged_records_sha256": vbo_sha256,
-            "marker_page_rect_source_y_down_points": [
-                expanded_bounds.x_min,
-                expanded_bounds.y_min,
-                expanded_bounds.x_max - expanded_bounds.x_min,
-                expanded_bounds.y_max - expanded_bounds.y_min
-            ],
-            "marker_source_transform_xy": [1, 0, 0, 1, expanded_bounds.x_min, expanded_bounds.y_min],
-            "form_bbox": [0, 0, 1, 1],
-            "outer_opacity": saved_alpha,
-            "page": [128, 96],
-            "image_count": 0,
-            "program_sha256": {
-                "rgb": sha256_hex(&expanded_program.rgb),
-                "mask": sha256_hex(&expanded_program.mask)
-            },
-            "baseline_program_sha256": {
-                "rgb": sha256_hex(&baseline_program.rgb),
-                "mask": sha256_hex(&baseline_program.mask)
-            },
-            "page_geometry_invariant": "same centers/radii in page coordinates; normalized under expanded bounds then mapped by the matching expanded marker rectangle",
-            "reader_scope": "compare all 128x96 premultiplied RGBA samples; no phase fit"
-        });
-        if !bbox_controls.is_empty() {
-            case_manifest["bbox_controls"] = json!(bbox_controls);
         }
-        if let Some(solid_outer_fill) = solid_outer_fill {
-            case_manifest["solid_outer_fill"] = solid_outer_fill;
-        }
-        manifest_cases.push(case_manifest);
     }
-    let manifest = json!({
-        "schema": "sdocx-inkpen2-radial-rgb-quant-pair-v1",
-        "policy": "test-only half-up per-draw RGBA8 RGB recurrence; production remains continuous",
-        "mask_diagnostics": "optional native DeviceGray image and opaque luminosity-mask controls; diagnostic only",
-        "radial_source_sha256": sha256_hex(include_bytes!("radial.rs")),
-        "writer_provenance": {
-            "test_module_path": "crates/sdocx/src/pdf/ink_field/radial_artifact_tests.rs",
-            "test_module_sha256": super::RADIAL_ARTIFACT_TEST_MODULE_SHA256,
-            "test_filter": "pdf::ink_field::radial_artifact_tests::write_inkpen2_quantization_pdf_pairs",
-            "command": "cargo test -p sdocx --features pdf --lib pdf::ink_field::radial_artifact_tests::write_inkpen2_quantization_pdf_pairs -- --ignored --exact"
-        },
-        "cases": manifest_cases,
-    });
-    write_new_file(
-        &output_dir.join("manifest.json"),
-        &serde_json::to_vec_pretty(&manifest).unwrap(),
-    );
 }

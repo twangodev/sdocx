@@ -26,10 +26,6 @@ mod radial_artifact_tests;
 #[path = "ink_field/radial_circles.rs"]
 pub(crate) mod radial_circles;
 
-#[cfg(test)]
-const RADIAL_ARTIFACT_TEST_MODULE_SHA256: &str =
-    "6d318becd5ade0cb3df81854877d655315e5c979c15f9a6cdadf64d02e25a0b5";
-
 pub(crate) use radial::{PdfRadialCoverage, PdfRadialRecord};
 pub(crate) use radial_circles::PdfRadialCircleRecord;
 
