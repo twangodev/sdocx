@@ -51,28 +51,33 @@ fn legacy_marker_argb_alpha_survives_svg_and_pdf() {
         ),
         (
             "size2",
-            include_bytes!("../../../../conformance/legacy-marker-size2-sparse-rgba8.bin")
-                .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-size2-sparse-rgba8.bin",
+            ),
         ),
         (
             "size3",
-            include_bytes!("../../../../conformance/legacy-marker-size3-sparse-rgba8.bin")
-                .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-size3-sparse-rgba8.bin",
+            ),
         ),
         (
             "size6",
-            include_bytes!("../../../../conformance/legacy-marker-size6-sparse-rgba8.bin")
-                .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-size6-sparse-rgba8.bin",
+            ),
         ),
         (
             "size24",
-            include_bytes!("../../../../conformance/legacy-marker-size24-sparse-rgba8.bin")
-                .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-size24-sparse-rgba8.bin",
+            ),
         ),
         (
             "size48",
-            include_bytes!("../../../../conformance/legacy-marker-size48-sparse-rgba8.bin")
-                .as_slice(),
+            crate::legacy_marker_sparse_fixtures::bytes(
+                "conformance/legacy-marker-size48-sparse-rgba8.bin",
+            ),
         ),
     ] {
         let inp = &fixture["cases"][if case.starts_with("alpha") || case.starts_with("size") {

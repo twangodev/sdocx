@@ -479,7 +479,9 @@ fn width_six_svg_improves_on_native_host_control() {
     let fallback = crate::render_document_svg(&doc, &RenderOptions::default())
         .remove(0)
         .svg;
-    let native = include_bytes!("../../../../../conformance/legacy-marker-size6-sparse-rgba8.bin");
+    let native = crate::legacy_marker_sparse_fixtures::bytes(
+        "conformance/legacy-marker-size6-sparse-rgba8.bin",
+    );
     assert!(error(&candidate, native) < error(&fallback, native));
 }
 
