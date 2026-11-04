@@ -1,6 +1,5 @@
 use super::device_raster::{self, Context};
 use super::mixed_rgb_tests::control_records;
-use flate2::read::GzDecoder;
 use sha2::{Digest, Sha256};
 
 fn context() -> Context {
@@ -23,10 +22,8 @@ fn bottom_hash(image: &[[u8; 4]]) -> String {
 
 #[test]
 fn expanded_viewport_control_compares_current_raster() {
-    let receipt: serde_json::Value = serde_json::from_reader(GzDecoder::new(
-        &include_bytes!("test_assets/expanded_viewport/native.json.gz")[..],
-    ))
-    .unwrap();
+    let receipt: serde_json::Value =
+        serde_json::from_slice(include_bytes!("test_assets/expanded_viewport/native.json")).unwrap();
     for name in ["mixed", "record_17", "record_20", "record_32", "record_35"] {
         let mut records = control_records("mixed");
         if name != "mixed" {

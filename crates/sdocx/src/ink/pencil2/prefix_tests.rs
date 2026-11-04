@@ -181,10 +181,8 @@ fn disabling_linear_rasterizer_preserves_the_native_prefix_controls() {
 
 #[test]
 fn nominal_period_native_overlap_is_not_identical() {
-    let receipt: serde_json::Value = serde_json::from_reader(flate2::read::GzDecoder::new(
-        &include_bytes!("test_assets/periodic_edge/native.json.gz")[..],
-    ))
-    .unwrap();
+    let receipt: serde_json::Value =
+        serde_json::from_slice(include_bytes!("test_assets/periodic_edge/native.json")).unwrap();
     for (name, expected) in [
         ("mixed", 4),
         ("record_17", 1),

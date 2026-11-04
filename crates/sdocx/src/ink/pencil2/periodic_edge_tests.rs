@@ -1,17 +1,7 @@
 // Bounded comparison against synthetic native host Mesa captures; not device parity.
 use super::device_raster::{self, Context};
 use super::mixed_rgb_tests::control_records;
-use flate2::read::GzDecoder;
 use sha2::{Digest, Sha256};
-use std::io::Read;
-
-fn receipt_bytes() -> Vec<u8> {
-    let mut bytes = Vec::new();
-    GzDecoder::new(&include_bytes!("test_assets/periodic_edge/native.json.gz")[..])
-        .read_to_end(&mut bytes)
-        .unwrap();
-    bytes
-}
 fn context() -> Context {
     Context {
         scale: 2.,
@@ -31,7 +21,8 @@ fn bottom_hash(image: &[[u8; 4]]) -> String {
 
 #[test]
 fn nominal_period_translation_control_compares_current_raster() {
-    let receipt: serde_json::Value = serde_json::from_slice(&receipt_bytes()).unwrap();
+    let receipt: serde_json::Value =
+        serde_json::from_slice(include_bytes!("test_assets/periodic_edge/native.json")).unwrap();
     for name in ["mixed", "record_17", "record_20", "record_32", "record_35"] {
         let mut records = control_records("mixed");
         if name != "mixed" {
