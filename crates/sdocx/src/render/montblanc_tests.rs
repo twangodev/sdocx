@@ -660,3 +660,141 @@ fn longer_profiles_preserve_point_count_boundaries() {
         );
     }
 }
+
+#[test]
+fn eight_point_native_frames_bound_profile_support_and_rgb_error() {
+    use sha2::{Digest, Sha256};
+
+    // Independent synthetic ARM64/host-Mesa captures, not saved-note or device
+    // parity. PDF reader measurements in the receipt remain historical only.
+    let inputs_bytes = include_bytes!("../../../../conformance/montblanc-eight-probe.json");
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/montblanc-eight-point-paint.json"
+    ))
+    .unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(inputs_bytes)),
+        receipt["stream_fixture_sha256"].as_str().unwrap()
+    );
+    let inputs: serde_json::Value = serde_json::from_slice(inputs_bytes).unwrap();
+    let frames = receipt["retained_native_frames"]["frames"]
+        .as_object()
+        .unwrap();
+    assert_eq!(frames.len(), 4);
+    for (case, scale, hash) in [
+        (
+            "eight",
+            1,
+            "d3acfdc04d6b8906255078bbe6748c17eefb9e8b48123cbe9b57a4f480f3546d",
+        ),
+        (
+            "eight",
+            2,
+            "de8be1fc20989a6f2b1bbbec729294cea09b454330438c48c19b92f0ffa54593",
+        ),
+        (
+            "loop",
+            1,
+            "419b92edd42a3306f32bfcfc9734e2fe49f51fa95c5d12c22f0913027092652f",
+        ),
+        (
+            "loop",
+            2,
+            "d657b96fa5ecc15f5cf86ab8e3eb16fb47491a484095b759d16559ea59280f19",
+        ),
+    ] {
+        let matching: Vec<_> = frames
+            .values()
+            .filter(|frame| frame["input_case"] == case && frame["matrix_scale"] == scale)
+            .collect();
+        assert_eq!(matching.len(), 1);
+        let frame = matching[0];
+        assert_eq!(
+            frame["input_fixture"],
+            "conformance/montblanc-eight-probe.json"
+        );
+        assert_eq!(frame["width"], 256);
+        assert_eq!(frame["height"], 256);
+        assert_eq!(frame["byte_length"], 256 * 256 * 4);
+        let palette: Vec<[u8; 4]> = serde_json::from_value(frame["palette_rgba8"].clone()).unwrap();
+        let runs: Vec<[usize; 2]> = serde_json::from_value(frame["runs"].clone()).unwrap();
+        let mut native = Vec::with_capacity(256 * 256 * 4);
+        for [count, index] in runs {
+            assert!(count > 0 && count <= (256 * 256 * 4 - native.len()) / 4);
+            let pixel = palette.get(index).unwrap();
+            for _ in 0..count {
+                native.extend_from_slice(pixel);
+            }
+        }
+        assert_eq!(native.len(), 256 * 256 * 4);
+        assert_eq!(frame["rgba_sha256"], hash);
+        assert_eq!(format!("{:x}", Sha256::digest(&native)), hash);
+
+        let input = &inputs["cases"][case]["input"];
+        let points: Vec<[f32; 2]> = serde_json::from_value(input["points"].clone()).unwrap();
+        let pressure: Vec<f32> = serde_json::from_value(input["pressure"].clone()).unwrap();
+        let mut stroke = source(&points, &pressure);
+        let size = input["pen_size"].as_f64().unwrap() as f32;
+        stroke.pen_width = size;
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+        // Native matrix scales geometry around (128,128), not the translation.
+        let offset = 128.0 - 128.0 / f64::from(scale);
+        for point in &mut stroke.points {
+            point.x -= offset;
+            point.y -= offset;
+        }
+        let doc = document(stroke);
+        let profile = if scale == 1 {
+            options()
+        } else {
+            RenderOptions {
+                montblanc_two_pixels_per_page_unit: true,
+                ..Default::default()
+            }
+        };
+        let measure = |options: &RenderOptions| {
+            let svg = render_document_svg(&doc, options).remove(0).svg;
+            let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+            let mut pixels = resvg::tiny_skia::Pixmap::new(256, 256).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::from_scale(scale as f32, scale as f32),
+                &mut pixels.as_mut(),
+            );
+            let (mut native_support, mut export_support, mut intersection, mut error) =
+                (0_u64, 0_u64, 0_u64, 0_u64);
+            for y in 0..256 {
+                for x in 0..256 {
+                    // GL readback rows run bottom-to-top; native RGB is already
+                    // premultiplied. Composite once over the SVG paper (252).
+                    let n = &native[((255 - y) * 256 + x) * 4..][..4];
+                    let actual = &pixels.data()[(y * 256 + x) * 4..][..4];
+                    assert_eq!(actual[3], 255);
+                    let expected: [u8; 3] = std::array::from_fn(|c| {
+                        (u32::from(n[c]) + (252 * (255 - u32::from(n[3])) + 127) / 255).min(255)
+                            as u8
+                    });
+                    let ns = expected.iter().any(|&c| c.abs_diff(252) > 2);
+                    let es = actual[..3].iter().any(|&c| c.abs_diff(252) > 2);
+                    native_support += u64::from(ns);
+                    export_support += u64::from(es);
+                    intersection += u64::from(ns && es);
+                    if ns || es {
+                        error += (0..3)
+                            .map(|c| u64::from(expected[c].abs_diff(actual[c])))
+                            .sum::<u64>();
+                    }
+                }
+            }
+            (native_support, export_support, intersection, error)
+        };
+        let candidate = measure(&profile);
+        let fallback = measure(&RenderOptions::default());
+        let context = format!("{case} {scale}x: profile={candidate:?}, fallback={fallback:?}");
+        assert!(candidate.0 > 100, "{context}");
+        assert!(candidate.2 * 100 >= candidate.0 * 95, "{context}");
+        assert!(candidate.1 * 100 <= candidate.0 * 150, "{context}");
+        assert!(candidate.2 > fallback.2, "{context}");
+        assert!(candidate.3 * 2 < fallback.3, "{context}");
+    }
+}
