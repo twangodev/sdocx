@@ -147,7 +147,6 @@ fn explicit_final_grid_source_public_transport() {
         if name == "turn"
             && row["phase"][0].as_f64() == Some(0.)
             && row["phase"][1].as_f64() == Some(0.)
-            && let Some(dir) = std::env::var_os("SDOCX_INK_DISTINCT_COLOR_CAPTURE")
         {
             let shifted_points: Vec<P> = points
                 .iter()
@@ -185,6 +184,14 @@ fn explicit_final_grid_source_public_transport() {
                 .iter()
                 .flat_map(|v| v[..3].iter().flat_map(|f| f.to_le_bytes()))
                 .collect();
+            // Transparent and background captures independently produced the same
+            // 252-byte native geometry stream.
+            use sha2::{Digest as _, Sha256};
+            assert_eq!(shifted_geometry.len(), 252);
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&shifted_geometry)),
+                "fe20f56a73c5bbab7488038fc19afc4265767b29d66c92ea8c7b9c53697ec1d2"
+            );
             let svg = transport_colored(
                 grid,
                 &[(&geometry, [255, 0, 0]), (&shifted_geometry, [0, 0, 255])],
@@ -196,10 +203,7 @@ fn explicit_final_grid_source_public_transport() {
                 &Default::default(),
             )
             .unwrap();
-            let path = std::path::Path::new(&dir);
-            std::fs::write(path.join("colors.svg"), svg).unwrap();
-            std::fs::write(path.join("colors.pdf"), pdf).unwrap();
-            std::fs::write(path.join("shifted.bin"), shifted_geometry).unwrap();
+            assert!(pdf.starts_with(b"%PDF"));
         }
         // Two differently colored source-derived layers exercise ordering and
         // alpha composition independently of the single-color capture.
@@ -237,24 +241,13 @@ fn explicit_final_grid_source_public_transport() {
                 .any(|(a, b)| a[2] > a[0] && b[0] > b[2]),
             "{name}: overlap order"
         );
-        for (order, svg, pixels) in [
-            ("forward", overlap, forward_pixels),
-            ("reverse", reversed, reverse_pixels),
-        ] {
+        for svg in [overlap, reversed] {
             let pdf = crate::render_svg_pages_pdf(
                 &[crate::RenderedPage::new(0, 64, 48, svg)],
                 &Default::default(),
             )
             .unwrap();
             assert!(pdf.starts_with(b"%PDF"));
-            if let Some(dir) = std::env::var_os("SDOCX_INK_GRID_OVERLAP_CAPTURE") {
-                let dx = row["phase"][0].as_f64().unwrap();
-                let dy = row["phase"][1].as_f64().unwrap();
-                let stem = format!("{name}-{dx}-{dy}-{order}");
-                let path = std::path::Path::new(&dir);
-                std::fs::write(path.join(format!("{stem}.pdf")), pdf).unwrap();
-                std::fs::write(path.join(format!("{stem}.rgba")), pixels.data()).unwrap();
-            }
         }
         let svg = transport(grid, std::slice::from_ref(&geometry), limits).unwrap();
         let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
@@ -318,16 +311,6 @@ fn explicit_final_grid_source_public_transport() {
         let page = crate::RenderedPage::new(0, 64, 48, svg);
         let pdf = crate::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
         assert!(pdf.starts_with(b"%PDF"));
-        if let Some(dir) = std::env::var_os("SDOCX_INK_GRID_PDF_CAPTURE") {
-            let path = std::path::Path::new(&dir);
-            let dx = row["phase"][0].as_f64().unwrap();
-            let dy = row["phase"][1].as_f64().unwrap();
-            let stem = format!("{name}-{dx}-{dy}");
-            std::fs::write(path.join(format!("{stem}-slice.pdf")), &odd_pdf).unwrap();
-            std::fs::write(path.join(format!("{stem}-slice.rgba")), slice.data()).unwrap();
-            std::fs::write(path.join(format!("{stem}.pdf")), &pdf).unwrap();
-            std::fs::write(path.join(format!("{stem}.rgba")), &expected).unwrap();
-        }
         assert!(
             transport(
                 grid,

@@ -849,10 +849,6 @@ mod tests {
             for ((x, y), alpha) in pixels {
                 actual[y as usize * 64 + x as usize] = alpha;
             }
-            if let Some(directory) = std::env::var_os("SDOCX_SOURCE_GRID_CAPTURE") {
-                let path = std::path::Path::new(&directory).join(format!("{name}-{dx}-{dy}"));
-                std::fs::write(path, &actual).unwrap();
-            }
             let compressed = base64::engine::general_purpose::STANDARD
                 .decode(row["predicted_alpha_zlib_base64"].as_str().unwrap())
                 .unwrap();
@@ -945,10 +941,6 @@ mod tests {
             let mut actual = vec![0; 64 * 48];
             for ((x, y), alpha) in pixels {
                 actual[y as usize * 64 + x as usize] = alpha;
-            }
-            if let Some(directory) = std::env::var_os("SDOCX_ZERO_WIDTH_GRID_CAPTURE") {
-                let path = std::path::Path::new(&directory).join(format!("{name}-{dx}-{dy}"));
-                std::fs::write(path, &actual).unwrap();
             }
             let digest = format!("{:x}", Sha256::digest(&actual));
             assert_eq!(

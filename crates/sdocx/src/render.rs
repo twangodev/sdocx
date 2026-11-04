@@ -22075,21 +22075,6 @@ mod tests {
             pdf,
             crate::render_document_pdf(&doc, &ordinary, &Default::default()).unwrap()
         );
-        if let Some(dir) = std::env::var_os("SDOCX_INKPEN2_HALF_EXPORT") {
-            let dir = std::path::Path::new(&dir);
-            std::fs::write(dir.join("candidate.svg"), svg).unwrap();
-            std::fs::write(dir.join("candidate.pdf"), pdf).unwrap();
-            std::fs::write(
-                dir.join("ordinary.svg"),
-                &render_document_svg(&doc, &ordinary)[0].svg,
-            )
-            .unwrap();
-            std::fs::write(
-                dir.join("ordinary.pdf"),
-                crate::render_document_pdf(&doc, &ordinary, &Default::default()).unwrap(),
-            )
-            .unwrap();
-        }
     }
 
     #[cfg(feature = "serde")]
@@ -22251,24 +22236,6 @@ mod tests {
             crate::render_document_pdf(&doc, &candidate, &Default::default()).unwrap(),
             crate::render_document_pdf(&doc, &base, &Default::default()).unwrap()
         );
-        if let Some(dir) = std::env::var_os("SDOCX_INKPEN2_HALF_EXPORT") {
-            std::fs::write(
-                std::path::Path::new(&dir).join("candidate.svg"),
-                &svg[0].svg,
-            )
-            .unwrap();
-            std::fs::write(std::path::Path::new(&dir).join("candidate.pdf"), &pdf).unwrap();
-            std::fs::write(
-                std::path::Path::new(&dir).join("ordinary.svg"),
-                &render_document_svg(&doc, &base)[0].svg,
-            )
-            .unwrap();
-            std::fs::write(
-                std::path::Path::new(&dir).join("ordinary.pdf"),
-                crate::render_document_pdf(&doc, &base, &Default::default()).unwrap(),
-            )
-            .unwrap();
-        }
     }
 
     #[cfg(feature = "pdf")]
