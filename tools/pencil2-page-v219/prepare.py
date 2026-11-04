@@ -14,7 +14,8 @@ baseline = native / "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-geometr
 for directory in baseline.parents:
     if directory.is_symlink():
         raise SystemExit(f"Refusing symlink ancestor: {directory}")
-raw = gzip.decompress(baseline.with_suffix(".json.gz").read_bytes())
+archive = root / "tools/pencil2-drawing-capture-closure/sources/v10_baseline_capture.json.gz"
+raw = gzip.decompress(archive.read_bytes())
 if hashlib.sha256(raw).hexdigest() != "469b54b231de1b6a8672c36130fda2e2617da53cfe90b0e188442610e2cd5eea":
     raise SystemExit("Baseline digest mismatch")
 if baseline.is_symlink():
@@ -23,6 +24,7 @@ if baseline.exists():
     if baseline.read_bytes() != raw:
         raise SystemExit("Refusing to replace different baseline")
 else:
+    baseline.parent.mkdir(parents=True, exist_ok=True)
     with baseline.open("xb") as output:
         output.write(raw)
 for link, target in (
