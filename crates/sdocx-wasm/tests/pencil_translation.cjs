@@ -220,16 +220,20 @@ try {
 
 const coloredReceipt = readReceipt('pencil2-overlap/bottom1-opaque-receipt.json');
 assert.equal(coloredReceipt.delta_rows.length, coloredReceipt.changed_pixels);
-const coloredDelta = Buffer.alloc(coloredReceipt.delta_rows.length * 8);
-coloredReceipt.delta_rows.forEach((row, i) => {
-  assert.equal(row.length, 5);
-  assert.ok(Number.isInteger(row[0]) && row[0] >= 0 && row[0] <= 0xffffffff);
-  coloredDelta.writeUInt32LE(row[0], i * 8);
-  row.slice(1).forEach((channel, j) => {
-    assert.ok(Number.isInteger(channel) && channel >= 0 && channel <= 255);
-    coloredDelta[i * 8 + 4 + j] = channel;
+function deltaFromRows(rows) {
+  const delta = Buffer.alloc(rows.length * 8);
+  rows.forEach((row, i) => {
+    assert.equal(row.length, 5);
+    assert.ok(Number.isInteger(row[0]) && row[0] >= 0 && row[0] <= 0xffffffff);
+    delta.writeUInt32LE(row[0], i * 8);
+    row.slice(1).forEach((channel, j) => {
+      assert.ok(Number.isInteger(channel) && channel >= 0 && channel <= 255);
+      delta[i * 8 + 4 + j] = channel;
+    });
   });
-});
+  return delta;
+}
+const coloredDelta = deltaFromRows(coloredReceipt.delta_rows);
 const coloredExpected = nativeFrame(prior, coloredDelta,
   coloredReceipt.native_rgba_sha256, coloredReceipt.delta_sha256);
 const colored = new sdk.InkRasterCanvas({width: 192, height: 192, pixels_per_unit: 1, origin: 'BottomLeft'}, prior);
@@ -247,8 +251,10 @@ const translucentPrior = new Uint8Array(prior.length);
 for (let i = 0; i < prior.length; i += 4) {
   translucentPrior.set([Math.floor(prior[i] / 2), Math.floor(prior[i + 1] / 2), Math.floor(prior[i + 2] / 2), 128], i);
 }
-const top2Expected = nativeFrame(translucentPrior, 'pencil2-overlap/top2-translucent.delta',
-  readReceipt('pencil2-overlap/colored-top2-translucent-receipt.json').native_rgba_sha256);
+const top2Receipt = readReceipt('pencil2-overlap/colored-top2-translucent-receipt.json');
+assert.equal(top2Receipt.delta_rows.length, top2Receipt.native_changed_pixels);
+const top2Expected = nativeFrame(translucentPrior, deltaFromRows(top2Receipt.delta_rows),
+  top2Receipt.native_rgba_sha256, top2Receipt.delta_sha256);
 const top2 = new sdk.InkRasterCanvas({width: 192, height: 192, pixels_per_unit: 2, origin: 'TopLeft'}, translucentPrior);
 try {
   const first = {...ramp, tilts: [0.4, 0.4, 0.4, 0.4], color: {r: 51, g: 102, b: 153},

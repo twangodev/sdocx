@@ -485,17 +485,35 @@ fn pencil2_colored_tilted_top2_translucent_overlap_matches_host() {
         })
         .collect();
     let mut expected: Vec<u8> = prior.iter().flatten().copied().collect();
-    let delta = include_bytes!("assets/pencil2-overlap/top2-translucent.delta");
-    let records = delta.as_chunks::<8>();
-    assert!(records.1.is_empty());
-    for record in records.0 {
-        let index = u32::from_le_bytes(record[..4].try_into().unwrap()) as usize;
-        expected[index * 4..index * 4 + 4].copy_from_slice(&record[4..]);
-    }
     let receipt: Value = serde_json::from_str(include_str!(
         "assets/pencil2-overlap/colored-top2-translucent-receipt.json"
     ))
     .unwrap();
+    let mut delta = Vec::new();
+    let rows = receipt["delta_rows"].as_array().unwrap();
+    assert_eq!(
+        rows.len(),
+        receipt["native_changed_pixels"].as_u64().unwrap() as usize
+    );
+    let mut previous = None;
+    for row in rows {
+        let row = row.as_array().unwrap();
+        assert_eq!(row.len(), 5);
+        let index = u32::try_from(row[0].as_u64().unwrap()).unwrap();
+        assert!((index as usize) < prior.len());
+        assert!(previous.is_none_or(|last| index > last));
+        previous = Some(index);
+        delta.extend_from_slice(&index.to_le_bytes());
+        for (i, channel) in row[1..].iter().enumerate() {
+            let channel = u8::try_from(channel.as_u64().unwrap()).unwrap();
+            delta.push(channel);
+            expected[index as usize * 4 + i] = channel;
+        }
+    }
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&delta)),
+        receipt["delta_sha256"]
+    );
     assert_eq!(
         format!("{:x}", Sha256::digest(&expected)),
         receipt["native_rgba_sha256"].as_str().unwrap()

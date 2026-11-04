@@ -4,18 +4,17 @@ This synthetic control replays production-generated sampled records for two
 colored, tilted strokes on host Mesa RTV4 over a deterministic premultiplied
 translucent patterned prior. It tests raster output conditional on those sampled
 records; it does not establish independent native geometry, screenshot, Android
-device, saved-note, or arbitrary-transform parity. The unchanged receipt records
-the inputs, frame and stream hashes and historical PDF and Wasm results. The
-regression test checks canvas and SVG pixels; it does not rerun PDF or Wasm.
-The historical PDF measurements include reader differences on translucent
-pixels, including untouched prior pixels.
+device, saved-note, or arbitrary-transform parity. The receipt preserves
+the inputs, frame and stream hashes and historical PDF and Wasm results. The Rust regression checks canvas and SVG pixels and PDF construction; a
+separate Node test checks WASM pixels. Historical external PDF-reader measurements
+are not rerun and include differences on translucent pixels, including untouched prior pixels.
 
-`top2-translucent.delta` is derived from the native capture, not the original
-capture. Start with the deterministic prior in the test. Each eight-byte record
-is a little-endian u32 pixel index followed by four RGBA bytes. The test checks
-the reconstructed complete frame against the native SHA-256 in the receipt and
-compares every canvas and SVG pixel. The original compressed native frame remains
-in the historical workspace.
+The translucent receipt retains readable `delta_rows` derived from the native
+capture, not a new capture. Each row contains a top-down pixel index and RGBA.
+Tests reconstruct the original eight-byte records in memory and verify their
+SHA-256, then reconstruct the complete frame over the deterministic prior and
+verify its native SHA-256 before comparing canvas and SVG pixels. The original
+compressed native frame remains in the historical workspace.
 
 The capture scripts `tools/pencil2-public-replay/colored_overlap_top2_capture.py`
 and `tools/pencil2-public-replay/colored_overlap_capture.py` now read the canonical
