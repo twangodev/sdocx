@@ -1,9 +1,14 @@
 # Pencil2 retained-scene transaction control
 
-Run `bash tools/pencil2-registry-scene-v212/run.sh`. The script tests an isolated archive of commit `b4bfeacb04f12b61ce3490cff6c5be498a9cfffe`, injects the local test and form constructor, uses the shared Cargo target offline, and removes the archive. It does not change production dispatch.
+The experimental source patches, harnesses and comparators were retired. The
+findings below are historical; native inputs, captures and receipts remain.
+These prototype assertions and external-reader measurements are not claimed
+as equivalent maintained Rust coverage.
 
-The test creates the two v199 source strokes and their captured translations and grain offsets. It calls the source planner before frame allocation, stages both independently generated frame sequences and bounded PDF forms, and then publishes their actual `LegacyMarker` payloads and matching SVG groups to the renderer's retained `Scene`. A pre-existing background and prior registered stroke are present. Injected failures after each staged stroke and an invalid second source must preserve the prior SVG bytes and complete registry debug representation including its prepared PDF payload. Success checks marker order, three real detached form roots, and serialization through the existing retained-scene PDF lowering. The test checks the page content placement and order, form resources, bounds, and distinct ordered stream contents using lopdf.
+The retired test injected a form constructor into an isolated archive of revision `b4bfeacb04f12b61ce3490cff6c5be498a9cfffe`. It did not change production dispatch.
+
+The retired test created the two v199 source strokes and their captured translations and grain offsets. It calls the source planner before frame allocation, stages both independently generated frame sequences and bounded PDF forms, and then publishes their actual `LegacyMarker` payloads and matching SVG groups to the renderer's retained `Scene`. A pre-existing background and prior registered stroke are present. Injected failures after each staged stroke and an invalid second source must preserve the prior SVG bytes and complete registry debug representation including its prepared PDF payload. Success checks marker order, three real detached form roots, and serialization through the existing retained-scene PDF lowering. The test checks the page content placement and order, form resources, bounds, and distinct ordered stream contents using lopdf.
 
 The control bounds the total planned frames and conservative pixel work, and caps each form stream at 2,000,000 bytes; form object counts are fixed. It stages all frame buffers before committing, and final registry/SVG insertion is not protected against process failure or allocation failure. These bounds do not cover the rest of the document or PDF serialization. This is a direct test function with supplied order and grid, not the document paint-order traversal, native comparison, reader-rendered verification, or an export admission profile. The v199 and v200 paired-reader evidence and limitations remain applicable; successful PDF parsing is not pixel fidelity evidence.
 
-The PDF content check exposed that the initial isolated form had a 192-unit bounding box despite normalized form commands; the control now uses the unit bounding box used by the v199 transport.
+The PDF content check exposed that the initial isolated form had a 192-unit bounding box despite normalized form commands; the prototype was corrected to use the unit bounding box used by the v199 transport.

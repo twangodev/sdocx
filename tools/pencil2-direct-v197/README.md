@@ -1,6 +1,11 @@
 # Pencil2 synthetic public SVG and PDF injection
 
-This isolated experiment applies `injection.patch` after the v195 probe patch to the pinned v195 snapshot. It does not edit the production crate. Run from the repository root with `PYTHONPATH=/tmp/sdocx-marker3-v133-readers tools/pencil2-direct-v197/run.sh` (or supply equivalent Python dependencies). The runner builds with the shared Cargo target and creates a unique temporary snapshot and outputs, removing only that directory on exit. See v195 for the input, native crop provenance, tool versions, and dependency setup. It also runs the v195 generic public SVG and direct PDF control from the same public document. The generic 2x output is a bottom-left-anchored transform of its 1x output.
+The experimental source patches, harnesses and comparators were retired. The
+findings below are historical; native inputs, captures and receipts remain.
+These prototype assertions and external-reader measurements are not claimed
+as equivalent maintained Rust coverage.
+
+The historical experiment patched revision `61fdc795adb2e2b075b6417ec9533f41cf884861`; v195 records input, native crop provenance and reader versions. The generic 2× control transformed its 1× output about the bottom-left corner.
 
 The test-only environment switch for SVG inserts ordered black translucent unit rectangles at the normal stroke dispatch position. It derives stamps from the public stroke's saved settings and input channels through `prepare_stroke`, flipping top-down input y about the 192-unit page height. It does not embed the native image. It admits only the exact source record stream SHA-256 `770651fc1b27bfa8a73731f1a3e24cf1a37847e920581aa36855c5107835c2fe`, matching the retained native geometry record stream; failed admission uses the generic SVG path. That byte identity does not establish general source equivalence. The rectangles are fixed to the output grid. The 2x result samples the same stroke with a doubled draw matrix in the same 192 x 192 viewport, not a PDF viewer zoom or a newly sampled Drawing. SVG dispatch is disabled without the test switch.
 
@@ -15,4 +20,4 @@ Opaque-white absolute alpha-equivalent error sums (maximum) against the retained
 | source SVG / synthetic injected PDF | 27 (2) / 73 (2) | 94 (4) / 341 (4) | 60 (3) / 242 (3) |
 | generic public sdocx | 2882 (184) / 11828 (181) | 2738 (180) / 11128 (183) | 3153 (233) / 10604 (239) |
 
-SVG is 17,301 / 61,721 bytes and injected PDF 27,228 / 37,701 bytes in this run. The native reference is the retained 62 x 22 crop; the comparison assumes zero outside based on its capture receipt, and does not recheck full-frame native support. Crop hashes, output dimensions, and the exact reader error results in the source SVG / synthetic injected PDF row are asserted by the runner. The generic control reports its results without asserting them. This is narrow host evidence, not saved-page, device, or scalable vector parity.
+SVG is 17,301 / 61,721 bytes and injected PDF 27,228 / 37,701 bytes in this run. The native reference is the retained 62 x 22 crop; the comparison assumes zero outside based on its capture receipt, and does not recheck full-frame native support. Crop hashes, output dimensions, and the exact reader error results in the source SVG / synthetic injected PDF row were asserted by the retired runner. The generic control reported results without asserting them. This is narrow host evidence, not saved-page, device, or scalable vector parity.
