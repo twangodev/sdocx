@@ -467,6 +467,126 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "pdf")]
+    #[test]
+    #[ignore = "writes final-grid transport experiment to SDOCX_BRUSHPEN_GRID_DIR"]
+    fn final_grid_public_transport_experiment() {
+        use std::fmt::Write as _;
+        let dir = std::path::PathBuf::from(std::env::var_os("SDOCX_BRUSHPEN_GRID_DIR").unwrap());
+        std::fs::create_dir_all(&dir).unwrap();
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/brushpen-second-native/receipt.json"
+        ))
+        .unwrap();
+        let transform: Value = serde_json::from_str(include_str!(
+            "../../../../../conformance/brushpen-second-native/comparison.json"
+        ))
+        .unwrap();
+        let imports = fixture["paint"]["draw_time_uniform_imports"]["imports"]
+            .as_array()
+            .unwrap();
+        let values = |key: &str, location: u64| -> Vec<f32> {
+            imports.iter().find(|row| row[key] == location).unwrap()["values"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_f64().unwrap() as f32)
+                .collect()
+        };
+        let read = |key: &str| -> Vec<f32> {
+            transform["matrix"][key]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_f64().unwrap() as f32)
+                .collect()
+        };
+        let raw =
+            include_bytes!("../../../../../conformance/brushpen-second-native/geometry-221x44.bin");
+        let records: Vec<[f32; 11]> = raw
+            .as_chunks::<44>()
+            .0
+            .iter()
+            .map(|r| {
+                std::array::from_fn(|i| f32::from_le_bytes(r[i * 4..i * 4 + 4].try_into().unwrap()))
+            })
+            .collect();
+        let (atlas, grain) = source_textures();
+        let rgb: [f32; 3] = values("uniform4fv_location", 4)[..3].try_into().unwrap();
+        for (name, background, translated) in [
+            ("baseline", [0, 0, 0, 0], false),
+            ("nonwhite", [32, 160, 96, 255], false),
+            ("translated", [0, 0, 0, 0], true),
+        ] {
+            let mut pixels = background.repeat(321 * 228);
+            let context = Context {
+                width: 321,
+                height: 228,
+                projection: if translated {
+                    read("matrix_uniform").try_into().unwrap()
+                } else {
+                    values("location", 0).try_into().unwrap()
+                },
+                rgb,
+                grain_period: if translated {
+                    read("grain_period").try_into().unwrap()
+                } else {
+                    values("uniform2fv_location", 5).try_into().unwrap()
+                },
+                grain_offset: if translated {
+                    read("grain_offset").try_into().unwrap()
+                } else {
+                    values("uniform2fv_location", 6).try_into().unwrap()
+                },
+                num_tiles: 3.0,
+            };
+            paint(
+                &records,
+                Rgba8 {
+                    width: 144,
+                    height: 144,
+                    bytes: &atlas,
+                },
+                Rgba8 {
+                    width: 321,
+                    height: 228,
+                    bytes: &grain,
+                },
+                context,
+                &mut pixels,
+            )
+            .unwrap();
+            std::fs::write(dir.join(format!("{name}.rgba")), &pixels).unwrap();
+            let mut svg = String::from(
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"321\" height=\"228\" viewBox=\"0 0 321 228\">",
+            );
+            if background[3] == 255 {
+                write!(
+                    svg,
+                    "<rect width=\"321\" height=\"228\" fill=\"#{:02x}{:02x}{:02x}\"/>",
+                    background[0], background[1], background[2]
+                )
+                .unwrap();
+            }
+            for (i, pixel) in pixels.as_chunks::<4>().0.iter().enumerate() {
+                let a = u32::from(pixel[3]);
+                if a == 0 || *pixel == background {
+                    continue;
+                }
+                let rgb = pixel[..3]
+                    .iter()
+                    .map(|&c| ((u32::from(c) * 255 + a / 2) / a).min(255))
+                    .collect::<Vec<_>>();
+                write!(svg, "<rect x=\"{}\" y=\"{}\" width=\"1\" height=\"1\" fill=\"#{:02x}{:02x}{:02x}\" fill-opacity=\"{}\"/>", i % 321, 227-i/321, rgb[0], rgb[1], rgb[2], f64::from(pixel[3])/255.0).unwrap();
+            }
+            svg.push_str("</svg>");
+            std::fs::write(dir.join(format!("{name}.svg")), &svg).unwrap();
+            let page = crate::RenderedPage::new(0, 321, 228, svg);
+            let pdf = crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default()).unwrap();
+            std::fs::write(dir.join(format!("{name}.pdf")), pdf).unwrap();
+        }
+    }
+
     const FIXTURE_JSON: &[u8] = include_bytes!(
         "../../../../../conformance/brushpen-native-paint-v1/brushpen-native-paint.json"
     );
@@ -1420,6 +1540,17 @@ mod tests {
                     },
                 )
                 .unwrap();
+            let actual: Vec<u8> = canvas
+                .pixels()
+                .as_chunks::<321>()
+                .0
+                .iter()
+                .rev()
+                .flatten()
+                .flatten()
+                .copied()
+                .collect();
+            assert_eq!(actual, native_background);
             let prior = canvas.pixels().to_vec();
             let invalid = canvas.paint_brushpen_glv10_host(
                 &stroke,
@@ -1448,17 +1579,6 @@ mod tests {
                 Err(crate::InkRasterError::InvalidContext)
             ));
             assert_eq!(canvas.pixels(), prior);
-            let actual: Vec<u8> = canvas
-                .pixels()
-                .as_chunks::<321>()
-                .0
-                .iter()
-                .rev()
-                .flatten()
-                .flatten()
-                .copied()
-                .collect();
-            assert_eq!(actual, native_background);
             let png = canvas.to_png().unwrap();
             let image = resvg::tiny_skia::Pixmap::decode_png(&png).unwrap();
             assert_eq!(
@@ -1483,7 +1603,6 @@ mod tests {
                 )
                 .unwrap();
             }
-
             let tree = resvg::usvg::Tree::from_str(&page.svg, &Default::default()).unwrap();
             let mut image = resvg::tiny_skia::Pixmap::new(321, 228).unwrap();
             resvg::render(
@@ -1495,6 +1614,7 @@ mod tests {
                 image.data(),
                 prior.iter().flatten().copied().collect::<Vec<_>>()
             );
+
             let mut overlap_canvas = crate::InkRasterCanvas::new(
                 crate::InkRasterContext {
                     width: 321,
@@ -1691,6 +1811,7 @@ mod tests {
                 assert_eq!(image.data(), expected, "{name} SVG raster");
             }
         }
+
         for (case_index, (receipt, compressed)) in [
             (
                 include_str!("../../../tests/fixtures/brushpen-target-sizes/256x192-identity.json"),
@@ -1874,6 +1995,22 @@ mod tests {
                     public, actual,
                     "public canvas {width}x{height} half={is_half}"
                 );
+                #[cfg(feature = "pdf")]
+                {
+                    let page = canvas.rendered_page(0).unwrap();
+                    let mut options = crate::PdfOptions::default();
+                    options.dpi = 72.0;
+                    let direct = canvas.to_pdf(&options).unwrap();
+                    let svg_pdf = crate::pdf::render_svg_pages_pdf(&[page], &options).unwrap();
+                    assert!(direct.starts_with(b"%PDF"));
+                    assert!(svg_pdf.starts_with(b"%PDF"));
+                    if let Some(dir) = std::env::var_os("SDOCX_BRUSHPEN_MULTI_EXPORT_DIR") {
+                        let dir = std::path::PathBuf::from(dir);
+                        std::fs::write(dir.join(format!("{case_index}.direct.pdf")), direct)
+                            .unwrap();
+                        std::fs::write(dir.join(format!("{case_index}.svg.pdf")), svg_pdf).unwrap();
+                    }
+                }
             }
         }
         let transform_receipt: Value = serde_json::from_str(include_str!(
@@ -2233,6 +2370,145 @@ mod tests {
         )
         .unwrap();
         assert_eq!(sha256(&painted), fixture["paint"]["full_rgba_sha256"]);
+        let mut canvas = crate::InkRasterCanvas::new(
+            crate::InkRasterContext {
+                width: 321,
+                height: 228,
+                pixels_per_unit: 1,
+                origin: crate::InkRasterOrigin::TopLeft,
+            },
+            [0; 4],
+        )
+        .unwrap();
+        let public_context = crate::BrushPenPaintContext {
+            screen_width: 1920,
+            screen_height: 1080,
+            projection: values("location", 0).try_into().unwrap(),
+            rgb: color[..3].try_into().unwrap(),
+            grain_period: values("uniform2fv_location", 5).try_into().unwrap(),
+            grain_offset: values("uniform2fv_location", 6).try_into().unwrap(),
+            num_tiles: 3.0,
+            atlas: crate::BrushPenTexture {
+                width: 144,
+                height: 144,
+                rgba: &atlas_rgba,
+            },
+            grain: crate::BrushPenTexture {
+                width: 321,
+                height: 228,
+                rgba: &grain_rgba,
+            },
+        };
+        canvas
+            .paint_brushpen_glv10_host(&stroke, public_context)
+            .unwrap();
+        let public_bottom_rows: Vec<u8> = canvas
+            .pixels()
+            .as_chunks::<321>()
+            .0
+            .iter()
+            .rev()
+            .flatten()
+            .flatten()
+            .copied()
+            .collect();
+        assert_eq!(public_bottom_rows, painted);
+        let before = canvas.pixels().to_vec();
+        let mut invalid = public_context;
+        invalid.grain_period[0] = 0.0;
+        assert!(canvas.paint_brushpen_glv10_host(&stroke, invalid).is_err());
+        assert_eq!(canvas.pixels(), before);
+        if let Some(dir) = std::env::var_os("SDOCX_BRUSHPEN_EXPORT_CHECK") {
+            let dir = std::path::PathBuf::from(dir);
+            std::fs::write(dir.join("canvas.png"), canvas.to_png().unwrap()).unwrap();
+            #[cfg(feature = "pdf")]
+            {
+                let mut options = crate::PdfOptions::default();
+                options.dpi = 72.0;
+                std::fs::write(dir.join("canvas.pdf"), canvas.to_pdf(&options).unwrap()).unwrap();
+            }
+        }
+        #[cfg(feature = "pdf")]
+        {
+            assert!(
+                canvas
+                    .to_pdf(&Default::default())
+                    .unwrap()
+                    .starts_with(b"%PDF")
+            );
+        }
+
+        let background = [40, 60, 20, 128];
+        let mut reference = background.repeat(321 * 228);
+        paint(
+            &records,
+            Rgba8 {
+                width: 144,
+                height: 144,
+                bytes: &atlas_rgba,
+            },
+            Rgba8 {
+                width: 321,
+                height: 228,
+                bytes: &grain_rgba,
+            },
+            Context {
+                width: 321,
+                height: 228,
+                projection: public_context.projection,
+                rgb: public_context.rgb,
+                grain_period: public_context.grain_period,
+                grain_offset: public_context.grain_offset,
+                num_tiles: 3.0,
+            },
+            &mut reference,
+        )
+        .unwrap();
+        for origin in [
+            crate::InkRasterOrigin::TopLeft,
+            crate::InkRasterOrigin::BottomLeft,
+        ] {
+            let mut colored = crate::InkRasterCanvas::new(
+                crate::InkRasterContext {
+                    width: 321,
+                    height: 228,
+                    pixels_per_unit: 1,
+                    origin,
+                },
+                background,
+            )
+            .unwrap();
+            colored
+                .paint_brushpen_glv10_host(&stroke, public_context)
+                .unwrap();
+            let actual: Vec<u8> = colored
+                .pixels()
+                .as_chunks::<321>()
+                .0
+                .iter()
+                .rev()
+                .flatten()
+                .flatten()
+                .copied()
+                .collect();
+            assert_eq!(actual, reference);
+        }
+        let mut limited = crate::InkRasterCanvas::new(
+            crate::InkRasterContext {
+                width: 1000,
+                height: 1000,
+                pixels_per_unit: 1,
+                origin: crate::InkRasterOrigin::TopLeft,
+            },
+            background,
+        )
+        .unwrap();
+        assert!(matches!(
+            limited.paint_brushpen_glv10_host(&stroke, public_context),
+            Err(crate::InkRasterError::WorkLimit)
+        ));
+        assert!(limited.pixels().iter().all(|p| *p == background));
+
         let mut document_crop = Vec::new();
         ZlibDecoder::new(
             &include_bytes!(
@@ -2300,6 +2576,274 @@ mod tests {
         assert!(
             intersection * 100 > union * 40,
             "public SVG no longer overlaps the native stroke"
+        );
+    }
+    #[test]
+    fn serialized_model_paint_matches_native_frame() {
+        // The retained receipt records a historical capture-helper hash that differs
+        // from the current helper. Its pins remain unchanged; this fixture replay
+        // does not claim a full native recapture.
+        let stroke = crate::decode::decode_stroke(
+            include_bytes!("../../../../../conformance/brushpen-serialized/v10-payload.bin"),
+            &crate::ParseLimits::default(),
+        )
+        .unwrap();
+        let points: Vec<_> = stroke
+            .points
+            .iter()
+            .map(|p| super::super::P {
+                x: p.x as f32,
+                y: p.y as f32,
+            })
+            .collect();
+        let pressure: Vec<_> = stroke.pressures.iter().map(|&v| v as f32).collect();
+        let orientation: Vec<_> = stroke.orientations.iter().map(|&v| v as f32).collect();
+        let tilt: Vec<_> = stroke.tilts.iter().map(|&v| v as f32).collect();
+        let mut profile = super::super::SAVED_GLV10_CONSTRUCTOR_PROFILE;
+        profile.motion_distance_threshold = f32::from_bits(0x3fcb_7b12);
+        profile.motion_alternation_threshold = 2.6_f32 * (1080.0_f32 / 360.0);
+        profile.motion_settings_limits = [1920, 1080];
+        profile.allow_empty_curved_paths = true;
+        let samples = super::super::sample_object_stroke_wrapper(
+            10,
+            profile,
+            stroke.pen_width,
+            0.0,
+            false,
+            true,
+            false,
+            &points,
+            &stroke.timestamps,
+            &pressure,
+            &orientation,
+            &tilt,
+            2,
+        )
+        .unwrap();
+        let output = super::super::sampled_instances(10, &samples).unwrap();
+        let records: Vec<_> = output.instances.iter().map(|i| i.values).collect();
+        let bytes: Vec<_> = records
+            .iter()
+            .flat_map(|r| r.iter().flat_map(|v| v.to_le_bytes()))
+            .collect();
+        let mut expected = Vec::new();
+        flate2::read::ZlibDecoder::new(
+            &include_bytes!(
+                "../../../../../conformance/brushpen-serialized/v10-native-stream.zlib"
+            )[..],
+        )
+        .read_to_end(&mut expected)
+        .unwrap();
+        assert_eq!(bytes, expected, "generated geometry");
+        let mut public_stroke = stroke.clone();
+        let rendering = public_stroke.rendering.as_mut().unwrap();
+        rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.BrushPen".into());
+        rendering.advanced_settings = Some("10;".into());
+        let public_records = crate::sample_brushpen_glv10_host(&public_stroke, 1920, 1080).unwrap();
+        assert_eq!(public_records, records);
+        let original = public_stroke.rendering.as_ref().unwrap();
+        assert!(original.properties.millisecond_timestamps);
+        assert!(original.properties.binary_added);
+        assert!(!original.properties.fixed_width);
+        assert_eq!(original.style.fixed_width, Some(stroke.pen_width));
+        assert_eq!(original.style.size_level, None);
+        assert_eq!(original.style.stroke_type_raw, None);
+        for (size_level, stroke_type) in [(Some(31), None), (None, Some(1))] {
+            let mut unsupported = public_stroke.clone();
+            let style = &mut unsupported.rendering.as_mut().unwrap().style;
+            style.size_level = size_level;
+            style.stroke_type_raw = stroke_type;
+            assert!(crate::sample_brushpen_glv10_host(&unsupported, 1920, 1080).is_none());
+        }
+        let mut metadata_variant = public_stroke.clone();
+        let rendering = metadata_variant.rendering.as_mut().unwrap();
+        rendering.properties.millisecond_timestamps = false;
+        rendering.properties.binary_added = false;
+        rendering.style.fixed_width = Some(123.0);
+        assert_eq!(metadata_variant.timestamps, public_stroke.timestamps);
+        assert_eq!(
+            crate::sample_brushpen_glv10_host(&metadata_variant, 1920, 1080).unwrap(),
+            records
+        );
+
+        assert!(crate::sample_brushpen_glv10_host(&public_stroke, 0, 1080).is_none());
+        let mut invalid = public_stroke.clone();
+        invalid.pressures.pop();
+        assert!(crate::sample_brushpen_glv10_host(&invalid, 1920, 1080).is_none());
+        invalid = public_stroke.clone();
+        invalid.points.resize(
+            super::super::MAX_SAMPLES + 1,
+            crate::Point { x: 0.0, y: 0.0 },
+        );
+        invalid.timestamps.resize(super::super::MAX_SAMPLES + 1, 0);
+        invalid.pressures.resize(super::super::MAX_SAMPLES + 1, 0.0);
+        invalid
+            .orientations
+            .resize(super::super::MAX_SAMPLES + 1, 0.0);
+        invalid.tilts.resize(super::super::MAX_SAMPLES + 1, 0.0);
+        assert!(crate::sample_brushpen_glv10_host(&invalid, 1920, 1080).is_none());
+        invalid = public_stroke.clone();
+        invalid.timestamps[0] = i64::MIN;
+        invalid.timestamps[1] = i64::MAX;
+        assert!(crate::sample_brushpen_glv10_host(&invalid, 1920, 1080).is_none());
+        let accepted_stroke = public_stroke.clone();
+        public_stroke
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .fixed_width = true;
+        assert!(crate::sample_brushpen_glv10_host(&public_stroke, 1920, 1080).is_none());
+        let (atlas, grain) = source_textures();
+        let mut actual = vec![0; 321 * 228 * 4];
+        paint(
+            &records,
+            Rgba8 {
+                width: 144,
+                height: 144,
+                bytes: &atlas,
+            },
+            Rgba8 {
+                width: 321,
+                height: 228,
+                bytes: &grain,
+            },
+            Context {
+                width: 321,
+                height: 228,
+                projection: [
+                    0.006_230_529_4,
+                    0.,
+                    0.,
+                    0.,
+                    0.,
+                    0.008_771_93,
+                    0.,
+                    0.,
+                    0.,
+                    0.,
+                    -0.000_030_518_51,
+                    0.,
+                    -1.,
+                    -1.,
+                    0.,
+                    1.,
+                ],
+                rgb: [0., 0., 0.],
+                grain_period: [321., 228.],
+                grain_offset: [132.823_96, 211.381_33],
+                num_tiles: 3.,
+            },
+            &mut actual,
+        )
+        .unwrap();
+        let mut canvas = crate::InkRasterCanvas::new(
+            crate::InkRasterContext {
+                width: 321,
+                height: 228,
+                pixels_per_unit: 1,
+                origin: crate::InkRasterOrigin::TopLeft,
+            },
+            [0; 4],
+        )
+        .unwrap();
+        canvas
+            .paint_brushpen_glv10_host(
+                &accepted_stroke,
+                crate::BrushPenPaintContext {
+                    screen_width: 1920,
+                    screen_height: 1080,
+                    projection: [
+                        0.006_230_529_4,
+                        0.,
+                        0.,
+                        0.,
+                        0.,
+                        0.008_771_93,
+                        0.,
+                        0.,
+                        0.,
+                        0.,
+                        -0.000_030_518_51,
+                        0.,
+                        -1.,
+                        -1.,
+                        0.,
+                        1.,
+                    ],
+                    rgb: [0., 0., 0.],
+                    grain_period: [321., 228.],
+                    grain_offset: [132.823_96, 211.381_33],
+                    num_tiles: 3.,
+                    atlas: crate::BrushPenTexture {
+                        width: 144,
+                        height: 144,
+                        rgba: &atlas,
+                    },
+                    grain: crate::BrushPenTexture {
+                        width: 321,
+                        height: 228,
+                        rgba: &grain,
+                    },
+                },
+            )
+            .unwrap();
+        let public_rows: Vec<u8> = canvas
+            .pixels()
+            .as_chunks::<321>()
+            .0
+            .iter()
+            .rev()
+            .flatten()
+            .flatten()
+            .copied()
+            .collect();
+        assert_eq!(public_rows, actual);
+        #[cfg(feature = "pdf")]
+        {
+            let page = canvas.rendered_page(0).unwrap();
+            assert!(
+                !canvas
+                    .to_pdf(&crate::PdfOptions::default())
+                    .unwrap()
+                    .is_empty()
+            );
+            if let Some(dir) = std::env::var_os("SDOCX_BRUSHPEN_SERIALIZED_EXPORT") {
+                let dir = std::path::PathBuf::from(dir);
+                let mut options = crate::PdfOptions::default();
+                options.dpi = 72.0;
+                std::fs::write(dir.join("canvas.png"), canvas.to_png().unwrap()).unwrap();
+                std::fs::write(dir.join("canvas.svg"), &page.svg).unwrap();
+                std::fs::write(dir.join("direct.pdf"), canvas.to_pdf(&options).unwrap()).unwrap();
+                std::fs::write(
+                    dir.join("svg.pdf"),
+                    crate::render_svg_pages_pdf(&[page], &options).unwrap(),
+                )
+                .unwrap();
+            }
+        }
+        let mut native = Vec::new();
+        flate2::read::ZlibDecoder::new(
+            &include_bytes!("../../../../../conformance/brushpen-serialized/paint-frame.rgba.zlib")
+                [..],
+        )
+        .read_to_end(&mut native)
+        .unwrap();
+        assert_eq!(native.len(), 321 * 228 * 4);
+        assert_eq!(actual.len(), native.len());
+        assert_eq!(
+            sha256(&native),
+            "c2914a505ba9b8b53fdd383bcf824e7f294238c8d1e20dd547fdd2d2d5738d1e"
+        );
+        let sum: usize = actual
+            .iter()
+            .zip(&native)
+            .map(|(a, b)| usize::from(a.abs_diff(*b)))
+            .sum();
+        let changed = actual.iter().zip(&native).filter(|(a, b)| a != b).count();
+        assert!(
+            sum <= 1 && changed <= 1,
+            "native residual: sum={sum}, changed={changed}"
         );
     }
     #[cfg(feature = "render")]

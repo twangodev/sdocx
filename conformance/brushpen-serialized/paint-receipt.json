@@ -1,0 +1,400 @@
+{
+  "scope": "Synthetic serialized v10 Model OnAttach to ObjectDrawing and same RTV1 queued task2, host Unicorn adapters and Mesa GLES; not device or complete native note loading. Inherited endPen instrumentation disabled for zero-length initial path; 63 callback records required byte-for-byte native prior capture.",
+  "input_table_sha256": "d28e2c2c4c9a31cf744b2ba495e8a8847f285d0aabfe3bfe6464522c12e35d73",
+  "input_frame_sha256": "9b495ebc360c03d2b064e21bf97ce5a45d6f02290aa04410ba87316ae59874f3",
+  "callback_stream_sha256": "becc134bf38d9c9c3488d7d9163eee94d56a6ef94456e66c61248d0fce65888a",
+  "rgba_sha256": "c2914a505ba9b8b53fdd383bcf824e7f294238c8d1e20dd547fdd2d2d5738d1e",
+  "rgba_size": [
+    321,
+    228
+  ],
+  "nonzero_alpha_pixels": 360,
+  "uniforms": {
+    "source": "intercepted glUniform calls; inherited target uniform snapshot refers to earlier control and is excluded",
+    "calls": [
+      {
+        "count": 1,
+        "location": 0,
+        "transpose": 0,
+        "values": [
+          0.006230529397726059,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.008771929889917374,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -3.0518509447574615e-05,
+          0.0,
+          -1.0,
+          -1.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "count": 1,
+        "phase": "native PenGLRenderMsg task2",
+        "raw_f32_le": "0000000000000000000000000000803f",
+        "uniform4fv_location": 4,
+        "values": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "count": 1,
+        "uniform2fv_location": 5,
+        "values": [
+          321.0,
+          228.0
+        ]
+      },
+      {
+        "count": 1,
+        "uniform2fv_location": 6,
+        "values": [
+          132.82395935058594,
+          211.38133239746094
+        ]
+      },
+      {
+        "uniform1f_location": 1,
+        "value": 3.0
+      },
+      {
+        "uniform1i_location": 2,
+        "value": 0
+      },
+      {
+        "uniform1i_location": 3,
+        "value": 1
+      }
+    ]
+  },
+  "framebuffer_status": [
+    {
+      "bound_draw_framebuffer": 2,
+      "is_framebuffer_complete": true,
+      "phase": "native PenGLRenderMsg task2",
+      "status_enum": 36053,
+      "status_hex": "0x8cd5",
+      "target_enum": 36160
+    }
+  ],
+  "draw_calls": [
+    {
+      "args": [
+        5,
+        0,
+        4,
+        63
+      ],
+      "call": "glDrawArraysInstanced",
+      "error_after": 0,
+      "prior_error": 0
+    }
+  ],
+  "bindings": [],
+  "renderer_target": {
+    "attachment_texture_id": 4,
+    "feedback_alias_with_pattern_or_grain": false,
+    "gl_error_after_readback": 0,
+    "input_color_f32": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "actual_gl_blend_state_after_draw": {
+      "blend_enabled": true,
+      "color_write_mask": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "dst_alpha": 771,
+      "dst_rgb": 771,
+      "equation_alpha": 32774,
+      "equation_rgb": 32774,
+      "src_alpha": 1,
+      "src_rgb": 770
+    },
+    "task2_texture_bindings": [
+      {
+        "args": [
+          33984
+        ],
+        "call": "glActiveTexture",
+        "error_after": 0,
+        "prior_error": 0
+      },
+      {
+        "args": [
+          3553,
+          5
+        ],
+        "call": "glBindTexture",
+        "error_after": 0,
+        "prior_error": 0
+      },
+      {
+        "args": [
+          0,
+          4
+        ],
+        "call": "glBindSampler",
+        "error_after": 0,
+        "prior_error": 0
+      },
+      {
+        "args": [
+          33985
+        ],
+        "call": "glActiveTexture",
+        "error_after": 0,
+        "prior_error": 0
+      },
+      {
+        "args": [
+          3553,
+          6
+        ],
+        "call": "glBindTexture",
+        "error_after": 0,
+        "prior_error": 0
+      },
+      {
+        "args": [
+          1,
+          5
+        ],
+        "call": "glBindSampler",
+        "error_after": 0,
+        "prior_error": 0
+      }
+    ]
+  },
+  "native_pattern_material": {
+    "diagnostic_pattern_sentinel": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        2304,
+        2304
+      ]
+    ],
+    "initialized_pattern_tile_hashes": [
+      [
+        "ffd57f9ee646f24275657f37c36c110ecd1222057bf8e9be4edc7232d130f797",
+        "e9434ac19612b18993c2ffe9120087439ae71424da634ea3243c1db170987a33",
+        "34da0361a3b5bf7189a56a828cabf516888169453b89b838e42135378bdf01d9"
+      ],
+      [
+        "1ea0f6d77015268626d130f0e1afe0527da1e166a7945ee937dd92f4e16354b7",
+        "548f45eebd8ec2723e847cf1f8d4ac6893be2acae8700c12542b8a1f32153b86",
+        "81c9322348fe6d3a0edf38f98f84460a105b43864b03cceac3763166af0ae097"
+      ],
+      [
+        "8e866e40d2f17f017e61e315e1dcc07c076b9c3963992eb123a847f14ce73b58",
+        "e03c32fe84c5c3b577c61e0c1c2b1708247de2bb4b9b28447dfe515792e488ab",
+        "e03c32fe84c5c3b577c61e0c1c2b1708247de2bb4b9b28447dfe515792e488ab"
+      ]
+    ],
+    "pattern_and_grain_texture_ids": [
+      1,
+      2
+    ],
+    "sampler_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "shader_source_sha256": {
+      "fragment": "4c45b50596922acd7b14e5dd56df2301b8b652e25e89bf466172558e929d44aa",
+      "vertex": "44072299681d558389d5a7e94e2c70929b2cf1399a493df777302c30b609fc3e"
+    },
+    "texture_fixture_sha256": "827aee3f567fecdce3e04b4a29217dc1f5d140e130d11ef7720734ef4e7e992c",
+    "texture_uploads": [
+      {
+        "bytes": 0,
+        "dimensions": [
+          144,
+          144
+        ],
+        "format": 6408,
+        "kind": "storage",
+        "sha256": null,
+        "type": null
+      },
+      {
+        "bytes": 0,
+        "dimensions": [
+          321,
+          228
+        ],
+        "format": 6408,
+        "kind": "storage",
+        "sha256": null,
+        "type": null
+      },
+      {
+        "bytes": 82944,
+        "dimensions": [
+          144,
+          144
+        ],
+        "format": 6408,
+        "kind": "upload",
+        "sha256": "10363ec672243f7a0f09c0ce1aed7a69e8f4296153ec47691a469f513d344cf2",
+        "type": 5121
+      },
+      {
+        "bytes": 292752,
+        "dimensions": [
+          321,
+          228
+        ],
+        "format": 6408,
+        "kind": "upload",
+        "sha256": "ec10a82c17d4912c8d0611b0c87664c7f26662911ed284bbad017d6e3f444beb",
+        "type": 5121
+      },
+      {
+        "bytes": 292752,
+        "dimensions": [
+          321,
+          228
+        ],
+        "format": 6408,
+        "kind": "storage",
+        "sha256": "f0cae1c3cf0c26f5eb5d3a6a1986263254718bb7ddf89b32d58edc0e4466fb89",
+        "type": null
+      },
+      {
+        "bytes": 0,
+        "dimensions": [
+          144,
+          144
+        ],
+        "format": 6408,
+        "kind": "storage",
+        "sha256": null,
+        "type": null
+      },
+      {
+        "bytes": 0,
+        "dimensions": [
+          321,
+          228
+        ],
+        "format": 6408,
+        "kind": "storage",
+        "sha256": null,
+        "type": null
+      },
+      {
+        "bytes": 82944,
+        "dimensions": [
+          144,
+          144
+        ],
+        "format": 6408,
+        "kind": "upload",
+        "sha256": "10363ec672243f7a0f09c0ce1aed7a69e8f4296153ec47691a469f513d344cf2",
+        "type": 5121
+      },
+      {
+        "bytes": 292752,
+        "dimensions": [
+          321,
+          228
+        ],
+        "format": 6408,
+        "kind": "upload",
+        "sha256": "ec10a82c17d4912c8d0611b0c87664c7f26662911ed284bbad017d6e3f444beb",
+        "type": 5121
+      }
+    ],
+    "texture_ids_scope": "Inherited initial control texture IDs; actual task2 bindings are recorded separately"
+  },
+  "buffer_handoff": {
+    "native_update_draw_instanced_args": [
+      5,
+      0,
+      4,
+      63
+    ],
+    "producer_fields_cleared_after_task1": true,
+    "rt_plus_104_after_task1": "0x0",
+    "rt_plus_112_after_task1": "0x0",
+    "rt_plus_80_after_task1": "0x0",
+    "rt_plus_88_after_task1": "0x100ec2f0",
+    "same_bytes_as_saved_geometry_fixture": true,
+    "task1_second_vector_argument_matches_rt_plus_112": true,
+    "task1_vector_argument_matches_rt_plus_88": true,
+    "vector_bytes": 2772,
+    "vector_sha256": "becc134bf38d9c9c3488d7d9163eee94d56a6ef94456e66c61248d0fce65888a"
+  },
+  "host_mesa": {
+    "egl_version": "1.5",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "shading_language": "OpenGL ES GLSL ES 3.20",
+    "vendor": "Mesa",
+    "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1"
+  },
+  "native_dsos": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "BrushPen": "acf59300dbdf53942680761a6cfe57e5164e0e6c45076d30fc56b9efa04ea0ce",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libSPenCxx.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd"
+  },
+  "repetitions": 3,
+  "model_comparison": {
+    "source": "Rust test-only GLV10 sampler from decoded v10 payload, followed by Rust host-Mesa-profile painter using captured uniforms and reconstructed intrinsic textures",
+    "geometry_match": "byte-for-byte 2772 bytes vs native callback",
+    "rgba_absolute_error_sum": 1,
+    "changed_channels": 1,
+    "model_rgba_sha256": "5c74085ae50cab7d1b4bdd983b8e5ffbb97f3eddae9c98487eb5eb6980a16722",
+    "test_command": "CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 cargo test -p sdocx --features render,serde --lib serialized_model_paint_matches_native_frame -- --nocapture",
+    "workspace": "isolated copy against current source; not production dispatch"
+  },
+  "capture_helper_sha256": "4624137b6be78038a0d1739fb15684d3b697f111319f5699c628f5608c002742",
+  "readback_state": {
+    "dimensions": [
+      321,
+      228
+    ],
+    "format": "RGBA8",
+    "before_native_task2_verified_zero": true,
+    "attachment_texture_id_at_read": 4,
+    "attachment_type_at_read": 5890,
+    "draw_framebuffer_at_read": 2,
+    "read_framebuffer_at_read": 2,
+    "after_task2_nonzero_alpha_pixels": 360,
+    "after_task2_nonzero_bytes": 360
+  },
+  "repetition_scope": "Three expanded-verifier replays each checked callback, uploads, uniforms, task2 bindings, blend, draw, framebuffer status and readback against this receipt."
+}
