@@ -1257,12 +1257,12 @@ mod tests {
         }
     }
 
-    // Experimental paired output for the retained joined native capture. This
-    // does not enable the candidate in production or assert pixel parity.
+    // Joined native geometry and in-memory PDF construction checks.
+    // This does not enable the candidate in production or assert pixel parity.
     #[cfg(feature = "pdf")]
     #[test]
-    #[ignore = "writes experimental SVG/PDF to SDOCX_INKPEN_V4_EXPORT_DIR"]
-    fn export_v4_joined_candidate_and_generic_fallback() {
+    #[ignore = "requires pinned local joined-paint and color capture files"]
+    fn v4_joined_candidate_and_generic_fallback_construct_pdf() {
         use sha2::{Digest, Sha256};
 
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -1341,15 +1341,8 @@ mod tests {
         let fallback = crate::render_document_svg(&document, &crate::RenderOptions::default())
             .remove(0)
             .svg;
-        let output = std::path::PathBuf::from(
-            std::env::var_os("SDOCX_INKPEN_V4_EXPORT_DIR")
-                .expect("set SDOCX_INKPEN_V4_EXPORT_DIR to a fresh directory"),
-        );
-        std::fs::create_dir(&output).expect("output directory must not already exist");
-        let write_pair = |prefix: &str, candidate: String, fallback: String| {
+        let check_pair = |candidate: String, fallback: String| {
             for (kind, raw_svg) in [("candidate", candidate), ("generic", fallback)] {
-                let name = format!("{prefix}{kind}");
-                std::fs::write(output.join(format!("{name}-raw.svg")), &raw_svg).unwrap();
                 let start = raw_svg.find('>').unwrap() + 1;
                 let end = raw_svg.rfind("</svg>").unwrap();
                 let mut body = &raw_svg[start..end];
@@ -1367,14 +1360,12 @@ mod tests {
                     "{}<g transform=\"translate(0 64) scale(1 -1)\">{body}</g></svg>",
                     &raw_svg[..start],
                 );
-                let page = crate::RenderedPage::new(0, 128, 64, svg.clone());
-                let pdf = crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default())
-                    .expect("experimental SVG must lower to PDF");
-                std::fs::write(output.join(format!("{name}.svg")), svg).unwrap();
-                std::fs::write(output.join(format!("{name}.pdf")), pdf).unwrap();
+                let page = crate::RenderedPage::new(0, 128, 64, svg);
+                crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default())
+                    .expect("captured-source SVG must lower to PDF");
             }
         };
-        write_pair("", candidate.svg, fallback);
+        check_pair(candidate.svg, fallback);
 
         let color_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(
             "../../tmp/vector-parity-plan/inkpen-saved-rgb/native-inputs/inkpen-color-native.json",
@@ -1459,11 +1450,7 @@ mod tests {
                 crate::render_document_svg(&color_document, &crate::RenderOptions::default())
                     .remove(0)
                     .svg;
-            write_pair(
-                &format!("argb-{argb:08x}-"),
-                color_candidate.svg,
-                color_fallback,
-            );
+            check_pair(color_candidate.svg, color_fallback);
         }
     }
 
