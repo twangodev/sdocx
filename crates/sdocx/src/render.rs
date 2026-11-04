@@ -6933,8 +6933,6 @@ mod tests {
             }
         }
 
-        let artifact_dir =
-            std::env::var_os("SDOCX_SLICE_EQUIVALENCE_ARTIFACTS").map(std::path::PathBuf::from);
         for (case, variable) in [("quiz", "SDOCX_QUIZ_SDOCX"), ("cs61", "SDOCX_CS61_SDOCX")] {
             let path = std::env::var_os(variable)
                 .unwrap_or_else(|| panic!("set {variable} to the actual {case} fixture"));
@@ -6994,26 +6992,6 @@ mod tests {
                     y + height
                 );
                 if pixmap_without_culling.data() != pixmap_with_culling.data() {
-                    if let Some(directory) = &artifact_dir {
-                        std::fs::create_dir_all(directory).unwrap();
-                        let stem = format!("{case}-slice-{index:02}-y{y}-h{height}");
-                        std::fs::write(
-                            directory.join(format!("{stem}-reference.svg")),
-                            &without_culling.page.svg,
-                        )
-                        .unwrap();
-                        std::fs::write(
-                            directory.join(format!("{stem}-culled.svg")),
-                            &with_culling.page.svg,
-                        )
-                        .unwrap();
-                        pixmap_without_culling
-                            .save_png(directory.join(format!("{stem}-reference.png")))
-                            .unwrap();
-                        pixmap_with_culling
-                            .save_png(directory.join(format!("{stem}-culled.png")))
-                            .unwrap();
-                    }
                     let first_difference = pixmap_without_culling
                         .data()
                         .iter()
@@ -19394,13 +19372,6 @@ mod tests {
         };
         assert_field_form(&full_pdf, 75.0);
         assert_field_form(&slice_pdf, 30.0);
-
-        if let Some(directory) = std::env::var_os("SDOCX_SLICE_INK_ARTIFACTS") {
-            let directory = std::path::PathBuf::from(directory);
-            std::fs::create_dir_all(&directory).unwrap();
-            std::fs::write(directory.join("full-page.pdf"), &full_pdf).unwrap();
-            std::fs::write(directory.join("slice-y30-h40.pdf"), &slice_pdf).unwrap();
-        }
     }
 
     #[cfg(feature = "pdf")]
