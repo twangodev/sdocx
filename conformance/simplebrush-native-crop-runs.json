@@ -551,7 +551,7 @@
     "conformance/simplebrush-edge-7-24-crop.rgba": {
       "byte_length": 18432,
       "sha256": "6561416fd2664482ff541e04eaa303957b92de02e4063afd08d9f55cfba9e7b4",
-      "provenance_receipts": ["conformance/simplebrush-edge-7-24.json"],
+      "provenance_receipts": ["conformance/simplebrush-edge-7-3.json#/retained_controls/7-24"],
       "runs": [
         [1, "44aaeeff"],
         [1, "44abefff"],
@@ -951,7 +951,7 @@
     "conformance/simplebrush-edge-7-3-crop.rgba": {
       "byte_length": 18432,
       "sha256": "2bdfa8c587b6deec50a491410929d4551cfc7adbada7db002fe584d4098d8c35",
-      "provenance_receipts": ["conformance/simplebrush-edge-7-3.json"],
+      "provenance_receipts": ["conformance/simplebrush-edge-7-3.json#/retained_controls/7-3"],
       "runs": [
         [288, "00000000"],
         [1, "122c3e42"],
@@ -11557,7 +11557,7 @@
     "conformance/simplebrush-edge-16-24-crop.rgba": {
       "byte_length": 18432,
       "sha256": "f007ee8c017f4f3bbef8cde3302c8c59253e25543b564c3273e585ff44252aec",
-      "provenance_receipts": ["conformance/simplebrush-edge-16-24.json"],
+      "provenance_receipts": ["conformance/simplebrush-edge-7-3.json#/retained_controls/16-24"],
       "palette": [
         "44aaeeff", "44abefff", "3481b2bf", "183c555a", "00000000", "0f263538", "3c96d2e1", "45aaeeff",
         "44aaedff", "40a1e0f0", "2a69929e", "07111719", "2052757e", "41a3e4f4", "44a9edff", "44a9eeff",
@@ -11718,7 +11718,7 @@
     "conformance/simplebrush-edge-16-3-crop.rgba": {
       "byte_length": 18432,
       "sha256": "35c71af366fa4705e3278b04db0a4460a2963cdd6080a92aae3380a295202f82",
-      "provenance_receipts": ["conformance/simplebrush-edge-16-3.json"],
+      "provenance_receipts": ["conformance/simplebrush-edge-7-3.json#/retained_controls/16-3"],
       "palette": [
         "00000000", "122c3e42", "16364c51", "3b95d0de", "3482b6c2", "15354a50", "050d1213", "03070a0b",
         "0711181a", "050c1112", "08131a1c", "050e1315", "07111819", "040b0f11", "183b5359", "3481b4c1",

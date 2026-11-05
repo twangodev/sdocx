@@ -1614,17 +1614,8 @@ mod tests {
             (_, 16) if probe == 2 => {
                 include_str!("../../../../conformance/simplebrush-two-16.json")
             }
-            (_, 3) if probe == 7 => {
+            (_, 3 | 24) if probe == 7 || probe == 16 => {
                 include_str!("../../../../conformance/simplebrush-edge-7-3.json")
-            }
-            (_, 3) if probe == 16 => {
-                include_str!("../../../../conformance/simplebrush-edge-16-3.json")
-            }
-            (_, 24) if probe == 7 => {
-                include_str!("../../../../conformance/simplebrush-edge-7-24.json")
-            }
-            (_, 24) if probe == 16 => {
-                include_str!("../../../../conformance/simplebrush-edge-16-24.json")
             }
             (_, 10) => include_str!("../../../../conformance/simplebrush-size-3-10.json"),
             (_, 55) => include_str!("../../../../conformance/simplebrush-size-7-55.json"),
@@ -1669,6 +1660,11 @@ mod tests {
             _ => unreachable!(),
         })
         .unwrap();
+        let receipt = if matches!(size, 3 | 24) && matches!(probe, 7 | 16) {
+            &receipt["retained_controls"][format!("{probe}-{size}")]
+        } else {
+            &receipt
+        };
         assert_eq!(
             format!("{:x}", Sha256::digest(native)),
             (if extra || six || probe != 0 {
