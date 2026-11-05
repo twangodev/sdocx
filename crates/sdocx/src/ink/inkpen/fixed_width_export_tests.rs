@@ -10,7 +10,8 @@ fn v1_fixed_width_same_input_export_comparison() {
         .transpose()
         .unwrap()
         .unwrap_or_else(|| {
-            include_str!("../../../tests/fixtures/inkpen-v1-high-scale-color-native.json").to_owned()
+            include_str!("../../../tests/fixtures/inkpen-v1-high-scale-color-native.json")
+                .to_owned()
         });
     let fixture: Value = serde_json::from_str(&fixture_data).unwrap();
     for (i, case) in fixture["cases"].as_array().unwrap().iter().enumerate() {
@@ -76,9 +77,10 @@ fn v1_fixed_width_export_comparison() {
     ))
     .unwrap();
     let extended: Value = serde_json::from_str(include_str!(
-        "../../../../../conformance/inkpen-v1-fixed-width-extended-native.json"
+        "../../../../../conformance/inkpen-v1-fixed-width-native.json"
     ))
     .unwrap();
+    let extended = &extended["retained_controls"]["extended"];
     fixture["cases"]
         .as_array_mut()
         .unwrap()

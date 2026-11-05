@@ -14,9 +14,10 @@ fn v1_fixed_width_color_export_comparison() {
         );
     }
     let fixture: Value = serde_json::from_str(include_str!(
-        "../../../../../conformance/inkpen-v1-fixed-width-color-native.json"
+        "../../../../../conformance/inkpen-v1-fixed-width-native.json"
     ))
     .unwrap();
+    let fixture = &fixture["retained_controls"]["color"];
     for (i, case) in fixture["cases"].as_array().unwrap().iter().enumerate() {
         let mut stroke = native_caller_stroke(&case["input"]);
         let r = stroke.rendering.as_mut().unwrap();
