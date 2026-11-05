@@ -2520,10 +2520,11 @@ mod tests {
 
     #[test]
     fn matches_native_v1_source_event_boundary_matrix() {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/inkpen-v1-boundaries-native.json"
+        let fixture: Value = serde_json::from_str::<Value>(include_str!(
+            "../../../../conformance/inkpen-v1-saved-native.json"
         ))
-        .unwrap();
+        .unwrap()["retained_controls"]["boundaries"]
+            .clone();
         assert_eq!(
             fixture["schema"],
             "sdocx-inkpen-v1-native-event-boundaries-v1"
@@ -2607,10 +2608,11 @@ mod tests {
 
     #[test]
     fn matches_native_v1_no_curve_tools_3_and_4_full_streams_and_event_ranges() {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/inkpen-v1-nocurve-tool34-native.json"
+        let fixture: Value = serde_json::from_str::<Value>(include_str!(
+            "../../../../conformance/inkpen-v1-saved-native.json"
         ))
-        .unwrap();
+        .unwrap()["retained_controls"]["nocurve"]
+            .clone();
         assert_eq!(
             fixture["schema"],
             "sdocx-inkpen-v1-nocurve-tool34-native-fixture-v1"
@@ -2747,10 +2749,11 @@ mod tests {
 
     #[test]
     fn curved_tool3_and_tool4_use_native_vectors_and_argb() {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/inkpen-v1-boundaries-native.json"
+        let fixture: Value = serde_json::from_str::<Value>(include_str!(
+            "../../../../conformance/inkpen-v1-saved-native.json"
         ))
-        .unwrap();
+        .unwrap()["retained_controls"]["boundaries"]
+            .clone();
         for tool in [3_u64, 4] {
             let case = &fixture["cases"][format!("tool{tool}_five_1920x1080")];
             let mut input = native_caller_stroke(&case["input"]);
@@ -2776,10 +2779,11 @@ mod tests {
 
     #[test]
     fn canonical_no_curve_tools_3_and_4_match_native_vectors_and_keep_fallback_gates() {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/inkpen-v1-nocurve-tool34-native.json"
+        let fixture: Value = serde_json::from_str::<Value>(include_str!(
+            "../../../../conformance/inkpen-v1-saved-native.json"
         ))
-        .unwrap();
+        .unwrap()["retained_controls"]["nocurve"]
+            .clone();
         assert_eq!(
             fixture["schema"],
             "sdocx-inkpen-v1-nocurve-tool34-native-fixture-v1"
@@ -2868,10 +2872,11 @@ mod tests {
 
     #[test]
     fn matches_native_v1_reuse_source_event_boundaries() {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/inkpen-v1-reuse-native.json"
+        let fixture: Value = serde_json::from_str::<Value>(include_str!(
+            "../../../../conformance/inkpen-v1-saved-native.json"
         ))
-        .unwrap();
+        .unwrap()["retained_controls"]["reuse"]
+            .clone();
         assert_eq!(fixture["schema"], "sdocx-inkpen-v1-reuse-native-v1");
         let cases = fixture["cases"].as_object().unwrap();
         assert_eq!(cases.len(), 4);
