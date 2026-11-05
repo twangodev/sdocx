@@ -1573,10 +1573,9 @@ mod tests {
             }
             _ if probe == 216 => include_str!("../../../../conformance/simplebrush-size32.json"),
             _ if probe == 217 => include_str!("../../../../conformance/simplebrush-size28.json"),
-            _ if probe == 215 => {
+            _ if matches!(probe, 214 | 215) => {
                 include_str!("../../../../conformance/simplebrush-fractional.json")
             }
-            _ if probe == 214 => include_str!("../../../../conformance/simplebrush-manyskip.json"),
             _ if probe == 211 => {
                 include_str!("../../../../conformance/simplebrush-threshold-below.json")
             }
@@ -1660,7 +1659,13 @@ mod tests {
             _ => unreachable!(),
         })
         .unwrap();
-        let receipt = if matches!(size, 3 | 24) && matches!(probe, 7 | 16) {
+        let receipt = if matches!(probe, 214 | 215) {
+            &receipt["retained_controls"][if probe == 215 {
+                "fractional"
+            } else {
+                "manyskip"
+            }]
+        } else if matches!(size, 3 | 24) && matches!(probe, 7 | 16) {
             &receipt["retained_controls"][format!("{probe}-{size}")]
         } else {
             &receipt

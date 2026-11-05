@@ -1321,7 +1321,7 @@
     "conformance/simplebrush-fractional-crop.rgba": {
       "byte_length": 18432,
       "sha256": "9c46dc8f203842ce1fd82153b3fe690dafc20cffd55a89b1668f3582b1b48d96",
-      "provenance_receipts": ["conformance/simplebrush-fractional.json"],
+      "provenance_receipts": ["conformance/simplebrush-fractional.json#/retained_controls/fractional"],
       "runs": [
         [1, "43aaeeff"],
         [13, "44aaeeff"],
@@ -1465,7 +1465,7 @@
     "conformance/simplebrush-manyskip-crop.rgba": {
       "byte_length": 18432,
       "sha256": "66af4df81285effd4aca096ae76c006787a12a0be5be8fc86222094b82758ea2",
-      "provenance_receipts": ["conformance/simplebrush-manyskip.json"],
+      "provenance_receipts": ["conformance/simplebrush-fractional.json#/retained_controls/manyskip"],
       "runs": [
         [1, "43aaeeff"],
         [13, "44aaeeff"],
