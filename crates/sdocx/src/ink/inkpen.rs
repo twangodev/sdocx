@@ -1461,10 +1461,11 @@ mod tests {
         use sha2::{Digest, Sha256};
         use std::io::Read;
 
-        let receipt: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/inkpen-v4-crossing-native.json"
+        let receipt: Value = serde_json::from_str::<Value>(include_str!(
+            "../../../../conformance/inkpen-v4-vector-host.json"
         ))
-        .unwrap();
+        .unwrap()["retained_controls"]["crossing"]
+            .clone();
         let compressed = base64::engine::general_purpose::STANDARD
             .decode(receipt["rgba_zlib_base64"].as_str().unwrap())
             .unwrap();
@@ -1799,10 +1800,11 @@ mod tests {
         use sha2::{Digest, Sha256};
         use std::io::Read;
 
-        let receipt: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/inkpen-v4-scale-native.json"
+        let receipt: Value = serde_json::from_str::<Value>(include_str!(
+            "../../../../conformance/inkpen-v4-vector-host.json"
         ))
-        .unwrap();
+        .unwrap()["retained_controls"]["scale"]
+            .clone();
         let frames = include_bytes!("../../../../conformance/inkpen-v4-scale-native.bin");
         let hash = |bytes: &[u8]| format!("{:x}", Sha256::digest(bytes));
         assert_eq!(hash(frames), receipt["frames_sha256"]);

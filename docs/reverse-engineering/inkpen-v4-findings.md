@@ -156,7 +156,7 @@ by the host; the terminal event clock models signed last-minus-first time.
 Only SmPath is constructed natively. This establishes the selected synthetic
 call-path observations, not Android lifecycle, Rust or appearance parity.
 
-A fresh crossing-stroke [host capture](../../conformance/inkpen-v4-crossing-native.json)
+A fresh crossing-stroke [host capture](../../conformance/inkpen-v4-vector-host.json) (under `retained_controls.crossing`)
 checks a distinct self-crossing trajectory. The scale-1 profile's SVG alpha
 error is less than one fifth of the generic route in the Rust raster regression.
 In a historical MuPDF 1.28.2 comparison, both the SVG and PDF alpha error sums
