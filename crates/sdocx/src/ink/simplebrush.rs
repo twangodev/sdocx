@@ -1576,14 +1576,8 @@ mod tests {
             _ if matches!(probe, 214 | 215) => {
                 include_str!("../../../../conformance/simplebrush-fractional.json")
             }
-            _ if probe == 211 => {
+            _ if matches!(probe, 211..=213) => {
                 include_str!("../../../../conformance/simplebrush-threshold-below.json")
-            }
-            _ if probe == 212 => {
-                include_str!("../../../../conformance/simplebrush-threshold-equal.json")
-            }
-            _ if probe == 213 => {
-                include_str!("../../../../conformance/simplebrush-threshold-above.json")
             }
             _ if probe == 210 => {
                 include_str!("../../../../conformance/simplebrush-short-large.json")
@@ -1659,7 +1653,14 @@ mod tests {
             _ => unreachable!(),
         })
         .unwrap();
-        let receipt = if matches!(probe, 214 | 215) {
+        let receipt = if matches!(probe, 211..=213) {
+            &receipt["retained_controls"][match probe {
+                211 => "below",
+                212 => "equal",
+                213 => "above",
+                _ => unreachable!(),
+            }]
+        } else if matches!(probe, 214 | 215) {
             &receipt["retained_controls"][if probe == 215 {
                 "fractional"
             } else {

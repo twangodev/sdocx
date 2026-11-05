@@ -2750,7 +2750,7 @@
     "conformance/simplebrush-threshold-above-crop.rgba": {
       "byte_length": 18432,
       "sha256": "eb4062dda035ae78e2e4fd34a12c4cade1e3a086ceb2936a8fe5f450b988dfac",
-      "provenance_receipts": ["conformance/simplebrush-threshold-above.json"],
+      "provenance_receipts": ["conformance/simplebrush-threshold-below.json#/retained_controls/above"],
       "runs": [
         [4, "00000000"],
         [1, "08131a1d"],
@@ -2798,7 +2798,7 @@
     "conformance/simplebrush-threshold-below-crop.rgba": {
       "byte_length": 18432,
       "sha256": "b98ce550ba6f124d47ca7315bc7a1ddddca9d22c9091419d129c93aa3110c4bb",
-      "provenance_receipts": ["conformance/simplebrush-threshold-below.json"],
+      "provenance_receipts": ["conformance/simplebrush-threshold-below.json#/retained_controls/below"],
       "runs": [
         [4, "00000000"],
         [1, "08141c1d"],
@@ -2846,7 +2846,7 @@
     "conformance/simplebrush-threshold-equal-crop.rgba": {
       "byte_length": 18432,
       "sha256": "79045693f73e144d00dce00fa18b7f2f90ac481bd5719168d7edbcbd0445d564",
-      "provenance_receipts": ["conformance/simplebrush-threshold-equal.json"],
+      "provenance_receipts": ["conformance/simplebrush-threshold-below.json#/retained_controls/equal"],
       "runs": [
         [4, "00000000"],
         [1, "08131a1d"],
