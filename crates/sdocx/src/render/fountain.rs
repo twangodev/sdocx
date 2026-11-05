@@ -1718,10 +1718,11 @@ mod tests {
 
     #[test]
     fn v16_svg_fields_match_native_unit_scale_records() {
-        let fixture: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../../conformance/fountain-v16-addpoint-native.json"
+        let captures: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-as18-glv16-rainbow-ignored-native.json"
         ))
         .unwrap();
+        let fixture = &captures["addpoint_capture"];
         let mut checked = 0;
         for case in fixture["cases"].as_array().unwrap() {
             if case["inverse_xy"] != serde_json::json!([1.0, 1.0])
@@ -2669,10 +2670,11 @@ mod tests {
 
     #[test]
     fn saved_v16_argb_opacity_matches_native_draw_uniform() {
-        let capture: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../../conformance/fountain-as18-v16-alpha-native.json"
+        let captures: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-as18-glv16-rainbow-ignored-native.json"
         ))
         .unwrap();
+        let capture = &captures["alpha_capture"];
         let reference: serde_json::Value =
             serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
                 .unwrap();
