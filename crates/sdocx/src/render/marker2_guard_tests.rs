@@ -382,6 +382,7 @@ fn marker2_page_budget_for_stroke(s: Stroke) {
 // This checks SVG pixels; historical MuPDF/PDFium measurements are not rerun here.
 #[test]
 fn marker2_both_widths_improve_native_overlap_rgb() {
+    use base64::Engine as _;
     use sha2::{Digest, Sha256};
     use std::io::Read;
 
@@ -402,18 +403,51 @@ fn marker2_both_widths_improve_native_overlap_rgb() {
     for (source_path, source_hash, native_dir, receipt_hash) in [
         (
             "v61/bend/w2-translated-a255.json",
-            "3855b96ee0a39a1f24c6853f0af8e765a7820283f004a6cb8551be624903dded",
+            "8700cfda6f47d1e5c9f06a40106f1ea73aa50e803138a9a02a37f85946e81047",
             "expanded/independent-lifecycle",
             "2897535340da643d019f42590a25b0a2e7b2e850ca1ebd5369ad3debb5ec4a88",
         ),
         (
             "fringe-sweep/bend/w3-translated-a255.json",
-            "8689de71d4da3cff3bc9f4e9510a438feaa15f7b13cf63f646b08dea5dbdf145",
+            "5e5162b1a1263ec1dd42969cf2ce634c264612b1830e2604e6be4f9d4d2682f1",
             "width3-controls",
             "2b44034dd9cbf29677c8ebdca86f24851addbd37fa4ffce723bc0136f3baca21",
         ),
     ] {
         let source = read_pinned(source_path, source_hash);
+        for (name, channels, color_type) in [
+            ("composite", 4usize, png::ColorType::Rgba),
+            ("mask", 1usize, png::ColorType::Grayscale),
+        ] {
+            let image = &source[name];
+            let encoded = image["embedded_png_base64"].as_str().unwrap();
+            assert!(encoded.len() <= 16_384);
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(encoded)
+                .unwrap();
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&bytes)),
+                image["png_sha256"].as_str().unwrap()
+            );
+            let mut reader = png::Decoder::new(std::io::Cursor::new(bytes))
+                .read_info()
+                .unwrap();
+            assert_eq!((reader.info().width, reader.info().height), (256, 256));
+            assert_eq!(reader.info().color_type, color_type);
+            assert_eq!(reader.info().bit_depth, png::BitDepth::Eight);
+            assert_eq!(reader.output_buffer_size().unwrap(), 256 * 256 * channels);
+            let mut pixels = vec![0; 256 * 256 * channels];
+            let frame = reader.next_frame(&mut pixels).unwrap();
+            assert_eq!(frame.buffer_size(), pixels.len());
+            let mut digest = Sha256::new();
+            for row in pixels.chunks_exact(256 * channels).rev() {
+                digest.update(row);
+            }
+            assert_eq!(
+                format!("{:x}", digest.finalize()),
+                image["raw_gl_sha256"].as_str().unwrap()
+            );
+        }
         let receipt = read_pinned(&format!("{native_dir}/receipt.json"), receipt_hash);
         assert!(receipt["nonzero_gl_errors"].as_array().unwrap().is_empty());
         for field in ["object_strokes", "drawings", "pens", "renderers"] {

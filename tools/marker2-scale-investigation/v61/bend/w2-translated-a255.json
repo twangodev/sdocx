@@ -1,4 +1,6 @@
 {
+  "historical_receipt_sha256": "3855b96ee0a39a1f24c6853f0af8e765a7820283f004a6cb8551be624903dded",
+  "embedded_png_scope": "Exact original PNG bytes; filenames are historical capture paths. Native GL hashes and capture provenance are unchanged.",
   "case": "w2-translated-a255",
   "composite": {
     "bbox_gl_bottom_up": [
@@ -8,7 +10,8 @@
       168
     ],
     "channels": 4,
-    "file": "w2-translated-a255-composite-rgba.png",
+    "historical_file": "w2-translated-a255-composite-rgba.png",
+    "embedded_png_base64": "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAD4ElEQVR42u3dzWscZRwH8Ca7zWa3u5tNNqv70u5mYyNpK9po0rc0EbpSrCKKgqJtrdjizaqHFqkIxUOx5KAHS3yB0n+itBdPKgh69eBJQURPXhVU1DkEypqZpM0Gd8bPB+aUeZ7Dd/j9ZuftyZYtAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAEuXSg6X7yrljl+ab3y13Jv94YnL0YimTbkgGEu7sTO3mR49M/hW2jWfTbSlBAu0uZ49GFf/KdmJX5WNpQcKsp/hXtuDyQGKQEPuq+RdupwEE26t7q9clBwk9+7+70Pzh8fbo22s1AulBAhvA9vzQ/St/f+/hiV+imkAmNbBNipCgBtC9z7F26UJYA1jutH+XIsTQgVr+ZHdBv/Fg7dPV9n2gsu3JsCbwzqEd30oTYuaZqfJSdzFfOdL+LWz/6bFsJ6wJXNjX+EqiECMv7alc6y7koClEjYm6OdhpjrwmVYjx9X9Q4GuNi7onsL+aPy5ZiIHg5353AU+NDi+uZ+z5ufoXqzWApcXWT+VsekK60Mey6cGRjT7bf2rn2CXvCEAMtYqZ2V4UblgDOLW7clXK0Keenhq73Kszd1gTONwonJE09KHgeX+vPvQ5WCucCmsCwaNDaUOfOT9b/7y7WE/uqnxyp/M9e2/5fa8LQ0x8cKT9a3ehFodS1Y3MeXamesNNQYiB1Yp0ow0g6n7A5YXWj1KHPrCjMLR3s87Sd+W27ox4Xfhr6cN/bDg9WNzMn+kHaoUXw5pA2MdGUYKFSufrhZcdOeiRN+caX95amP8U2Olezh+sKBzWBM7N1j9b7zxLi62fbx1byqTqjh705FIgM9Npjrye35oa34z5H2uX3gprAh92Jv9ca3zYNweOHMTExYPbv4laUWh/LX9itXHpwYFM0CQ0AIi556fHr6y1vuBEMTO3sn/w3oBPjiFBgpt4t7v68L/eVDzc/F6SEFMLjeIrG2kArWLmISlCjA2lBnJ3Uvx7yrlHpQcJETx9WG/xH22VzkkMEuj49PhyWOEH/6BEQvA/cU9peH727vxzkgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADoI38DBr/yyjE9jbUAAAAASUVORK5CYII=",
     "height": 256,
     "nonzero_pixels": 429,
     "png_sha256": "b0adbb763d161af2def0acad4fcc31fbb904f6c5011083860de23a54cdd5c0ea",
@@ -31,7 +34,8 @@
       168
     ],
     "channels": 1,
-    "file": "w2-translated-a255-mask-red.png",
+    "historical_file": "w2-translated-a255-mask-red.png",
+    "embedded_png_base64": "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAAAAAB5Gfe6AAABvUlEQVR42u3Yv0tWURwH4LMJCdrgELkYOIdRTkGLEDo1BpkGGq66uBiCUyAuLREoRP+E1PJOGgS6NjS9gYROrQkqV+977tvr+8PF8f0+z3TO2T6fezn3npMSAAAAAAAAAAAAAAAAAAAAAAAAAAAAcCt3Z+rnG6Nx838rsgdB8z8vmrZjFlC01CPmf3WtgGI36gtwtN6sIGgBD1P6WzUwGLKAcrCWCzgLln+uDF1rDF/kBn7FKmCrzHyax1O5gYNQBXwpI29Vk2orXA63Baw3Z9U+MBuogNMy8LP/0++NAo7HwuQf7vz4vw/2O/CkK24u4HOUAja7n3du4G2QAmrdZ6A3uYGpGAXsl1l32tc+RPon/ldGvdex+DXQRlj0KqDaBv4EyD/R+1GP5wYO+7+AoRve9fncQO362sxCPzbw4yrmYo/1jdzAXmvl5Gp6vw8beLQy0nP9XW7gov2UEOmU9LO6IXrdmA1cxLsw+9i8JpxMaTDgOTmlhaLD7xTMUkcBj6MVkO605Z9OAa208q+mmD7l+EcpsKcvEwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEDfuAR1C3ln1w5hRgAAAABJRU5ErkJggg==",
     "height": 256,
     "nonzero_pixels": 429,
     "png_sha256": "69cc44f4e3b4c416dac2da4dd9522cead1ca21031a2c3e1ac9192b7fdee30a06",
