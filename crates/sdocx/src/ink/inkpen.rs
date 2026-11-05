@@ -3198,31 +3198,19 @@ mod tests {
     fn fixed_width_v4_matches_native_drawing_and_improves_svg() {
         use base64::Engine;
         use std::io::Read;
-        let mut cases: Vec<(f32, Value)> = [
-            (
-                3.0,
-                include_str!("../../../../conformance/inkpen-v4-fixed-width-3-native.json"),
-            ),
-            (
-                6.0,
-                include_str!("../../../../conformance/inkpen-v4-fixed-width-native.json"),
-            ),
-            (
-                12.0,
-                include_str!("../../../../conformance/inkpen-v4-fixed-width-12-native.json"),
-            ),
-            (
-                6.0,
-                include_str!("../../../../conformance/inkpen-v4-fixed-width-geometry-native.json"),
-            ),
-        ]
-        .into_iter()
-        .map(|(width, data)| (width, serde_json::from_str(data).unwrap()))
-        .collect();
         let matrix: Value = serde_json::from_str(include_str!(
             "../../../../conformance/inkpen-v4-fixed-width-matrix-native.json"
         ))
         .unwrap();
+        let mut cases: Vec<(f32, Value)> = [
+            (3.0, "width3"),
+            (6.0, "width6"),
+            (12.0, "width12"),
+            (6.0, "geometry"),
+        ]
+        .into_iter()
+        .map(|(width, key)| (width, matrix["retained_controls"][key].clone()))
+        .collect();
         cases.extend(
             matrix["cases"]
                 .as_array()
