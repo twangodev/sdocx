@@ -3014,10 +3014,11 @@ mod tests {
 
     #[test]
     fn matches_all_native_v4_display_profile_callback_bits() {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/inkpen-display-profiles-native.json"
+        let fixture: Value = serde_json::from_str::<Value>(include_str!(
+            "../../../../conformance/inkpen-admission-native.json"
         ))
-        .unwrap();
+        .unwrap()["retained_controls"]["display_profiles"]
+            .clone();
         assert_eq!(fixture["schema"], "sdocx-inkpen-display-profiles-native-v1");
         let cases = fixture["cases"].as_object().unwrap();
         assert_eq!(cases.len(), 7);

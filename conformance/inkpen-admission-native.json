@@ -1665,5 +1665,1983 @@
         }
       }
     }
+  },
+  "retained_controls": {
+    "display_profiles": {
+      "capture_revision": "rust-asserted-native-v1",
+      "original_sha256": "9e8dbf225de58a325b10a4572a52070ba64dbc445eb19d2c7c8ab6dbb21e4e21",
+      "schema": "sdocx-inkpen-display-profiles-native-v1",
+      "cases": {
+        "abi_control_70000x80000": {
+          "input": {
+            "advanced_getter_utf8": "",
+            "advanced_setting_state": "empty",
+            "curve_enabled": true,
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+            "pen_size_f32_bits": "00002041",
+            "points_f32_bits": [
+              [
+                "00000000",
+                "00000000"
+              ],
+              [
+                "00002041",
+                "00000000"
+              ],
+              [
+                "0000a041",
+                "00000000"
+              ],
+              [
+                "0000f041",
+                "00002041"
+              ]
+            ],
+            "pressure_f32_bits": [
+              "0000803e",
+              "0000003f",
+              "0000403f",
+              "0000803f"
+            ],
+            "stroke_type": 0,
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              10,
+              20,
+              30,
+              40
+            ],
+            "tool_type": 1
+          },
+          "profile_case": {
+            "system_display_width_px": 70000,
+            "system_display_height_px": 80000
+          },
+          "pen_setting_data": {
+            "screen_resolution_i32_offsets_32_36": [
+              70000,
+              80000
+            ]
+          },
+          "route": {
+            "selected_drawable_vtable_id": "v4"
+          },
+          "streams": {
+            "draw_object_stroke": {
+              "values_f32_bits": [
+                "00000000",
+                "00000000",
+                "00004040",
+                "00000000",
+                "00000000",
+                "00004040",
+                "78fd9f3f",
+                "00000000",
+                "00004840",
+                "c0370e40",
+                "00000000",
+                "00005040",
+                "28385e40",
+                "00000000",
+                "00005840",
+                "0000a040",
+                "00000000",
+                "00006040",
+                "3566cf40",
+                "4081c43d",
+                "abaa6240",
+                "3b780241",
+                "4081c43e",
+                "56556540",
+                "5f4f2041",
+                "66115d3f",
+                "01006840",
+                "9dcc3c41",
+                "4f06b83f",
+                "acaa6a40",
+                "4a495441",
+                "e131fd3f",
+                "57556d40",
+                "5e266d41",
+                "4eb02640",
+                "02007040",
+                "ecb18341",
+                "44495440",
+                "adaa7240",
+                "da809141",
+                "e7b18340",
+                "58557540",
+                "0000a041",
+                "0000a040",
+                "00007840",
+                "8935ae41",
+                "116bbc40",
+                "00007a40",
+                "c6b3ba41",
+                "8a67d540",
+                "00007c40",
+                "c6a5c841",
+                "8b4bf140",
+                "00007e40",
+                "9358d741",
+                "93580741",
+                "00008040",
+                "0fbee341",
+                "0fbe1341",
+                "00008140"
+              ],
+              "callback_count": 20,
+              "sha256": "fc95eb216cd1c5074714a9833bcb5773d3318319cba7dfac19eaecceb61b1ae2"
+            },
+            "saved_redraw": {
+              "callback_count": 20,
+              "same_bytes_as_drawing_phase": true,
+              "sha256": "fc95eb216cd1c5074714a9833bcb5773d3318319cba7dfac19eaecceb61b1ae2"
+            }
+          }
+        },
+        "abi_control_zero_width_1080": {
+          "input": {
+            "advanced_getter_utf8": "",
+            "advanced_setting_state": "empty",
+            "curve_enabled": true,
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+            "pen_size_f32_bits": "00002041",
+            "points_f32_bits": [
+              [
+                "00000000",
+                "00000000"
+              ],
+              [
+                "00002041",
+                "00000000"
+              ],
+              [
+                "0000a041",
+                "00000000"
+              ],
+              [
+                "0000f041",
+                "00002041"
+              ]
+            ],
+            "pressure_f32_bits": [
+              "0000803e",
+              "0000003f",
+              "0000403f",
+              "0000803f"
+            ],
+            "stroke_type": 0,
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              10,
+              20,
+              30,
+              40
+            ],
+            "tool_type": 1
+          },
+          "profile_case": {
+            "system_display_width_px": 0,
+            "system_display_height_px": 1080
+          },
+          "pen_setting_data": {
+            "screen_resolution_i32_offsets_32_36": [
+              0,
+              1080
+            ]
+          },
+          "route": {
+            "selected_drawable_vtable_id": "v4"
+          },
+          "streams": {
+            "draw_object_stroke": {
+              "values_f32_bits": [
+                "00000000",
+                "00000000",
+                "00004040",
+                "00000000",
+                "00000000",
+                "00004040",
+                "78fd9f3f",
+                "00000000",
+                "00004840",
+                "c0370e40",
+                "00000000",
+                "00005040",
+                "28385e40",
+                "00000000",
+                "00005840",
+                "0000a040",
+                "00000000",
+                "00006040",
+                "47f9c240",
+                "66115d3d",
+                "4cff5e40",
+                "d466e940",
+                "66115d3e",
+                "98fe5d40",
+                "53a40941",
+                "92b3f83e",
+                "e4fd5c40",
+                "5f4f2041",
+                "66115d3f",
+                "30fd5b40",
+                "81243741",
+                "ea73a83f",
+                "7cfc5a40",
+                "e75e4841",
+                "b23bd93f",
+                "c8fb5940",
+                "875f5a41",
+                "a41a0840",
+                "14fb5840",
+                "5e266d41",
+                "4eb02640",
+                "60fa5740",
+                "b7598041",
+                "e05e4840",
+                "acf95640",
+                "5c838a41",
+                "56266d40",
+                "f8f85540",
+                "1d109541",
+                "56838a40",
+                "44f85440",
+                "0000a041",
+                "0000a040",
+                "8af75340",
+                "7cada941",
+                "f85ab340",
+                "44605540",
+                "a58ab241",
+                "4c15c540",
+                "fec85640",
+                "c6b3ba41",
+                "8a67d540",
+                "b8315840",
+                "674fc441",
+                "cd9ee840",
+                "729a5940",
+                "1bb0cc41",
+                "3760f940",
+                "2c035b40",
+                "9358d741",
+                "93580741",
+                "e66b5c40",
+                "ef3ce041",
+                "ef3c1041",
+                "a0d45d40",
+                "1fc9e741",
+                "1fc91741",
+                "5a3d5f40"
+              ],
+              "callback_count": 26,
+              "sha256": "bb09ffd551982d699083f45c12309e3c18fbf4ccc3f177247b31e13bc7d2be2b"
+            },
+            "saved_redraw": {
+              "callback_count": 26,
+              "same_bytes_as_drawing_phase": true,
+              "sha256": "bb09ffd551982d699083f45c12309e3c18fbf4ccc3f177247b31e13bc7d2be2b"
+            }
+          }
+        },
+        "profile_1080x1920": {
+          "input": {
+            "advanced_getter_utf8": "",
+            "advanced_setting_state": "empty",
+            "curve_enabled": true,
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+            "pen_size_f32_bits": "00002041",
+            "points_f32_bits": [
+              [
+                "00000000",
+                "00000000"
+              ],
+              [
+                "00002041",
+                "00000000"
+              ],
+              [
+                "0000a041",
+                "00000000"
+              ],
+              [
+                "0000f041",
+                "00002041"
+              ]
+            ],
+            "pressure_f32_bits": [
+              "0000803e",
+              "0000003f",
+              "0000403f",
+              "0000803f"
+            ],
+            "stroke_type": 0,
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              10,
+              20,
+              30,
+              40
+            ],
+            "tool_type": 1
+          },
+          "profile_case": {
+            "system_display_width_px": 1080,
+            "system_display_height_px": 1920
+          },
+          "pen_setting_data": {
+            "screen_resolution_i32_offsets_32_36": [
+              1080,
+              1920
+            ]
+          },
+          "route": {
+            "selected_drawable_vtable_id": "v4"
+          },
+          "streams": {
+            "draw_object_stroke": {
+              "values_f32_bits": [
+                "00000000",
+                "00000000",
+                "00004040",
+                "00000000",
+                "00000000",
+                "00004040",
+                "78fd9f3f",
+                "00000000",
+                "d8464640",
+                "c0370e40",
+                "00000000",
+                "b08d4c40",
+                "28385e40",
+                "00000000",
+                "88d45240",
+                "0000a040",
+                "00000000",
+                "5f1b5940",
+                "47f9c240",
+                "66115d3d",
+                "8bdd5740",
+                "d466e940",
+                "66115d3e",
+                "b79f5640",
+                "53a40941",
+                "92b3f83e",
+                "e3615540",
+                "5f4f2041",
+                "66115d3f",
+                "0f245440",
+                "81243741",
+                "ea73a83f",
+                "3be65240",
+                "e75e4841",
+                "b23bd93f",
+                "67a85140",
+                "875f5a41",
+                "a41a0840",
+                "936a5040",
+                "5e266d41",
+                "4eb02640",
+                "bf2c4f40",
+                "b7598041",
+                "e05e4840",
+                "ebee4d40",
+                "5c838a41",
+                "56266d40",
+                "17b14c40",
+                "1d109541",
+                "56838a40",
+                "43734b40",
+                "0000a041",
+                "0000a040",
+                "70354a40",
+                "7cada941",
+                "f85ab340",
+                "27944a40",
+                "a58ab241",
+                "4c15c540",
+                "def24a40",
+                "c6b3ba41",
+                "8a67d540",
+                "95514b40",
+                "674fc441",
+                "cd9ee840",
+                "4cb04b40",
+                "1bb0cc41",
+                "3760f940",
+                "030f4c40",
+                "9358d741",
+                "93580741",
+                "ba6d4c40",
+                "ef3ce041",
+                "ef3c1041",
+                "71cc4c40",
+                "1fc9e741",
+                "1fc91741",
+                "282b4d40"
+              ],
+              "callback_count": 26,
+              "sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6"
+            },
+            "saved_redraw": {
+              "callback_count": 26,
+              "same_bytes_as_drawing_phase": true,
+              "sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6"
+            }
+          }
+        },
+        "profile_1440x2560": {
+          "input": {
+            "advanced_getter_utf8": "",
+            "advanced_setting_state": "empty",
+            "curve_enabled": true,
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+            "pen_size_f32_bits": "00002041",
+            "points_f32_bits": [
+              [
+                "00000000",
+                "00000000"
+              ],
+              [
+                "00002041",
+                "00000000"
+              ],
+              [
+                "0000a041",
+                "00000000"
+              ],
+              [
+                "0000f041",
+                "00002041"
+              ]
+            ],
+            "pressure_f32_bits": [
+              "0000803e",
+              "0000003f",
+              "0000403f",
+              "0000803f"
+            ],
+            "stroke_type": 0,
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              10,
+              20,
+              30,
+              40
+            ],
+            "tool_type": 1
+          },
+          "profile_case": {
+            "system_display_width_px": 1440,
+            "system_display_height_px": 2560
+          },
+          "pen_setting_data": {
+            "screen_resolution_i32_offsets_32_36": [
+              1440,
+              2560
+            ]
+          },
+          "route": {
+            "selected_drawable_vtable_id": "v4"
+          },
+          "streams": {
+            "draw_object_stroke": {
+              "values_f32_bits": [
+                "00000000",
+                "00000000",
+                "00004040",
+                "00000000",
+                "00000000",
+                "00004040",
+                "78fd9f3f",
+                "00000000",
+                "00004840",
+                "c0370e40",
+                "00000000",
+                "00005040",
+                "28385e40",
+                "00000000",
+                "00005840",
+                "0000a040",
+                "00000000",
+                "00006040",
+                "47f9c240",
+                "66115d3d",
+                "4cff5e40",
+                "d466e940",
+                "66115d3e",
+                "98fe5d40",
+                "53a40941",
+                "92b3f83e",
+                "e4fd5c40",
+                "5f4f2041",
+                "66115d3f",
+                "30fd5b40",
+                "81243741",
+                "ea73a83f",
+                "7cfc5a40",
+                "e75e4841",
+                "b23bd93f",
+                "c8fb5940",
+                "875f5a41",
+                "a41a0840",
+                "14fb5840",
+                "5e266d41",
+                "4eb02640",
+                "60fa5740",
+                "b7598041",
+                "e05e4840",
+                "acf95640",
+                "5c838a41",
+                "56266d40",
+                "f8f85540",
+                "1d109541",
+                "56838a40",
+                "44f85440",
+                "0000a041",
+                "0000a040",
+                "8af75340",
+                "7cada941",
+                "f85ab340",
+                "44605540",
+                "a58ab241",
+                "4c15c540",
+                "fec85640",
+                "c6b3ba41",
+                "8a67d540",
+                "b8315840",
+                "674fc441",
+                "cd9ee840",
+                "729a5940",
+                "1bb0cc41",
+                "3760f940",
+                "2c035b40",
+                "9358d741",
+                "93580741",
+                "e66b5c40",
+                "ef3ce041",
+                "ef3c1041",
+                "a0d45d40",
+                "1fc9e741",
+                "1fc91741",
+                "5a3d5f40"
+              ],
+              "callback_count": 26,
+              "sha256": "bb09ffd551982d699083f45c12309e3c18fbf4ccc3f177247b31e13bc7d2be2b"
+            },
+            "saved_redraw": {
+              "callback_count": 26,
+              "same_bytes_as_drawing_phase": true,
+              "sha256": "bb09ffd551982d699083f45c12309e3c18fbf4ccc3f177247b31e13bc7d2be2b"
+            }
+          }
+        },
+        "profile_1920x1080": {
+          "input": {
+            "advanced_getter_utf8": "",
+            "advanced_setting_state": "empty",
+            "curve_enabled": true,
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+            "pen_size_f32_bits": "00002041",
+            "points_f32_bits": [
+              [
+                "00000000",
+                "00000000"
+              ],
+              [
+                "00002041",
+                "00000000"
+              ],
+              [
+                "0000a041",
+                "00000000"
+              ],
+              [
+                "0000f041",
+                "00002041"
+              ]
+            ],
+            "pressure_f32_bits": [
+              "0000803e",
+              "0000003f",
+              "0000403f",
+              "0000803f"
+            ],
+            "stroke_type": 0,
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              10,
+              20,
+              30,
+              40
+            ],
+            "tool_type": 1
+          },
+          "profile_case": {
+            "system_display_width_px": 1920,
+            "system_display_height_px": 1080
+          },
+          "pen_setting_data": {
+            "screen_resolution_i32_offsets_32_36": [
+              1920,
+              1080
+            ]
+          },
+          "route": {
+            "selected_drawable_vtable_id": "v4"
+          },
+          "streams": {
+            "draw_object_stroke": {
+              "values_f32_bits": [
+                "00000000",
+                "00000000",
+                "00004040",
+                "00000000",
+                "00000000",
+                "00004040",
+                "78fd9f3f",
+                "00000000",
+                "d8464640",
+                "c0370e40",
+                "00000000",
+                "b08d4c40",
+                "28385e40",
+                "00000000",
+                "88d45240",
+                "0000a040",
+                "00000000",
+                "5f1b5940",
+                "47f9c240",
+                "66115d3d",
+                "8bdd5740",
+                "d466e940",
+                "66115d3e",
+                "b79f5640",
+                "53a40941",
+                "92b3f83e",
+                "e3615540",
+                "5f4f2041",
+                "66115d3f",
+                "0f245440",
+                "81243741",
+                "ea73a83f",
+                "3be65240",
+                "e75e4841",
+                "b23bd93f",
+                "67a85140",
+                "875f5a41",
+                "a41a0840",
+                "936a5040",
+                "5e266d41",
+                "4eb02640",
+                "bf2c4f40",
+                "b7598041",
+                "e05e4840",
+                "ebee4d40",
+                "5c838a41",
+                "56266d40",
+                "17b14c40",
+                "1d109541",
+                "56838a40",
+                "43734b40",
+                "0000a041",
+                "0000a040",
+                "70354a40",
+                "7cada941",
+                "f85ab340",
+                "27944a40",
+                "a58ab241",
+                "4c15c540",
+                "def24a40",
+                "c6b3ba41",
+                "8a67d540",
+                "95514b40",
+                "674fc441",
+                "cd9ee840",
+                "4cb04b40",
+                "1bb0cc41",
+                "3760f940",
+                "030f4c40",
+                "9358d741",
+                "93580741",
+                "ba6d4c40",
+                "ef3ce041",
+                "ef3c1041",
+                "71cc4c40",
+                "1fc9e741",
+                "1fc91741",
+                "282b4d40"
+              ],
+              "callback_count": 26,
+              "sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6"
+            },
+            "saved_redraw": {
+              "callback_count": 26,
+              "same_bytes_as_drawing_phase": true,
+              "sha256": "7b08daf7b07bd579c26d04009dfa4f13858858fc35508c24c66fb21ce4ed84e6"
+            }
+          }
+        },
+        "profile_2048x1536": {
+          "input": {
+            "advanced_getter_utf8": "",
+            "advanced_setting_state": "empty",
+            "curve_enabled": true,
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+            "pen_size_f32_bits": "00002041",
+            "points_f32_bits": [
+              [
+                "00000000",
+                "00000000"
+              ],
+              [
+                "00002041",
+                "00000000"
+              ],
+              [
+                "0000a041",
+                "00000000"
+              ],
+              [
+                "0000f041",
+                "00002041"
+              ]
+            ],
+            "pressure_f32_bits": [
+              "0000803e",
+              "0000003f",
+              "0000403f",
+              "0000803f"
+            ],
+            "stroke_type": 0,
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              10,
+              20,
+              30,
+              40
+            ],
+            "tool_type": 1
+          },
+          "profile_case": {
+            "system_display_width_px": 2048,
+            "system_display_height_px": 1536
+          },
+          "pen_setting_data": {
+            "screen_resolution_i32_offsets_32_36": [
+              2048,
+              1536
+            ]
+          },
+          "route": {
+            "selected_drawable_vtable_id": "v4"
+          },
+          "streams": {
+            "draw_object_stroke": {
+              "values_f32_bits": [
+                "00000000",
+                "00000000",
+                "00004040",
+                "00000000",
+                "00000000",
+                "00004040",
+                "78fd9f3f",
+                "00000000",
+                "00004840",
+                "c0370e40",
+                "00000000",
+                "00005040",
+                "28385e40",
+                "00000000",
+                "00005840",
+                "0000a040",
+                "00000000",
+                "00006040",
+                "47f9c240",
+                "66115d3d",
+                "8b185f40",
+                "d466e940",
+                "66115d3e",
+                "16315e40",
+                "53a40941",
+                "92b3f83e",
+                "a1495d40",
+                "5f4f2041",
+                "66115d3f",
+                "2c625c40",
+                "81243741",
+                "ea73a83f",
+                "b77a5b40",
+                "e75e4841",
+                "b23bd93f",
+                "42935a40",
+                "875f5a41",
+                "a41a0840",
+                "cdab5940",
+                "5e266d41",
+                "4eb02640",
+                "58c45840",
+                "b7598041",
+                "e05e4840",
+                "e3dc5740",
+                "5c838a41",
+                "56266d40",
+                "6ef55640",
+                "1d109541",
+                "56838a40",
+                "f90d5640",
+                "0000a041",
+                "0000a040",
+                "80265540",
+                "7cada941",
+                "f85ab340",
+                "4bca5640",
+                "a58ab241",
+                "4c15c540",
+                "166e5840",
+                "c6b3ba41",
+                "8a67d540",
+                "e1115a40",
+                "674fc441",
+                "cd9ee840",
+                "acb55b40",
+                "1bb0cc41",
+                "3760f940",
+                "77595d40",
+                "9358d741",
+                "93580741",
+                "42fd5e40",
+                "ef3ce041",
+                "ef3c1041",
+                "0da16040",
+                "1fc9e741",
+                "1fc91741",
+                "d8446240"
+              ],
+              "callback_count": 26,
+              "sha256": "5888d43e314d7ab460770a96649c110fd35edd6f0abb29aa9a4417532afc205d"
+            },
+            "saved_redraw": {
+              "callback_count": 26,
+              "same_bytes_as_drawing_phase": true,
+              "sha256": "5888d43e314d7ab460770a96649c110fd35edd6f0abb29aa9a4417532afc205d"
+            }
+          }
+        },
+        "profile_2560x1440": {
+          "input": {
+            "advanced_getter_utf8": "",
+            "advanced_setting_state": "empty",
+            "curve_enabled": true,
+            "orientation_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "pen_name": "com.samsung.android.sdk.pen.pen.preload.InkPen",
+            "pen_size_f32_bits": "00002041",
+            "points_f32_bits": [
+              [
+                "00000000",
+                "00000000"
+              ],
+              [
+                "00002041",
+                "00000000"
+              ],
+              [
+                "0000a041",
+                "00000000"
+              ],
+              [
+                "0000f041",
+                "00002041"
+              ]
+            ],
+            "pressure_f32_bits": [
+              "0000803e",
+              "0000003f",
+              "0000403f",
+              "0000803f"
+            ],
+            "stroke_type": 0,
+            "tilt_f32_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ],
+            "timestamps_i32": [
+              10,
+              20,
+              30,
+              40
+            ],
+            "tool_type": 1
+          },
+          "profile_case": {
+            "system_display_width_px": 2560,
+            "system_display_height_px": 1440
+          },
+          "pen_setting_data": {
+            "screen_resolution_i32_offsets_32_36": [
+              2560,
+              1440
+            ]
+          },
+          "route": {
+            "selected_drawable_vtable_id": "v4"
+          },
+          "streams": {
+            "draw_object_stroke": {
+              "values_f32_bits": [
+                "00000000",
+                "00000000",
+                "00004040",
+                "00000000",
+                "00000000",
+                "00004040",
+                "78fd9f3f",
+                "00000000",
+                "00004840",
+                "c0370e40",
+                "00000000",
+                "00005040",
+                "28385e40",
+                "00000000",
+                "00005840",
+                "0000a040",
+                "00000000",
+                "00006040",
+                "47f9c240",
+                "66115d3d",
+                "4cff5e40",
+                "d466e940",
+                "66115d3e",
+                "98fe5d40",
+                "53a40941",
+                "92b3f83e",
+                "e4fd5c40",
+                "5f4f2041",
+                "66115d3f",
+                "30fd5b40",
+                "81243741",
+                "ea73a83f",
+                "7cfc5a40",
+                "e75e4841",
+                "b23bd93f",
+                "c8fb5940",
+                "875f5a41",
+                "a41a0840",
+                "14fb5840",
+                "5e266d41",
+                "4eb02640",
+                "60fa5740",
+                "b7598041",
+                "e05e4840",
+                "acf95640",
+                "5c838a41",
+                "56266d40",
+                "f8f85540",
+                "1d109541",
+                "56838a40",
+                "44f85440",
+                "0000a041",
+                "0000a040",
+                "8af75340",
+                "7cada941",
+                "f85ab340",
+                "44605540",
+                "a58ab241",
+                "4c15c540",
+                "fec85640",
+                "c6b3ba41",
+                "8a67d540",
+                "b8315840",
+                "674fc441",
+                "cd9ee840",
+                "729a5940",
+                "1bb0cc41",
+                "3760f940",
+                "2c035b40",
+                "9358d741",
+                "93580741",
+                "e66b5c40",
+                "ef3ce041",
+                "ef3c1041",
+                "a0d45d40",
+                "1fc9e741",
+                "1fc91741",
+                "5a3d5f40"
+              ],
+              "callback_count": 26,
+              "sha256": "bb09ffd551982d699083f45c12309e3c18fbf4ccc3f177247b31e13bc7d2be2b"
+            },
+            "saved_redraw": {
+              "callback_count": 26,
+              "same_bytes_as_drawing_phase": true,
+              "sha256": "bb09ffd551982d699083f45c12309e3c18fbf4ccc3f177247b31e13bc7d2be2b"
+            }
+          }
+        }
+      }
+    },
+    "serialized_drawing": {
+      "capture_revision": "rust-asserted-native-v1",
+      "original_sha256": "2b3839bb43cf2d5de495d7ed096cb127c21051fe007c33111426d26a7f511cde",
+      "schema": "sdocx-inkpen-serialized-drawing-native-v1",
+      "input": {
+        "cases": {
+          "synthetic_full_name_null_setting_v1": {
+            "frame": {
+              "bytes": "zgkAAAEAugkAAAIlBASIJQAAzAAAAADgXZpgQAAAAOAzbGpAAIAAgACAAoAAgAKAAIACgACAAYAAgASAAIAEgACAA4AAgAaAAIAGgACABYAAgAaAAIADgACAAYAAgAOAAIAGgACABYAAgAaAAIAFgAKABoACgAWAAoAGgAAAAIABgAWABIAGgAaABYADgAaAAYABgAWABIAFgAaABoAGgAWABYAIgASAD4AFgAOABIAIgAaAAoAAgAyAA4AGgASAD4AEgAWAA4ARgASABYAEgBOAAoAHgAGAE4AAgAeAAIATgACADoAAgA+AAIAPgAMAD4AEABCABAADgAEADoAEABCABgARgA8AEYADABCABgARgAUAEYAPAAeABAASgA8AD4ADAAiADwAQgAQABoAOABCABAAGgA8AB4AEAA+ADgAEgAQABYAPAASABAAAgAQAAoAKAAKABAABgAYAAIAOAACABAAAgAYAAIAFAACABgAFAAUABgAGAAUABQAGAAYABgACAAkAAwADAAQADwAGAAYAAwAHAAIACQACAAYABAAQAAMABgAEABQABAAGAAUAFAAEAAUABQALAAIADAACAA4ABAAPAAMADwAEAA8ABAAOAAQADwADAA8ABAAIAAMABwACAAUABAAVAAYABQADAAsAAwAJAAMABgAFABQABgAGAAYACgADAAgAAgAGAAYAEAAFAAYADwAIAACABwAAgAMABQAPAA8ABAAAAAMAAwACAAMABgAPAAUAAwAGAAYABgAQAAUABAAEAAYAAIAQAACAAgAAgAIAAIAPAACAAwAAgAYAAIADAACAAgACgA8ABIAEAAWABQADgAkAA4AGAAWABAAIgA8AD4ADAAWABgAPgBEABYADABOADwAFgAIAAoACABOADgAHgAQAFIAGAAqACwAFgAUAD4AEAA+ABQAQgAYADIAEAAWAAgASgAUAEYAGABKABQAMgAMABYABABGABAAQgACAEYADAAyAAAAEgAAAD4AAAA+AAAAHgAAAEIAAAAWAAAAHgAAAEoAAAAaAAoARgAGABYAEgAiABIAHgAWAB4AEgAiABoAFgAOABoAEgAWABoACgAWAAoAGgAKABYAAAASAAAACgAAAAABSDEU9MAAnADUAPABDAFEAWgBiAHsAdwCAAH0AcgAAAGsAbABbAFQAWAA+AFAAOQAAADwAIgAhABYAAAAdABkAFwANAAAAEQAEgA8AAAAEAA0AAQAPAAIAAYAMAAMAAAAWAAAADQAMAAiAAQAEgAAABIAJgAkAC4AFgAIABgAGgBEAC4AHAAgAAAAZABCACAAMgAuAB4ADgAAADYAFgBGAEYAHgBGAE4AHgBKAEIAAABCAAAAMgAuADoAUgAAABYAOgAYAC4AHgBWAFoATgAAACYAKgA6ADAAWgAYADoAMgAAABIACgAmAAAAAAAmAAoADAA+AAAADAAmAAYAGgAAACAAEgA0ABgAAAAAAAwABAAAABgABAAUACQAAABEAEQAVABEAAAAAABUABIAaAAAADAANAA0ABAABgBEADAAIAAAAEwAJgBAAAgAAAAYAAwAIgAmAAAAJAAiAAQABgAAACYANgAWAJIAAAB+AIoBAgDuAAABXgFaAboBqgIGAh4CRgJ6AooCggI2AeoBZgEKALoA1gAAAnYAAAAAAAAACAAIAAgACAAIAAgADAAIAAgACAAIAAgACAAAAAgACAAIAAgACAAIAAgACAAEAAQADAAIAAgAAAAIAAgACAAIAAgACAAIAAgABAAEAAwACAAIAAgACAAIAAgACAAIAAgACAAIAAwACAAIAAAACAAIAAgACAAIAAgACAAMAAQACAAIAAwACAAIAAgACAAIAAgACAAIAAQABAAIAAwABAAIAAwACAAIAAgACAAIAAgABAAEAAgACAAIAAQABAAIAAgADAAIAAgACAAIAAQABAAIAAgACAAIAAgACAAIAAQABAAIAAwACAAEAAQACAAIAAgABAAEAAgACAAIAAQABAAMAAgACAAEAAQACAAIAAgACAAIAAgACAAEAAQACAAMAAQACAAEAAgACAAIAAQABAAIAAgACAAIAAgACAAIAAgAAAAMAAgACAAEAAQACAAIAAgABAAEAAgACAAIAAgAAAAIAAgACAAIAAQACAAIAAgABAAEAAgACAAIAAgACAAIAAwACAAEAAwACAAIAAgACAAIAAgAAAAIAnPkEPwAAAAAAAAAAAACKgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARIAAAAAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAArgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFoAAAAAAAAAAAAAAAAAHiqm/AAAAAAAAAAAAAEEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAkAAAAAAAAAJQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAdAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB2BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABRAQAAAAAAAAAAAAAAAAIAat4RQQIAAABq3hFBAQAAABJ7yz8="
+            }
+          }
+        }
+      },
+      "cases": {
+        "synthetic_full_name_null_setting_v1": {
+          "native_capture": {
+            "native_source_arrays": {
+              "points": {
+                "bytes": "efd204439f615343efd204439f615343efd204439f515343efd204439f415343efd204439f315343efd204439f295343efd204439f095343efd204439fe95243efd204439fd15243efd204439fa15243efd204439f715243efd204439f495243efd204439f195243efd204439f015243efd204439ff95143efd204439fe15143efd204439fb15143efd204439f895143efd204439f595143efd204439f315143efc204439f015143efb204439fd95043efa204439fa95043efa204439fa95043ef9a04439f815043ef7a04439f515043ef4a04439f295043ef3204439ff94f43ef2a04439ff14f43ef0204439fd14f43efda03439fa14f43efaa03439f714f43ef8203439f494f43ef4203439f294f43efca02439f014f43efb202439fe14e43ef7202439fb14e43ef6202439fb14e43ef0202439f994e43efd201439f794e43ef5a01439f594e43ef3201439f414e43efaa00439f214e43ef8200439f014e43ded5ff429ff14d43de65ff429fe94d43de35fe429fe94d43dec5fd429fe94d43de95fc429fe94d43deb5fb429fe94d43dec5fa429fe94d43ded5f9429f014e43dee5f8429f214e43dee5f7429f414e43deb5f7429f494e43ded5f6429f694e43ded5f5429f994e43dec5f4429f114f43deb5f3429f294f43deb5f2429f594f43dea5f1429f814f43de95f0429ff94f43de25f0429f195043de05ef429f915043de15ee429fa95043de95ed429f215143de95ec429f415143de35ec429fb15143de35eb429fd15143ded5ea429f495243de65ea429f695243de75e9429fd95243de35e9429ff95243dee5e8429f715343dea5e8429f915343dea5e8429fb15343de85e8429f015443de65e8429f215443de55e8429f515443de55e8429fc15443de55e8429fe15443de55e8429f115543de55e8429f395543de55e8429f695543dea5e8429f915543de05e9429fc15543de55e9429fe95543deb5e9429f195643de15ea429f295643dea5ea429f415643ded5ea429f615643dec5eb429f915643de25ec429fa95643de95ec429fb95643de25ed429fc95643de85ed429fe95643de85ee429f015743dee5ee429f215743de25f0429f415743de85f0429f695743dec5f1429f895743de15f2429fb15743dec5f2429fc15743de85f3429fd15743de65f4429ff15743de55f5429f095843de45f6429f295843de35f7429f495843de15f8429f695843de05f9429f815843def5f9429fa15843de75fa429fb95843dee5fa429fc95843de35fb429fe95843de85fc429f195943ded5fc429f315943de85fd429f495943de15fe429f615943de75fe429f895943deb5ff429fb95943ef0a00439fe95943ef5a00439f015a43ef9a00439f115a43efca00439f415a43ef4a01439f695a43ef7a01439fe15a43efba01439fe15a43eff201439fe15a43ef0a02439f095b43ef8202439f815b43efa202439f815b43efba02439f995b43efca02439fb15b43effa02439f295c43ef2203439f415c43ef5203439f715c43ef8203439ff15c43efaa03439f115d43efca03439f415d43efca03439fc15d43efca03439fd15d43efca03439fe15d43efca03439f595e43efca03439f715e43efca03439fa15e43efca03439fb95e43efca03439fc95e43efba03439f415f43ef9a03439f615f43ef7203439f895f43ef5a03439fd15f43ef4203439f016043ef1a03439f216043efda02439f996043ef6202439fb16043ef3a02439fe16043efc201439f696143ef9a01439f816143ef0201439ff96143efda00439f096243efca00439f196243ef3200439f896243def5ff429fa96243deb5fe429fd96243de15fe429f316343dec5fd429f596343ded5fc429f796343dee5fb429fa16343dee5fa429fd16343de25fa429ff16343ded5f9429f016443deb5f8429f296443dea5f7429f596443de85f6429f816443dec5f5429f996443de75f5429fa16443de65f4429fc16443de65f3429fc16443de55f2429fd96443de95f1429fd96443de55f1429fd96443de65f0429fd96443de75ef429fd96443de05ef429fd96443de05ee429fd96443deb5ed429fd96443de45ed429fd96443de25ec429fd96443dec5eb429fc96443deb5ea429fc16443de65ea429fa16443dee5e9429f816443de75e9429f596443de05e9429f396443de85e8429f096443de35e8429ff16343ded5e7429fd16343de85e7429fa16343de65e7429f796343de45e7429f496343de25e7429f216343de25e7429f016343de25e7429ff16243de25e7429ff16243",
+                "count": 204
+              },
+              "timestamps": {
+                "bytes": "00000000020000000400000006000000080000000a0000000c0000000f00000011000000130000001500000017000000190000001b0000001b0000001d0000001f00000021000000230000002500000027000000290000002b0000002c0000002d0000003000000032000000340000003400000036000000380000003a0000003c0000003e0000004000000042000000440000004500000046000000490000004b0000004d0000004f00000051000000530000005500000057000000590000005b0000005d0000005f00000062000000640000006600000066000000680000006a0000006c0000006e00000070000000720000007400000077000000780000007a0000007c0000007f00000081000000830000008500000087000000890000008b0000008d0000008f0000009000000091000000930000009600000097000000990000009c0000009e000000a0000000a2000000a4000000a6000000a8000000a9000000aa000000ac000000ae000000b0000000b1000000b2000000b4000000b6000000b9000000bb000000bd000000bf000000c1000000c2000000c3000000c5000000c7000000c9000000cb000000cd000000cf000000d1000000d2000000d3000000d5000000d8000000da000000db000000dc000000de000000e0000000e2000000e3000000e4000000e6000000e8000000ea000000eb000000ec000000ef000000f1000000f3000000f4000000f5000000f7000000f9000000fb000000fd000000ff00000001010000030100000401000005010000070100000a0100000b0100000d0100000e0100001001000012010000140100001501000016010000180100001a0100001c0100001e0100002001000022010000240100002601000026010000290100002b0100002d0100002e0100002f0100003101000033010000350100003601000037010000390100003b0100003d0100003f0100003f01000041010000430100004501000047010000480100004a0100004c0100004e0100004f01000050010000520100005401000056010000580100005a0100005c0100005f01000061010000620100006501000067010000690100006b0100006d0100006f010000710100007101000073010000",
+                "count": 204
+              },
+              "pressure": {
+                "bytes": "520c453d520c753d29068e3d2986a83d2986c63d2906e83d1443083e14c31e3e1443373e1403563e14c3733e8ae1893e8a81993e8ac1a73e8ac1a73e8a21b53e8aa1c23e8a01ce3e8a81d83e8a81e33e8a41eb3e8a41f53e8a61fc3e8a61fc3ec5f0013fc510043fc520063fc580073fc580073fc550093fc5e00a3fc5500c3fc5200d3fc5200d3fc5300e3fc5f00d3fc5e00e3fc5e00e3fc5200f3fc5f00f3fc500103fc5f0103fc510113fc500113fc5c0113fc5f0113fc5f0113fc550133fc550133fc520143fc5e0143fc560143fc570143fc530143fc530143fc5f0133fc560133fc5f0133fc540133fc5f0123fc510133fc570133fc510133fc520143fc570133fc5e0133fc560143fc560143fc5f0153fc5f0143fc570153fc5b0143fc500143fc590133fc560133fc560133fc590123fc540123fc530113fc520103fc5b00f3fc5a00e3fc5700d3fc5000d3fc5e00b3fc5e00a3fc5e00a3fc5e0093fc5e0093fc520093fc570083fc590073fc550063fc550063fc500063fc520053fc580053fc5d0043fc560043fc510033fc5b0013fc580003fc580003f8ae1ff3e8aa1fe3e8ae1fc3e8a61fe3e8aa1fb3e8a61fc3e8aa1fa3e8a21f93e8a21f93e8aa1f83e8a61f83e8a41f73e8a41f73e8a41f73e8a21f63e8ae1f53e8a41f63e8a61f43e8a61f43e8ac1f43e8aa1f33e8a81f33e8ac1f23e8ac1f23e8ac1f33e8a41f33e8ae1f43e8aa1f53e8aa1f53e8aa1f53e8a01f63e8a21f63e8a21f63e8ae1f63e8a01f73e8aa1f73e8ac1f83e8ac1f83e8ae1fa3e8a01fd3e8aa1ff3ec5e0003fc5e0003fc5e0003fc530023fc5f0013fc590033fc590033fc550043fc520053fc5f0053fc530063fc520063fc530073fc5f0073fc570083fc570083fc5a0093fc510093fc5100a3fc5300a3fc5300a3fc5900a3fc5c00a3fc5400a3fc5b0093fc5b0093fc5400a3fc5c0093fc5d0093fc5c0093fc5c0093fc530093fc560083fc510083fc5d0053fc5d0053fc5e0033fc5c0013f8a81fb3e8a21f43e8a21f43e8a41e93e8a81de3e8ac1d03e8a81c33e8a61b33e8a81a23e8a61903e1443793e14c3503e14c3283e1483053e2806ce3d2886a13d2886803d500c533d500c1e3d500c1e3d0028863900288639",
+                "count": 204
+              },
+              "tilt": {
+                "bytes": "9cf9043f9cf9043f9cf9043f9cf9043f9cf9043f9cf9043f38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e38b3f83e3833f03e3833f03e3833f03e3833f03e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e38d3f73e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e3873f23e38b3ef3e38b3ef3e38b3ef3e38b3ef3e38b3ef3e38b3ef3e38b3ef3e",
+                "count": 204
+              },
+              "orientation": {
+                "bytes": "078aa9bf078aa9bf078aa9bf078aa9bf078aa9bf078aa9bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0782a7bf0762a6bf0762a6bf0762a6bf0762a6bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07da98bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf07c2a1bf073a97bf073a97bf073a97bf073a97bf073a97bf073a97bf073a97bf",
+                "count": 204
+              }
+            },
+            "serialized_drawing": {
+              "native_getcolor_argb": "0xff000000",
+              "color_forwarding_calls": [
+                {
+                  "argb_u32": "0xff000000",
+                  "entry_pc": "0x104602c",
+                  "method": "SPen::Pen::SetColor(int)",
+                  "phase": "serialized_drawing",
+                  "this": "0x10038e90"
+                },
+                {
+                  "argb_u32": "0xff000000",
+                  "entry_pc": "0x104602c",
+                  "method": "SPen::Pen::SetColor(int)",
+                  "phase": "serialized_drawing",
+                  "this": "0x10038e90"
+                },
+                {
+                  "argb_u32": "0xff000000",
+                  "entry_pc": "0x104a558",
+                  "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+                  "phase": "serialized_drawing",
+                  "size_f32_bits": "0x4111de6a",
+                  "this": "0x1003a050"
+                }
+              ],
+              "callback_delta_bytes": "efd204439f6153435d350740afc204439fa252435d350f40ef9104439fe551435d351740af4004439f2a51435d351f40efce03439f7150435d3527406f440343dfc74f435d352f40efa802439f3a4f435d3537406ffc0143dfc94e435d353f40ef3e01439f754e435d354740af7300431f3b4e438a184f40de3bff429f174e43b8fb56405e7bfd421f0b4e43e6de5e40dea5fb429f154e4313c26640decff942df324e43269f6a40de0df8429f5e4e433a7c6e40de5ff642df984e434e597240dec5f4429fe14e43613676405e31f342df3d4f431b477840de93f1429fb24f43d5577a405eedef42df3f50438f687c40de3dee429fe5504348797e40deaeec429f9b514367dc7e40de69eb429f595243863f7f40de6eea429f1f5343a5a27f40debde9429fed5343e20280405a75e9428cb254438db67f40d4b4e942c35b554356677f40587aea4257e855431f187f40dec5eb429f595643e9c87e405e57ed425fb85643102d7e40deebee429f0c574337917d405e83f0425f5657435ef57c40de1df2429f95574386597c40debff342dfd0574352d87b40de6df5429f0e58431e577b40de27f742df4e5843ead57a40deedf8429f915843b4547a40deb3fa425fdb584313eb7940de6dfc429f30594372817940de1bfe425f915943d1177940debdff429ffd594331ae7840afa500435f785a4314b07840ef5d01439f045b43f7b17840af0702435fa25b43dab37840efa202439f515c43bdb57840ef1703439f0b5d4376687940ef4e03439fc95d432e1b7a40ef4703439f8b5e43e6cd7a40ef0203439f515f439f807b40ef8c02435f156043502e7c40eff201439fd0604301dc7c40ef3401435f836143b2897d40ef5200439f2d624362377e405ec8fe421fc76243ff7b7e40defffc429f4763439cc07e405e4cfb421faf634339057f40deadf9429ffd6343d5497f405e1bf8421f3a644345da7e40de8bf6429f6b6443b56a7e405efff4421f92644325fb7d40de75f3429fad6443948b7d40deeaf1421fbe64433a3a7940de59f0429fc36443e0e87440dec2ee421fbe644386977040de25ed429fad64432b466c40de8deb425f81644364fa6440de05ea429f2864439eae5d40de8de8425fa36343d8625640",
+              "boundaries": [
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 0
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 4
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 4
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 4
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 4
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 4
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 4
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 4
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 4
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 4
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 4
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 4
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 8
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 8
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 8
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 8
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 8
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 8
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 8
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 8
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 12
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 12
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 12
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 12
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 12
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 12
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 12
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 16
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 16
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 16
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 16
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 16
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 16
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 16
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 16
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 16
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 20
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 24
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 28
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 28
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 28
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 28
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 28
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 28
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 28
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 28
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 32
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 32
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 32
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 32
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 32
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 32
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 32
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 32
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 32
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 36
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 36
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 36
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 36
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 36
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 36
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 36
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 36
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 36
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 36
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 36
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 40
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 44
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 48
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 48
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 48
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 48
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 48
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 48
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 48
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 48
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 48
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 48
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 48
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 52
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 52
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 52
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 52
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 52
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 52
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 52
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 56
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 56
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 56
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 56
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 56
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 56
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 56
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 56
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 60
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 60
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 60
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 60
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 60
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 60
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 60
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 60
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 60
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 60
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "reDrawLine",
+                  "after_record_count": 64
+                },
+                {
+                  "method": "endPen",
+                  "after_record_count": 68
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
   }
 }

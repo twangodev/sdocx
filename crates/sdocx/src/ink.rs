@@ -2788,10 +2788,11 @@ mod tests {
                 .map(|bytes| f32::from_le_bytes(*bytes) as f64)
                 .collect()
         }
-        let fixture: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../conformance/inkpen-serialized-drawing-native.json"
+        let fixture: serde_json::Value = serde_json::from_str::<serde_json::Value>(include_str!(
+            "../../../conformance/inkpen-admission-native.json"
         ))
-        .unwrap();
+        .unwrap()["retained_controls"]["serialized_drawing"]
+            .clone();
         let capture = &fixture["cases"]["synthetic_full_name_null_setting_v1"]["native_capture"];
         let arrays = &capture["native_source_arrays"];
         let frame = base64::engine::general_purpose::STANDARD
