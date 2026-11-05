@@ -15015,9 +15015,10 @@ mod tests {
     fn saved_v2_stationary_public_route_matches_native_frame() {
         use sha2::{Digest, Sha256};
         let evidence: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../conformance/airbrush-v2-stationary-native.json"
+            "../../../conformance/airbrush-v1-v2-boundary-native.json"
         ))
         .unwrap();
+        let evidence = &evidence["retained_controls"]["v2_stationary"];
         assert_eq!(evidence["selected_profile"], 2);
         let mut document = public_airbrush_v2_document();
         let stroke = document.pages[0].strokes_mut().next().unwrap();
@@ -15362,9 +15363,10 @@ mod tests {
     fn saved_v1_public_short_stroke_matches_native_frame() {
         use sha2::{Digest, Sha256};
         let evidence: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../conformance/airbrush-short-v1-v2-native.json"
+            "../../../conformance/airbrush-v1-v2-boundary-native.json"
         ))
         .unwrap();
+        let evidence = &evidence["retained_controls"]["short_v1_v2"];
         let case = &evidence["cases"][0];
         assert_eq!(case["selected_drawable_profile_version"], 1);
         let mut document = public_airbrush_v2_document();

@@ -832,9 +832,10 @@ mod tests {
     #[test]
     fn v1_two_point_stationary_drawing_matches_native_stamp() {
         let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/airbrush-v1-stationary-two-native.json"
+            "../../../../conformance/airbrush-v1-v2-boundary-native.json"
         ))
         .unwrap();
+        let fixture = &fixture["retained_controls"]["v1_stationary_two"];
         assert_eq!(fixture["result"]["selected_drawable_profile_version"], 1);
         let point = P {
             x: 128.453_13,
@@ -959,9 +960,10 @@ mod tests {
     #[test]
     fn saved_v1_stationary_stream_matches_native_drawing_matrix() {
         let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/airbrush-v1-stationary-matrix-native.json"
+            "../../../../conformance/airbrush-v1-v2-boundary-native.json"
         ))
         .unwrap();
+        let fixture = &fixture["retained_controls"]["v1_stationary_matrix"];
         for case in fixture["cases"].as_array().unwrap() {
             let point_hex = case["points_f32_le"].as_str().unwrap();
             let points: Vec<P> = point_hex
@@ -1004,9 +1006,10 @@ mod tests {
     #[test]
     fn short_saved_v1_native_stream_matches_shared_sampler() {
         let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/airbrush-short-v1-v2-native.json"
+            "../../../../conformance/airbrush-v1-v2-boundary-native.json"
         ))
         .unwrap();
+        let fixture = &fixture["retained_controls"]["short_v1_v2"];
         let cases = fixture["cases"].as_array().unwrap();
         let first = &cases[0];
         assert_eq!(first["profile"], "v1");

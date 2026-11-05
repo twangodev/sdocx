@@ -3,6 +3,7 @@
   "pymupdf_version": "1.28.2",
   "scope": "Synthetic host Mesa frame; PDF rasterized at 96 dpi on transparent and white backgrounds. Coordinates top-left. Transparent channels are premultiplied. White reference is integer source-over of native RGBA. Not device or cross-viewer parity.",
   "native_receipt": "airbrush-short-v1-v2-native.json",
+  "native_receipt_storage": {"container": "conformance/airbrush-v1-v2-boundary-native.json", "pointer": "/retained_controls/short_v1_v2"},
   "width": 256,
   "height": 256,
   "pdfs": {

@@ -2,6 +2,7 @@
   "schema": "sdocx.airbrush-v1-pdf-texture-probe.v1",
   "input_pdf_sha256": "c4cae99811523ed338c094262db172e7ceb044455f87b0660fbbfbe452c4873a",
   "native_receipt": "airbrush-short-v1-v2-native.json",
+  "native_receipt_storage": {"container": "conformance/airbrush-v1-v2-boundary-native.json", "pointer": "/retained_controls/short_v1_v2"},
   "native_alpha_3x3": [
     1,
     14,
