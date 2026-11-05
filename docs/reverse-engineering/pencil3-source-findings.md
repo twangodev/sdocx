@@ -181,7 +181,7 @@ partial stream or caller RNG changes on rejection. Admission requires exact
 Pencil3 empty/`4;` settings, tools 1, 2 or 3, complete finite channels, explicit
 ARGB and supported style defaults. Explicit-profile replay reveals the same
 saved-redraw particle stream using source-event cutoffs.
-A [curve-disabled native control](../../conformance/pencil3-no-curve-native.json) matches the complete tool 2 and tool 3 curve-enabled streams; the retained tool 1 curve-disabled and curve-enabled captures also match all 77 records. The V3 profile therefore admits either saved curve flag. These controls use synthetic Model setters and host adapters.
+A [curve-disabled native control](../../conformance/pencil3-stationary-native.json) (`retained_controls.no_curve`) matches the complete tool 2 and tool 3 curve-enabled streams; the retained tool 1 curve-disabled and curve-enabled captures also match all 77 records. The V3 profile therefore admits either saved curve flag. These controls use synthetic Model setters and host adapters.
 A [curve-enabled tool 1 capture](../../conformance/pencil3-v3-tool1-curve-native.json) verifies the complete 77-record V3 stream through the native Drawing route; Rust matches every packed word. The earlier tool 1 fixture used a straight input and did not establish this admitted route.
 Native `Pen::SetSize` at PenCommon `0x45fdc` clamps to [0.4,800]. Drawing forwards
 omitted size as zero, yielding 0.4; explicit 0/0.1 and 800/900 controls match
@@ -190,7 +190,7 @@ optional axes remain distinct. The strict ordinary-style gate does not establish
 native behavior for the rejected effects or all property combinations.
 
 The [negative-size Drawing probe](../../tools/pencil-capture/pencil3_negative_size_capture.py)
-and its [receipt](../../conformance/pencil3-negative-size-native.json)
+and its [receipt](../../conformance/pencil3-stationary-native.json) (`retained_controls.negative_size`)
 also captures -10 and -0.1. The native Model setter's getter returns 0 for
 both; Drawing's Pen setter then clamps that to 0.4. Both produce the same complete
 1,048-record stream (SHA-256 `e597079876c3b10ab3def4cf395d8db944ba565d744c33cf5f682f09f04108a4`)
@@ -222,7 +222,7 @@ harnesses and an operator-local source note, so it is not portable to a clean
 checkout. This does not exercise Rust archive or note-table parsing, the whole
 native note loader, public SVG/PDF paint, or Android device output.
 
-A [short-stroke control](../../conformance/pencil3-short-stroke-native.json)
+A [short-stroke control](../../conformance/pencil3-stationary-native.json) (`retained_controls.short_stroke`)
 found that native Drawing returns failure without selecting a Pencil3 drawable
 for one source point. Two and three points produce 19 and 31 particles,
 respectively, with matching Drawing and saved-redraw streams. These synthetic
@@ -255,7 +255,7 @@ consumer sampling, real paper/projection inputs, broader source
 profiles and Samsung-device comparisons remain open. Scratch captures and
 cross-renderer reports stay outside maintained conformance files.
 
-A [fractional non-square handoff control](../../conformance/pencil3-fractional-context-native.json)
+A [fractional non-square handoff control](../../conformance/pencil3-stationary-native.json) (`retained_controls.fractional_context`)
 captures native `uPaperScale` for a 321×179 canvas at paper scale 0.75. A
 production SVG paper-mask test uses those uniform bits to check selected
 nearest texels across the repeat seam. Renderer interfaces and the matrix are
@@ -273,3 +273,5 @@ a varied-pressure/tilt control with a skipped 0.02236 movement has
 receipt SHA-256 is `281722a1a62dda32d57534c103c311c5f9fdd5678f12b86f33637f33c28e0f70`.
 This establishes source ownership within a full saved redraw, not live gesture
 behavior or equality with redrawing truncated source prefixes.
+
+The capture scripts emit standalone JSON to stdout. When refreshing a control, replace its `retained_controls` member; refresh stationary root fields without removing those members.

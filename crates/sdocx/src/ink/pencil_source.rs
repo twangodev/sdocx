@@ -366,9 +366,10 @@ mod tests {
     #[test]
     fn short_strokes_match_native_admission_and_particles() {
         let fixture: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/pencil3-short-stroke-native.json"
+            "../../../../conformance/pencil3-stationary-native.json"
         ))
         .unwrap();
+        let fixture = &fixture["retained_controls"]["short_stroke"];
         for (count, case) in fixture["cases"].as_object().unwrap() {
             let prepared =
                 prepare_pencil3_v3_source(&fixture_stroke(&case["input_profile"]), 1920, 1080);
@@ -426,9 +427,10 @@ mod tests {
         ))
         .unwrap();
         let receipt: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/pencil3-no-curve-native.json"
+            "../../../../conformance/pencil3-stationary-native.json"
         ))
         .unwrap();
+        let receipt = &receipt["retained_controls"]["no_curve"];
         let tool1 = &fixture["cases"]["tool1_straight_4pt"];
         assert_eq!(tool1["input_profile"]["curve_enabled"], false);
         let mut stroke = fixture_stroke(&tool1["input_profile"]);
@@ -705,9 +707,10 @@ mod tests {
         }
 
         let negative_sizes: Value = serde_json::from_str(include_str!(
-            "../../../../conformance/pencil3-negative-size-native.json"
+            "../../../../conformance/pencil3-stationary-native.json"
         ))
         .unwrap();
+        let negative_sizes = &negative_sizes["retained_controls"]["negative_size"];
         for case in negative_sizes["cases"].as_array().unwrap() {
             let size = case["input_size"].as_f64().unwrap() as f32;
             let mut stroke = fixture_stroke(profile);

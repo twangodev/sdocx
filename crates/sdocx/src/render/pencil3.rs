@@ -542,9 +542,10 @@ mod paper_sampling_tests {
     #[test]
     fn paper_samples_follow_native_fractional_non_square_context() {
         let receipt: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../../conformance/pencil3-fractional-context-native.json"
+            "../../../../conformance/pencil3-stationary-native.json"
         ))
         .unwrap();
+        let receipt = &receipt["retained_controls"]["fractional_context"];
         let bits = receipt["paper_scale_float32_bits"].as_array().unwrap();
         let native_scale: Vec<_> = bits
             .iter()
