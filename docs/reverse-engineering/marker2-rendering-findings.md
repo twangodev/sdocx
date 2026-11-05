@@ -340,4 +340,4 @@ are unverified. Native recapture requires the capture runner's manifest-pinned
 local libraries and helpers, which are not bundled; Rust replay uses retained
 inputs and frames.
 
-The historical two-draw control and independent-lifecycle control share identical first-frame bytes, retained in `tools/marker2-scale-investigation/expanded/independent-lifecycle/first.rgba.zlib`. Their capture contexts and later frames remain distinct.
+The historical two-draw control and independent-lifecycle control shared identical first-frame bytes, retained in `tools/marker2-scale-investigation/expanded/independent-lifecycle/first.rgba.zlib`. Their capture contexts and later-frame observations differed.
