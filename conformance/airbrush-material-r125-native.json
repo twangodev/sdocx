@@ -1,5 +1,6 @@
 {
-  "binary": "airbrush-material-r125-native.bin",
+  "binary": "embedded in crates/sdocx/src/render.rs saved_v2_public_transparent_material_r125_matches_native_full_rgba",
+  "original_binary": "airbrush-material-r125-native.bin",
   "binary_bytes": 64,
   "binary_format": {
     "header": "magic[4],version:u16,count:u16",
