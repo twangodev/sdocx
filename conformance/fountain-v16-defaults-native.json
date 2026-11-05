@@ -250,5 +250,357 @@
         }
       ]
     }
-  ]
+  ],
+  "event_time_capture": {
+    "capture_revision": "native-defaults-v1",
+    "original_sha256": "9128f23068be5d683df57cb5ce4c3a54fc096ef5e6103093d9f384932823a6d0",
+    "schema": "sdocx-fountain-v16-event-time-v1",
+    "tool_type": 2,
+    "cases": [
+      {
+        "case": "offset_no_line",
+        "advanced_setting": "18;0;100;",
+        "style_pen_size_setter": "set",
+        "source_model_get_pen_size_f32_bits": "00002041",
+        "style_initial_tolerance_setter": "set",
+        "model_get_initial_tolerance_f32_bits": "00003040",
+        "native_pen_getsize_f32_bits": "00002041",
+        "source_arrays": {
+          "points_f32_bits": [
+            "00000000",
+            "00000000",
+            "3dcccccd",
+            "00000000",
+            "3e4ccccd",
+            "00000000"
+          ],
+          "pressure_f32_bits": [
+            "3e99999a",
+            "3f19999a",
+            "3f800000"
+          ],
+          "tilt_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "timestamps_i32": [
+            100,
+            110,
+            120
+          ]
+        },
+        "v16_rtv5_addpoint_host_boundary": [
+          {
+            "float_words_s0_s3": [
+              "00000000",
+              "00000000",
+              "0000403f",
+              "0000803f"
+            ]
+          }
+        ]
+      },
+      {
+        "case": "zero_no_line",
+        "advanced_setting": "18;0;100;",
+        "style_pen_size_setter": "set",
+        "source_model_get_pen_size_f32_bits": "00002041",
+        "style_initial_tolerance_setter": "set",
+        "model_get_initial_tolerance_f32_bits": "00003040",
+        "native_pen_getsize_f32_bits": "00002041",
+        "source_arrays": {
+          "points_f32_bits": [
+            "00000000",
+            "00000000",
+            "3dcccccd",
+            "00000000",
+            "3e4ccccd",
+            "00000000"
+          ],
+          "pressure_f32_bits": [
+            "3e99999a",
+            "3f19999a",
+            "3f800000"
+          ],
+          "tilt_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "timestamps_i32": [
+            0,
+            10,
+            20
+          ]
+        },
+        "v16_rtv5_addpoint_host_boundary": [
+          {
+            "float_words_s0_s3": [
+              "00000000",
+              "00000000",
+              "00002040",
+              "0000803f"
+            ]
+          }
+        ]
+      },
+      {
+        "case": "negative_no_line",
+        "advanced_setting": "18;0;100;",
+        "style_pen_size_setter": "set",
+        "source_model_get_pen_size_f32_bits": "00002041",
+        "style_initial_tolerance_setter": "set",
+        "model_get_initial_tolerance_f32_bits": "00003040",
+        "native_pen_getsize_f32_bits": "00002041",
+        "source_arrays": {
+          "points_f32_bits": [
+            "00000000",
+            "00000000",
+            "3dcccccd",
+            "00000000",
+            "3e4ccccd",
+            "00000000"
+          ],
+          "pressure_f32_bits": [
+            "3e99999a",
+            "3f19999a",
+            "3f800000"
+          ],
+          "tilt_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "timestamps_i32": [
+            -100,
+            -90,
+            -80
+          ]
+        },
+        "v16_rtv5_addpoint_host_boundary": [
+          {
+            "float_words_s0_s3": [
+              "00000000",
+              "00000000",
+              "00002040",
+              "0000803f"
+            ]
+          }
+        ]
+      },
+      {
+        "case": "duplicate_no_line",
+        "advanced_setting": "18;0;100;",
+        "style_pen_size_setter": "set",
+        "source_model_get_pen_size_f32_bits": "00002041",
+        "style_initial_tolerance_setter": "set",
+        "model_get_initial_tolerance_f32_bits": "00003040",
+        "native_pen_getsize_f32_bits": "00002041",
+        "source_arrays": {
+          "points_f32_bits": [
+            "00000000",
+            "00000000",
+            "3dcccccd",
+            "00000000",
+            "3e4ccccd",
+            "00000000"
+          ],
+          "pressure_f32_bits": [
+            "3e99999a",
+            "3f19999a",
+            "3f800000"
+          ],
+          "tilt_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "timestamps_i32": [
+            100,
+            100,
+            120
+          ]
+        },
+        "v16_rtv5_addpoint_host_boundary": [
+          {
+            "float_words_s0_s3": [
+              "00000000",
+              "00000000",
+              "0000403f",
+              "0000803f"
+            ]
+          }
+        ]
+      },
+      {
+        "case": "reverse_no_line",
+        "advanced_setting": "18;0;100;",
+        "style_pen_size_setter": "set",
+        "source_model_get_pen_size_f32_bits": "00002041",
+        "style_initial_tolerance_setter": "set",
+        "model_get_initial_tolerance_f32_bits": "00003040",
+        "native_pen_getsize_f32_bits": "00002041",
+        "source_arrays": {
+          "points_f32_bits": [
+            "00000000",
+            "00000000",
+            "3dcccccd",
+            "00000000",
+            "3e4ccccd",
+            "00000000"
+          ],
+          "pressure_f32_bits": [
+            "3e99999a",
+            "3f19999a",
+            "3f800000"
+          ],
+          "tilt_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "timestamps_i32": [
+            120,
+            110,
+            100
+          ]
+        },
+        "v16_rtv5_addpoint_host_boundary": [
+          {
+            "float_words_s0_s3": [
+              "00000000",
+              "00000000",
+              "0000403f",
+              "0000803f"
+            ]
+          }
+        ]
+      },
+      {
+        "case": "offset_accepted_line",
+        "advanced_setting": "18;0;100;",
+        "style_pen_size_setter": "set",
+        "source_model_get_pen_size_f32_bits": "00002041",
+        "style_initial_tolerance_setter": "set",
+        "model_get_initial_tolerance_f32_bits": "00003040",
+        "native_pen_getsize_f32_bits": "00002041",
+        "source_arrays": {
+          "points_f32_bits": [
+            "00000000",
+            "00000000",
+            "40800000",
+            "00000000",
+            "41000000",
+            "00000000"
+          ],
+          "pressure_f32_bits": [
+            "3e99999a",
+            "3f19999a",
+            "3f800000"
+          ],
+          "tilt_f32_bits": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "timestamps_i32": [
+            100,
+            110,
+            120
+          ]
+        },
+        "v16_rtv5_addpoint_host_boundary": [
+          {
+            "float_words_s0_s3": [
+              "00000000",
+              "00000000",
+              "9a99993f",
+              "0000803f"
+            ]
+          },
+          {
+            "float_words_s0_s3": [
+              "6022ac3e",
+              "00000000",
+              "3433d33f",
+              "0000803f"
+            ]
+          },
+          {
+            "float_words_s0_s3": [
+              "6022ac3f",
+              "00000000",
+              "67660640",
+              "0000803f"
+            ]
+          },
+          {
+            "float_words_s0_s3": [
+              "07611440",
+              "00000000",
+              "67660640",
+              "0000803f"
+            ]
+          },
+          {
+            "float_words_s0_s3": [
+              "51703c40",
+              "00000000",
+              "67660640",
+              "0000803f"
+            ]
+          },
+          {
+            "float_words_s0_s3": [
+              "ac476940",
+              "00000000",
+              "67660640",
+              "0000803f"
+            ]
+          },
+          {
+            "float_words_s0_s3": [
+              "8b738d40",
+              "00000000",
+              "67660640",
+              "0000803f"
+            ]
+          },
+          {
+            "float_words_s0_s3": [
+              "48a7a840",
+              "00000000",
+              "67660640",
+              "0000803f"
+            ]
+          },
+          {
+            "float_words_s0_s3": [
+              "103fc640",
+              "00000000",
+              "67660640",
+              "0000803f"
+            ]
+          },
+          {
+            "float_words_s0_s3": [
+              "df3ae640",
+              "00000000",
+              "67660640",
+              "0000803f"
+            ]
+          },
+          {
+            "float_words_s0_s3": [
+              "00000041",
+              "00000000",
+              "67660640",
+              "0000803f"
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }

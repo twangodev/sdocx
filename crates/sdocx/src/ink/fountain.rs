@@ -1134,11 +1134,11 @@ mod tests {
 
     #[test]
     fn v16_native_size_and_tolerance_defaults_match_all_native_argument_records() {
-        for encoded in [
-            include_str!("../../../../conformance/fountain-v16-defaults-native.json"),
-            include_str!("../../../../conformance/fountain-v16-event-time-native.json"),
-        ] {
-            let fixture: Value = serde_json::from_str(encoded).unwrap();
+        let captures: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/fountain-v16-defaults-native.json"
+        ))
+        .unwrap();
+        for fixture in [&captures, &captures["event_time_capture"]] {
             // In the captured no-line size-10 case, ObjectStroke times are
             // 100/110/120 while MotionEvent::GetEventTime returns 20, relative to
             // its constructor base of 100. The terminal history lookup therefore
