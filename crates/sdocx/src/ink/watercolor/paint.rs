@@ -16,7 +16,6 @@ const PAINT: &str = include_str!("../../../../../conformance/watercolor-paint-na
 const GEOMETRY: &str = include_str!("../../../../../conformance/watercolor-native.json");
 const STREAM: &[u8] = include_bytes!("../../../../../conformance/watercolor-native.bin");
 const PATTERN_PNG: &[u8] = include_bytes!("../../../../../conformance/watercolor-pattern.png");
-const DENSE: &str = include_str!("../../../../../conformance/watercolor-dense-native.json");
 const DENSE_SPARSE: &[u8] =
     include_bytes!("../../../../../conformance/watercolor-dense-sparse.bin");
 const SIZE: usize = 256;
@@ -712,7 +711,8 @@ fn watercolor_v1_generated_svg_matches_native_full_frame() {
 fn watercolor_repeat32_source_plane_svg_matches_native_dense_full_frame() {
     let (base_rows, base_fixture, _base_offset, argb) = inputs();
     let rows = dense_repeat32_rows(&base_rows);
-    let fixture: Value = serde_json::from_str(DENSE).expect("dense WaterColor fixture JSON");
+    let captures: Value = serde_json::from_str(PAINT).expect("WaterColor fixture JSON");
+    let fixture = &captures["dense_capture"];
     let source_color = input_color(argb);
     let geometry: Value = serde_json::from_str(GEOMETRY).unwrap();
     assert_eq!(
@@ -725,8 +725,8 @@ fn watercolor_repeat32_source_plane_svg_matches_native_dense_full_frame() {
         sha256(STREAM),
         geometry["stream"]["sha256"].as_str().unwrap()
     );
-    assert_dense_source_color(&rows, &fixture, source_color, argb);
-    assert_high_branch_mask_gate(&fixture);
+    assert_dense_source_color(&rows, fixture, source_color, argb);
+    assert_high_branch_mask_gate(fixture);
 
     let svg = make_svg(&rows, source_color, true);
     assert_eq!(svg.matches("<polygon points=").count(), 960);
@@ -740,14 +740,13 @@ fn watercolor_repeat32_source_plane_svg_matches_native_dense_full_frame() {
         resvg::tiny_skia::Transform::identity(),
         &mut pix.as_mut(),
     );
-    assert_dense_final_frame(pix.data(), &fixture);
+    assert_dense_final_frame(pix.data(), fixture);
 }
 
 #[test]
 fn controlled_drawing_capture_v22_geometry_and_full_frame() {
-    const CAPTURE: &str =
-        include_str!("../../../../../conformance/watercolor-drawing-capture-v22.json");
-    let fixture: Value = serde_json::from_str(CAPTURE).unwrap();
+    let captures: Value = serde_json::from_str(PAINT).unwrap();
+    let fixture = &captures["controlled_drawing_capture"];
     assert_eq!(
         fixture["schema"],
         "sdocx-watercolor-controlled-drawing-capture-v22-v1"
