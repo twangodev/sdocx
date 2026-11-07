@@ -432,6 +432,7 @@ pub struct CurveEmission {
     pub terminal_range: Range<usize>,
 }
 
+#[cfg(test)]
 fn source_glv1_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) -> Vec<[u32; 3]> {
     source_glv1_curve_trace(points, pressure, source_size).records
 }
@@ -778,23 +779,9 @@ fn source_glv1_no_curve_trace(
     }
 }
 
+#[cfg(test)]
 fn source_glv1_no_curve(points: &[[f32; 2]], pressure: &[f32], source_size: f32) -> Vec<[u32; 3]> {
     source_glv1_no_curve_trace(points, pressure, source_size).records
-}
-
-#[allow(dead_code)]
-pub fn copied_model_curve(points: &[[f32; 2]], pressure: &[f32], size: f32) -> Vec<[u32; 3]> {
-    source_glv1_curve(points, pressure, size)
-}
-
-#[allow(dead_code)]
-pub fn copied_model_curve_trace(points: &[[f32; 2]], pressure: &[f32], size: f32) -> CurveEmission {
-    source_glv1_curve_trace(points, pressure, size)
-}
-
-#[allow(dead_code)]
-pub fn copied_model_no_curve(points: &[[f32; 2]], pressure: &[f32], size: f32) -> Vec<[u32; 3]> {
-    source_glv1_no_curve(points, pressure, size)
 }
 
 #[cfg(test)]
