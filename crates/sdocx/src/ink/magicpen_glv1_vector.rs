@@ -288,6 +288,106 @@ mod tests {
         }
     }
 
+    #[test]
+    fn native_object_list_controls_retain_order_and_frame_handoff() {
+        use std::collections::BTreeSet;
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/magicpen-phase-export-host.json"
+        ))
+        .unwrap();
+        let captures = &fixture["object_list_capture_original"];
+        let baseline = fixture["two_stroke_controls"].as_array().unwrap();
+        let mut seen = BTreeSet::new();
+        for key in ["solid_template", "background_template"] {
+            let text = captures[key].as_str().unwrap();
+            for block in text.split("LIST_METADATA ").skip(1) {
+                let mut lines = block.lines();
+                let metadata: Value = serde_json::from_str(lines.next().unwrap()).unwrap();
+                let background = metadata["background"].as_str().unwrap();
+                let scale = metadata["scale"].as_u64().unwrap() as usize;
+                assert!(["solid", "pattern", "transparent"].contains(&background));
+                assert!([1, 2, 4].contains(&scale));
+                assert!(seen.insert((background.to_owned(), scale)));
+                assert_eq!(metadata["cases"], serde_json::json!(["red", "blue"]));
+                let lines: Vec<_> = lines.collect();
+                let line = |prefix: &str| {
+                    let mut found = lines.iter().filter_map(|line| line.strip_prefix(prefix));
+                    let value = found.next().expect("missing object-list trace line");
+                    assert!(found.next().is_none(), "duplicate object-list trace line");
+                    value
+                };
+                assert_eq!(line("LIST_RESULT "), "0x1");
+                assert_eq!(line("exit "), "77"); // Intentional probe termination.
+                let fields: Vec<_> = line("LIST_PIXELS ").split(' ').collect();
+                assert_eq!(fields.len(), 4);
+                assert_eq!(fields[0], "2");
+                assert_eq!(fields[2], "0");
+                let frame_data = if background == "transparent" {
+                    Value::String(fields[3].to_owned())
+                } else {
+                    let mut matches = baseline
+                        .iter()
+                        .filter(|case| case["background"] == background && case["scale"] == scale);
+                    let prior = matches.next().expect("missing sequential frame");
+                    assert!(matches.next().is_none(), "duplicate sequential frame");
+                    assert_eq!(prior["stages"][1]["readback_sha256"], fields[1]);
+                    assert_eq!(fields[3], format!("__SDOCX_FRAME_{background}_{scale}__"));
+                    prior["rgba_zlib"].clone()
+                };
+                let size = (32 * scale).pow(2) * 4;
+                let frame = decode_frame_data(&frame_data, &Value::from(fields[1]), size);
+                if background == "transparent" {
+                    assert_eq!(&frame[..4], &[0, 0, 0, 0]);
+                }
+                let gl: Vec<Value> = serde_json::from_str(line("LIST_GL ")).unwrap();
+                let statuses: Vec<_> = gl
+                    .iter()
+                    .filter(|call| call["call"] == "glCheckFramebufferStatus")
+                    .collect();
+                assert!(!statuses.is_empty());
+                assert!(statuses.iter().all(|call| call["status"] == 36053));
+                let draws: Vec<Value> = serde_json::from_str(line("LIST_DRAWS ")).unwrap();
+                let draw_calls: Vec<_> = draws
+                    .iter()
+                    .map(|draw| draw["call"].as_str().unwrap())
+                    .collect();
+                assert_eq!(
+                    draw_calls,
+                    [
+                        "glDrawArraysInstanced",
+                        "glDrawArrays",
+                        "glDrawArraysInstanced",
+                        "glDrawArrays"
+                    ]
+                );
+                let events: Vec<Value> = serde_json::from_str(line("LIST_EVENTS ")).unwrap();
+                let dispatch: Vec<_> = events
+                    .iter()
+                    .filter_map(|event| {
+                        let name = event["name"].as_str()?;
+                        if name.contains("::drawObjectStroke(") {
+                            Some("stroke")
+                        } else if name.contains("::drawObject(") {
+                            Some("object")
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                assert_eq!(dispatch, ["object", "stroke", "object", "stroke"]);
+                let objects: Vec<_> = events
+                    .iter()
+                    .filter(|event| event["name"] == "GetData return")
+                    .map(|event| event["value"].as_str().unwrap())
+                    .collect();
+                assert_eq!(objects.len(), 2);
+                assert_ne!(objects[0], objects[1]);
+            }
+        }
+        assert_eq!(seen.len(), 9);
+    }
+
     fn float_records(hex: &str) -> Vec<[u32; 3]> {
         let bytes = hex.as_bytes();
         assert_eq!(bytes.len() % 24, 0);

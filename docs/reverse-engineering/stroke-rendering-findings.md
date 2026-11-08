@@ -1380,6 +1380,16 @@ test ! -e tools/magicpen-phase/diverse/inputs.json && jq -jr '.diverse_capture_o
 test ! -e tools/magicpen-phase/diverse/native-receipt.json && jq -jr '.diverse_capture_original.native_receipt_json' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/diverse/native-receipt.json
 ```
 
+The `native_object_list_controls_retain_order_and_frame_handoff` Rust test checks
+nine retained ObjectList traces and their full frames. Six frame payloads are
+shared with the byte-identical sequential captures. Restore the original trace
+files, including those shared bytes, before local ObjectList comparison:
+
+```sh
+test ! -e tools/magicpen-phase/object-list/receipt.txt && jq -jr '. as $root | reduce $root.two_stroke_controls[] as $c ($root.object_list_capture_original.solid_template; gsub("__SDOCX_FRAME_" + $c.background + "_" + ($c.scale|tostring) + "__"; $c.rgba_zlib))' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/object-list/receipt.txt
+test ! -e tools/magicpen-phase/object-list/background-receipt.txt && jq -jr '. as $root | reduce $root.two_stroke_controls[] as $c ($root.object_list_capture_original.background_template; gsub("__SDOCX_FRAME_" + $c.background + "_" + ($c.scale|tostring) + "__"; $c.rgba_zlib))' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/object-list/background-receipt.txt
+```
+
 ## Converted Marker2 and InkPen2 trajectories
 
 A historical Marker2 host control reverses every channel of a saved Fountain
