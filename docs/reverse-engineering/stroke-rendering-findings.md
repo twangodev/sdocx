@@ -1797,6 +1797,16 @@ contract. The local `tools/pencil2_v14` prefix, varying and original-clipping
 scripts and receipts retain these controls. No production correction follows
 from them alone.
 
+Six synthetic viewport controls are retained in the existing
+[viewport fixture](../../conformance/pencil2-v14-expanded-viewport-sweep-native.json).
+One- and two-pixel origin shifts preserved the recorded frames; shifts of four,
+eight and sixteen and the expanded-viewport control changed edge pixels under
+host Mesa. The source captures are recoverable without overwriting local files:
+
+```sh
+for f in viewport_1_5_receipt.json viewport_origin_{1,2,4,8,16}_receipt.json; do test ! -e "tools/pencil2_v14/$f" && jq -r --arg f "$f" '.viewport_controls_original[$f]' conformance/pencil2-v14-expanded-viewport-sweep-native.json | base64 -d | gzip -dc > "tools/pencil2_v14/$f"; done
+```
+
 Historical source-cell SVG opacity strata reduced measured error on one
 note-derived host scene and separate synthetic scenes, but produced multi-MB
 SVGs and retained substantial reader differences; a separately generated PDF

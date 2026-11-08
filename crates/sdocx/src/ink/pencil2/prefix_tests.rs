@@ -220,6 +220,88 @@ fn nominal_period_native_overlap_is_not_identical() {
 }
 
 #[test]
+fn viewport_origin_controls_preserve_native_capture_and_baseline() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../conformance/pencil2-v14-expanded-viewport-sweep-native.json"
+    ))
+    .unwrap();
+    let captures = fixture["viewport_controls_original"].as_object().unwrap();
+    let cases = [
+        (
+            "viewport_1_5_receipt.json",
+            "19f7959ac925cd2d919bf73410edf87299e066b9ea0cd251f13cc1153ddd14e2",
+            true,
+        ),
+        (
+            "viewport_origin_1_receipt.json",
+            "b2f6c15da3a46d91b47ab37658873a242c1a06bd19f6b86a7ba97d36eea401c4",
+            false,
+        ),
+        (
+            "viewport_origin_2_receipt.json",
+            "14c0793588ae96297306c3b24dc543a3d7027b467e437ed7fff19643b1e75d29",
+            false,
+        ),
+        (
+            "viewport_origin_4_receipt.json",
+            "6f6a3397eb78ec9aabd864a8dee50b253d0b1f80e2bd53986619254e6180a038",
+            true,
+        ),
+        (
+            "viewport_origin_8_receipt.json",
+            "6349bdea87b63e5e274b47422a9f18bacaa931f92f97e244faa4c1d8172c698f",
+            true,
+        ),
+        (
+            "viewport_origin_16_receipt.json",
+            "d6bf8de19d1432e91e805ca7cc6a4b6ceec9d543e50e6237b4f95808e6e34103",
+            true,
+        ),
+    ];
+    assert_eq!(captures.len(), cases.len());
+    for (name, expected_hash, changed) in cases {
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(captures[name].as_str().unwrap())
+            .unwrap();
+        let mut original = Vec::new();
+        flate2::read::GzDecoder::new(compressed.as_slice())
+            .read_to_end(&mut original)
+            .unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&original)),
+            expected_hash,
+            "{name}"
+        );
+        let receipt: serde_json::Value = serde_json::from_slice(&original).unwrap();
+        assert_eq!(receipt["frame"], serde_json::json!([192, 192]));
+        assert_eq!(
+            !receipt["comparison"].as_object().unwrap().is_empty(),
+            changed,
+            "{name}"
+        );
+        for case in ["mixed", "record_17", "record_20", "record_32", "record_35"] {
+            let input = format!("0_0_{case}");
+            assert_eq!(
+                receipt["inputs"][&input], fixture["inputs"][case],
+                "{name} {case}"
+            );
+            assert_eq!(
+                receipt["results"][format!("{input}:0")]["sha256"],
+                fixture["results"][format!("{case}:0")]["sha256"],
+                "{name} {case}"
+            );
+            if name == "viewport_1_5_receipt.json" {
+                assert_eq!(
+                    receipt["results"][format!("{input}:1")]["sha256"],
+                    fixture["results"][format!("{case}:1")]["sha256"],
+                    "{name} {case}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn expanded_viewport_record_sweep_changes_only_edge_controls() {
     let edge: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../../conformance/pencil2-v14-expanded-viewport-sweep-native.json"
