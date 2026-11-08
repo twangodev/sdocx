@@ -1740,8 +1740,7 @@ observed seams at integer phase and 1×/2×/4×. Uniform and checkerboard RGB
 matched the expected values; an opaque-black luminosity-mask control gave 128
 in MuPDF and 127 in PDFium. This is not a Pencil2 native-paint or public PDF
 renderer comparison and does not cover fractional transforms, clipping or
-repeated translucent stamps. The local diagnostic is
-`tools/pencil2-mesh-v307/control.py`.
+repeated translucent stamps. The experimental diagnostic was retired.
 
 A separate source-mesh experiment used a synthetic native first-stroke prefix
 as backdrop and compared a second-stroke texture-cell mesh against the native
@@ -1749,8 +1748,8 @@ second prefix. It reduced summed error versus omitting the second stroke, but
 required approximately 1.4 million triangles and 5 MB of PDF per case, with
 substantial residuals in MuPDF and PDFium. Its baseline was not the public
 generic renderer, and it did not model native half precision or intermediate
-RGBA8 quantization. It does not justify production admission. The local
-`tools/pencil2-mesh-v307/scene.py` is an in-memory diagnostic.
+RGBA8 quantization. It does not justify production admission; the experimental
+mesh generator was retired.
 
 A retired texture-coordinate rectangle prototype covered a bounded 16×16
 texel region with aligned grain and point phases and constant opacity. Its
