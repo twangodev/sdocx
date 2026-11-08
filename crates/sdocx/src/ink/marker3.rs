@@ -787,6 +787,44 @@ mod tests {
             );
             let cases = captured["cases"].as_object().unwrap();
             assert_eq!(cases.len(), expected_cases);
+            if key == "expanded_fixture_template"
+                && let Some(dir) = std::env::var_os("SDOCX_MARKER3_CAPTURE_DIR")
+            {
+                for (name, expected) in cases {
+                    let path = std::path::Path::new(&dir).join(format!("{name}.json"));
+                    let actual: Value =
+                        serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+                    let actual = actual["cases"]
+                        .as_object()
+                        .unwrap()
+                        .values()
+                        .next()
+                        .unwrap();
+                    for field in ["input", "native_vector_bytes", "gl_error", "topology"] {
+                        assert_eq!(actual[field], expected[field], "{name}: {field}");
+                    }
+                    assert_eq!(
+                        actual["readback"]["sha256"], expected["frame_sha256"],
+                        "{name}"
+                    );
+                    let decode = |data: &str| {
+                        let bytes = base64::engine::general_purpose::STANDARD
+                            .decode(data)
+                            .unwrap();
+                        let mut frame = Vec::new();
+                        flate2::read::ZlibDecoder::new(bytes.as_slice())
+                            .take((256 * 256 * 4 + 1) as u64)
+                            .read_to_end(&mut frame)
+                            .unwrap();
+                        frame
+                    };
+                    assert_eq!(
+                        decode(actual["readback"]["dataZlibBase64"].as_str().unwrap()),
+                        decode(expected["frame_zlib_base64"].as_str().unwrap()),
+                        "{name} frame"
+                    );
+                }
+            }
             for control in cases
                 .values()
                 .chain(std::iter::once(&captured["zero_alpha_control"]))

@@ -1704,7 +1704,10 @@ test ! -e tools/marker3-alias-paint/receipt-more.json && jq -jr '.alias_paint_or
 The `zigzag_source_and_host_frames_match_native_controls` Rust test checks
 the Marker3 zigzag sampler against both native Drawing vectors and validates
 nine captured host frames. Two capture tools expect the original fixture and
-hash files; restore their byte-exact content from the tracked fixture first:
+hash files; restore their byte-exact content from the tracked fixture first. The
+expanded hash list includes the historical verifier, now replaced by the Rust
+test. To compare fresh expanded captures, set `SDOCX_MARKER3_CAPTURE_DIR` to
+their directory when running that test:
 
 ```sh
 test ! -e tools/marker3-zigzag/fixture.json && jq -jr '. as $root | .zigzag_capture_original.simple_fixture_template | gsub("__SDOCX_ZERO_ALPHA__"; $root.zero_alpha_control.frame_zlib_base64)' conformance/marker3-v5-scale-shell-native.json > tools/marker3-zigzag/fixture.json
