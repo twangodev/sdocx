@@ -1337,3 +1337,46 @@ was pinned as SHA-256 `1e49677249ffb510ca862eba5e52d4321ad1b62fac7c3c55df475d27d
 A mask readback inserted after native stamp drawing preserved all 48 existing phase-frame hashes. For opaque 1× controls the mask alpha equaled final alpha; overlaps and partial alpha remain unverified. The `magicpen_mask_phase` Rust integration test compares the retained masks against an idealized finite-quad model: support matched at every scale; at 1× seven of nine nonzero alphas matched and two differed by one, while all 36 at 2× and 192 at 4× matched. A one-pixel output translation changed a 2× phase alpha from 43 to 85, so a translation-invariant contour cannot reproduce both. A historical grid-cell diagnostic found RGB errors 6/6/6 at 1×, 0/36/0 at 2× and 0/48/0 at 4× in resvg/MuPDF/PDFium. It did not use the public exporters; per-pixel geometry depends on final scale and grows with area, so it is not admitted as a general vector profile. The local acquisition entry point is `tools/magicpen-phase/mask/run.py`.
 
 Two sequential synthetic host captures seeded the second stroke with the first framebuffer. A separate reentrant Drawing probe produced identical final bytes on solid and patterned backgrounds at 1×, 2× and 4× while reusing the RTV1 receiver. A DrawObjectList probe with native Model initialization and host clock, UUID and queue adapters matched the solid reentrant frames at those scales; patterned captures also matched, while transparent captures had no independent reentrant baseline. The native bitmap-to-GL attachment identity, full queue/cache lifecycle, general list contents, serialized notes and Android behavior remain unverified. Local probes and their retained inputs and receipts are under `tools/magicpen-phase/{two-stroke,reentrant,object-list}`. Page-edge controls shifted eight source units inward retained the shared native region, but 4× interior undercoverage persisted, so clipping alone did not explain the error. Historical reader comparisons were made against dirty, incompletely pinned source snapshots; they do not attest a clean build or general backdrop fidelity.
+
+## Converted Marker2 and InkPen2 trajectories
+
+A historical Marker2 host control reverses every channel of a saved Fountain
+trajectory and substitutes Marker2 properties; it is not a saved Marker2
+stroke. Native Drawing and saved-redraw vectors and sample boundaries matched
+the then-current Rust exporter on that input. An explicit 2× option reduced the
+measured SVG and PDF reader errors, but the retired comparator does not validate
+the current exporter, Android behavior or complete pages. The local capture and
+receipt are under `tools/marker2-note-v309`; recapture needs the pinned v306
+runner and local native/runtime inputs described in `tools/marker2-note-v306`.
+
+A separate converted 318-point Fountain trajectory tested InkPen2 V1 tool 2 at
+size 9 and tool 3 at size 3. Both produced 76 native records; Drawing and saved
+redraw matched within each case, and a retired Rust harness matched their bytes.
+This does not establish saved InkPen2, paint, device or general trajectory
+parity. The local `tools/inkpen2-dense-v307/receipt.json` retains the streams
+and pins; `capture.py` uses the local `tools/inkpen2-v1-model-tolerance` helper
+closure and requires changing the tool and size for the second case.
+
+## Montblanc eight- and ten-point host controls
+
+The tracked [eight-point input](../../conformance/montblanc-eight-probe.json)
+and [paint fixture](../../conformance/montblanc-eight-point-paint.json) retain
+the native streams, four host frames and 2× capture provenance. Historical
+2× eight-point RGB L1 was 51,539/43,957/43,374 versus fallback
+386,190/384,514/384,962 in resvg/MuPDF/PDFium; the loop control was
+27,410/23,402/23,353 versus 224,248/223,557/229,084. These host controls
+reduced error while overcovering support and do not establish device or
+saved-note parity. Local `tools/montblanc/eight-point/capture-{1x,2x}.py` and
+`tools/montblanc/extended-streams/capture.py` require the pinned native
+libraries, adapters, `MB_CASE` and project-local runtime; the paint captures
+also require `SDOCX_CAPTURE_ROOT` and the extended-paint helpers on `PYTHONPATH`.
+
+A synthetic ten-point loop yielded 48 native callbacks versus 60 from a
+historical sampler with its point-count guard widened. The first 36 numerical
+records matched; the next native and modeled redraw points differed. This is
+consistent with omission of an initial redraw segment in that case, but the
+native branch and general redraw window remain unverified; it does not justify
+widening admission. The local `tools/montblanc/ten-negative` receipt and stream
+retain the input and pins. Recapture uses the narrow-probe harness and the
+native runtime described in `tools/montblanc/many-point-paint`; the retired
+comparison did not automatically assert every callback type.
