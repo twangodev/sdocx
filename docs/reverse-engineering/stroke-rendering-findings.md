@@ -1301,7 +1301,6 @@ setter control, not a saved AirBrush stroke; its isolated export experiment did
 not establish a production correction. Restore receipts when needed:
 
 ```sh
-test ! -e tools/pen-capture/airbrush_v1_tool_receipt.json && jq -jr '.tool_matrix_original' conformance/airbrush-v1-curved-export-control.json > tools/pen-capture/airbrush_v1_tool_receipt.json
 test ! -e tools/airbrush-note-v308/receipt.json && jq -jr '.converted_trajectory_original' conformance/airbrush-v1-curved-export-control.json > tools/airbrush-note-v308/receipt.json
 ```
 
