@@ -1806,10 +1806,9 @@ lanes. A separate f64 calculation cast to f32 retained the original differences.
 A tolerance-0.2 host trace found one differing cosine among 207 calls, but its
 Rust library was not verified as the candidate's exact dependency. The
 [native fixture](../../conformance/pencil2-v14-native.json) retains both host
-receipts; restore them for local workflows if needed:
+receipts; restore the tolerance receipt for its local workflow if needed:
 
 ```sh
-test ! -e tools/pencil2-second-source/sincos-trace-receipt.json && jq -jr '.host_sincos_receipts_original.second_source' conformance/pencil2-v14-native.json > tools/pencil2-second-source/sincos-trace-receipt.json
 test ! -e tools/pencil2-serialized-bridge/sincos-tolerance-receipt.json && jq -jr '.host_sincos_receipts_original.tolerance' conformance/pencil2-v14-native.json > tools/pencil2-serialized-bridge/sincos-tolerance-receipt.json
 ```
 
