@@ -1647,32 +1647,9 @@ capture sets to compare paired native reports and frames.
 
 The `zigzag_source_and_host_frames_match_native_controls` Rust test checks
 the Marker3 zigzag sampler against both native Drawing vectors and validates
-nine captured host frames. Two capture tools expect the original fixture and
-hash files; restore their byte-exact content from the tracked fixture first. The
-expanded hash list includes the historical verifier, now replaced by the Rust
-test. The simple hash list also identifies a retired full caller log; its native
-inputs, vectors, factory observations and trace fingerprints remain in the
-fixture. To compare fresh expanded captures, set `SDOCX_MARKER3_CAPTURE_DIR`
-to their directory when running that test:
-
-```sh
-test ! -e tools/marker3-zigzag/fixture.json && jq -jr '. as $root | .zigzag_capture_original.simple_fixture_template | gsub("__SDOCX_ZERO_ALPHA__"; $root.zero_alpha_control.frame_zlib_base64)' conformance/marker3-v5-scale-shell-native.json > tools/marker3-zigzag/fixture.json
-test ! -e tools/marker3-zigzag/hashes.json && jq -jr '.zigzag_capture_original.simple_hashes_json' conformance/marker3-v5-scale-shell-native.json > tools/marker3-zigzag/hashes.json
-test ! -e tools/marker3-zigzag-expanded/fixture.json && jq -jr '. as $root | .zigzag_capture_original.expanded_fixture_template | gsub("__SDOCX_ZERO_ALPHA__"; $root.zero_alpha_control.frame_zlib_base64)' conformance/marker3-v5-scale-shell-native.json > tools/marker3-zigzag-expanded/fixture.json
-test ! -e tools/marker3-zigzag-expanded/hashes.json && jq -jr '.zigzag_capture_original.expanded_hashes_json' conformance/marker3-v5-scale-shell-native.json > tools/marker3-zigzag-expanded/hashes.json
-```
-
-The expanded phase helper differs from the retained base helper only in its
-two translation constants. Restore its historical gzip bytes on a compatible
-gzip implementation as follows; the hash check fails closed if compression
-differs:
-
-```sh
-tmp_phase=$(mktemp /tmp/sdocx-marker3-phase.XXXXXX)
-{ printf '\037\213\010\010\320\127\343\152\000\003rt-phase.py\000'; gzip -dc tools/marker3-zigzag/rt.py.gz | sed -e 's/tx=128\.0-ARGS\.scale\*offset\[0\]/tx=128.25-ARGS.scale*offset[0]/' -e 's/ty=128\.0-ARGS\.scale\*(offset\[1\]/ty=128.25-ARGS.scale*(offset[1]/' | gzip -n -6 | tail -c +11; } > "$tmp_phase"
-test ! -e tools/marker3-zigzag-expanded/rt-phase.py.gz && printf '%s  %s\n' a23b0958114de5baaba07c11d8a192467efd15620aeb1ac23ac112bb3184c5cb "$tmp_phase" | sha256sum -c && mv -n "$tmp_phase" tools/marker3-zigzag-expanded/rt-phase.py.gz
-rm -f -- "$tmp_phase"
-```
+nine captured host frames. The fixture retains the native inputs, vectors,
+factory observations and trace fingerprints. Set `SDOCX_MARKER3_CAPTURE_DIR`
+to compare fresh expanded captures when running the test.
 
 ## Pencil2 host completion and vector diagnostics
 
