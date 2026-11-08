@@ -1443,9 +1443,18 @@ A separate converted 318-point Fountain trajectory tested InkPen2 V1 tool 2 at
 size 9 and tool 3 at size 3. Both produced 76 native records; Drawing and saved
 redraw matched within each case, and a retired Rust harness matched their bytes.
 This does not establish saved InkPen2, paint, device or general trajectory
-parity. The local `tools/inkpen2-dense-v307/receipt.json` retains the streams
-and pins; `capture.py` uses the local `tools/inkpen2-v1-model-tolerance` helper
-closure and requires changing the tool and size for the second case.
+parity. The [native fixture](../../conformance/inkpen2-v1-screen-paint-native.json)
+retains the original receipt and its pins. A current Rust comparison using the
+documented tolerance and screen size emitted 83 records rather than 76 for tool
+2; the capture setup needs further investigation before treating that as a
+renderer regression or claiming current parity.
+The local `capture.py` uses the `tools/inkpen2-v1-model-tolerance` helper closure
+and requires changing the tool and size for the second case. Restore the receipt
+if needed with:
+
+```sh
+test ! -e tools/inkpen2-dense-v307/receipt.json && jq -jr '.dense_trajectory_original' conformance/inkpen2-v1-screen-paint-native.json > tools/inkpen2-dense-v307/receipt.json
+```
 
 ## Montblanc eight- and ten-point host controls
 
