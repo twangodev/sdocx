@@ -1594,9 +1594,9 @@ Local acquisition under `tools/montblanc/narrow-probe` requires the native
 runtime in `tools/montblanc/many-point-paint`, `SDOCX_CAPTURE_ROOT`,
 `MB_CASE` from the chosen fixture input, and `PYTHONPATH` containing the scratch
 runtime and `tools/montblanc/extended-paint/conformance`. `capture.py` writes a
-fresh host capture and prints the callback stream on stderr; `diverse-v8.py`
-covers independent pairs. The capture and state receipts retain the native pins; the
-export comparator and subdivision verifier were retired.
+fresh host capture and prints the callback stream on stderr. The capture and
+state receipts retain the native pins; the export comparator and subdivision
+verifier were retired.
 
 The `alias_paint_sources_match_native_vector_hashes` Rust test compares both
 Marker3 names against the retained native vector hashes for the scale and path
