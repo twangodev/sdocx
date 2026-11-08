@@ -397,6 +397,80 @@ mod tests {
         assert!(comparisons.iter().all(|case| case["equal"] == true
             && case["same_boundaries"] == true
             && case["max_error"] == 0.0));
+        let native_reference = reference();
+        let mut checked = 0;
+        for case in native_reference
+            .cases
+            .iter()
+            .filter(|case| case.samples.len() >= 2)
+        {
+            let mut stroke = native_reference.stroke.clone();
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.tool_type_raw = 0;
+            rendering.style.pen_size = Some(case.size);
+            for (index, sample) in case.samples.iter().enumerate() {
+                stroke.points.push(Point {
+                    x: sample[0],
+                    y: sample[1],
+                });
+                stroke.pressures.push(sample[2]);
+                stroke.tilts.push(sample[3]);
+                stroke.timestamps.push(index as i64 * 10);
+            }
+            let baseline = prepare_v7_finger(&stroke).unwrap();
+            for variant in ["low", "high", "varying"] {
+                let native = comparisons
+                    .iter()
+                    .find(|row| row["case"] == case.name && row["variant"] == variant)
+                    .unwrap();
+                assert_eq!(
+                    native["stamps"],
+                    baseline.points.len(),
+                    "{} {variant}",
+                    case.name
+                );
+                for index in 0..stroke.points.len() {
+                    stroke.pressures[index] = match variant {
+                        "low" => 0.,
+                        "high" => 1.,
+                        _ => (index % 3) as f64 / 2.,
+                    };
+                    stroke.tilts[index] = match variant {
+                        "low" => 0.,
+                        "high" => 1.2,
+                        _ => (index % 3) as f64 * 0.6,
+                    };
+                }
+                let actual = prepare_v7_finger(&stroke).unwrap();
+                assert_eq!(
+                    actual.sample_ends, baseline.sample_ends,
+                    "{} {variant}",
+                    case.name
+                );
+                assert_eq!(
+                    actual.points.len(),
+                    baseline.points.len(),
+                    "{} {variant}",
+                    case.name
+                );
+                for (a, b) in actual.points.iter().zip(&baseline.points) {
+                    assert_eq!(
+                        (a.x.to_bits(), a.y.to_bits()),
+                        (b.x.to_bits(), b.y.to_bits()),
+                        "{} {variant}",
+                        case.name
+                    );
+                }
+                assert_eq!(actual.stamp.width.to_bits(), baseline.stamp.width.to_bits());
+                assert_eq!(
+                    actual.stamp.height.to_bits(),
+                    baseline.stamp.height.to_bits()
+                );
+                assert_eq!(actual.stamp.angle.to_bits(), baseline.stamp.angle.to_bits());
+                checked += 1;
+            }
+        }
+        assert_eq!(checked, comparisons.len());
         let cases = geometry["cases"].as_array().unwrap();
         assert_eq!(cases.len(), 3);
         for case in cases {
