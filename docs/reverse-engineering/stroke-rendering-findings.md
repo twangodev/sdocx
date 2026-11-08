@@ -1777,11 +1777,18 @@ recapture uses a fresh `SDOCX_PENCIL2_FRESH_FRAME_DIR`, local native libraries
 and incompletely pinned harness dependencies. The second-source geometry
 comparison uses its `geometry_test.sh`. In the historical Debian glibc 2.41
 host intervention, three Rust-replay orientations had bits `bfba41b7` and
-produced sine/cosine bits `bf7e4a19`/`3dec5b1a`; this orientation was not
-independently traced at the native call. A separate f64 calculation cast to
-f32 retained the original differences. The temporary patch experiment and its
-derived receipt were retired; the separate native `sincos-trace.py` capture and
-receipt remain.
+produced sine/cosine bits `bf7e4a19`/`3dec5b1a`; a separate native trace observed
+three calls with those bits but did not independently link them to descriptor
+lanes. A separate f64 calculation cast to f32 retained the original differences.
+A tolerance-0.2 host trace found one differing cosine among 207 calls, but its
+Rust library was not verified as the candidate's exact dependency. The
+[native fixture](../../conformance/pencil2-v14-native.json) retains both host
+receipts; restore them for local workflows if needed:
+
+```sh
+test ! -e tools/pencil2-second-source/sincos-trace-receipt.json && jq -jr '.host_sincos_receipts_original.second_source' conformance/pencil2-v14-native.json > tools/pencil2-second-source/sincos-trace-receipt.json
+test ! -e tools/pencil2-serialized-bridge/sincos-tolerance-receipt.json && jq -jr '.host_sincos_receipts_original.tolerance' conformance/pencil2-v14-native.json > tools/pencil2-serialized-bridge/sincos-tolerance-receipt.json
+```
 
 A translated, pressure-scaled version of the 87-point source historically
 matched the full opaque host frame in canvas, PNG, image-backed SVG and both
