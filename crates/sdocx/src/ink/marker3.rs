@@ -669,6 +669,96 @@ mod tests {
     }
 
     #[test]
+    fn zigzag_source_and_host_frames_match_native_controls() {
+        use base64::Engine;
+        use serde_json::Value;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-v5-scale-shell-native.json"
+        ))
+        .unwrap();
+        let capture = &fixture["zigzag_capture_original"];
+        let caller = &capture["caller_case"];
+        let stroke = caller_stroke(caller);
+        let ink = prepare_for_page(&stroke).expect("native zigzag is admitted");
+        assert_caller_xy_matches(&ink, caller);
+        let source = &caller["phase_final_vectors"]["saved_redraw"];
+        let source_bytes = bytes_from_hex(source["vector_bytes"].as_str().unwrap());
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&source_bytes)),
+            source["sha256"]
+        );
+
+        let zero_data = fixture["zero_alpha_control"]["frame_zlib_base64"]
+            .as_str()
+            .unwrap();
+        let mut total = 0;
+        for (key, expected_cases) in [
+            ("simple_fixture_template", 1_usize),
+            ("expanded_fixture_template", 8),
+        ] {
+            let text = capture[key]
+                .as_str()
+                .unwrap()
+                .replace("__SDOCX_ZERO_ALPHA__", zero_data);
+            let captured: Value = serde_json::from_str(&text).unwrap();
+            assert_eq!(
+                captured["zero_alpha_control"],
+                fixture["zero_alpha_control"]
+            );
+            let cases = captured["cases"].as_object().unwrap();
+            assert_eq!(cases.len(), expected_cases);
+            for control in cases
+                .values()
+                .chain(std::iter::once(&captured["zero_alpha_control"]))
+            {
+                assert_eq!(control["gl_error"], 0);
+                let points = control["input"]["points"].as_array().unwrap();
+                assert_eq!(points.len() * 8, control["native_vector_bytes"]);
+                let compressed = base64::engine::general_purpose::STANDARD
+                    .decode(control["frame_zlib_base64"].as_str().unwrap())
+                    .unwrap();
+                let mut frame = Vec::new();
+                flate2::read::ZlibDecoder::new(compressed.as_slice())
+                    .take((256 * 256 * 4 + 1) as u64)
+                    .read_to_end(&mut frame)
+                    .unwrap();
+                assert_eq!(frame.len(), 256 * 256 * 4);
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(&frame)),
+                    control["frame_sha256"]
+                );
+                if control == &captured["zero_alpha_control"] {
+                    assert!(frame.iter().all(|byte| *byte == 0));
+                } else {
+                    assert_eq!(
+                        control["input"]["source_point_bytes_sha256"],
+                        source["sha256"]
+                    );
+                    assert_eq!(points.len(), ink.points.len());
+                    let mut upload = Vec::with_capacity(points.len() * 8);
+                    for (point, actual) in points.iter().zip(&ink.points) {
+                        let x = actual.x + 32.0;
+                        let y = actual.y + 96.0;
+                        assert!((point[0].as_f64().unwrap() - x).abs() < 1e-10);
+                        assert!((point[1].as_f64().unwrap() - y).abs() < 1e-10);
+                        upload.extend_from_slice(&(x as f32).to_le_bytes());
+                        upload.extend_from_slice(&(y as f32).to_le_bytes());
+                    }
+                    assert_eq!(
+                        format!("{:x}", Sha256::digest(&upload)),
+                        control["input"]["native_addpoint_xy_upload_sha256"]
+                    );
+                }
+            }
+            total += cases.len();
+        }
+        assert_eq!(total, 9);
+    }
+
+    #[test]
     fn size_nine_diverse_retained_provenance_and_frames() {
         use serde_json::{Value, json};
         use sha2::{Digest, Sha256};

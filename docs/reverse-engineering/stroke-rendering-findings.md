@@ -1547,6 +1547,18 @@ and `capture-state-v8.py` additionally trace state, and `diverse-v8.py` covers
 independent pairs. The capture and state receipts retain the native pins; the
 export comparator and subdivision verifier were retired.
 
+The `zigzag_source_and_host_frames_match_native_controls` Rust test checks
+the Marker3 zigzag sampler against both native Drawing vectors and validates
+nine captured host frames. Two capture tools expect the original fixture and
+hash files; restore their byte-exact content from the tracked fixture first:
+
+```sh
+test ! -e tools/marker3-zigzag/fixture.json && jq -jr '. as $root | .zigzag_capture_original.simple_fixture_template | gsub("__SDOCX_ZERO_ALPHA__"; $root.zero_alpha_control.frame_zlib_base64)' conformance/marker3-v5-scale-shell-native.json > tools/marker3-zigzag/fixture.json
+test ! -e tools/marker3-zigzag/hashes.json && jq -jr '.zigzag_capture_original.simple_hashes_json' conformance/marker3-v5-scale-shell-native.json > tools/marker3-zigzag/hashes.json
+test ! -e tools/marker3-zigzag-expanded/fixture.json && jq -jr '. as $root | .zigzag_capture_original.expanded_fixture_template | gsub("__SDOCX_ZERO_ALPHA__"; $root.zero_alpha_control.frame_zlib_base64)' conformance/marker3-v5-scale-shell-native.json > tools/marker3-zigzag-expanded/fixture.json
+test ! -e tools/marker3-zigzag-expanded/hashes.json && jq -jr '.zigzag_capture_original.expanded_hashes_json' conformance/marker3-v5-scale-shell-native.json > tools/marker3-zigzag-expanded/hashes.json
+```
+
 ## Pencil2 host completion and vector diagnostics
 
 A historical synthetic dispatch trace observed an `IContextHolder` virtual slot
