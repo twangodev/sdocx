@@ -132,6 +132,111 @@ fn zero_width_native_frames_match_explicit_grid_model() {
 }
 
 #[test]
+fn viewport_and_phase_controls_match_native_error_bounds() {
+    use base64::Engine as _;
+    use sha2::{Digest, Sha256};
+    use std::io::Read as _;
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/inkpen2-v1-screen-paint-native.json"
+    ))
+    .unwrap();
+    let captures: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/inkpen2-v1-tablet-half/receipt.json"
+    ))
+    .unwrap();
+    let originals = &fixture["half_grid_more_original"];
+    let read = |name: &str| -> serde_json::Value {
+        serde_json::from_str(originals[name].as_str().unwrap()).unwrap()
+    };
+    let decode_hex = |value: &str| {
+        value
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect::<Vec<_>>()
+    };
+    let compare = |row: &serde_json::Value,
+                   geometry: &[u8],
+                   width: i32,
+                   height: i32,
+                   scale: f64,
+                   x: f64,
+                   y: f64| {
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(row["rgba_zlib_base64"].as_str().unwrap())
+            .unwrap();
+        let mut rgba = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut rgba)
+            .unwrap();
+        assert_eq!(rgba.len(), width as usize * height as usize * 4);
+        assert_eq!(format!("{:x}", Sha256::digest(&rgba)), row["rgba_sha256"]);
+        let grid =
+            model::grid(geometry, width, height, scale, x, y, [2000, 200_000, 6144]).unwrap();
+        let mut sum = 0_u64;
+        let mut max = 0_u8;
+        for (i, pixel) in rgba.as_chunks::<4>().0.iter().enumerate() {
+            let actual = grid
+                .get(&((i % width as usize) as i32, (i / width as usize) as i32))
+                .copied()
+                .unwrap_or(0);
+            let error = pixel[3].abs_diff(actual);
+            sum += u64::from(error);
+            max = max.max(error);
+        }
+        (sum, max)
+    };
+    let phases = read("phase-model.json");
+    assert_eq!(phases["cases"].as_array().unwrap().len(), 5);
+    for row in phases["cases"].as_array().unwrap() {
+        let geometry = decode_hex(row["geometry_hex"].as_str().unwrap());
+        assert_eq!(
+            compare(
+                row,
+                &geometry,
+                64,
+                48,
+                0.5,
+                16. + row["phase"][0].as_f64().unwrap(),
+                16. + row["phase"][1].as_f64().unwrap()
+            ),
+            (0, 0)
+        );
+    }
+    for (file, expected_count) in [("viewport-controls.json", 8), ("edge-controls.json", 6)] {
+        let report = read(file);
+        let rows = report["cases"].as_array().unwrap();
+        assert_eq!(rows.len(), expected_count);
+        for row in rows {
+            let name = row["source"]
+                .as_str()
+                .or_else(|| row["case"].as_str())
+                .unwrap();
+            let geometry = decode_hex(captures["cases"][name]["geometry_hex"].as_str().unwrap());
+            let c = &row["control"];
+            let (sum, max) = compare(
+                row,
+                &geometry,
+                c[0].as_i64().unwrap() as i32,
+                c[1].as_i64().unwrap() as i32,
+                c[2].as_f64().unwrap(),
+                c[3].as_f64().unwrap(),
+                c[4].as_f64().unwrap(),
+            );
+            assert!(sum <= row["metrics"]["absolute_error"].as_u64().unwrap());
+            assert!(max <= 1);
+        }
+    }
+    let pins = read("phase-pins.json");
+    assert_eq!(
+        pins["tools/inkpen2-v1-tablet-half/receipt.json"],
+        "ff4a42391828bf32d21675fc993a85f29d0f2407d976681551934f5733b7ccc0"
+    );
+}
+
+#[test]
 fn explicit_final_grid_source_public_transport() {
     use base64::Engine as _;
     use std::io::Read as _;

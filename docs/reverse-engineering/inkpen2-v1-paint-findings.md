@@ -104,6 +104,7 @@ fixture; restore them for the local capture workflows without overwriting files:
 
 ```sh
 for f in integer-phase.json translated-phase.json zero-width-native.json; do test ! -e "tools/inkpen2-v1-tablet-half/$f" && jq -jr --arg name "$f" '.half_grid_controls_original[$name]' conformance/inkpen2-v1-screen-paint-native.json > "tools/inkpen2-v1-tablet-half/$f"; done
+for f in phase-model.json viewport-controls.json edge-controls.json phase-pins.json; do test ! -e "tools/inkpen2-v1-tablet-half/$f" && jq -jr --arg name "$f" '.half_grid_more_original[$name]' conformance/inkpen2-v1-screen-paint-native.json > "tools/inkpen2-v1-tablet-half/$f"; done
 ```
 
 
