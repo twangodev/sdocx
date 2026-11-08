@@ -382,6 +382,58 @@ mod tests {
     }
 
     #[test]
+    fn v7_channel_controls_match_native_geometry() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker4-v7-finger-paint-host.json"
+        ))
+        .unwrap();
+        let controls = &fixture["channel_controls_original"];
+        let geometry: serde_json::Value =
+            serde_json::from_str(controls["geometry"].as_str().unwrap()).unwrap();
+        let receipt: serde_json::Value =
+            serde_json::from_str(controls["receipt"].as_str().unwrap()).unwrap();
+        let comparisons = receipt["cases"].as_array().unwrap();
+        assert_eq!(comparisons.len(), 81);
+        assert!(comparisons.iter().all(|case| case["equal"] == true
+            && case["same_boundaries"] == true
+            && case["max_error"] == 0.0));
+        let cases = geometry["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 3);
+        for case in cases {
+            let mut stroke = reference().stroke;
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.advanced_settings = Some("7;".into());
+            rendering.tool_type_raw = 0;
+            rendering.style.pen_size = Some(case["size"].as_f64().unwrap() as f32);
+            for (index, sample) in case["samples"].as_array().unwrap().iter().enumerate() {
+                stroke.points.push(Point {
+                    x: sample[0].as_f64().unwrap(),
+                    y: sample[1].as_f64().unwrap(),
+                });
+                stroke.pressures.push(sample[2].as_f64().unwrap());
+                stroke.tilts.push(sample[3].as_f64().unwrap());
+                stroke.timestamps.push(index as i64 * 10);
+            }
+            let ink = prepare_v7_finger(&stroke).unwrap();
+            let ends: Vec<_> = case["sample_ends"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|end| end.as_u64().unwrap() as usize)
+                .collect();
+            assert_eq!(ink.sample_ends, ends, "{}", case["name"]);
+            let dots = case["dots"].as_array().unwrap();
+            assert_eq!(ink.points.len(), dots.len());
+            for (point, dot) in ink.points.iter().zip(dots) {
+                assert!((point.x - dot[0].as_f64().unwrap()).abs() < 1e-4);
+                assert!((point.y - dot[1].as_f64().unwrap()).abs() < 1e-4);
+                assert!((ink.stamp.height - 2. * (dot[2].as_f64().unwrap() + 0.5)).abs() < 1e-4);
+                assert!((ink.stamp.angle - dot[3].as_f64().unwrap()).abs() < 1e-4);
+            }
+        }
+    }
+
+    #[test]
     fn v7_finger_budget_is_atomic_and_bounded() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
             "../../../../tools/marker4_v7/public-finger/wide-extra/geometry.json"

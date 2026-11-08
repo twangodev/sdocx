@@ -1507,6 +1507,13 @@ error in all three readers, using a shared workspace that was not snapshotted.
 The local `tools/marker4_v7/channel-controls` captures, receipts and frames
 retain those measurements. They do not establish device input, orientation,
 archive loading or general paint parity.
+The Rust channel-control test checks three captured geometries. Restore its
+original inputs for the local capture workflow with:
+
+```sh
+test ! -e tools/marker4_v7/channel-controls/geometry.json && jq -jr '.channel_controls_original.geometry' conformance/marker4-v7-finger-paint-host.json > tools/marker4_v7/channel-controls/geometry.json
+test ! -e tools/marker4_v7/channel-controls/receipt.json && jq -jr '.channel_controls_original.receipt' conformance/marker4-v7-finger-paint-host.json > tools/marker4_v7/channel-controls/receipt.json
+```
 
 A note-derived Marker4 V8 host probe found that the parser's per-addition f32
 pressure recurrence, including its first difference from a historical f64
