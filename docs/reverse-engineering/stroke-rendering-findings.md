@@ -1368,7 +1368,7 @@ PDF reader error grew with area, and affine transforms, clipping, replay, output
 size and resource bounds remain unresolved. Its axis-aligned host results do
 not establish device behavior or justify a general production profile.
 
-Local `tools/magicpen-phase/{diverse,minimum-dot,minimum-dot-color,cells/controls,cells/variable}/capture.py`
+Local `tools/magicpen-phase/{cells/controls,cells/variable}/capture.py`
 scripts and their native receipts retain the detailed inputs and readbacks.
 The controls capture also supports `MAGIC_BACKGROUND=opaque`. The Rust test
 checks retained frames and can compare fresh captures when
@@ -1412,7 +1412,6 @@ These extracts also reproduce the original bytes. The Rust
 color, sequential-stroke and independent reentrant controls. To restore those capture receipt paths:
 
 ```sh
-test ! -e tools/magicpen-phase/minimum-dot-color/native-receipt.json && jq '.single_dot_color_controls' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/minimum-dot-color/native-receipt.json
 test ! -e tools/magicpen-phase/two-stroke/inputs.json && jq -jr '.edge_and_stroke_inputs_original.two_stroke_json' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/two-stroke/inputs.json
 test ! -e tools/magicpen-phase/two-stroke/native-receipt.json && jq '.two_stroke_controls' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/two-stroke/native-receipt.json
 test ! -e tools/magicpen-phase/reentrant/receipt.json && jq '. as $root | [.reentrant_controls[] | . as $row | . + {rgba_zlib: ($root.two_stroke_controls[] | select(.background == $row.background and .scale == $row.scale) | .rgba_zlib)}]' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/reentrant/receipt.json
@@ -1421,13 +1420,7 @@ test ! -e tools/magicpen-phase/reentrant/receipt.json && jq '. as $root | [.reen
 These extracts reproduce the original receipt bytes. The
 `diverse_no_curve_sources_match_native_vectors_and_frame_hashes` Rust test
 compares three source trajectories against complete native vectors at three
-scales and checks the frame hashes. The original diverse input and receipt text
-can be restored byte-for-byte for the local capture script:
-
-```sh
-test ! -e tools/magicpen-phase/diverse/inputs.json && jq -jr '.diverse_capture_original.inputs_json' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/diverse/inputs.json
-test ! -e tools/magicpen-phase/diverse/native-receipt.json && jq -jr '.diverse_capture_original.native_receipt_json' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/diverse/native-receipt.json
-```
+scales and checks the frame hashes.
 
 The `native_object_list_controls_retain_order_and_frame_handoff` Rust test checks
 nine retained ObjectList traces and their full frames. Six frame payloads are
