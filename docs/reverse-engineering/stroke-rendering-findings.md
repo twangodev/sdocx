@@ -1770,9 +1770,11 @@ matched those records, without establishing portable or device behavior. A
 separate 231-point source produced 124 records with two one-ULP differences in
 lane 8; the maintained `note_source_preserves_native_geometry_except_two_known_ulp_lanes`
 test checks that descriptor. Neither native descriptor has been independently
-confirmed as the submitted GPU buffer. The local `tools/pencil2-second-source`
-and `tools/pencil2-note-source-v300` scripts and receipts retain the controls;
-recapture uses a fresh `SDOCX_PENCIL2_FRESH_FRAME_DIR`, local native libraries
+confirmed as the submitted GPU buffer. The native source metadata is retained in
+the [mesh control receipt](../../tools/pencil2-mesh-v309/receipt.json); local
+`tools/pencil2-second-source` and `tools/pencil2-note-source-v300` scripts retain
+the capture workflow. Recapture uses a fresh `SDOCX_PENCIL2_FRESH_FRAME_DIR`,
+local native libraries
 and incompletely pinned harness dependencies. The second-source geometry
 comparison uses its `geometry_test.sh`. In the historical Debian glibc 2.41
 host intervention, three Rust-replay orientations had bits `bfba41b7` and
