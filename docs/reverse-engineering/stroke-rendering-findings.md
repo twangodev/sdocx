@@ -1738,11 +1738,7 @@ order for 300 moderate finite cases; the conventional matrix formula differed
 in all 300. The anomaly is in a Z lane unused by the modeled XY uniform, and the
 probe does not establish full Drawing, device or unusual-float behavior. The
 [lifecycle fixture](../../crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json)
-retains the trace and probe receipts; restore them if needed:
-
-```sh
-for f in caller-receipt.json matrix-decisive-receipt.json matrix-probe-receipt.json receipt.json; do test ! -e "tools/pencil2-offset-trace/$f" && jq -r --arg f "$f" '.offset_trace_original[$f]' crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json | base64 -d | gzip -dc > "tools/pencil2-offset-trace/$f"; done
-```
+retains the trace and probe receipts, which are checked by Rust.
 
 Seven synthetic first-point controls and their native uniform observations are
 retained in the lifecycle fixture alongside the Rust offset tests. Restore the
