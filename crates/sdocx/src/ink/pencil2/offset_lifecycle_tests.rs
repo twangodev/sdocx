@@ -18,6 +18,60 @@ fn floats<const N: usize>(hex: &str) -> [f32; N] {
 }
 
 #[test]
+fn first_point_controls_match_native_grain_offsets() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/pencil2-offset-lifecycle-native.json"
+    ))
+    .unwrap();
+    let compressed = base64::engine::general_purpose::STANDARD
+        .decode(fixture["first_point_capture_gzip_base64"].as_str().unwrap())
+        .unwrap();
+    let mut bytes = Vec::new();
+    flate2::read::GzDecoder::new(compressed.as_slice())
+        .read_to_end(&mut bytes)
+        .unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "324878a816bd8a8ea1a9f77e78ee7d30e53576824744cf46551610273cbc30b4"
+    );
+    let receipt: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let cases = receipt["cases"].as_object().unwrap();
+    assert_eq!(cases.len(), 7);
+    let mut projection = [0_f32; 16];
+    projection[0] = 2. / 192.;
+    projection[5] = 2. / 192.;
+    projection[10] = 1.;
+    projection[12] = -1.;
+    projection[13] = -1.;
+    projection[15] = 1.;
+    for (name, case) in cases {
+        assert_eq!(case["second_outcome"], "returned", "{name}");
+        assert_eq!(case["update_gl_error"], 0, "{name}");
+        assert_eq!(case["draw_readback_gl_error"], 0, "{name}");
+        let points = case["points"].as_array().unwrap();
+        let matrix = case["second_matrix"].as_array().unwrap();
+        assert_eq!(matrix.len(), 16);
+        let matrix = std::array::from_fn(|i| matrix[i].as_f64().unwrap() as f32);
+        let point = [
+            points[0].as_f64().unwrap() as f32,
+            points[1].as_f64().unwrap() as f32,
+        ];
+        let actual =
+            candidate::pencil2_v14_host_grain_offset(projection, matrix, point, [192, 192])
+                .unwrap();
+        let uniforms = case["uniforms"].as_array().unwrap();
+        assert_eq!(uniforms.len(), 2, "{name}");
+        let native = uniforms[1][3].as_array().unwrap();
+        for axis in 0..2 {
+            assert!(
+                (f64::from(actual[axis]) - native[axis].as_f64().unwrap()).abs() < 1e-4,
+                "{name} axis {axis}"
+            );
+        }
+    }
+}
+
+#[test]
 fn drawing_replay_controls_preserve_offset_and_texture_evidence() {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../../../tests/fixtures/pencil2-offset-lifecycle-native.json"

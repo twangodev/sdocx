@@ -1741,12 +1741,9 @@ probe does not establish full Drawing, device or unusual-float behavior. The
 retains the trace and probe receipts, which are checked by Rust.
 
 Seven synthetic first-point controls and their native uniform observations are
-retained in the lifecycle fixture alongside the Rust offset tests. Restore the
-original receipt for the local capture workflow if needed:
-
-```sh
-test ! -e tools/pencil2-first-point-offset/receipt.json && jq -r '.first_point_capture_gzip_base64' crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json | base64 -d | gzip -dc > tools/pencil2-first-point-offset/receipt.json
-```
+retained in the lifecycle fixture. The Rust
+`first_point_controls_match_native_grain_offsets` test compares all seven with
+the host offset model.
 
 Synthetic Drawing matrix controls recorded offsets close to the input matrix
 translations across twelve tested matrices; direct-RT controls used a different
