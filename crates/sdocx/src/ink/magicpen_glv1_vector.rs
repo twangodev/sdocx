@@ -72,8 +72,12 @@ mod tests {
     use std::io::Read;
 
     fn decode_native_frame(case: &Value, data_key: &str, hash_key: &str, size: usize) -> Vec<u8> {
+        decode_frame_data(&case[data_key], &case[hash_key], size)
+    }
+
+    fn decode_frame_data(data: &Value, hash: &Value, size: usize) -> Vec<u8> {
         let compressed = base64::engine::general_purpose::STANDARD
-            .decode(case[data_key].as_str().unwrap())
+            .decode(data.as_str().unwrap())
             .unwrap();
         let mut bytes = Vec::new();
         flate2::read::ZlibDecoder::new(compressed.as_slice())
@@ -81,7 +85,7 @@ mod tests {
             .read_to_end(&mut bytes)
             .unwrap();
         assert_eq!(bytes.len(), size);
-        assert_eq!(format!("{:x}", Sha256::digest(&bytes)), case[hash_key]);
+        assert_eq!(format!("{:x}", Sha256::digest(&bytes)), *hash);
         bytes
     }
 
@@ -190,6 +194,81 @@ mod tests {
                 }
             }
             assert_eq!(names.len(), 8);
+        }
+    }
+
+    #[test]
+    fn native_minimum_dot_color_and_alpha_controls() {
+        use std::collections::BTreeSet;
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/magicpen-phase-export-host.json"
+        ))
+        .unwrap();
+        let cases = fixture["single_dot_color_controls"]["cases"]
+            .as_array()
+            .unwrap();
+        assert_eq!(cases.len(), 15);
+        let mut seen = BTreeSet::new();
+        for (position, opaque_alpha, half_alpha) in
+            [("p825", 20_u8, 10_u8), ("p850", 64, 32), ("p875", 43, 22)]
+        {
+            for (color, expected_alpha) in [
+                ("ff336699", opaque_alpha),
+                ("80336699", half_alpha),
+                ("01336699", 0),
+                ("80ff0000", half_alpha),
+                ("4000ff00", (u16::from(opaque_alpha) + 2) as u8 / 4),
+            ] {
+                let id = format!("{position}-{color}");
+                let mut matches = cases.iter().filter(|case| case["input"]["id"] == id);
+                let case = matches.next().expect("missing native color control");
+                assert!(matches.next().is_none(), "duplicate native color control");
+                assert!(seen.insert(id));
+                let readback = &case["readback"];
+                assert_eq!(readback["width"], 32);
+                assert_eq!(readback["height"], 32);
+                assert_eq!(readback["bytes"], 32 * 32 * 4);
+                let frame =
+                    decode_native_frame(readback, "rgba8_zlib_base64", "sha256", 32 * 32 * 4);
+                let pixels = frame.as_chunks::<4>().0;
+                let active: Vec<_> = pixels.iter().filter(|pixel| pixel[3] != 0).collect();
+                assert_eq!(active.len(), usize::from(expected_alpha != 0));
+                assert_eq!(readback["changed_from_background_pixels"], active.len());
+                if let Some(pixel) = active.first() {
+                    assert_eq!(pixel[3], expected_alpha);
+                    assert!(pixel[..3].iter().all(|channel| *channel <= pixel[3]));
+                }
+            }
+        }
+        assert_eq!(seen.len(), cases.len());
+    }
+
+    #[test]
+    fn native_sequential_stroke_frames_preserve_seed_handoff() {
+        use std::collections::BTreeSet;
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/magicpen-phase-export-host.json"
+        ))
+        .unwrap();
+        let cases = fixture["two_stroke_controls"].as_array().unwrap();
+        assert_eq!(cases.len(), 6);
+        let mut seen = BTreeSet::new();
+        for case in cases {
+            let background = case["background"].as_str().unwrap();
+            let scale = case["scale"].as_u64().unwrap() as usize;
+            assert!(["solid", "pattern"].contains(&background));
+            assert!([1, 2, 4].contains(&scale));
+            assert!(seen.insert((background, scale)));
+            let stages = case["stages"].as_array().unwrap();
+            assert_eq!(stages.len(), 2);
+            assert_eq!(stages[0]["case"], "red");
+            assert_eq!(stages[1]["case"], "blue");
+            assert_eq!(stages[1]["seed_sha256"], stages[0]["readback_sha256"]);
+            let size = (32 * scale).pow(2) * 4;
+            let frame = decode_frame_data(&case["rgba_zlib"], &stages[1]["readback_sha256"], size);
+            assert!(frame.as_chunks::<4>().0.iter().all(|pixel| pixel[3] == 255));
         }
     }
 

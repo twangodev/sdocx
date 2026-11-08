@@ -1358,7 +1358,17 @@ test ! -e tools/magicpen-phase/cells/controls/native-receipt.json && jq '.cell_c
 test ! -e tools/magicpen-phase/cells/variable/native-receipt.json && jq '.cell_composition_controls.variable' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/cells/variable/native-receipt.json
 ```
 
-These extracts also reproduce the original bytes.
+These extracts also reproduce the original bytes. The Rust
+`native_minimum_dot_color_and_alpha_controls` and
+`native_sequential_stroke_frames_preserve_seed_handoff` tests check the retained
+color and sequential-stroke controls. To restore those capture receipt paths:
+
+```sh
+test ! -e tools/magicpen-phase/minimum-dot-color/native-receipt.json && jq '.single_dot_color_controls' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/minimum-dot-color/native-receipt.json
+test ! -e tools/magicpen-phase/two-stroke/native-receipt.json && jq '.two_stroke_controls' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/two-stroke/native-receipt.json
+```
+
+These extracts reproduce the original receipt bytes.
 
 ## Converted Marker2 and InkPen2 trajectories
 
