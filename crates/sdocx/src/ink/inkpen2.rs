@@ -770,6 +770,62 @@ mod tests {
 
     #[cfg(feature = "pdf")]
     #[test]
+    fn half_grid_tool3_native_capture_matches_tool2() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read as _;
+
+        let tool3: Value = serde_json::from_str(include_str!(
+            "../../../../tools/inkpen2-v1-tablet-half/receipt.json"
+        ))
+        .unwrap();
+        let tool2: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen2-v1-high-scales-native.json"
+        ))
+        .unwrap();
+        let inputs: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen2-null-v1-shapes-paint-native.json"
+        ))
+        .unwrap();
+        let cases = tool3["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 6);
+        assert_eq!(cases.len(), tool2["cases"].as_object().unwrap().len());
+        assert_eq!(cases.len(), inputs["cases"].as_object().unwrap().len());
+        assert_eq!(tool3["profile"], serde_json::json!([1440, 2560]));
+        assert_eq!(tool3["scale"], 0.5);
+
+        for (name, actual) in cases {
+            let mut expected_input = inputs["cases"][name]["input"].clone();
+            expected_input["tool_type"] = 3.into();
+            assert_eq!(actual["input"], expected_input, "{name}: input");
+            let reference = &tool2["cases"][name]["0.5"];
+            let decode = |row: &Value| {
+                let geometry = hex_bytes(row["geometry_hex"].as_str().unwrap());
+                let compressed = base64::engine::general_purpose::STANDARD
+                    .decode(row["rgba_zlib_base64"].as_str().unwrap())
+                    .unwrap();
+                let mut rgba = Vec::new();
+                flate2::read::ZlibDecoder::new(compressed.as_slice())
+                    .read_to_end(&mut rgba)
+                    .unwrap();
+                assert_eq!(row["output_size"], serde_json::json!([64, 48]));
+                assert_eq!(rgba.len(), 64 * 48 * 4);
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(&geometry)),
+                    row["geometry_sha256"].as_str().unwrap()
+                );
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(&rgba)),
+                    row["rgba_sha256"].as_str().unwrap()
+                );
+                (geometry, rgba)
+            };
+            assert_eq!(decode(actual), decode(reference), "{name}: native capture");
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
     fn half_grid_from_source_geometry_matches_retained_phases() {
         use base64::Engine as _;
         use std::io::Read as _;
