@@ -1793,8 +1793,8 @@ A translated, pressure-scaled version of the 87-point source historically
 matched the full opaque host frame in canvas, PNG, image-backed SVG and both
 PDF readers. This used an intervened queue, explicit native Update/Draw and a
 setter-built object; it does not establish saved Pencil2 admission, ordinary
-queue behavior or device fidelity. The local `tools/pencil2-changed-input`
-receipt records the historical hashes; native acquisition uses
+queue behavior or device fidelity. The [control receipt](../../tools/pencil2-control/isolation-receipt.json)
+records the historical hashes; native acquisition uses
 `tools/pencil2-control/native-capture.py` and a fresh frame directory.
 
 A synthetic negative-Y 2× prefix control observed a one-pixel paint difference

@@ -36,5 +36,74 @@
     "lint": "strict library Clippy with -D warnings passed",
     "non_pdf": "render,serde cargo check passed"
   },
-  "limitations": "Fresh setter-built Pencil2 from transformed Fountain source; synthetic prior, intervened queue, host Mesa and ARM64 emulation. No saved Pencil2, normal queue, device or production parity. Native capture requires external local dependencies documented in README."
+  "limitations": "Fresh setter-built Pencil2 from transformed Fountain source; synthetic prior, intervened queue, host Mesa and ARM64 emulation. No saved Pencil2, normal queue, device or production parity. Native capture requires external local dependencies documented in README.",
+  "changed_input_comparison": {
+    "schema": "sdocx-pencil2-changed-input-export-v1",
+    "scope": "Fresh setter-built Pencil2 from decoded Fountain channels with x + 3.25, y - 2.5, and pressure * 0.75, normalized to the public fresh stylus profile, synthetic prior native frame, computed host grain offset and opaque 192x192 host Mesa output. The source is a Fountain stroke, and no saved Pencil2 or device parity is established.",
+    "source_index": 6,
+    "native_frame_sha256": "6759da166f2094f08034bce5172ca0ac66f7489670a2d75aa6e621d6d19c631e",
+    "native_offset_bits": [
+      "4333eda0",
+      "42fb2629"
+    ],
+    "input_sha256": {
+      "tools/pencil2-independent-drawing/capture.py": "974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7",
+      "tools/pencil2-public-replay/drawing_native_target_translated_probe.py": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861",
+      "tools/pencil2-mixed-drawing/capture.patch": "b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83",
+      "tmp/vector-parity-plan/pen-family-audit/pencil2-v14-geometry-v12/capture_candidate.py": "996ef6db3a376619e9e5d1d05b7d5e1a940726f3feb2ef6895275a705576ee3e",
+      "tmp/vector-parity-plan/chinesebrush-paint-scale-work/conformance/inkpen_paint_native.py": "a3e65b2b37b2913b4bb2787b72ab2dbad0a9660cb66435b142f5acfa4d5051ae",
+      "scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed"
+    },
+    "artifact_sha256": {
+      "first.rgba": "0f0cbf122a9484d1760f1fae7f260f51552e4c6bee05a8016d032e833385e923",
+      "second.rgba": "6759da166f2094f08034bce5172ca0ac66f7489670a2d75aa6e621d6d19c631e",
+      "canvas.rgba": "aecbbb01b381465c87450aa3c88af29206712e36712d93375d6802e5026ec071",
+      "canvas.png": "af94544ae502181f7bb05031d66c8c4d88d3feefcfbc43c6c02ed257a17dcafb",
+      "canvas.svg": "3a7628b1e7267002e92007980a3e9b463151e617dddeebd1aa61324a34a78bf9",
+      "svg.png": "68900904ed8072d0b57dbf2062edf0443405934f3ae5cdfbde8844a82392321f",
+      "canvas.pdf": "29a4cb766eec54f83743eaa6614de569e3ac9042f0373e89c2a23a38ad62b1e3"
+    },
+    "runtime_limitations": "The listed native harness files and renderer are pinned; transitive harness dependencies, Unicorn, host GL/Mesa, and other runtime libraries are not fully pinned.",
+    "source_sha256": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+    "capture_sha256": "de7100e3efd3fa498629976cba05b04ffebece739bbf31f785be2211b28e9b72",
+    "public_source_sha256": "cfbd5c092fa9f6fea9a14debe12f451847a8d191d0923e6c86e12db5400dd991",
+    "script_sha256": "1c9f0305d23bdf56284726071244d43bb0c62e6dcefd27c4f136191780882643",
+    "readers": {
+      "resvg": "0.45.1",
+      "mupdf": "1.28.2",
+      "pdfium": "156.0.8076.0"
+    },
+    "results": {
+      "canvas": {
+        "different_pixels": 0,
+        "different_channels": 0,
+        "max_channel_error": 0,
+        "sum_channel_error": 0
+      },
+      "png": {
+        "different_pixels": 0,
+        "different_channels": 0,
+        "max_channel_error": 0,
+        "sum_channel_error": 0
+      },
+      "svg_resvg": {
+        "different_pixels": 0,
+        "different_channels": 0,
+        "max_channel_error": 0,
+        "sum_channel_error": 0
+      },
+      "direct_pdf_mupdf": {
+        "different_pixels": 0,
+        "different_channels": 0,
+        "max_channel_error": 0,
+        "sum_channel_error": 0
+      },
+      "direct_pdf_pdfium": {
+        "different_pixels": 0,
+        "different_channels": 0,
+        "max_channel_error": 0,
+        "sum_channel_error": 0
+      }
+    }
+  }
 }
