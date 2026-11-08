@@ -1312,13 +1312,8 @@ preflight's partial resolution, and did not execute initialization arrays,
 Drawing, GL, teardown or pixels. These controls do not establish Android
 loading, independent state, lifecycle or device parity.
 
-Original relocation, constructor and factory records are preserved in the Rust
-test fixture. Restore the remaining local probe inputs without overwriting files:
-
-```sh
-for f in mixed-pen-constructor-probe/{receipt,reverse-limit-receipt,reverse-receipt}.json; do test ! -e "tools/$f" && jq -r --arg name "$f" '.originals[$name].gzip_base64' crates/sdocx/tests/fixtures/mixed-pen-preflight-native.json | base64 -d | gzip -dc > "tools/$f"; done
-for f in mesa-factory-draw-attempt.json mesa-factory-drawing-final-receipt.json mesa-factory-style-control-receipt.json; do test ! -e "tools/mixed-pen-pencil-factory-probe/$f" && jq -r --arg name "mixed-pen-pencil-factory-probe/$f" '.originals[$name].gzip_base64' crates/sdocx/tests/fixtures/mixed-pen-preflight-native.json | base64 -d | gzip -dc > "tools/mixed-pen-pencil-factory-probe/$f"; done
-```
+Original relocation, constructor and factory records are preserved in the
+[Rust test fixture](../../crates/sdocx/tests/fixtures/mixed-pen-preflight-native.json).
 
 ## MagicPen host grid controls
 
