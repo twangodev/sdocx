@@ -1803,6 +1803,11 @@ test ! -e tools/pencil2-second-source/sincos-trace-receipt.json && jq -jr '.host
 test ! -e tools/pencil2-serialized-bridge/sincos-tolerance-receipt.json && jq -jr '.host_sincos_receipts_original.tolerance' conformance/pencil2-v14-native.json > tools/pencil2-serialized-bridge/sincos-tolerance-receipt.json
 ```
 
+A separate synthetic remap of a 318-point Fountain payload exercised native
+deserialization and Drawing selection for Pencil2. Its getter, geometry and
+frame hashes are in the same fixture; it does not establish saved Pencil2 or
+device parity. The local serialized-bridge capture script remains available.
+
 A translated, pressure-scaled version of the 87-point source historically
 matched the full opaque host frame in canvas, PNG, image-backed SVG and both
 PDF readers. This used an intervened queue, explicit native Update/Draw and a

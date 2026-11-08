@@ -648,5 +648,75 @@
   "host_sincos_receipts_original": {
     "second_source": "{\n  \"scope\": \"Setter-built second source; native Pencil2 ARM64 emulation with sincosf import bridged to host glibc. No Android libm or device parity.\",\n  \"command\": \"python3 tools/pencil2-second-source/sincos-trace.py\",\n  \"capture_sha256\": \"464a4db2acf1d8f71bb451ccad0f3b8f38635e9e48f8df0fd190371831035940\",\n  \"script_sha256\": \"0fef13da00805bde2a505ffd45e12b62774fdbbbe0d015eeae4f184fcb9c32ea\",\n  \"input_sha256\": \"b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f\",\n  \"harness_sha256\": {\n    \"tools/pencil2-independent-drawing/capture.py\": \"974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7\",\n    \"tools/pencil2-public-replay/drawing_native_target_translated_probe.py\": \"675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861\",\n    \"tools/pencil2-mixed-drawing/capture.patch\": \"b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83\",\n    \"tmp/vector-parity-plan/pen-family-audit/pencil2-v14-geometry-v12/capture_candidate.py\": \"996ef6db3a376619e9e5d1d05b7d5e1a940726f3feb2ef6895275a705576ee3e\"\n  },\n  \"native_geometry_sha256\": \"1119d446324f6f3a61ff231b61b73a154010304e9bf8ebd4fc9e33cddbb1c9ab\",\n  \"host_libm_path\": \"/usr/lib/x86_64-linux-gnu/libm.so.6\",\n  \"host_libm_sha256\": \"6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3\",\n  \"python_version\": \"3.13.5 (main, Aug 10 2026, 12:06:59) [GCC 14.2.0]\",\n  \"native_library_sha256\": {\n    \"libSPenPencil2.so\": \"3e7d7118ea0fea370d491a5582ac81c09dc063ac75dbcc396abdc32976a42b0f\",\n    \"libSPenRenderer.so\": \"f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed\",\n    \"libSPenModel.so\": \"4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a\",\n    \"libSPenDrawing.so\": \"788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd\"\n  },\n  \"second_draw_call_count\": 83,\n  \"matching_calls_little_endian_bits\": [\n    {\n      \"index\": 76,\n      \"cos_f32_bits\": \"1a5bec3d\",\n      \"input_f32_bits\": \"b741babf\",\n      \"phase\": \"second_draw_object_stroke\",\n      \"sin_f32_bits\": \"194a7ebf\"\n    },\n    {\n      \"index\": 77,\n      \"cos_f32_bits\": \"1a5bec3d\",\n      \"input_f32_bits\": \"b741babf\",\n      \"phase\": \"second_draw_object_stroke\",\n      \"sin_f32_bits\": \"194a7ebf\"\n    },\n    {\n      \"index\": 78,\n      \"cos_f32_bits\": \"1a5bec3d\",\n      \"input_f32_bits\": \"b741babf\",\n      \"phase\": \"second_draw_object_stroke\",\n      \"sin_f32_bits\": \"194a7ebf\"\n    }\n  ],\n  \"limitations\": \"Calls and fixture share the synthetic harness but this run does not independently link each call to a descriptor lane or verify GPU upload. Transitive harness and host runtime libraries are not fully pinned.\"\n}\n",
     "tolerance": "{\n  \"scope\": \"Synthetic remapped Pencil2 tolerance 0.2, reused renderer under ARM64 emulation; sincosf calls are bridged to host glibc and compared with a shared-target Rust libm rlib. No Android libm or device parity.\",\n  \"calls\": 207,\n  \"differences\": [\n    {\n      \"call_index\": 200,\n      \"input_bits\": \"bfb99c48\",\n      \"host_sin_bits\": \"bf7e2316\",\n      \"host_cos_bits\": \"3df69f92\",\n      \"rust_sin_bits\": \"bf7e2316\",\n      \"rust_cos_bits\": \"3df69f91\"\n    }\n  ],\n  \"native_glibc_libm_sha256\": \"6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3\",\n  \"rust_rlib_sha256\": \"f3851b30c3051aeb719fabb89a91c09404f51b712029400707e5ebe93496d78f\",\n  \"tolerance_control_sha256\": \"117a9fe6444ed21872b9cc4ac672095abb66dd3f7426415a2668e960c8b2e740\",\n  \"script_sha256\": \"ef5f16f5c4d4a843dc5ab10a0376030b0dc919ee788bc6aa10b5c561199e4733\",\n  \"limitations\": \"The candidate geometry comparison independently reported record 200 lane 8 drift, consistent with the cosine difference at this call. Call index is not independently linked to geometry record index. The first sorted shared-target libm rlib is used and has not been verified as the exact dependency used by the candidate build. This does not validate the tolerance gate generally, resolve the separate tolerance-5 endpoint opacity mismatch, or establish pixel or saved-note parity.\"\n}\n"
+  },
+  "synthetic_serialized_remap": {
+    "scope": "Synthetic Pencil2 V14 identity remapped onto an original Fountain payload with a synthesized StringID table; native NewApplyBinary and OnAttach, Drawing selection and deferred host queue, explicit Update and Draw on ARM64 emulation and host Mesa. The first stroke is synthetic and the second is drawn over it. No original saved Pencil2, outer page loading, normal queue scheduling, device or production parity is established.",
+    "source_index": 3,
+    "source_payload_sha256": "0210af6b413aea15dbc920098a3953a6e3f98358d6966400333b82d0b446b410",
+    "inputs_sha256": "b8bb2d8a17412e80b67dc8456b9d8dbd061ebf0afcb443c32ff09cbb9b59182f",
+    "script_sha256": "c16da1f7407f6c362a55fdd2338a450b8b99a5f02bb4e29eea5788df3a740fa9",
+    "base_sha256": "974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7",
+    "drawing_base_sha256": "675279014dfeb4778d8118a02d8d9d77779f4cec1c6f18444a5f7b28751e6861",
+    "patch_sha256": "b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83",
+    "point_count": 318,
+    "consumed": 4007,
+    "channel_sha256": {
+      "points": "08d5ec4f71a0cd8ba4f28b2e61aa679e48a989378da35183a99cc1fb897977af",
+      "pressures": "70702c0555169f03af692ffe34df4905775a85c7fa8a6d29d6864db06190039b",
+      "timestamps": "00fb9292318a9598d63cc4686df935c42351291769d6af5119918ab0c0cc6796",
+      "tilts": "f5dfae54af170bf88d92c0926dae2314af0bff07b2163ec7af55c7149fe547a1",
+      "orientations": "813c1bfc1d4c69ca930e74266019deb9023f15f5cd913606678157bd380eae3f"
+    },
+    "native_getters": {
+      "color_argb": 4294425088,
+      "curve_enabled": 1,
+      "fixed_width_bits": "6ade1141",
+      "fixed_width_enabled": 0,
+      "label": "second_before_draw",
+      "line_type": 0,
+      "point_count": 318,
+      "rainbow_distance": 0,
+      "rainbow_enabled": 0,
+      "rainbow_offset_bits": "00000000",
+      "shape": 0,
+      "size_bits": "6ade1141",
+      "size_level": 0,
+      "stroke_type": 0,
+      "tool_type": 2
+    },
+    "advanced_setting": "14;",
+    "drawing_return": 1,
+    "same_renderer": true,
+    "geometry_bytes": 11536,
+    "geometry_sha256": "e4de0ac4dc0a13142378db481488f99de039dc9d4001a649f919b3a0e366d8a2",
+    "uniforms": [
+      [
+        "glUniform2fv",
+        4,
+        1,
+        [
+          6,
+          9
+        ]
+      ],
+      [
+        "glUniform2fv",
+        4,
+        1,
+        [
+          132.41741943359375,
+          138.97479248046875
+        ]
+      ]
+    ],
+    "first_sha256": "0f0cbf122a9484d1760f1fae7f260f51552e4c6bee05a8016d032e833385e923",
+    "second_sha256": "125cd0f12dc014faa60273794a2f67e3a0e7b2492100b68102b00a7415b2c3a3",
+    "changed_pixels": 525,
+    "gl_errors": [
+      0,
+      0,
+      0
+    ],
+    "limitations": "UUID callbacks are stubbed; StringID manager is synthesized from Pencil2 and 14; names. Transitive native harness and runtime libraries are not fully pinned."
   }
 }
