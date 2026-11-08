@@ -1469,21 +1469,13 @@ runtime. Drawing tasks and target clearing were host controlled.
 Further synthetic 65-point/size-8 and reversed 128-point/size-20 controls tested
 tools 0, 2 and 3 at fractional 2×; their tracked
 [receipt](../../conformance/simplebrush-expanded-long-native.json) preserves
-geometry and frame hashes and historical reader measurements. The local
-`tools/simplebrush-long-expanded/capture.py` accepts those point/size variables
-and `--tool` with a fresh output path; its transitive adapter dependencies are
-not fully pinned. Two ordered overlap captures under `tools/simplebrush-v69`
+geometry and frame hashes and historical reader measurements. The general
+capture helper has incompletely pinned adapter dependencies. Two ordered overlap captures
 retained all 5,288 native alpha-support pixels in resvg with respective summed
 RGBA errors 22,080 and 21,159 after a post-export transform. This is not a
 public transform API or native PDF export result.
 Their original pure-drain receipt and frames are preserved in the fringe
-comparison fixture; restore them for local replay without overwriting files:
-
-```sh
-test ! -e tools/simplebrush-v69/drain-pure-receipt.json && jq -jr '.ordered_overlap_original.receipt' conformance/simplebrush-fringe-width-comparison.json > tools/simplebrush-v69/drain-pure-receipt.json
-for f in long-short short-long; do test ! -e "tools/simplebrush-v69/$f-pure.rgba.zlib" && jq -r --arg name "$f" '.ordered_overlap_original.frames_hex[$name]' conformance/simplebrush-fringe-width-comparison.json | tr '[:lower:]' '[:upper:]' | basenc --base16 --decode > "tools/simplebrush-v69/$f-pure.rgba.zlib"; done
-for f in drain-first-receipt.json long-short.json short-long.json queue-mapping-receipt.json; do test ! -e "tools/simplebrush-v69/$f" && jq -r --arg name "$f" '.ordered_queue_original_gzip_base64[$name]' conformance/simplebrush-fringe-width-comparison.json | base64 -d | gzip -dc > "tools/simplebrush-v69/$f"; done
-```
+comparison fixture and checked by Rust.
 
 A historical gradient-stop change helped those two overlaps without showing a
 general single-stroke improvement; an eight-sector prototype worsened the
@@ -1493,12 +1485,7 @@ comparison does not isolate GPU precision, blending or reader effects. These
 controls do not establish arbitrary strokes, device or saved-note parity.
 
 The isolated native fringe receipt and compressed frame are preserved in the
-fringe comparison fixture. Restore them for the local workflow if needed:
-
-```sh
-test ! -e tools/simplebrush-v74/receipt.json && jq -jr '.isolated_native_original.receipt' conformance/simplebrush-fringe-width-comparison.json > tools/simplebrush-v74/receipt.json
-test ! -e tools/simplebrush-v74/first-instance.rgba.zlib && jq -r '.isolated_native_original.compressed_frame_hex' conformance/simplebrush-fringe-width-comparison.json | tr '[:lower:]' '[:upper:]' | basenc --base16 --decode > tools/simplebrush-v74/first-instance.rgba.zlib
-```
+fringe comparison fixture and checked by Rust.
 
 ## Marker alias and channel host controls
 
