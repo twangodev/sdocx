@@ -41,5 +41,97 @@
     "pypdfium2": "5.14.0",
     "pdfium": "156.0.8076.0",
     "result": "Native, SVG and PDF hashes and all reported alpha metrics reproduced."
+  },
+  "ordered_vector_control": {
+    "scope": "Fixed 192x192 host synthetic isolated stamp pixels represented as ordered unit vector rectangles over two opaque backgrounds; each rectangle uses isolated native premultiplied color converted to straight opacity. This is pixel-grid dependent, not a resolution-independent texture or device or saved-note result. SVG and PDF were generated independently; reader compositing and rounding may differ. No general claim about arbitrary page composition.",
+    "input_sha256": "b63f3bdcb7ba09a5a182fabffe91e9a34c469f0ff90604d4d91d2acdeaee8b67",
+    "script_sha256": "a00476e82946879d00a2eca15c6776dfed746ee1d0906325a0bc205253836fce",
+    "readers": {
+      "resvg": "0.45.1",
+      "mupdf": "1.28.2",
+      "pdfium": "156.0.8076.0"
+    },
+    "results": {
+      "colored_white": {
+        "svg_resvg": {
+          "different_pixels": 14,
+          "different_channels": 27,
+          "max_channel_error": 3,
+          "sum_channel_error": 43
+        },
+        "pdf_mupdf": {
+          "different_pixels": 40,
+          "different_channels": 109,
+          "max_channel_error": 5,
+          "sum_channel_error": 198
+        },
+        "pdf_pdfium": {
+          "different_pixels": 40,
+          "different_channels": 109,
+          "max_channel_error": 5,
+          "sum_channel_error": 198
+        }
+      },
+      "colored_paper": {
+        "svg_resvg": {
+          "different_pixels": 51,
+          "different_channels": 120,
+          "max_channel_error": 3,
+          "sum_channel_error": 171
+        },
+        "pdf_mupdf": {
+          "different_pixels": 59,
+          "different_channels": 174,
+          "max_channel_error": 6,
+          "sum_channel_error": 502
+        },
+        "pdf_pdfium": {
+          "different_pixels": 59,
+          "different_channels": 174,
+          "max_channel_error": 6,
+          "sum_channel_error": 490
+        }
+      },
+      "mixed_white": {
+        "svg_resvg": {
+          "different_pixels": 62,
+          "different_channels": 164,
+          "max_channel_error": 4,
+          "sum_channel_error": 254
+        },
+        "pdf_mupdf": {
+          "different_pixels": 141,
+          "different_channels": 413,
+          "max_channel_error": 8,
+          "sum_channel_error": 884
+        },
+        "pdf_pdfium": {
+          "different_pixels": 141,
+          "different_channels": 413,
+          "max_channel_error": 8,
+          "sum_channel_error": 906
+        }
+      },
+      "mixed_paper": {
+        "svg_resvg": {
+          "different_pixels": 167,
+          "different_channels": 331,
+          "max_channel_error": 5,
+          "sum_channel_error": 540
+        },
+        "pdf_mupdf": {
+          "different_pixels": 189,
+          "different_channels": 511,
+          "max_channel_error": 8,
+          "sum_channel_error": 1213
+        },
+        "pdf_pdfium": {
+          "different_pixels": 197,
+          "different_channels": 534,
+          "max_channel_error": 9,
+          "sum_channel_error": 1273
+        }
+      }
+    }
   }
 }

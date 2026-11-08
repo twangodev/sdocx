@@ -1859,7 +1859,10 @@ test ! -e tools/pencil2-public-replay/drawing-native-target.rgba.zlib && jq -r '
 Historical source-cell SVG opacity strata reduced measured error on one
 note-derived host scene and separate synthetic scenes, but produced multi-MB
 SVGs and retained substantial reader differences; a separately generated PDF
-was not the public exporter. The prototypes were retired. Geometry, phase,
+was not the public exporter. A separate ordered-pixel rectangle experiment and
+its per-reader errors are retained in the existing
+[SVG/PDF control](../../conformance/pencil2-v14-svg-pdf-control.json); it is tied
+to a fixed pixel grid. The prototypes were retired. Geometry, phase,
 translucent export, transforms, cross-reader coverage and resource limits
 remain unresolved, so these controls do not justify production dispatch or
 claim device parity.
