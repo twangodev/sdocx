@@ -1410,3 +1410,43 @@ overlap controls and MuPDF output and grew markup roughly twelvefold. Native
 `fwidth(distance)` and a fixed vector fringe differ, but the analytic host
 comparison does not isolate GPU precision, blending or reader effects. These
 controls do not establish arbitrary strokes, device or saved-note parity.
+
+## Marker alias and channel host controls
+
+Synthetic Marker3/StraightMarker tool-2 pairs were captured through native
+Drawing and a host RTV1 bridge, including clipped, fractional, self-crossing
+and explicit-empty-setting paths. The paired controls compare complete frames,
+vector/upload hashes, shader sources, draws, color and GL errors; the empty
+setting selected V5 for the tested input. The host reconnects Drawing's captured
+vector after the wrapper clears its slots; the native SetPenData call site was
+not observed. The local scripts and receipts are under
+`tools/marker3-alias-paint` and require its pinned native libraries and helpers.
+These controls do not establish serialized-note or Android parity.
+
+For Marker4/StraightHighlighter, six synthetic Model/Drawing controls at sizes
+4, 10 and 35 selected GLV7 and produced identical 33-record AddPoint streams
+within each pair. A separate size-10 host RTV3 bridge with supplied color and
+canvas produced matching VBO hashes and frames; it is not uninterrupted
+Drawing-to-paint execution. Turn and loop paint controls bypass alias selection
+and improved historical public RGB error over fallback in resvg, MuPDF and
+PDFium. The local `tools/marker4_v7/alias-control` scripts and receipts retain
+the source provenance, native pins and bridge data; acquisition requires the
+project-local native runtime and helper inputs.
+
+For 27 multi-point Marker4 geometries, 81 pressure/tilt variants retained the
+same full stamp attributes, sample boundaries and tip bounds at unit inverse
+scale. Three paired host paint controls also improved historical public RGB
+error in all three readers, using a shared workspace that was not snapshotted.
+The local `tools/marker4_v7/channel-controls` captures, receipts and frames
+retain those measurements. They do not establish device input, orientation,
+archive loading or general paint parity.
+
+A note-derived Marker4 V8 host probe found that the parser's per-addition f32
+pressure recurrence, including its first difference from a historical f64
+recurrence at index 17, retained the same 341 geometry tuples at sizes 0.4 and
+2.0. On that one stroke, 0.4 and 0.99 were blank; 1.0, 1.5 and 1.99 had
+identical frames distinct from 2.0. Historical reader results depend on dirty
+source and reader versions and justify no renderer change. The local
+`tools/marker4_v8/paired` scripts and receipts retain input and native hashes;
+recapture requires unbundled scratch runners, native libraries and emulation.
+These observations do not establish Samsung-device or general PDF fidelity.
