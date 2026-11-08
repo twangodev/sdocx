@@ -1525,13 +1525,8 @@ for f in marker3-tool1-paint/native.json marker3-tool1-paint/scale2-receipt.json
 for f in marker3-tool1-paint/{crossing-tool1,fractional-tool1,short-tool1,short-tool2,short4-zero-tool1,short6-zero-tool1}.rgba.zlib marker3-tool1-scale4/{crossing,fractional,short}.rgba.zlib; do test ! -e "tools/$f" && jq -r --arg name "$f" '.tool1_scale_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d > "tools/$f"; done
 ```
 
-The Marker3 fractional-size receipt and scale-capture pins are preserved in the
-zero-width fixture; restore them for local capture without overwriting files:
-
-```sh
-test ! -e tools/marker3-fraction/receipt.json && jq -jr '.fraction_scale_original["fraction.json"]' conformance/marker3-v5-zero-width-native.json > tools/marker3-fraction/receipt.json
-test ! -e tools/marker3-scale/hashes.json && jq -jr '.fraction_scale_original["scale-hashes.json"]' conformance/marker3-v5-zero-width-native.json > tools/marker3-scale/hashes.json
-```
+The Marker3 fractional-size receipt and scale-capture pins remain in the
+zero-width fixture; Rust tests check the retained controls.
 
 Synthetic Marker3/StraightMarker tool-2 pairs were captured through native
 Drawing and a host RTV1 bridge, including clipped, fractional, self-crossing
