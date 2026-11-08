@@ -253,7 +253,9 @@ mod tests {
         ))
         .unwrap();
         let cases = fixture["two_stroke_controls"].as_array().unwrap();
+        let reentrant = fixture["reentrant_controls"].as_array().unwrap();
         assert_eq!(cases.len(), 6);
+        assert_eq!(reentrant.len(), 6);
         let mut seen = BTreeSet::new();
         for case in cases {
             let background = case["background"].as_str().unwrap();
@@ -266,6 +268,20 @@ mod tests {
             assert_eq!(stages[0]["case"], "red");
             assert_eq!(stages[1]["case"], "blue");
             assert_eq!(stages[1]["seed_sha256"], stages[0]["readback_sha256"]);
+            let mut comparisons = reentrant
+                .iter()
+                .filter(|capture| capture["background"] == background && capture["scale"] == scale);
+            let joined = comparisons.next().expect("missing reentrant control");
+            assert!(comparisons.next().is_none(), "duplicate reentrant control");
+            assert_eq!(joined["sha256"], stages[1]["readback_sha256"]);
+            assert_eq!(joined["difference_from_two_process_rgb"], 0);
+            let first_hash = stages[0]["readback_sha256"].as_str().unwrap();
+            assert!(
+                joined["trace"]
+                    .as_str()
+                    .unwrap()
+                    .contains(&format!("FIRST_FRAME {first_hash} "))
+            );
             let size = (32 * scale).pow(2) * 4;
             let frame = decode_frame_data(&case["rgba_zlib"], &stages[1]["readback_sha256"], size);
             assert!(frame.as_chunks::<4>().0.iter().all(|pixel| pixel[3] == 255));

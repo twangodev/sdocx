@@ -1361,11 +1361,12 @@ test ! -e tools/magicpen-phase/cells/variable/native-receipt.json && jq '.cell_c
 These extracts also reproduce the original bytes. The Rust
 `native_minimum_dot_color_and_alpha_controls` and
 `native_sequential_stroke_frames_preserve_seed_handoff` tests check the retained
-color and sequential-stroke controls. To restore those capture receipt paths:
+color, sequential-stroke and independent reentrant controls. To restore those capture receipt paths:
 
 ```sh
 test ! -e tools/magicpen-phase/minimum-dot-color/native-receipt.json && jq '.single_dot_color_controls' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/minimum-dot-color/native-receipt.json
 test ! -e tools/magicpen-phase/two-stroke/native-receipt.json && jq '.two_stroke_controls' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/two-stroke/native-receipt.json
+test ! -e tools/magicpen-phase/reentrant/receipt.json && jq '. as $root | [.reentrant_controls[] | . as $row | . + {rgba_zlib: ($root.two_stroke_controls[] | select(.background == $row.background and .scale == $row.scale) | .rgba_zlib)}]' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/reentrant/receipt.json
 ```
 
 These extracts reproduce the original receipt bytes. The
