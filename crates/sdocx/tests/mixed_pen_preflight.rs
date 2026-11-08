@@ -90,3 +90,56 @@ fn native_loader_constructor_and_factory_evidence_remains_consistent() {
         "instruction_limit"
     );
 }
+
+#[test]
+fn native_factory_draw_diagnostics_keep_failure_and_sparse_frame() {
+    let fixture: Value =
+        serde_json::from_str(include_str!("fixtures/mixed-pen-preflight-native.json")).unwrap();
+    let read = |name: &str| -> Value {
+        let original = &fixture["originals"][format!("mixed-pen-pencil-factory-probe/{name}")];
+        let data = base64::engine::general_purpose::STANDARD
+            .decode(original["gzip_base64"].as_str().unwrap())
+            .unwrap();
+        let mut raw = Vec::new();
+        flate2::read::GzDecoder::new(data.as_slice())
+            .read_to_end(&mut raw)
+            .unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(&raw)), original["sha256"]);
+        serde_json::from_slice(&raw).unwrap()
+    };
+    let failed = read("mesa-factory-draw-attempt.json");
+    assert!(
+        failed["failure"]
+            .as_str()
+            .unwrap()
+            .contains("did not complete")
+    );
+    assert_eq!(failed["pixel_readback"], false);
+    assert_eq!(failed["teardown_observed"], false);
+    let drawing = read("mesa-factory-drawing-final-receipt.json");
+    assert_eq!(drawing["exit_code"], 0);
+    assert_eq!(drawing["first_gl_error"], 0);
+    assert_eq!(drawing["second_gl_error"], 0);
+    assert_eq!(drawing["second"]["drawing_result"], 1);
+    assert_eq!(drawing["second"]["geometry_bytes"], 4592);
+    assert_ne!(drawing["first_sha256"], drawing["second_sha256"]);
+    let style = read("mesa-factory-style-control-receipt.json");
+    assert_eq!(style["style"]["argb"], "0xff000000");
+    let capture = &style["readback"];
+    assert_eq!(capture["bytes"], 192 * 192 * 4);
+    let pixels = capture["nonzero_pixel_rgba"].as_array().unwrap();
+    assert_eq!(
+        pixels.len(),
+        capture["nonzero_pixels"].as_u64().unwrap() as usize
+    );
+    let mut rgba = vec![0_u8; 192 * 192 * 4];
+    for pixel in pixels {
+        let x = pixel[0].as_u64().unwrap() as usize;
+        let y = pixel[1].as_u64().unwrap() as usize;
+        assert!(x < 192 && y < 192);
+        for c in 0..4 {
+            rgba[(y * 192 + x) * 4 + c] = pixel[c + 2].as_u64().unwrap() as u8;
+        }
+    }
+    assert_eq!(format!("{:x}", Sha256::digest(&rgba)), capture["sha256"]);
+}
