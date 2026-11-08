@@ -80,3 +80,53 @@ fn native_width_state_receipts() {
         );
     }
 }
+
+#[test]
+fn native_narrow_size_selection_matches_sampler() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/montblanc-wide-width-state-native.json"
+    ))
+    .unwrap();
+    let originals = &fixture["narrow_state_original"];
+    let initial: serde_json::Value =
+        serde_json::from_str(originals["state-receipt.json"].as_str().unwrap()).unwrap();
+    let trace: serde_json::Value =
+        serde_json::from_str(originals["state-v8-receipt.json"].as_str().unwrap()).unwrap();
+    let captured = word(&initial["observation"]["source_model_get_pen_size_f32_bits"]);
+    let selected = word(&initial["observation"]["native_pen_getsize_f32_bits"]);
+    assert_eq!(captured, 0.25_f32.to_bits());
+    assert_eq!(selected, 0.4_f32.to_bits());
+    assert_eq!(word(&trace["model_size_f32_bits"]), captured);
+    assert_eq!(word(&trace["pen_getter_f32_bits"]), selected);
+    assert_eq!(
+        word(&initial["drawable_pen_data_width_source_chain"]["gl_data_first_f32_bits"]),
+        selected
+    );
+    let native_base = word(&trace["end_pen_width_register_trace"][2]["s_registers"]["s0_f32_bits"]);
+    assert_eq!((f32::from_bits(selected) / 3.).to_bits(), native_base);
+    let points = [
+        [0., 0.],
+        [7., 3.],
+        [14., -2.],
+        [21., 4.],
+        [28., -1.],
+        [35., 3.],
+    ];
+    let pressure = [0., 1., 0.1, 0.9, 0.2, 1.];
+    let run = |pen_size| {
+        super::many_point::many_point(super::Input {
+            points: &points,
+            pressure: &pressure,
+            pen_size,
+        })
+        .unwrap()
+    };
+    let a = run(f32::from_bits(captured));
+    let b = run(f32::from_bits(selected));
+    assert!(!a.is_empty());
+    assert_eq!(a.len(), b.len());
+    for (a, b) in a.iter().zip(b) {
+        assert_eq!(a.call, b.call);
+        assert_eq!(a.lanes.map(f32::to_bits), b.lanes.map(f32::to_bits));
+    }
+}

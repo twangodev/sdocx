@@ -1583,6 +1583,13 @@ larger SVG/PDF outputs. A four-subdivision experiment reduced SVG size but
 worsened every measured reader comparison; production retains eight. The
 experiments do not establish saved-note or device parity.
 
+The original narrow-width state traces are preserved in the tracked width-state
+fixture. Restore them for the local capture workflow without overwriting files:
+
+```sh
+for f in state-receipt.json state-v8-receipt.json; do test ! -e "tools/montblanc/narrow-probe/$f" && jq -jr --arg name "$f" '.narrow_state_original[$name]' conformance/montblanc-wide-width-state-native.json > "tools/montblanc/narrow-probe/$f"; done
+```
+
 Local acquisition under `tools/montblanc/narrow-probe` requires the native
 runtime in `tools/montblanc/many-point-paint`, `SDOCX_CAPTURE_ROOT`,
 `MB_CASE` from the chosen fixture input, and `PYTHONPATH` containing the scratch
