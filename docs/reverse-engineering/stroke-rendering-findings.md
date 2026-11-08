@@ -1380,3 +1380,33 @@ widening admission. The local `tools/montblanc/ten-negative` receipt and stream
 retain the input and pins. Recapture uses the narrow-probe harness and the
 native runtime described in `tools/montblanc/many-point-paint`; the retired
 comparison did not automatically assert every callback type.
+
+## SimpleBrush long-stroke host controls
+
+Synthetic tool-2 controls at 129 points/size 20 and reversed 256 points/size 8
+used a fractional 2× transform on a 256×256 host-Mesa target. Their complete
+streams match the Rust `folded_long_strokes_match_complete_native_geometry`
+regression; a former one-lane final-coordinate discrepancy disappeared after
+SmPath distance clamping. The local `conformance/simplebrush-long-audit/receipt.json`
+retains geometry, full frames and capture pins. On a prepared host,
+`tools/simplebrush-long-audit/capture.py` accepts `POINT_COUNT`, `PROBE_SIZE`
+and `VARIANT=reverse`; its scratch dependencies are not a clean-checkout
+runtime. Drawing tasks and target clearing were host controlled.
+
+Further synthetic 65-point/size-8 and reversed 128-point/size-20 controls tested
+tools 0, 2 and 3 at fractional 2×; their tracked
+[receipt](../../conformance/simplebrush-expanded-long-native.json) preserves
+geometry and frame hashes and historical reader measurements. The local
+`tools/simplebrush-long-expanded/capture.py` accepts those point/size variables
+and `--tool` with a fresh output path; its transitive adapter dependencies are
+not fully pinned. Two ordered overlap captures under `tools/simplebrush-v69`
+retained all 5,288 native alpha-support pixels in resvg with respective summed
+RGBA errors 22,080 and 21,159 after a post-export transform. This is not a
+public transform API or native PDF export result.
+
+A historical gradient-stop change helped those two overlaps without showing a
+general single-stroke improvement; an eight-sector prototype worsened the
+overlap controls and MuPDF output and grew markup roughly twelvefold. Native
+`fwidth(distance)` and a fixed vector fringe differ, but the analytic host
+comparison does not isolate GPU precision, blending or reader effects. These
+controls do not establish arbitrary strokes, device or saved-note parity.
