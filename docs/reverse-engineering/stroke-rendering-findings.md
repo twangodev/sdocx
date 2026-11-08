@@ -1269,3 +1269,28 @@ but worsened others; none established a general correction. Native-frame image
 transport also left RGB differences and is not an independent paint reconstruction.
 These host observations do not establish device, saved-note or arbitrary-scale
 parity.
+
+## Historical mixed-pen loader and factory controls
+
+In isolated Unicorn mappings, a loader preflight found no overlap between the
+allocated library ranges and checked segment payloads after mapping. A separate
+relocation control wrote and read back 65,290 supported relocations, leaving
+8,025 unresolved. It assumed non-preempted definitions and unique visible
+export candidates; symbol versions, Android lookup scopes, interposition,
+permissions and constructors were not modeled. Guest code did not run in
+that relocation control.
+
+Two subsequent synthetic factory controls returned live FountainPen and
+Pencil2 allocations with vtable pointers in their respective libraries, in
+both call orders. They used a bounded host heap and adapters, assumed the
+preflight's partial resolution, and did not execute initialization arrays,
+Drawing, GL, teardown or pixels. These controls do not establish Android
+loading, independent state, lifecycle or device parity.
+
+The local acquisition scripts are `tools/mixed-pen-loader-preflight/preflight.py`,
+`tools/mixed-pen-relocation-preflight/preflight.py`, and
+`tools/mixed-pen-factory-probe/probe.py`; their receipts and native DSOs are
+local research inputs. The scripts use assertions, so run without optimized
+Python, and require new output paths. The factory probe accepts `--order
+pencil-first` for the reverse order and `--instruction-limit` to exercise a
+bounded failure. Unsupported relocations are not all trapped.
