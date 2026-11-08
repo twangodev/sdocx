@@ -1322,22 +1322,13 @@ preflight's partial resolution, and did not execute initialization arrays,
 Drawing, GL, teardown or pixels. These controls do not establish Android
 loading, independent state, lifecycle or device parity.
 
-Six original relocation, constructor and factory records are preserved in the
-Rust test fixture. Restore them for the local probes without overwriting files:
+Original relocation, constructor and factory records are preserved in the Rust
+test fixture. Restore the remaining local probe inputs without overwriting files:
 
 ```sh
-for f in mixed-pen-constructor-probe/{receipt,reverse-limit-receipt,reverse-receipt}.json mixed-pen-relocation-preflight/receipt.json mixed-pen-factory-probe/{forward,reverse}.json; do test ! -e "tools/$f" && jq -r --arg name "$f" '.originals[$name].gzip_base64' crates/sdocx/tests/fixtures/mixed-pen-preflight-native.json | base64 -d | gzip -dc > "tools/$f"; done
+for f in mixed-pen-constructor-probe/{receipt,reverse-limit-receipt,reverse-receipt}.json; do test ! -e "tools/$f" && jq -r --arg name "$f" '.originals[$name].gzip_base64' crates/sdocx/tests/fixtures/mixed-pen-preflight-native.json | base64 -d | gzip -dc > "tools/$f"; done
 for f in mesa-factory-draw-attempt.json mesa-factory-drawing-final-receipt.json mesa-factory-style-control-receipt.json; do test ! -e "tools/mixed-pen-pencil-factory-probe/$f" && jq -r --arg name "mixed-pen-pencil-factory-probe/$f" '.originals[$name].gzip_base64' crates/sdocx/tests/fixtures/mixed-pen-preflight-native.json | base64 -d | gzip -dc > "tools/mixed-pen-pencil-factory-probe/$f"; done
-test ! -e tools/mixed-pen-loader-preflight/receipt-v2.json && jq -r '.originals["mixed-pen-loader-preflight/receipt-v2.json"].gzip_base64' crates/sdocx/tests/fixtures/mixed-pen-preflight-native.json | base64 -d | gzip -dc | jq -Rsj --arg root "$PWD" 'gsub("__SDOCX_WORKSPACE__"; $root)' > tools/mixed-pen-loader-preflight/receipt-v2.json
 ```
-
-The local acquisition scripts are `tools/mixed-pen-loader-preflight/preflight.py`,
-`tools/mixed-pen-relocation-preflight/preflight.py`, and
-`tools/mixed-pen-factory-probe/probe.py`; their receipts and native DSOs are
-local research inputs. The scripts use assertions, so run without optimized
-Python, and require new output paths. The factory probe accepts `--order
-pencil-first` for the reverse order and `--instruction-limit` to exercise a
-bounded failure. Unsupported relocations are not all trapped.
 
 ## MagicPen host grid controls
 
