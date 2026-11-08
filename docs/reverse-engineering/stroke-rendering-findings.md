@@ -409,15 +409,10 @@ the `conformance` tree from commit `84d6e2fca4b2882e0b28b688c5e71964c723976a`
 into a temporary project tree, add an `AGENTS.md` root marker, and link the local
 `scratch` runtime. Use a fresh tree to avoid stale helpers. The pinned
 paint helper has SHA-256 `0377f7de9c48e7c79fc596603128d49bff3a7427ce59e6052db14a53d8cf342a`.
-The scripts in `tools/chinesebrush-default-size` and `tools/chinesebrush-v5-matrix`
-check their native helper pins; references in script comments to the former
-`tools/chinesebrush-default-size/README.md` refer to this setup. Restore the
-receipts without overwriting files:
-
-```sh
-for f in receipt.json paint-receipt.json phase-receipt.json; do test ! -e "tools/chinesebrush-default-size/$f" && jq -jr --arg name "$f" '.default_size_controls_original[$name]' conformance/chinesebrush-v5-paired-native.json > "tools/chinesebrush-default-size/$f"; done
-test ! -e tools/chinesebrush-v5-matrix/paint-receipt.json && jq -jr '.default_size_controls_original["v5-paint-receipt.json"]' conformance/chinesebrush-v5-paired-native.json > tools/chinesebrush-v5-matrix/paint-receipt.json
-```
+The tracked `tools/chinesebrush_v5_probe.py` refers to the former default-size
+README; the setup above replaces it. The Rust
+`omitted_size_and_alias_controls_match_native_sources` test checks the retained
+default-size, phase and alias observations.
 
 The imported shared `Pen::SetSize` clamps finite sizes to 0.4–800 before storing
 them (PenCommon RVA `0x45fdc`, SHA-256
