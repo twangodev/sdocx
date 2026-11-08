@@ -1478,6 +1478,14 @@ overlap controls and MuPDF output and grew markup roughly twelvefold. Native
 comparison does not isolate GPU precision, blending or reader effects. These
 controls do not establish arbitrary strokes, device or saved-note parity.
 
+The isolated native fringe receipt and compressed frame are preserved in the
+fringe comparison fixture. Restore them for the local workflow if needed:
+
+```sh
+test ! -e tools/simplebrush-v74/receipt.json && jq -jr '.isolated_native_original.receipt' conformance/simplebrush-fringe-width-comparison.json > tools/simplebrush-v74/receipt.json
+test ! -e tools/simplebrush-v74/first-instance.rgba.zlib && jq -r '.isolated_native_original.compressed_frame_hex' conformance/simplebrush-fringe-width-comparison.json | tr '[:lower:]' '[:upper:]' | basenc --base16 --decode > tools/simplebrush-v74/first-instance.rgba.zlib
+```
+
 ## Marker alias and channel host controls
 
 Synthetic Marker3/StraightMarker tool-2 pairs were captured through native

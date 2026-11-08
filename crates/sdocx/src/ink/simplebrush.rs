@@ -572,6 +572,53 @@ mod tests {
     use sha2::{Digest, Sha256};
 
     #[test]
+    fn isolated_native_fringe_matches_quad_difference_model() {
+        use std::io::Read as _;
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-fringe-width-comparison.json"
+        ))
+        .unwrap();
+        let original = &fixture["isolated_native_original"];
+        let receipt: Value = serde_json::from_str(original["receipt"].as_str().unwrap()).unwrap();
+        let compressed = decode_hex(original["compressed_frame_hex"].as_str().unwrap());
+        let mut frame = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut frame)
+            .unwrap();
+        assert_eq!(frame.len(), 256 * 256 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&frame)),
+            receipt["frame_sha256"]
+        );
+        let center = [
+            receipt["frame_center"][0].as_f64().unwrap(),
+            receipt["frame_center"][1].as_f64().unwrap(),
+        ];
+        let radius = receipt["radius"].as_f64().unwrap();
+        let distance =
+            |x: i32, y: i32| (f64::from(x) + 0.5 - center[0]).hypot(f64::from(y) + 0.5 - center[1]);
+        let mut count = 0;
+        let mut absolute_error = 0.;
+        for y in 58..83_i32 {
+            for x in 38..63_i32 {
+                let d = distance(x, y);
+                if !(9. < d && d < radius) {
+                    continue;
+                }
+                let (qx, qy) = (x & !1, y & !1);
+                let width = (distance(qx + 1, y) - distance(qx, y)).abs()
+                    + (distance(x, qy + 1) - distance(x, qy)).abs();
+                let predicted = ((radius - d) / width).clamp(0., 1.);
+                let alpha = f64::from(frame[((y * 256 + x) * 4 + 3) as usize]) / 255.;
+                absolute_error += (alpha - predicted).abs();
+                count += 1;
+            }
+        }
+        assert_eq!(count, 126);
+        assert!(absolute_error / f64::from(count) < 0.003);
+    }
+
+    #[test]
     fn note_derived_short_movements_match_native_vectors() {
         let saved: serde_json::Value = serde_json::from_str(include_str!(
             "../../tests/assets/fountain-v14/saved-source-29.json"
