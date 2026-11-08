@@ -1309,6 +1309,13 @@ preflight's partial resolution, and did not execute initialization arrays,
 Drawing, GL, teardown or pixels. These controls do not establish Android
 loading, independent state, lifecycle or device parity.
 
+Six original relocation, constructor and factory records are preserved in the
+Rust test fixture. Restore them for the local probes without overwriting files:
+
+```sh
+for f in mixed-pen-constructor-probe/{receipt,reverse-limit-receipt,reverse-receipt}.json mixed-pen-relocation-preflight/receipt.json mixed-pen-factory-probe/{forward,reverse}.json; do test ! -e "tools/$f" && jq -r --arg name "$f" '.originals[$name].gzip_base64' crates/sdocx/tests/fixtures/mixed-pen-preflight-native.json | base64 -d | gzip -dc > "tools/$f"; done
+```
+
 The local acquisition scripts are `tools/mixed-pen-loader-preflight/preflight.py`,
 `tools/mixed-pen-relocation-preflight/preflight.py`, and
 `tools/mixed-pen-factory-probe/probe.py`; their receipts and native DSOs are
