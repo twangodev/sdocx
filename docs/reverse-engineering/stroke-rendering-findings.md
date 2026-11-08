@@ -1495,6 +1495,8 @@ receipt with geometry, full frames and capture pins. Restore it for recapture:
 
 ```sh
 test ! -e conformance/simplebrush-long-audit/receipt.json && jq -r '.long_audit_original_gzip_base64' conformance/simplebrush-expanded-long-native.json | base64 -d | gzip -dc > conformance/simplebrush-long-audit/receipt.json
+for f in alternate129.input.json receipt.json; do test ! -e "tools/simplebrush-v63/$f" && jq -r --arg name "$f" '.alternate_tool0_original_base64[$name]' conformance/simplebrush-expanded-long-native.json | base64 -d | gzip -dc > "tools/simplebrush-v63/$f"; done
+test ! -e tools/simplebrush-v63/alternate129.rgba.zlib && jq -r '.alternate_tool0_original_base64["alternate129.rgba.zlib"]' conformance/simplebrush-expanded-long-native.json | base64 -d > tools/simplebrush-v63/alternate129.rgba.zlib
 ```
 
 On a prepared host,

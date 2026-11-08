@@ -889,6 +889,79 @@ mod tests {
         assert_eq!(receipt["frame"]["sha256"], reference["frame_sha256"]);
     }
 
+    #[cfg(feature = "render")]
+    #[test]
+    fn alternate_tool_zero_long_stroke_matches_native_geometry() {
+        use base64::Engine as _;
+        use std::io::Read as _;
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-expanded-long-native.json"
+        ))
+        .unwrap();
+        let original = &fixture["alternate_tool0_original_base64"];
+        let decode = |name: &str| {
+            base64::engine::general_purpose::STANDARD
+                .decode(original[name].as_str().unwrap())
+                .unwrap()
+        };
+        let read_json = |name: &str| -> (Vec<u8>, Value) {
+            let compressed = decode(name);
+            let mut bytes = Vec::new();
+            flate2::read::GzDecoder::new(compressed.as_slice())
+                .read_to_end(&mut bytes)
+                .unwrap();
+            let value = serde_json::from_slice(&bytes).unwrap();
+            (bytes, value)
+        };
+        let (input_bytes, input) = read_json("alternate129.input.json");
+        let (_, receipt) = read_json("receipt.json");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&input_bytes)),
+            receipt["input_json_sha256"]
+        );
+        let points: Vec<_> = input["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| [p[0].as_f64().unwrap() as f32, p[1].as_f64().unwrap() as f32])
+            .collect();
+        let pressures: Vec<_> = input["pressures"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| p.as_f64().unwrap() as f32)
+            .collect();
+        assert_eq!(points.len(), 129);
+        let samples = generate(NativeInput {
+            points: &points,
+            pressures: &pressures,
+            size: input["size"].as_f64().unwrap() as f32,
+            tool_type: input["tool"].as_i64().unwrap() as i32,
+            curve_enabled: true,
+            max_samples: 32_768,
+        })
+        .unwrap();
+        let bytes: Vec<_> = samples
+            .into_iter()
+            .flatten()
+            .flat_map(f32::to_le_bytes)
+            .collect();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            receipt["native_geometry_sha256"]
+        );
+        let frame = decode("alternate129.rgba.zlib");
+        let mut rgba = Vec::new();
+        flate2::read::ZlibDecoder::new(frame.as_slice())
+            .read_to_end(&mut rgba)
+            .unwrap();
+        assert_eq!(rgba.len(), 256 * 256 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&rgba)),
+            receipt["native_frame_sha256"]
+        );
+    }
+
     #[test]
     fn note_derived_short_movements_match_native_vectors() {
         let saved: serde_json::Value = serde_json::from_str(include_str!(
