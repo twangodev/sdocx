@@ -34,11 +34,15 @@
       "rgba_sha256": "5647f05ec18958947d32874eeb788fa396a05d0bab7c1b71f112ceb7e9b31eee"
     },
     {
-      "size": 2.0,
+      "size": 2,
       "output_scale": 1,
       "nonzero_alpha_pixels": 1015,
       "max_alpha": 128,
       "rgba_sha256": "e99c099d5ca5fff5528a84afcab80f201ead9c13a016d7db56cbdea00b3942a7"
     }
-  ]
+  ],
+  "paired_receipts_original": {
+    "paired": "{\n  \"scope\": \"Native V8 redraw from retained historical HF04 stroke 35 channels at each size, then direct RTV4 host Mesa paint. Native provenance retained; derived public-export comparisons retired. Not Samsung device or Standard PDF evidence.\",\n  \"cases\": [\n    {\n      \"size\": 0.4,\n      \"native_rgba_sha256\": \"5647f05ec18958947d32874eeb788fa396a05d0bab7c1b71f112ceb7e9b31eee\",\n      \"native_nonzero_alpha_pixels\": 0\n    },\n    {\n      \"size\": 2.0,\n      \"native_rgba_sha256\": \"e99c099d5ca5fff5528a84afcab80f201ead9c13a016d7db56cbdea00b3942a7\",\n      \"native_nonzero_alpha_pixels\": 1015\n    }\n  ],\n  \"input_boundary\": \"The current parser returns at least one pressure value one float32 ULP different from the historical corpus report. The public harness overwrites parsed channels with the exact historical input used by native redraw; this does not verify current parser parity.\",\n  \"native_geometry\": \"341 AddPoint tuples and all sample boundaries match retained native V8 size-36.21 capture at both tested sizes.\",\n  \"input_sha256\": \"e5d2a4c4fade709d3fb0c01c26621e2393f9cefa1810112e21d5d477da0de9db\"\n}\n",
+    "boundary": "{\n  \"scope\": \"Marker4 V8 RTV4 host Mesa same retained stroke 35 dot input; size sweep, not device output\",\n  \"cases\": [\n    {\n      \"size\": 0.4,\n      \"rgba_sha256\": \"5647f05ec18958947d32874eeb788fa396a05d0bab7c1b71f112ceb7e9b31eee\",\n      \"nonzero_alpha_pixels\": 0,\n      \"max_alpha\": 0\n    },\n    {\n      \"size\": 0.99,\n      \"rgba_sha256\": \"5647f05ec18958947d32874eeb788fa396a05d0bab7c1b71f112ceb7e9b31eee\",\n      \"nonzero_alpha_pixels\": 0,\n      \"max_alpha\": 0\n    },\n    {\n      \"size\": 1.0,\n      \"rgba_sha256\": \"2f7aeb674493f84d17a9c764ac1fb17a54c4211d6b3baac6dc8f0f8ea51c7c9d\",\n      \"nonzero_alpha_pixels\": 650,\n      \"max_alpha\": 128\n    },\n    {\n      \"size\": 1.5,\n      \"rgba_sha256\": \"2f7aeb674493f84d17a9c764ac1fb17a54c4211d6b3baac6dc8f0f8ea51c7c9d\",\n      \"nonzero_alpha_pixels\": 650,\n      \"max_alpha\": 128\n    },\n    {\n      \"size\": 1.99,\n      \"rgba_sha256\": \"2f7aeb674493f84d17a9c764ac1fb17a54c4211d6b3baac6dc8f0f8ea51c7c9d\",\n      \"nonzero_alpha_pixels\": 650,\n      \"max_alpha\": 128\n    },\n    {\n      \"size\": 2.0,\n      \"rgba_sha256\": \"e99c099d5ca5fff5528a84afcab80f201ead9c13a016d7db56cbdea00b3942a7\",\n      \"nonzero_alpha_pixels\": 1015,\n      \"max_alpha\": 128\n    }\n  ]\n}\n"
+  }
 }

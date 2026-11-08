@@ -752,6 +752,55 @@ mod tests {
     }
 
     #[test]
+    fn v8_thin_sizes_follow_native_host_boundaries() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker4-v8-thin-host-native.json"
+        ))
+        .unwrap();
+        let original = &fixture["paired_receipts_original"];
+        let paired: serde_json::Value =
+            serde_json::from_str(original["paired"].as_str().unwrap()).unwrap();
+        let boundary: serde_json::Value =
+            serde_json::from_str(original["boundary"].as_str().unwrap()).unwrap();
+        let cases = boundary["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 6);
+        let mut stroke = reference().stroke;
+        stroke.points = vec![Point { x: 20., y: 20. }, Point { x: 40., y: 20. }];
+        stroke.pressures = vec![0.5; 2];
+        stroke.timestamps = vec![0, 10];
+        stroke.rendering.as_mut().unwrap().advanced_settings = Some("8;".into());
+        for (case, size) in cases.iter().zip([0.4_f32, 0.99, 1., 1.5, 1.99, 2.]) {
+            assert!((case["size"].as_f64().unwrap() - f64::from(size)).abs() < 1e-6);
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            let ink = prepare(&stroke).unwrap();
+            assert!((ink.stamp.height - f64::from(size.trunc()) * 0.99).abs() < 1e-6);
+            assert_eq!(case["nonzero_alpha_pixels"] == 0, ink.stamp.height == 0.);
+        }
+        assert_eq!(cases[0]["rgba_sha256"], cases[1]["rgba_sha256"]);
+        assert_eq!(cases[2]["rgba_sha256"], cases[3]["rgba_sha256"]);
+        assert_eq!(cases[3]["rgba_sha256"], cases[4]["rgba_sha256"]);
+        assert_ne!(cases[4]["rgba_sha256"], cases[5]["rgba_sha256"]);
+        let paired_cases = paired["cases"].as_array().unwrap();
+        assert_eq!(paired_cases.len(), 2);
+        for (pair, index) in paired_cases.iter().zip([0, 5]) {
+            assert_eq!(pair["native_rgba_sha256"], cases[index]["rgba_sha256"]);
+            assert_eq!(
+                pair["native_nonzero_alpha_pixels"],
+                cases[index]["nonzero_alpha_pixels"]
+            );
+            let reference = fixture["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|item| {
+                    item["size"].as_f64() == pair["size"].as_f64() && item["output_scale"] == 1
+                })
+                .unwrap();
+            assert_eq!(reference["rgba_sha256"], pair["native_rgba_sha256"]);
+        }
+    }
+
+    #[test]
     fn saved_style_size_and_alias_match_native_caller_controls() {
         let mut stroke = reference().stroke;
         stroke.points = vec![Point { x: 20., y: 20. }, Point { x: 40., y: 20. }];

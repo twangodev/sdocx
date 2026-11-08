@@ -1517,6 +1517,13 @@ source and reader versions and justify no renderer change. The local
 `tools/marker4_v8/paired` scripts and receipts retain input and native hashes;
 recapture requires unbundled scratch runners, native libraries and emulation.
 These observations do not establish Samsung-device or general PDF fidelity.
+The original paired receipts are preserved in the tracked thin-host fixture;
+restore them for the local capture scripts with:
+
+```sh
+test ! -e tools/marker4_v8/paired/receipt.json && jq -jr '.paired_receipts_original.paired' conformance/marker4-v8-thin-host-native.json > tools/marker4_v8/paired/receipt.json
+test ! -e tools/marker4_v8/paired/boundary-receipt.json && jq -jr '.paired_receipts_original.boundary' conformance/marker4-v8-thin-host-native.json > tools/marker4_v8/paired/boundary-receipt.json
+```
 
 ## Independent serialized BrushPen control
 
