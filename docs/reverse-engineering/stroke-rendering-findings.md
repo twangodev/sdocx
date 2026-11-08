@@ -1553,20 +1553,17 @@ For 27 multi-point Marker4 geometries, 81 pressure/tilt variants retained the
 same full stamp attributes, sample boundaries and tip bounds at unit inverse
 scale. Three paired host paint controls also improved historical public RGB
 error in all three readers, using a shared workspace that was not snapshotted.
-The local `tools/marker4_v7/channel-controls` captures, receipts and frames
-retain those measurements. They do not establish device input, orientation,
-archive loading or general paint parity.
-The Rust channel-control test checks three captured geometries. Restore its
-original inputs for the local capture workflow with:
+The fixture retains those measurements. They do not establish device input,
+orientation, archive loading or general paint parity. The Rust channel-control
+test checks three captured geometries and all 81 channel variants. Restore the
+remaining public-finger and alias capture inputs with:
 
 ```sh
-test ! -e tools/marker4_v7/channel-controls/geometry.json && jq -jr '.channel_controls_original.geometry' conformance/marker4-v7-finger-paint-host.json > tools/marker4_v7/channel-controls/geometry.json
-test ! -e tools/marker4_v7/channel-controls/receipt.json && jq -jr '.channel_controls_original.receipt' conformance/marker4-v7-finger-paint-host.json > tools/marker4_v7/channel-controls/receipt.json
 for f in intermediate/geometry.json intermediate/receipt.json wide-extra/receipt.json width4-extra/receipt.json scale-extra/receipt.json repeat-loop-control/receipt.json; do test ! -e "tools/marker4_v7/public-finger/$f" && jq -r --arg name "$f" '.finger_width_captures_gzip_base64[$name]' conformance/marker4-v7-finger-paint-host.json | base64 -d | gzip -dc > "tools/marker4_v7/public-finger/$f"; done
 for f in receipt.json shape-sweep-receipt.json overlap-extra/receipt.json overlap-varied/receipt.json; do test ! -e "tools/marker4_v7/public-finger/$f" && jq -r --arg name "$f" '.finger_overlap_original_base64[$name]' conformance/marker4-v7-finger-paint-host.json | base64 -d | gzip -dc > "tools/marker4_v7/public-finger/$f"; done
 for f in overlap-extra/frame-{1,2,4}.rgba.gz overlap-varied/frame-{0,1,2,3,4,5}.rgba.gz; do test ! -e "tools/marker4_v7/public-finger/$f" && jq -r --arg name "$f" '.finger_overlap_original_base64[$name]' conformance/marker4-v7-finger-paint-host.json | base64 -d > "tools/marker4_v7/public-finger/$f"; done
-for f in alias-control/loop-paint.json alias-control/turn-paint.json channel-controls/paired-receipt.json; do test ! -e "tools/marker4_v7/$f" && jq -r --arg name "$f" '.alias_channel_original_base64[$name]' conformance/marker4-v7-finger-paint-host.json | base64 -d | gzip -dc > "tools/marker4_v7/$f"; done
-for f in alias-control/{loop-paint,turn-paint,marker-10-bridged}.rgba.gz channel-controls/{line-low,loop-varying,turn-high}.rgba.gz; do test ! -e "tools/marker4_v7/$f" && jq -r --arg name "$f" '.alias_channel_original_base64[$name]' conformance/marker4-v7-finger-paint-host.json | base64 -d > "tools/marker4_v7/$f"; done
+for f in alias-control/loop-paint.json alias-control/turn-paint.json; do test ! -e "tools/marker4_v7/$f" && jq -r --arg name "$f" '.alias_channel_original_base64[$name]' conformance/marker4-v7-finger-paint-host.json | base64 -d | gzip -dc > "tools/marker4_v7/$f"; done
+for f in alias-control/{loop-paint,turn-paint,marker-10-bridged}.rgba.gz; do test ! -e "tools/marker4_v7/$f" && jq -r --arg name "$f" '.alias_channel_original_base64[$name]' conformance/marker4-v7-finger-paint-host.json | base64 -d > "tools/marker4_v7/$f"; done
 ```
 
 Two dense saved Marker4 V7 trajectories matched the native host geometry and
