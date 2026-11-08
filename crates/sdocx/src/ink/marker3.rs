@@ -668,6 +668,112 @@ mod tests {
         .unwrap()
     }
 
+    fn assert_alias_capture_pair(
+        reports: &[serde_json::Value; 2],
+        frames: [&[u8]; 2],
+        input: &serde_json::Value,
+        expected_vector: &str,
+    ) {
+        use sha2::{Digest, Sha256};
+
+        assert_eq!(frames[0], frames[1], "paired native frames");
+        let mut expected_input = input.clone();
+        expected_input.as_object_mut().unwrap().remove("pen_name");
+        for (report, (name, frame)) in reports
+            .iter()
+            .zip([("Marker3", frames[0]), ("StraightMarker", frames[1])])
+        {
+            let source = &report["source_caller_case"]["input"];
+            let factory =
+                &report["source_caller_case"]["native_calls"]["Drawing_factory_admission"];
+            let canonical = format!("com.samsung.android.sdk.pen.pen.preload.{name}");
+            assert_eq!(source["pen_name"], canonical);
+            assert_eq!(factory["requested_canonical_pen_name"], canonical);
+            let mut actual_input = source.clone();
+            actual_input.as_object_mut().unwrap().remove("pen_name");
+            assert_eq!(actual_input, expected_input, "{name} input");
+            assert_eq!(factory["factory_created_pen_count"], 1);
+            assert_eq!(factory["selected_v5_or_v1_actual"], "5");
+            assert_eq!(report["selected_drawable_version"], "5");
+            assert!(
+                factory["selected_vtable_entry"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|entry| entry
+                        .as_str()
+                        .unwrap()
+                        .contains("Marker3StrokeDrawableGLV5::RedrawPen"))
+            );
+            assert_eq!(report["native_vector_sha256"], expected_vector);
+            assert_eq!(frame.len(), 256 * 256 * 4);
+            assert_eq!(report["readback"]["bytes"], frame.len());
+            assert_eq!(
+                format!("{:x}", Sha256::digest(frame)),
+                report["readback"]["sha256"]
+            );
+            assert!(
+                report["gl_error_checks"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|check| check["error"] == 0)
+            );
+        }
+        for key in [
+            "native_vector_sha256",
+            "readback",
+            "shader_source_calls",
+            "draws",
+            "native_rt_color_rgba_f32",
+            "matching_native_gpu_uploads",
+        ] {
+            assert_eq!(reports[0][key], reports[1][key], "paired {key}");
+        }
+        for key in [
+            "native_vector_bytes",
+            "callback_count",
+            "library_hashes",
+            "helper_hashes",
+            "host_gles",
+        ] {
+            if !reports[0][key].is_null() || !reports[1][key].is_null() {
+                assert_eq!(reports[0][key], reports[1][key], "paired {key}");
+            }
+        }
+    }
+
+    #[test]
+    fn alias_recapture_verifier_accepts_matching_and_rejects_changed_frames() {
+        use sha2::{Digest, Sha256};
+        let frame = vec![7_u8; 256 * 256 * 4];
+        let digest = format!("{:x}", Sha256::digest(&frame));
+        let make = |name: &str| {
+            let pen = format!("com.samsung.android.sdk.pen.pen.preload.{name}");
+            serde_json::json!({
+                "source_caller_case": {"input": {"pen_name": pen, "tool_type": 2}, "native_calls": {"Drawing_factory_admission": {"requested_canonical_pen_name": pen, "factory_created_pen_count": 1, "selected_v5_or_v1_actual": "5", "selected_vtable_entry": ["Marker3StrokeDrawableGLV5::RedrawPen"]}}},
+                "selected_drawable_version": "5", "native_vector_sha256": "vector",
+                "readback": {"bytes": frame.len(), "sha256": digest},
+                "gl_error_checks": [{"error": 0}], "shader_source_calls": [], "draws": [],
+                "native_rt_color_rgba_f32": [], "matching_native_gpu_uploads": []
+            })
+        };
+        let reports = [make("Marker3"), make("StraightMarker")];
+        let input = serde_json::json!({"tool_type": 2});
+        assert_alias_capture_pair(&reports, [&frame, &frame], &input, "vector");
+        let mut changed = frame.clone();
+        changed[0] ^= 1;
+        assert!(
+            std::panic::catch_unwind(|| assert_alias_capture_pair(
+                &reports,
+                [&frame, &changed],
+                &input,
+                "vector"
+            ))
+            .is_err()
+        );
+    }
+
     #[test]
     fn alias_paint_sources_match_native_vector_hashes() {
         use serde_json::Value;
@@ -691,6 +797,34 @@ mod tests {
                 } else {
                     &case["input"]
                 };
+                if let Some(dir) = std::env::var_os("SDOCX_MARKER3_ALIAS_CAPTURE_DIR") {
+                    let paths: Vec<_> = ["Marker3", "StraightMarker"]
+                        .into_iter()
+                        .map(|name| {
+                            let directory = if scale_controls {
+                                format!("{name}-{label}")
+                            } else {
+                                format!("{label}-{name}")
+                            };
+                            std::path::Path::new(&dir).join(directory)
+                        })
+                        .collect();
+                    let reports: [Value; 2] = std::array::from_fn(|i| {
+                        serde_json::from_slice(
+                            &std::fs::read(paths[i].join("drawing-paint-positive.json")).unwrap(),
+                        )
+                        .unwrap()
+                    });
+                    let frames: [Vec<u8>; 2] = std::array::from_fn(|i| {
+                        std::fs::read(paths[i].join("drawing-paint-positive.rgba")).unwrap()
+                    });
+                    assert_alias_capture_pair(
+                        &reports,
+                        [&frames[0], &frames[1]],
+                        input,
+                        case["vector_sha256"].as_str().unwrap(),
+                    );
+                }
                 let points = input["points_f32_bits"]
                     .as_array()
                     .unwrap()

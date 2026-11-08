@@ -1702,7 +1702,9 @@ export comparator and subdivision verifier were retired.
 
 The `alias_paint_sources_match_native_vector_hashes` Rust test compares both
 Marker3 names against the retained native vector hashes for the scale and path
-controls. Restore the original receipts before running local recapture checks:
+controls. Set `SDOCX_MARKER3_ALIAS_CAPTURE_DIR` to a directory containing both
+capture sets to compare paired native reports and frames. Restore the original
+receipts for the capture workflow if needed:
 
 ```sh
 test ! -e tools/marker3-alias-paint/receipt.json && jq -jr '.alias_paint_original.scale_receipt_json' conformance/marker3-v5-scale-shell-native.json > tools/marker3-alias-paint/receipt.json
