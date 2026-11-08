@@ -2006,6 +2006,62 @@ mod tests {
     }
 
     #[test]
+    fn omitted_size_and_alias_controls_match_native_sources() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/chinesebrush-v5-paired-native.json"
+        ))
+        .unwrap();
+        let originals = &fixture["default_size_controls_original"];
+        let read = |name: &str| -> Value {
+            serde_json::from_str(originals[name].as_str().unwrap()).unwrap()
+        };
+        let native = read("receipt.json");
+        let paint = read("paint-receipt.json");
+        let phase = read("phase-receipt.json");
+        let aliases = read("v5-paint-receipt.json");
+        assert_eq!(
+            native["native_model_getter_snapshot"]["size"].as_f64(),
+            Some(0.)
+        );
+        assert_eq!(native["selected_size_f32_bits"], "cdcccc3e");
+        let (points, pressure, times) = source_arrays(&native);
+        let xy: Vec<[f32; 2]> = points.iter().map(|p| [p.x, p.y]).collect();
+        let records =
+            run_model_bounded(&xy, &pressure, &times, 0.4, 3, 1920, 1080, 2, true, 100).unwrap();
+        let bytes: Vec<u8> = records
+            .iter()
+            .flat_map(|[x, y, z, phase, scalar]| [*x, *y, *z, packed_w(*phase, *scalar)])
+            .flat_map(f32::to_le_bytes)
+            .collect();
+        assert_eq!(
+            bytes,
+            hex_bytes(native["producer"]["buffer_hex"].as_str().unwrap())
+        );
+        assert_eq!(digest_hex(&bytes), native["producer"]["buffer_sha256"]);
+        let shifted = &paint["cases"]["shifted-explicit"];
+        let omitted = &paint["cases"]["shifted-omitted"];
+        assert_eq!(shifted["frame_sha256"], omitted["frame_sha256"]);
+        assert_eq!(shifted["upload_hex"], omitted["upload_hex"]);
+        assert_eq!(
+            shifted["frame_sha256"],
+            phase["cases"]["0.5"]["frame_sha256"]
+        );
+        assert_eq!(shifted["nonzero_pixels"], phase["cases"]["0.5"]["pixels"]);
+        assert_eq!(
+            aliases["cases"]["4"]["upload_hex"],
+            aliases["cases"]["5"]["upload_hex"]
+        );
+        assert_eq!(
+            aliases["cases"]["4"]["frame_sha256"],
+            aliases["cases"]["5"]["frame_sha256"]
+        );
+        assert_eq!(
+            aliases["cases"]["4"]["frame_sha256"],
+            shifted["frame_sha256"]
+        );
+    }
+
+    #[test]
     fn source_model_matches_native_glv1_glv2_glv3_full_vectors() {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/chinesebrush-source-native.json"

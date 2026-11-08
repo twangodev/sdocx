@@ -397,6 +397,14 @@ capture evidence for this historical local control is not packaged in the tracke
 profile treats `5;` as GLV3 based on these bounded synthetic controls, not device
 or saved-note evidence.
 
+The omitted-size and paired-paint native receipts are preserved in the paired
+fixture. Restore them for the local capture workflows without overwriting files:
+
+```sh
+for f in receipt.json paint-receipt.json phase-receipt.json; do test ! -e "tools/chinesebrush-default-size/$f" && jq -jr --arg name "$f" '.default_size_controls_original[$name]' conformance/chinesebrush-v5-paired-native.json > "tools/chinesebrush-default-size/$f"; done
+test ! -e tools/chinesebrush-v5-matrix/paint-receipt.json && jq -jr '.default_size_controls_original["v5-paint-receipt.json"]' conformance/chinesebrush-v5-paired-native.json > tools/chinesebrush-v5-matrix/paint-receipt.json
+```
+
 The imported shared `Pen::SetSize` clamps finite sizes to 0.4–800 before storing
 them (PenCommon RVA `0x45fdc`, SHA-256
 `afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d`).
