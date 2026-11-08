@@ -1793,9 +1793,14 @@ around a nearest-mask row boundary. A recompiled shader diagnostic showed
 viewport-dependent coordinates on opposite sides of that boundary; a separate
 original-shader intervention directly reproduced the paint difference. Neither
 measures the original varying or establishes the full clipping/interpolation
-contract. The local `tools/pencil2_v14` prefix, varying and original-clipping
-scripts and receipts retain these controls. No production correction follows
-from them alone.
+contract. The prefix, varying and original-clipping receipts are retained in the
+[point-boundary fixture](../../conformance/pencil2-v14-prefix-point-boundary-native.json);
+the local capture scripts remain under `tools/pencil2_v14`. No production
+correction follows from these controls alone. Restore the receipts if needed:
+
+```sh
+for f in top2-prefix-receipt.json top2-varying-receipt.json top2-original-clipping-receipt.json; do test ! -e "tools/pencil2_v14/$f" && jq -r --arg f "$f" '.top2_controls_original[$f]' conformance/pencil2-v14-prefix-point-boundary-native.json | base64 -d | gzip -dc > "tools/pencil2_v14/$f"; done
+```
 
 Another synthetic origin-offset prefix control first differs from the host model
 at prefix 62 of 84. An isolated original-shader RGBA8 background sweep matched
