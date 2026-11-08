@@ -1537,17 +1537,10 @@ within each pair. A separate size-10 host RTV3 bridge with supplied color and
 canvas produced matching VBO hashes and frames; it is not uninterrupted
 Drawing-to-paint execution. Turn and loop paint controls bypass alias selection
 and improved historical public RGB error over fallback in resvg, MuPDF and
-PDFium. The local `tools/marker4_v7/alias-control` scripts and receipts retain
-the source provenance, native pins and bridge data; acquisition requires the
-project-local native runtime and helper inputs. The Rust
+PDFium. The retained native receipts contain the source provenance, pins and
+bridge data. The Rust
 `v7_finger_alias_sources_match_native_drawing_and_bridge` test checks the
-source geometry and the paired bridge upload. Restore the original receipts
-before using the local acquisition workflow:
-
-```sh
-test ! -e tools/marker4_v7/alias-control/drawing-receipt.json && jq -jr '.alias_controls_original.drawing_receipt_json' conformance/marker4-v7-finger-paint-host.json > tools/marker4_v7/alias-control/drawing-receipt.json
-test ! -e tools/marker4_v7/alias-control/bridged-10-receipt.json && jq -jr '.alias_controls_original.bridged_receipt_json' conformance/marker4-v7-finger-paint-host.json > tools/marker4_v7/alias-control/bridged-10-receipt.json
-```
+source geometry and the paired bridge upload.
 
 For 27 multi-point Marker4 geometries, 81 pressure/tilt variants retained the
 same full stamp attributes, sample boundaries and tip bounds at unit inverse
