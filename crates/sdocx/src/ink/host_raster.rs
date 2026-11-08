@@ -1,5 +1,6 @@
 //! Triangle varying planes for the captured Mesa llvmpipe host profile.
-//! See conformance/pencil2-v14-host-pipeline.json for active setup and FMA IR.
+//! See `host_pipeline_original` in the Pencil2 expanded-viewport fixture for
+//! the captured setup and FMA IR.
 
 use crate::InkRasterError;
 

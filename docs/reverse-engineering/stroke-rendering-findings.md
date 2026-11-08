@@ -1872,6 +1872,7 @@ host Mesa. The source captures are recoverable without overwriting local files:
 
 ```sh
 for f in viewport_1_5_receipt.json viewport_origin_{1,2,4,8,16}_receipt.json; do test ! -e "tools/pencil2_v14/$f" && jq -r --arg f "$f" '.viewport_controls_original[$f]' conformance/pencil2-v14-expanded-viewport-sweep-native.json | base64 -d | gzip -dc > "tools/pencil2_v14/$f"; done
+test ! -e conformance/pencil2-v14-host-pipeline.json && jq -r '.host_pipeline_original' conformance/pencil2-v14-expanded-viewport-sweep-native.json | base64 -d | gzip -dc > conformance/pencil2-v14-host-pipeline.json
 ```
 
 An isolated ARM64 grain-offset matrix probe matched the reconstructed operation
