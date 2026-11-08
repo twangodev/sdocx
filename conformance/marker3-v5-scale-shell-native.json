@@ -5989,5 +5989,74 @@
     "marker3-tool1-scale4/crossing.rgba.zlib": "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",
     "marker3-tool1-scale4/fractional.rgba.zlib": "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",
     "marker3-tool1-scale4/short.rgba.zlib": "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"
+  },
+  "zigzag_caller_compact": {
+    "scope": "Native Drawing caller plus direct RedrawPen through the selected GLV5 vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export.",
+    "schema": "sdocx-marker3-saved-caller-native-case-v1",
+    "case_id": "marker3_linked_saved1",
+    "source_gzip_sha256": "272faca1d002b43b7d49eb62a49e4a82f4e1dcce741f93d15fd1ff1c728e5053",
+    "source_json_sha256": "a0ee39c81f355ae3c0a1f47c01329cac627d6cb18549ef5581806c7348f6efb4",
+    "profile": {
+      "canvas_model_matrix_f32_bits": [
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f",
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "height": 1080,
+      "width": 1920
+    },
+    "host_boundaries": [
+      "ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height",
+      "context vslot +80 is a host identity ARGB callback (entry input and returned W0 captured)",
+      "context vslots +144/+152 return explicit flags/version values 1 and 1.0",
+      "canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods, Drawing selection, Marker3 wrapper, and saved geometry execute natively"
+    ],
+    "libraries": {
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Marker3": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "native_calls": {
+      "Drawing_factory_admission": {
+        "requested_canonical_pen_name": "com.samsung.android.sdk.pen.pen.preload.Marker3",
+        "factory_created_pen_count": 1,
+        "selected_v5_or_v1_actual": "5",
+        "selected_vtable_entry": [
+          "non-virtual thunk to SPen::Marker3StrokeDrawableGLV5::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)"
+        ]
+      },
+      "pen_screen_resolution": [
+        {
+          "height": 1080,
+          "width": 1920
+        }
+      ],
+      "pen_GetSize_after_draw_f32_bits": "00000041"
+    },
+    "callback_events": {
+      "count": 82,
+      "canonical_json_sha256": "208e09b7d29c09bdc003ba8b365087acffebf2de65b05faddeb379a3b8f7b60d"
+    },
+    "redraw_events": {
+      "count": 88,
+      "canonical_json_sha256": "4db8339b4f77fd5683dbd554fffaf510796263f787978e68bbfc455c8b0418eb"
+    },
+    "motion_getters": {
+      "count": 4,
+      "canonical_json_sha256": "b27cb8c3aa9d34bdf93259c5bff4c242bd92f133c41f3abcc5a6c2a0819396b5"
+    }
   }
 }

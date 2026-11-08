@@ -757,6 +757,20 @@ mod tests {
         ))
         .unwrap();
         let capture = &fixture["zigzag_capture_original"];
+        let compact = &fixture["zigzag_caller_compact"];
+        let hashes: Value =
+            serde_json::from_str(capture["simple_hashes_json"].as_str().unwrap()).unwrap();
+        assert_eq!(
+            compact["source_gzip_sha256"],
+            hashes["caller-receipt.json.gz"]
+        );
+        assert_eq!(compact["case_id"], "marker3_linked_saved1");
+        assert_eq!(
+            compact["native_calls"]["Drawing_factory_admission"]["selected_v5_or_v1_actual"],
+            "5"
+        );
+        assert_eq!(compact["callback_events"]["count"], 82);
+        assert_eq!(compact["redraw_events"]["count"], 88);
         let caller = &capture["caller_case"];
         let stroke = caller_stroke(caller);
         let ink = prepare_for_page(&stroke).expect("native zigzag is admitted");
