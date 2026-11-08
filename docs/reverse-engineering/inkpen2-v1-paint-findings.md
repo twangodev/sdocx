@@ -99,42 +99,9 @@ The optional export hook, reader comparator, and derived PDF receipt were remove
 
 Historical local synthetic landscape controls compared 2560 × 1440 with 1440 × 2560 at 1× and 2×. Their sampled native geometry and host-Mesa frames matched the portrait counterparts, and public SVG and direct PDF reduced aggregate error against generic output in resvg, MuPDF and PDFium. The original control covered tools 2 and 3; expanded tool-3 controls sampled both pen names and null or literal `1;` settings. The [landscape](../../tools/inkpen2-v1-landscape/receipt.json) and [expanded](../../tools/inkpen2-v1-landscape-expanded/receipt.json) receipts retain the captured streams and frames; the historical reader-comparison scaffolding is not packaged. Other trajectories extrapolate from these host controls. The V1 landscape profile admits both names and settings at those scales. The separate [experimental half-grid viewport](../../tools/inkpen2-v1-tablet-half/README.md) opts into an asserted fixed 0.5× grid with per-stroke fallback and page work limits. Device and saved-note parity remain unverified.
 
-Original half-grid control receipts are preserved in the screen-paint
-fixture; restore them for the local capture workflows without overwriting files:
-
-```sh
-for f in mixed-scene-native-line-receipt-v2.json mixed-scene-offset-input.json mixed-scene-rotated-input.json; do test ! -e "tools/inkpen2-v1-tablet-half/$f" && jq -jr --arg name "$f" '.mixed_scene_original[$name]' conformance/inkpen2-v1-screen-paint-native.json > "tools/inkpen2-v1-tablet-half/$f"; done
-```
-
-The line rerun and its offset and rotated variants can be reconstructed in
-memory from the tracked order capture. Restore the selected input above, then
-run this with `mixed-scene-offset-input.json` or `mixed-scene-rotated-input.json`
-as the argument. The original input hash is also accepted.
-
-```sh
-capture_input=tools/inkpen2-v1-tablet-half/mixed-scene-offset-input.json
-python3 - "$capture_input" <<'PY'
-import hashlib, sys
-from pathlib import Path
-root = Path('tools/inkpen2-v1-tablet-half')
-source = root / 'mixed_scene_order_capture.py'
-text = source.read_text()
-anchor = '  stage("changed_color_counts=" + json.dumps(changes.most_common(12)))\n'
-assert text.count(anchor) == 1
-text = text.replace(anchor, anchor + '  raise SystemExit(0)\n')
-start = text.index('final = """  final_pixels=framebuffer_snapshot(')
-end = text.index('\nwrapper = wrapper.replace(anchor, anchor.replace', start)
-line = 'wrapper=wrapper.replace(anchor,"code = code.replace(\\"  p.u.hook_del(draw_branch_hook)\\", "+repr(inject)+" + \\"\\\\n  p.u.hook_del(draw_branch_hook)\\")\\n"+anchor)'
-text = text[:start] + line + text[end:]
-assert hashlib.sha256(text.encode()).hexdigest() == 'bd40302bcc076fb7c7385bb87b16ffd36caf9b1f159f79caeee3d4aaac79220a'
-input_hash = hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest()
-assert input_hash in {'667ce1567150447bca4e5358f18a2f3f6fd8a8335d3d88b7f7da6c39a02d4069', '4953b7126678c85bf6355d3a1919ff3d40db581beff723cea4ffa2fd4d445031', '2fe8e1e46cce97e322ecfcbc53d16e8f716b391e3eace5763331d9b1cc52adc6'}
-text = text.replace('667ce1567150447bca4e5358f18a2f3f6fd8a8335d3d88b7f7da6c39a02d4069', input_hash)
-sys.argv = [str(source), '--input-json', sys.argv[1]]
-exec(compile(text, str(source), 'exec'), {'__name__': '__main__', '__file__': str(source)})
-PY
-```
-
+The screen-paint fixture retains the original half-grid controls. The Rust
+`mixed_scene_native_frames_and_line_defaults_are_preserved` test checks the
+native line defaults, offset and rotated input hashes, and retained frames.
 
 The [tool-2/tool-3](../../tools/inkpen2-v1-tool3/receipt.json) and [extended](../../tools/inkpen2-v1-tool3/extended-receipt.json) host receipts retain paired geometry and frame hashes. The uncurved zigzag supports the native tool alias only; the public profile uses its standard curve. The `inkpen2_v1_tool3_native_alias_exports`, `inkpen2_v1_tool3_extended_native_alias_exports` and `inkpen2_v1_landscape_expanded_exports` Rust tests check public SVG and direct PDF equality; the extended test validates decoded native hashes. The PDF reference composites transparent host frames over paper. Reader comparisons are historical and do not establish saved-note, Android device, arbitrary-transform or complete application parity.
 
