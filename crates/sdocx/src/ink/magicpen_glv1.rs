@@ -789,12 +789,78 @@ mod tests {
     use super::*;
     use serde_json::Value;
 
+    fn no_curve_vector_hex(case: &Value) -> String {
+        use std::fmt::Write;
+
+        let points: Vec<[f32; 2]> = case["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|point| {
+                [
+                    point[0].as_f64().unwrap() as f32,
+                    point[1].as_f64().unwrap() as f32,
+                ]
+            })
+            .collect();
+        let pressure: Vec<f32> = case["pressure"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_f64().unwrap() as f32)
+            .collect();
+        let size = case["size"].as_f64().unwrap() as f32;
+        let records = source_glv1_no_curve(&points, &pressure, size);
+        let mut vector_hex = String::new();
+        for word in records.iter().flatten() {
+            for byte in word.to_le_bytes() {
+                write!(vector_hex, "{byte:02x}").unwrap();
+            }
+        }
+        vector_hex
+    }
+
+    #[test]
+    fn cell_no_curve_sources_match_native_vectors() {
+        use std::collections::BTreeSet;
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/magicpen-phase-export-host.json"
+        ))
+        .unwrap();
+        for (group, input_key) in [("standard", "standard_json"), ("variable", "variable_json")] {
+            let inputs: Value =
+                serde_json::from_str(fixture["cell_inputs_original"][input_key].as_str().unwrap())
+                    .unwrap();
+            let cases = inputs["cases"].as_array().unwrap();
+            let native = fixture["cell_composition_controls"][group]
+                .as_array()
+                .unwrap();
+            assert_eq!(cases.len(), 8);
+            assert_eq!(native.len(), 24);
+            let mut seen = BTreeSet::new();
+            for case in cases {
+                let id = case["id"].as_str().unwrap();
+                let vector_hex = no_curve_vector_hex(case);
+                for scale in [1_usize, 2, 4] {
+                    let mut rows = native
+                        .iter()
+                        .filter(|row| row["case"] == id && row["scale"] == scale);
+                    let row = rows.next().expect("missing native cell control");
+                    assert!(rows.next().is_none(), "duplicate native cell control");
+                    assert!(seen.insert((id, scale)));
+                    assert_eq!(row["vector_hex"], vector_hex, "{group}/{id} at {scale}x");
+                }
+            }
+            assert_eq!(seen.len(), native.len());
+        }
+    }
+
     #[test]
     fn diverse_no_curve_sources_match_native_vectors_and_frame_hashes() {
         use base64::Engine;
         use sha2::{Digest, Sha256};
         use std::collections::BTreeSet;
-        use std::fmt::Write;
         use std::io::Read;
 
         let fixture: Value = serde_json::from_str(include_str!(
@@ -811,31 +877,7 @@ mod tests {
         let mut seen = BTreeSet::new();
         for case in cases {
             let id = case["id"].as_str().unwrap();
-            let points: Vec<[f32; 2]> = case["points"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|point| {
-                    [
-                        point[0].as_f64().unwrap() as f32,
-                        point[1].as_f64().unwrap() as f32,
-                    ]
-                })
-                .collect();
-            let pressure: Vec<f32> = case["pressure"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|value| value.as_f64().unwrap() as f32)
-                .collect();
-            let size = case["size"].as_f64().unwrap() as f32;
-            let records = source_glv1_no_curve(&points, &pressure, size);
-            let mut vector_hex = String::new();
-            for word in records.iter().flatten() {
-                for byte in word.to_le_bytes() {
-                    write!(vector_hex, "{byte:02x}").unwrap();
-                }
-            }
+            let vector_hex = no_curve_vector_hex(case);
             for scale in [1_usize, 2, 4] {
                 let mut rows = native
                     .iter()

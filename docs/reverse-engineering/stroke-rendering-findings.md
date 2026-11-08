@@ -1351,9 +1351,13 @@ test ! -e tools/magicpen-phase/clip/translation-receipt.json && jq '.edge_transl
 Both extracts reproduce the original bytes; native and scratch-runtime
 prerequisites remain separate. The `native_cell_frames_match_opaque_background_composition`
 Rust regression checks the retained standard and variable-radius frame pairs.
-To restore their receipt paths for the local cell capture workflows:
+The `cell_no_curve_sources_match_native_vectors` Rust test also compares all
+16 source trajectories with their captured native vectors at each scale. To
+restore the original inputs and receipts for local cell capture workflows:
 
 ```sh
+test ! -e tools/magicpen-phase/cells/controls/inputs.json && jq -jr '.cell_inputs_original.standard_json' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/cells/controls/inputs.json
+test ! -e tools/magicpen-phase/cells/variable/inputs.json && jq -jr '.cell_inputs_original.variable_json' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/cells/variable/inputs.json
 test ! -e tools/magicpen-phase/cells/controls/native-receipt.json && jq '.cell_composition_controls.standard' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/cells/controls/native-receipt.json
 test ! -e tools/magicpen-phase/cells/variable/native-receipt.json && jq '.cell_composition_controls.variable' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/cells/variable/native-receipt.json
 ```
