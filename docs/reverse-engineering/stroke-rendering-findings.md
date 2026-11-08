@@ -1487,3 +1487,42 @@ fresh host capture and prints the callback stream on stderr; `capture-state.py`
 and `capture-state-v8.py` additionally trace state, and `diverse-v8.py` covers
 independent pairs. The capture and state receipts retain the native pins; the
 export comparator and subdivision verifier were retired.
+
+## Pencil2 host completion and vector diagnostics
+
+A historical synthetic dispatch trace observed an `IContextHolder` virtual slot
+at byte offset `0x28`; its synthetic implementation was a stub. For the pinned
+shipped GLES implementation, the vtable address point at RVA `0x6a0b0` maps
+that slot to `WaitForGpuCompletion` at `0x51730`; its body calls `glFinish`
+and GL error reporting. Dynamic symbol interposition can change binding. This
+static observation does not establish application queue order, Draw execution
+or a matrix handoff. The local `tools/pencil2-holder-slot/check.py` verifies the
+native DSO hash, symbols, relocations and instructions using system binutils
+and an unbundled ARM64 objdump runtime; transitive tool dependencies are not
+pinned.
+
+A direct PDF Type 4 shading diagnostic transported four adjacent cells without
+observed seams at integer phase and 1×/2×/4×. Uniform and checkerboard RGB
+matched the expected values; an opaque-black luminosity-mask control gave 128
+in MuPDF and 127 in PDFium. This is not a Pencil2 native-paint or public PDF
+renderer comparison and does not cover fractional transforms, clipping or
+repeated translucent stamps. The local diagnostic is
+`tools/pencil2-mesh-v307/control.py`.
+
+A separate source-mesh experiment used a synthetic native first-stroke prefix
+as backdrop and compared a second-stroke texture-cell mesh against the native
+second prefix. It reduced summed error versus omitting the second stroke, but
+required approximately 1.4 million triangles and 5 MB of PDF per case, with
+substantial residuals in MuPDF and PDFium. Its baseline was not the public
+generic renderer, and it did not model native half precision or intermediate
+RGBA8 quantization. It does not justify production admission. The local
+`tools/pencil2-mesh-v307/scene.py` is an in-memory diagnostic.
+
+A retired texture-coordinate rectangle prototype covered a bounded 16×16
+texel region with aligned grain and point phases and constant opacity. Its
+pixel-center reference was not native paint, and its direct PDF came from
+PyMuPDF rather than the public exporter. Reader differences were substantial
+at 1×; 2× and 4× improved for the sampled cases but retained reader-dependent
+errors. Actual texture transforms, shader precision, stamp geometry, wrapping,
+quantization and repeated blending remain open. Neither this component control
+nor the mesh experiment establishes device, saved-note or general PDF parity.
