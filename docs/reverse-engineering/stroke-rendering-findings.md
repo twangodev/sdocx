@@ -1521,8 +1521,8 @@ fixture; restore them for local workflows without overwriting files:
 
 ```sh
 for k in full opaque; do f="tools/marker3-tool1-scale4-$k/receipt.json"; test ! -e "$f" && jq -r --arg name "$k/receipt.json" '.tool1_4x_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d | gzip -dc > "$f"; for n in short4 short6 fractional crossing; do f="tools/marker3-tool1-scale4-$k/$n.rgba.zlib"; test ! -e "$f" && jq -r --arg name "$k/$n.rgba.zlib" '.tool1_4x_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d > "$f"; done; done
-for f in marker3-tool1-paint/native.json marker3-tool1-paint/scale2-receipt.json marker3-tool1-paint/native-width-phase.json marker3-tool1-scale4/receipt.json; do test ! -e "tools/$f" && jq -r --arg name "$f" '.tool1_scale_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d | gzip -dc > "tools/$f"; done
-for f in marker3-tool1-paint/{crossing-tool1,fractional-tool1,short-tool1,short-tool2,short4-zero-tool1,short6-zero-tool1}.rgba.zlib marker3-tool1-scale4/{crossing,fractional,short}.rgba.zlib; do test ! -e "tools/$f" && jq -r --arg name "$f" '.tool1_scale_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d > "tools/$f"; done
+f=marker3-tool1-scale4/receipt.json; test ! -e "tools/$f" && jq -r --arg name "$f" '.tool1_scale_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d | gzip -dc > "tools/$f"
+for f in marker3-tool1-scale4/{crossing,fractional,short}.rgba.zlib; do test ! -e "tools/$f" && jq -r --arg name "$f" '.tool1_scale_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d > "tools/$f"; done
 ```
 
 The Marker3 fractional-size receipt and scale-capture pins remain in the
@@ -1534,8 +1534,7 @@ and explicit-empty-setting paths. The paired controls compare complete frames,
 vector/upload hashes, shader sources, draws, color and GL errors; the empty
 setting selected V5 for the tested input. The host reconnects Drawing's captured
 vector after the wrapper clears its slots; the native SetPenData call site was
-not observed. The local scripts and receipts are under
-`tools/marker3-alias-paint` and require its pinned native libraries and helpers.
+not observed. Their native receipts are retained in the scale-shell fixture.
 These controls do not establish serialized-note or Android parity.
 
 For Marker4/StraightHighlighter, six synthetic Model/Drawing controls at sizes
@@ -1650,13 +1649,7 @@ export comparator and subdivision verifier were retired.
 The `alias_paint_sources_match_native_vector_hashes` Rust test compares both
 Marker3 names against the retained native vector hashes for the scale and path
 controls. Set `SDOCX_MARKER3_ALIAS_CAPTURE_DIR` to a directory containing both
-capture sets to compare paired native reports and frames. Restore the original
-receipts for the capture workflow if needed:
-
-```sh
-test ! -e tools/marker3-alias-paint/receipt.json && jq -jr '.alias_paint_original.scale_receipt_json' conformance/marker3-v5-scale-shell-native.json > tools/marker3-alias-paint/receipt.json
-test ! -e tools/marker3-alias-paint/receipt-more.json && jq -jr '.alias_paint_original.paths_receipt_json' conformance/marker3-v5-scale-shell-native.json > tools/marker3-alias-paint/receipt-more.json
-```
+capture sets to compare paired native reports and frames.
 
 The `zigzag_source_and_host_frames_match_native_controls` Rust test checks
 the Marker3 zigzag sampler against both native Drawing vectors and validates
