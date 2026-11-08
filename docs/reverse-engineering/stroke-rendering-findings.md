@@ -393,12 +393,26 @@ independently identify the selected drawable class. Seven additional
 [Drawing controls](../../tools/chinesebrush-v5-matrix/receipt.json) match paired
 streams across sizes, pressure, display and path variants. A further shifted
 size-0.4 paint pair had identical frame hashes with two nonzero pixels; its
-capture evidence for this historical local control is not packaged in the tracked repository. The explicit
-profile treats `5;` as GLV3 based on these bounded synthetic controls, not device
-or saved-note evidence.
+capture evidence is preserved in the paired fixture below. The explicit profile
+treats `5;` as GLV3 based on these bounded synthetic controls, not device or
+saved-note evidence.
 
-The omitted-size and paired-paint native receipts are preserved in the paired
-fixture. Restore them for the local capture workflows without overwriting files:
+In an omitted-size control, the Model getter returned zero and Drawing selected
+size 0.4. A separate translation sweep at phases 0, 0.25, 0.5 and 0.75 produced
+0, 0, 2 and 1 nonzero native host pixels respectively. Historical SVG and PDFium
+exports of those controls were blank at 1×; this is not a general correction
+or device comparison. Their RGB errors over `#fcfcfc` were 0, 0, 33 and 6;
+MuPDF background conversion confounds its corresponding error. The native
+omitted-size and paired-paint receipts are
+preserved in the paired fixture. To replay the local capture helpers, restore
+the `conformance` tree from commit `84d6e2fca4b2882e0b28b688c5e71964c723976a`
+into a temporary project tree, add an `AGENTS.md` root marker, and link the local
+`scratch` runtime. Use a fresh tree to avoid stale helpers. The pinned
+paint helper has SHA-256 `0377f7de9c48e7c79fc596603128d49bff3a7427ce59e6052db14a53d8cf342a`.
+The scripts in `tools/chinesebrush-default-size` and `tools/chinesebrush-v5-matrix`
+check their native helper pins; references in script comments to the former
+`tools/chinesebrush-default-size/README.md` refer to this setup. Restore the
+receipts without overwriting files:
 
 ```sh
 for f in receipt.json paint-receipt.json phase-receipt.json; do test ! -e "tools/chinesebrush-default-size/$f" && jq -jr --arg name "$f" '.default_size_controls_original[$name]' conformance/chinesebrush-v5-paired-native.json > "tools/chinesebrush-default-size/$f"; done
