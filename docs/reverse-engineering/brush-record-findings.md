@@ -328,6 +328,12 @@ matched the test-only model's native streams, including threshold boundaries.
 The public source sampler matches 22 native streams; its serialized paint control
 retains a one-level pixel residual. The separate test-only prototype covers the
 experimental first zero-length transition and is not public dispatch.
+The serialized controls receipt is preserved byte-for-byte within the serialized
+receipt and can be restored for the local capture workflow with:
+
+```sh
+test ! -e conformance/brushpen-serialized/controls-receipt.json && jq -jr '.controls_receipt_original' conformance/brushpen-serialized/receipt.json > conformance/brushpen-serialized/controls-receipt.json
+```
 
 Two-submission host controls exercised translated, varying-pressure and distinct-color
 strokes on controlled priors. The Rust host canvas matched the captured overlap frames

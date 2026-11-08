@@ -2894,6 +2894,8 @@ mod serialized_native_controls {
             "../../../../conformance/brushpen-serialized/receipt.json"
         ))
         .unwrap();
+        let controls: serde_json::Value =
+            serde_json::from_str(receipt["controls_receipt_original"].as_str().unwrap()).unwrap();
         let channels = &receipt["cases"]["v10"]["native_arrays"];
         let check = |name: &str, count: usize, bytes: Vec<u8>| {
             assert_eq!(
@@ -3176,6 +3178,17 @@ mod serialized_native_controls {
             flate2::read::ZlibDecoder::new(compressed)
                 .read_to_end(&mut expected)
                 .unwrap();
+            if case != "base" {
+                let capture = &controls["cases"][case];
+                assert_eq!(
+                    expected.len(),
+                    capture["count"].as_u64().unwrap() as usize * 44
+                );
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(&expected)),
+                    capture["sha256"]
+                );
+            }
             assert!(actual == expected, "native stream mismatch for {case}");
             let mut public = stroke.clone();
             public.points = points
