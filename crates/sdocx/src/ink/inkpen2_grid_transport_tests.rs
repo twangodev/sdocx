@@ -341,6 +341,84 @@ fn colored_native_overlap_matches_explicit_grid_transport() {
 }
 
 #[test]
+fn mixed_scene_native_frames_and_line_defaults_are_preserved() {
+    use sha2::{Digest, Sha256};
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/inkpen2-v1-screen-paint-native.json"
+    ))
+    .unwrap();
+    let originals = &fixture["mixed_scene_original"];
+    let read = |name: &str| -> serde_json::Value {
+        serde_json::from_str(originals[name].as_str().unwrap()).unwrap()
+    };
+    let receipt = read("mixed-scene-native-line-receipt-v2.json");
+    let getter = read("mixed-scene-native-line-getters-receipt.json");
+    let style = crate::shape::ShapeStyle::default();
+    let native = &getter["line_getters"];
+    assert_eq!(style.cap, native["cap"].as_u64().unwrap() as u8);
+    assert_eq!(style.join, native["join"].as_u64().unwrap() as u8);
+    assert_eq!(style.dash, native["dash"].as_u64().unwrap() as u8);
+    assert_eq!(style.compound, native["compound"].as_u64().unwrap() as u8);
+    assert_eq!(
+        style.begin_arrow[0],
+        native["begin_arrow_type"].as_u64().unwrap() as u8
+    );
+    assert_eq!(
+        style.end_arrow[0],
+        native["end_arrow_type"].as_u64().unwrap() as u8
+    );
+    assert!(matches!(
+        style.paint,
+        crate::shape::ShapePaint::Solid(0xff000000)
+    ));
+    assert_eq!(native["solid_color_argb"], "0xff000000");
+    assert_eq!(native["width"], getter["paint_trace"]["width"]);
+    for (key, name) in [
+        ("offset", "mixed-scene-offset-input.json"),
+        ("rotated", "mixed-scene-rotated-input.json"),
+    ] {
+        let text = originals[name].as_str().unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(text.as_bytes())),
+            receipt["additional_controls"][key]["sha256"][name]
+        );
+    }
+    let mut count = 0;
+    for frames in [
+        &receipt["retained_frames"],
+        &receipt["additional_controls"]["offset"]["retained_frames"],
+        &receipt["additional_controls"]["rotated"]["retained_frames"],
+    ] {
+        for frame in frames.as_object().unwrap().values() {
+            let palette = frame["palette"].as_array().unwrap();
+            let mut raw = Vec::new();
+            for run in frame["runs"].as_array().unwrap() {
+                let repeat = run[0].as_u64().unwrap() as usize;
+                let pixel = palette[run[1].as_u64().unwrap() as usize]
+                    .as_array()
+                    .unwrap();
+                assert_eq!(pixel.len(), 4);
+                for _ in 0..repeat {
+                    raw.extend(pixel.iter().map(|v| v.as_u64().unwrap() as u8));
+                }
+            }
+            assert_eq!(raw.len(), 64 * 48 * 4);
+            assert_eq!(format!("{:x}", Sha256::digest(&raw)), frame["raw_sha256"]);
+            count += 1;
+        }
+    }
+    assert_eq!(count, 6);
+    assert_eq!(
+        getter["readback"]["before_sha256"],
+        receipt["observation"]["before_sha256"]
+    );
+    assert_eq!(
+        getter["readback"]["after_sha256"],
+        receipt["observation"]["after_sha256"]
+    );
+}
+
+#[test]
 fn explicit_final_grid_source_public_transport() {
     use base64::Engine as _;
     use std::io::Read as _;
