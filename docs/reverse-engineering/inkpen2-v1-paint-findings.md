@@ -103,7 +103,7 @@ Original half-grid control receipts are preserved in the screen-paint
 fixture; restore them for the local capture workflows without overwriting files:
 
 ```sh
-for f in mixed-scene-native-line-getters-receipt.json mixed-scene-native-line-receipt-v2.json mixed-scene-offset-input.json mixed-scene-rotated-input.json; do test ! -e "tools/inkpen2-v1-tablet-half/$f" && jq -jr --arg name "$f" '.mixed_scene_original[$name]' conformance/inkpen2-v1-screen-paint-native.json > "tools/inkpen2-v1-tablet-half/$f"; done
+for f in mixed-scene-native-line-receipt-v2.json mixed-scene-offset-input.json mixed-scene-rotated-input.json; do test ! -e "tools/inkpen2-v1-tablet-half/$f" && jq -jr --arg name "$f" '.mixed_scene_original[$name]' conformance/inkpen2-v1-screen-paint-native.json > "tools/inkpen2-v1-tablet-half/$f"; done
 ```
 
 The line rerun and its offset and rotated variants can be reconstructed in
