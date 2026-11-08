@@ -71,3 +71,20 @@ synthetic queue intervention using native ARM64 emulation and host Mesa; it
 does not establish device or saved-note parity. Mesa, libm and transitive host
 runtime dependencies are not fully pinned. The original verified receipt is
 preserved alongside the new closure reproduction receipt.
+
+Some local Drawing and lifecycle scripts also expect the independent adapter
+and patch at their historical workspace paths. Their exact bytes are already in
+this archive; restore those paths before running those local captures:
+
+```sh
+mkdir -p tools/pencil2-independent-drawing tools/pencil2-mixed-drawing
+cp -n tools/pencil2-drawing-capture-closure/sources/first_point_independent_capture.py tools/pencil2-independent-drawing/capture.py
+cp -n tools/pencil2-drawing-capture-closure/sources/first_point_capture.patch tools/pencil2-mixed-drawing/capture.patch
+sha256sum -c <<'HASHES'
+974a26d6ccea578fc642ae4c8173f4d5bba7cba5ab5c9f11510fdb4622f300d7  tools/pencil2-independent-drawing/capture.py
+b9342438df1b8099caf4185a0dc6ea692d7726e48014e921866ef6c3b4389a83  tools/pencil2-mixed-drawing/capture.patch
+HASHES
+```
+
+`cp -n` leaves an existing file untouched; the hash check detects differences.
+Other native and host prerequisites remain necessary for those captures.
