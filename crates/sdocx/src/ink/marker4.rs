@@ -535,6 +535,49 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "render")]
+    #[test]
+    fn native_finger_overlap_frames_match_retained_captures() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read as _;
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker4-v7-finger-paint-host.json"
+        ))
+        .unwrap();
+        let originals = &fixture["finger_overlap_original_base64"];
+        let read_gzip = |name: &str| {
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(originals[name].as_str().unwrap())
+                .unwrap();
+            let mut output = Vec::new();
+            flate2::read::GzDecoder::new(bytes.as_slice())
+                .read_to_end(&mut output)
+                .unwrap();
+            output
+        };
+        let read_json =
+            |name: &str| -> serde_json::Value { serde_json::from_slice(&read_gzip(name)).unwrap() };
+        let basic = read_json("receipt.json");
+        let sweep = read_json("shape-sweep-receipt.json");
+        assert_eq!(basic["cases"].as_array().unwrap().len(), 7);
+        assert_eq!(sweep["cases"].as_array().unwrap().len(), 8);
+        for (dir, indices) in [
+            ("overlap-extra", &[1, 2, 4][..]),
+            ("overlap-varied", &[0, 1, 2, 3, 4, 5][..]),
+        ] {
+            let receipt = read_json(&format!("{dir}/receipt.json"));
+            let cases = receipt["cases"].as_array().unwrap();
+            assert_eq!(cases.len(), indices.len());
+            for (case, index) in cases.iter().zip(indices) {
+                let rgba = read_gzip(&format!("{dir}/frame-{index}.rgba.gz"));
+                assert_eq!(rgba.len(), 1024 * 512 * 4);
+                assert_eq!(format!("{:x}", Sha256::digest(&rgba)), case["rgba_sha256"]);
+                assert!(rgba.as_chunks::<4>().0.iter().any(|pixel| pixel[3] != 0));
+            }
+        }
+    }
+
     #[test]
     fn v7_finger_budget_is_atomic_and_bounded() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
