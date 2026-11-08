@@ -126,6 +126,26 @@ fn compare() {
         assert_eq!(case["native_drawing_equals_production_stream"], true);
         assert_eq!(case["native_saved_redraw_equals_drawing"], true);
     }
+    let queue = &sampling["synthetic_queue_initialization"];
+    assert_eq!(queue["init_diagnostic"]["outcome"], "returned");
+    assert_eq!(queue["init_diagnostic"]["gl_error"], 0);
+    let update = &queue["update_after_handoff"];
+    assert_eq!(update["outcome"], "returned");
+    assert_eq!(update["gl_error"], 0);
+    assert_eq!(update["before_count"], 0);
+    assert_eq!(update["after_count"], 84);
+    assert_eq!(update["entry_matches_selected_rt"], true);
+    let upload = update["gl_simple_after_init"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|event| event[0] == "glBufferData")
+        .unwrap();
+    assert_eq!(upload[2], 84 * 14 * 4);
+    assert_eq!(
+        upload[5],
+        sampling["synthetic_independent_sampling"]["cases"]["ramp"]["native_sha256"]
+    );
     let records = prepare_stroke(&s, 1.).unwrap();
     let actual: String = records
         .iter()

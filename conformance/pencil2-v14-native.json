@@ -852,5 +852,110 @@
       }
     },
     "paired_paint_receipt": "tools/pencil2-public-replay/colored-overlap-receipt.json"
+  },
+  "synthetic_queue_initialization": {
+    "case": "handoff",
+    "init_diagnostic": {
+      "after200": "0x10047c30",
+      "before200": "0x0",
+      "gl_error": 0,
+      "gl_generated_buffers": [
+        1,
+        2
+      ],
+      "gl_simple": {
+        "count": 134,
+        "canonical_json_sha256": "44c4584e060902a006c1b5c7a509c2856c7f04d4a645b3d9f077227a7e913d2c"
+      },
+      "gl_strings": {
+        "count": 1,
+        "canonical_json_sha256": "d3bf0578c7273fa2b3c259fcdd354d06c85f400d901eb4ca793b26e6295822c0"
+      },
+      "outcome": "returned",
+      "renderer_initializers": {
+        "count": 44,
+        "canonical_json_sha256": "61cc10f9282dfc6316554c9e28a75e725f98ca13cbd0e2e5a25d2a3777907c28"
+      },
+      "vertex_entries": [
+        {
+          "lr": "0x5098540",
+          "pc": "0x9046d50"
+        },
+        {
+          "lr": "0x5098560",
+          "pc": "0x9046d50"
+        },
+        {
+          "lr": "0x5098578",
+          "pc": "0x9046d50"
+        },
+        {
+          "lr": "0x5098590",
+          "pc": "0x9046d50"
+        },
+        {
+          "lr": "0x50985a8",
+          "pc": "0x9046d50"
+        },
+        {
+          "lr": "0x50985c0",
+          "pc": "0x9046d50"
+        }
+      ],
+      "vertex_symbol": "0x9046d50"
+    },
+    "interpretation": "Synthetic callback queue intervention. Renderer initializers and Mesa GLES operations run for the Drawing-selected RT. Init and Update returned; final GL error checks returned zero, though Init can consume earlier errors. Shader cache uses an actual temporary file rather than the native path. No Draw, pixel comparison, normal scheduling, device parity or application behavior is established.",
+    "renderer_sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "script_sha256": "922b2dcc415730ffc5bae588fabdf4725fe5664f8fde9e130d0df462e5105f2f",
+    "source_capture_sha256": "996ef6db3a376619e9e5d1d05b7d5e1a940726f3feb2ef6895275a705576ee3e",
+    "update_after_handoff": {
+      "after88": "0x1003e5a0",
+      "after_count": 84,
+      "before200": "0x10047c30",
+      "before80": "0x0",
+      "before88": "0x1003e5a0",
+      "before_count": 0,
+      "entries": [
+        {
+          "graphics_ptr": "0x10047c30",
+          "pc": "0x50995f4",
+          "receiver": "0x10038210"
+        },
+        {
+          "pc": "0x5099648",
+          "x8": "0x10047c30"
+        }
+      ],
+      "entry_matches_selected_rt": true,
+      "gl_error": 0,
+      "gl_simple_after_init": [
+        [
+          "glBindBuffer",
+          34962,
+          2
+        ],
+        [
+          "glBufferData",
+          34962,
+          4704,
+          "0x10040750",
+          35040,
+          "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8"
+        ],
+        [
+          "glBindBuffer",
+          34963,
+          0
+        ],
+        [
+          "glBindBuffer",
+          34962,
+          0
+        ]
+      ],
+      "outcome": "returned",
+      "selected_rt": "0x10038210"
+    },
+    "original_receipt_sha256": "d2ae85735ba96787a6158ed38adff7b4c937471b33d4dbd74e2b318d5270ba40"
   }
 }

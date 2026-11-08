@@ -1893,7 +1893,10 @@ for f in colored-overlap-info.json colored-overlap-receipt.json drawing-offset-a
 Two synthetic native Drawing and saved-redraw sampling controls are retained in
 the [native fixture](../../conformance/pencil2-v14-native.json); the Rust test
 checks their complete geometry hashes. Their capture used host adapters and is
-not saved-note or device evidence.
+not saved-note or device evidence. A separate initialized-queue intervention
+recorded an 84-record native upload with final GL error zero; it did not execute
+Draw or establish normal queue scheduling. The fixture retains its upload data
+and trace fingerprints; the full repeated GL trace was retired.
 
 The lifecycle fixture also retains a synthetic identity-matrix Drawing frame. A Rust
 comparison checks its native hash and the bounded host rendering result. Restore
