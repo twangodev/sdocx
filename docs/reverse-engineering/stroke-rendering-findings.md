@@ -1676,6 +1676,12 @@ larger SVG/PDF outputs. A four-subdivision experiment reduced SVG size but
 worsened every measured reader comparison; production retains eight. The
 experiments do not establish saved-note or device parity.
 
+For two additional synthetic paths, sizes 0.1, 0.2, 0.25, 0.3 and 0.4
+produced identical streams and frames within each path. The narrow fixture
+retains both frames and compact capture fingerprints; the existing diverse
+fixture retains the inputs and streams. The Rust sampler test checks all ten
+size/path pairs. Full repeated render logs were retired.
+
 The original narrow-width state traces are preserved in the tracked width-state
 fixture. Restore them for the local capture workflow without overwriting files:
 

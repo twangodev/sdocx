@@ -266,6 +266,10 @@ fn record_budget_rejects_aggregate_overflow() {
 
 #[test]
 fn many_point_matches_native_streams() {
+    use base64::Engine as _;
+    use sha2::{Digest, Sha256};
+    use std::io::Read as _;
+
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../conformance/montblanc-many-point-full-streams.json"
     ))
@@ -294,6 +298,40 @@ fn many_point_matches_native_streams() {
         "../../../../tools/montblanc/nine-narrow/streams.json"
     ))
     .unwrap();
+    let mut size_sweep = std::collections::BTreeMap::new();
+    for (name, control) in narrow["subdivision_size_sweep"]["cases"]
+        .as_object()
+        .unwrap()
+    {
+        let source = &narrow_diverse["cases"][control["tracked_stream_case"].as_str().unwrap()];
+        assert_eq!(control["frame_sha256"], source["frame_sha256"]);
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(control["frame_rgba_zlib_base64"].as_str().unwrap())
+            .unwrap();
+        let mut frame = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut frame)
+            .unwrap();
+        assert_eq!(frame.len(), 256 * 256 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&frame)),
+            control["frame_sha256"]
+        );
+        let sizes = control["sizes"].as_array().unwrap();
+        assert_eq!(sizes.len(), 5);
+        for row in sizes {
+            let size = row["size"].as_f64().unwrap() as f32;
+            let bits = size
+                .to_le_bytes()
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>();
+            assert_eq!(bits, row["size_s0_bits"]);
+            let mut case = source.clone();
+            case["input"]["pen_size"] = row["size"].clone();
+            size_sweep.insert(format!("{name}-{size}"), case);
+        }
+    }
     for (name, case) in fixture["cases"]
         .as_object()
         .unwrap()
@@ -303,6 +341,7 @@ fn many_point_matches_native_streams() {
         .chain(narrow["cases"].as_object().unwrap().iter())
         .chain(narrow_independent["cases"].as_object().unwrap().iter())
         .chain(narrow_diverse["cases"].as_object().unwrap().iter())
+        .chain(size_sweep.iter())
         .chain(nine_narrow["cases"].as_object().unwrap().iter())
     {
         let number = |v: &serde_json::Value| v.as_f64().unwrap() as f32;
