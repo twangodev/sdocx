@@ -130,6 +130,35 @@ fn compare(
 
 #[test]
 fn drawing_public_comparison() {
+    use base64::Engine as _;
+    use sha2::{Digest, Sha256};
+    use std::io::Read as _;
+
+    let identity: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/pencil2-offset-lifecycle-native.json"
+    ))
+    .unwrap();
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../tools/pencil2-public-replay/drawing-native-target-receipt.json"
+    ))
+    .unwrap();
+    let frame = base64::engine::general_purpose::STANDARD
+        .decode(
+            identity["drawing_identity_frame_zlib_base64"]
+                .as_str()
+                .unwrap(),
+        )
+        .unwrap();
+    let mut raw = Vec::new();
+    flate2::read::ZlibDecoder::new(frame.as_slice())
+        .read_to_end(&mut raw)
+        .unwrap();
+    assert_eq!(raw.len(), 192 * 192 * 4);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&raw)),
+        receipt["target"]["readback_sha256"]
+    );
+    compare([0., 0.], [0., 0.], &frame, InkRasterOrigin::BottomLeft, 1);
     compare(
         [32., 32.],
         [f32::from_bits(32f32.to_bits() + 1); 2],

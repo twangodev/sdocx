@@ -1848,6 +1848,14 @@ colored-overlap replay are retained in the same fixture; restore them if needed:
 for f in colored-overlap-info.json colored-overlap-receipt.json drawing-offset-affine-receipt.json drawing-offset-matrix-receipt.json drawing-phase-control-receipt.json drawing-texture-identity-receipt.json; do test ! -e "tools/pencil2-public-replay/$f" && jq -r --arg f "$f" '.drawing_replay_original[$f]' crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json | base64 -d | gzip -dc > "tools/pencil2-public-replay/$f"; done
 ```
 
+The same fixture retains a synthetic identity-matrix Drawing frame. A Rust
+comparison checks its native hash and the bounded host rendering result. Restore
+the compressed frame for its capture workflow if needed:
+
+```sh
+test ! -e tools/pencil2-public-replay/drawing-native-target.rgba.zlib && jq -r '.drawing_identity_frame_zlib_base64' crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json | base64 -d > tools/pencil2-public-replay/drawing-native-target.rgba.zlib
+```
+
 Historical source-cell SVG opacity strata reduced measured error on one
 note-derived host scene and separate synthetic scenes, but produced multi-MB
 SVGs and retained substantial reader differences; a separately generated PDF
