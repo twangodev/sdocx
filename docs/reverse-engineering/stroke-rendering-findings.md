@@ -1890,7 +1890,12 @@ colored-overlap replay are retained in the same fixture; restore them if needed:
 for f in colored-overlap-info.json colored-overlap-receipt.json drawing-offset-affine-receipt.json drawing-offset-matrix-receipt.json drawing-phase-control-receipt.json drawing-texture-identity-receipt.json; do test ! -e "tools/pencil2-public-replay/$f" && jq -r --arg f "$f" '.drawing_replay_original[$f]' crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json | base64 -d | gzip -dc > "tools/pencil2-public-replay/$f"; done
 ```
 
-The same fixture retains a synthetic identity-matrix Drawing frame. A Rust
+Two synthetic native Drawing and saved-redraw sampling controls are retained in
+the [native fixture](../../conformance/pencil2-v14-native.json); the Rust test
+checks their complete geometry hashes. Their capture used host adapters and is
+not saved-note or device evidence.
+
+The lifecycle fixture also retains a synthetic identity-matrix Drawing frame. A Rust
 comparison checks its native hash and the bounded host rendering result. Restore
 the compressed frame for its capture workflow if needed:
 

@@ -718,5 +718,139 @@
       0
     ],
     "limitations": "UUID callbacks are stubbed; StringID manager is synthesized from Pencil2 and 14; names. Transitive native harness and runtime libraries are not fully pinned."
+  },
+  "synthetic_independent_sampling": {
+    "scope": "Synthetic Model setter inputs, native Drawing and saved redraw under Unicorn with host adapters; no serialized note or device output. Native record bytes match production-sampled streams independently; the previously captured host Mesa frame therefore also tests these native sampled records.",
+    "capture_script": "tools/pencil2-public-replay/independent_sampling_capture.py",
+    "capture_script_sha256": "926e7af7c4b09575e1041d6899694af6d808b0e5c98b3ec3f5165b3000473aad",
+    "cases": {
+      "ramp": {
+        "input": {
+          "advanced_getter_object_hex": "d0bf0e02000000008067031000000000f0bf0e02000000001000000003000000",
+          "advanced_getter_pointer_nonnull": true,
+          "advanced_getter_utf8": "14;",
+          "advanced_setting_model_setter_argument": "14;",
+          "advanced_setting_state": "explicit literal 14; set on ObjectStroke",
+          "kind": "synthetic native Model ObjectStroke setter input; no serialized Samsung document",
+          "object_stroke_color_argb": "0x80336699",
+          "object_stroke_size_f32_bits": "00000040",
+          "orientation": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "pen_name": "com.samsung.android.sdk.pen.pen.preload.Pencil2",
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              20,
+              0
+            ],
+            [
+              30,
+              10
+            ]
+          ],
+          "pressure": [
+            0.25,
+            0.5,
+            0.75,
+            1
+          ],
+          "size_level_native_getter": 0,
+          "stroke_type": 0,
+          "tilt": [
+            0.4,
+            0.4,
+            0.4,
+            0.4
+          ],
+          "timestamps": [
+            10,
+            20,
+            30,
+            40
+          ],
+          "tool_type": 2
+        },
+        "record_count": 84,
+        "native_sha256": "be8483b83e8918f18ffd4b9f23377a28b0bec8b095b58e6c201ac26c566828a8",
+        "native_drawing_equals_production_stream": true,
+        "native_saved_redraw_equals_drawing": true,
+        "adapted_probe_source_sha256": "6a435ba6566c6234d15d5e49fa256cbed9e526aa24e9c2312b5328b964fb5929"
+      },
+      "flat": {
+        "input": {
+          "advanced_getter_object_hex": "d0bf0e02000000008067031000000000f0bf0e02000000001000000003000000",
+          "advanced_getter_pointer_nonnull": true,
+          "advanced_getter_utf8": "14;",
+          "advanced_setting_model_setter_argument": "14;",
+          "advanced_setting_state": "explicit literal 14; set on ObjectStroke",
+          "kind": "synthetic native Model ObjectStroke setter input; no serialized Samsung document",
+          "object_stroke_color_argb": "0xffdd4411",
+          "object_stroke_size_f32_bits": "00000040",
+          "orientation": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "pen_name": "com.samsung.android.sdk.pen.pen.preload.Pencil2",
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              20,
+              0
+            ],
+            [
+              30,
+              10
+            ]
+          ],
+          "pressure": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "size_level_native_getter": 0,
+          "stroke_type": 0,
+          "tilt": [
+            0.8,
+            0.8,
+            0.8,
+            0.8
+          ],
+          "timestamps": [
+            10,
+            20,
+            30,
+            40
+          ],
+          "tool_type": 2
+        },
+        "record_count": 84,
+        "native_sha256": "8a12e28a8946b273996d12f5bbb45bc9948c7dc23b169f1ab2a11ff27a22e5c3",
+        "native_drawing_equals_production_stream": true,
+        "native_saved_redraw_equals_drawing": true,
+        "adapted_probe_source_sha256": "9feb819db1faa53d40568baf46b8d7a75cde3eb0da2d730ac534c9d53ba65d38"
+      }
+    },
+    "paired_paint_receipt": "tools/pencil2-public-replay/colored-overlap-receipt.json"
   }
 }

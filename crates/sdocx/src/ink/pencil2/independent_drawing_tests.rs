@@ -42,6 +42,90 @@ fn compare() {
         pen_width: 2.,
         rendering: Some(rendering),
     };
+    let sampling: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../conformance/pencil2-v14-native.json"
+    ))
+    .unwrap();
+    for (name, case) in sampling["synthetic_independent_sampling"]["cases"]
+        .as_object()
+        .unwrap()
+    {
+        use sha2::{Digest, Sha256};
+        let input = &case["input"];
+        let mut current = s.clone();
+        current.points = input["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| Point {
+                x: p[0].as_f64().unwrap(),
+                y: p[1].as_f64().unwrap(),
+            })
+            .collect();
+        current.pressures = input["pressure"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_f64().unwrap())
+            .collect();
+        current.tilts = input["tilt"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_f64().unwrap())
+            .collect();
+        current.orientations = input["orientation"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_f64().unwrap())
+            .collect();
+        current.timestamps = input["timestamps"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_i64().unwrap())
+            .collect();
+        let size_hex = input["object_stroke_size_f32_bits"].as_str().unwrap();
+        let size_bytes =
+            std::array::from_fn(|i| u8::from_str_radix(&size_hex[2 * i..2 * i + 2], 16).unwrap());
+        current.pen_width = f32::from_le_bytes(size_bytes);
+        let argb = u32::from_str_radix(
+            input["object_stroke_color_argb"]
+                .as_str()
+                .unwrap()
+                .trim_start_matches("0x"),
+            16,
+        )
+        .unwrap();
+        current.color = Some(Color {
+            r: (argb >> 16) as u8,
+            g: (argb >> 8) as u8,
+            b: argb as u8,
+        });
+        let rendering = current.rendering.as_mut().unwrap();
+        rendering.style.color_argb = Some(argb);
+        rendering.style.pen_size = Some(current.pen_width);
+        rendering.tool_type_raw = input["tool_type"].as_u64().unwrap() as u16;
+        rendering.advanced_settings = input["advanced_getter_utf8"].as_str().map(str::to_owned);
+        let records = prepare_stroke(&current, 1.).unwrap();
+        assert_eq!(
+            records.len() as u64,
+            case["record_count"].as_u64().unwrap(),
+            "{name}"
+        );
+        let bytes: Vec<u8> = records
+            .iter()
+            .flat_map(|record| record.lanes.iter().flat_map(|lane| lane.to_le_bytes()))
+            .collect();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            case["native_sha256"],
+            "{name}"
+        );
+        assert_eq!(case["native_drawing_equals_production_stream"], true);
+        assert_eq!(case["native_saved_redraw_equals_drawing"], true);
+    }
     let records = prepare_stroke(&s, 1.).unwrap();
     let actual: String = records
         .iter()
