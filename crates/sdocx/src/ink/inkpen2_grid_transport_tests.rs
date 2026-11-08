@@ -134,7 +134,7 @@ fn zero_width_native_frames_match_explicit_grid_model() {
     .unwrap();
     let translated_cases = translated["cases"].as_array().unwrap();
     assert_eq!(translated_cases.len(), 8);
-    for row in translated_cases {
+    for row in integer_cases.iter().chain(translated_cases) {
         let name = row["case"].as_str().unwrap();
         let hex = captures["cases"][name]["geometry_hex"].as_str().unwrap();
         let geometry: Vec<_> = hex
