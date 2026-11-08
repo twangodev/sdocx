@@ -1267,6 +1267,13 @@ This does not establish saved-note, PDF, or device parity or justify enabling it
 
 Three synthetic native Drawing/host-Mesa controls at widths 3, 6 and 12 with opaque, half-alpha and low-alpha colors show lower candidate RGB error than generic output in SVG, MuPDF and PDFium over #fcfcfc ([native frames](../../conformance/inkpen-v1-fixed-width-native.json), [export comparison](../../conformance/inkpen-v1-fixed-width-color-export-comparison.json)). The generic route uses an unsupported setting and does not preserve fixed-width behavior.
 
+The original low-scale color receipt is retained in the fixed-width fixture;
+restore it for the local capture workflow without overwriting an existing file:
+
+```sh
+test ! -e tools/inkpen-v1/low-scale-color-native.json && jq -r '.low_scale_color_original_gzip_base64' conformance/inkpen-v1-fixed-width-native.json | base64 -d | gzip -dc > tools/inkpen-v1/low-scale-color-native.json
+```
+
 MuPDF renders the nominal background as (251, 252, 251), adding a full-page error baseline. A historical reader-relative comparison accounted for that background but not ink color conversion; it does not prove parity. These synthetic controls do not establish saved-note or device parity. Capture and replay prerequisites are documented in [FIXED_WIDTH.md](../../tools/inkpen-v1/FIXED_WIDTH.md).
 
 ## Historical AirBrush PDF diagnostics

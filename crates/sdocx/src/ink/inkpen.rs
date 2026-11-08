@@ -3425,6 +3425,72 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "render")]
+    #[test]
+    fn low_scale_color_fixed_width_matches_native_controls() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read as _;
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-fixed-width-native.json"
+        ))
+        .unwrap();
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(
+                fixture["low_scale_color_original_gzip_base64"]
+                    .as_str()
+                    .unwrap(),
+            )
+            .unwrap();
+        let mut original = Vec::new();
+        flate2::read::GzDecoder::new(compressed.as_slice())
+            .read_to_end(&mut original)
+            .unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&original)),
+            "7a448a33dd33d70a829765118f52cad9380ce0c0564dfabb082be48e5ca90187"
+        );
+        let receipt: Value = serde_json::from_slice(&original).unwrap();
+        let cases = receipt["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 3);
+        for case in cases {
+            let mut stroke = native_caller_stroke(&case["input"]);
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.properties.fixed_width = true;
+            rendering.style.fixed_width = Some(case["width"].as_f64().unwrap() as f32);
+            rendering.style.color_argb = Some(case["color"].as_u64().unwrap() as u32);
+            let ink = prepare_v1(
+                &stroke,
+                RuntimeContext {
+                    curve_enabled: case["curve"].as_bool().unwrap(),
+                    screen_width: 1920,
+                    screen_height: 1080,
+                },
+            )
+            .unwrap();
+            let packed: Vec<_> = ink
+                .points
+                .iter()
+                .zip(&ink.radii)
+                .flat_map(|(p, r)| [p.x as f32, p.y as f32, *r])
+                .flat_map(f32::to_le_bytes)
+                .collect();
+            let stream = &case["streams"]["draw_object_stroke"];
+            assert_eq!(format!("{:x}", Sha256::digest(&packed)), stream["sha256"]);
+            assert_eq!(stream["sha256"], case["streams"]["saved_redraw"]["sha256"]);
+            let frame = base64::engine::general_purpose::STANDARD
+                .decode(case["rgba_zlib_base64"].as_str().unwrap())
+                .unwrap();
+            let mut rgba = Vec::new();
+            flate2::read::ZlibDecoder::new(frame.as_slice())
+                .read_to_end(&mut rgba)
+                .unwrap();
+            let scale = case["scale"].as_u64().unwrap() as usize;
+            assert_eq!(rgba.len(), 128 * 64 * scale * scale * 4);
+            assert_eq!(format!("{:x}", Sha256::digest(&rgba)), case["rgba_sha256"]);
+        }
+    }
+
     #[test]
     fn v1_fixed_width_matches_native_replay_boundaries() {
         let fixture: Value = serde_json::from_str(include_str!(
