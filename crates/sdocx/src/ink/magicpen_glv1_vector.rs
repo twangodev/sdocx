@@ -159,6 +159,12 @@ mod tests {
             "../../../../conformance/magicpen-phase-export-host.json"
         ))
         .unwrap();
+        let standard_inputs: Value = serde_json::from_str(
+            fixture["cell_inputs_original"]["standard_json"]
+                .as_str()
+                .unwrap(),
+        )
+        .unwrap();
         for group in ["standard", "variable"] {
             let cases = fixture["cell_composition_controls"][group]
                 .as_array()
@@ -177,6 +183,57 @@ mod tests {
                 let transparent =
                     decode_native_frame(case, "transparent_rgba_zlib", "transparent_sha256", size);
                 let opaque = decode_native_frame(case, "opaque_rgba_zlib", "opaque_sha256", size);
+                if group == "standard"
+                    && let Some(prefix) = std::env::var_os("SDOCX_MAGICPEN_CELL_CAPTURE_PREFIX")
+                {
+                    let input = standard_inputs["cases"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .find(|input| input["id"] == name)
+                        .expect("missing capture input");
+                    let mut vectors = Vec::new();
+                    for (background, expected) in
+                        [("transparent", &transparent), ("opaque", &opaque)]
+                    {
+                        let mut directory = prefix.clone();
+                        directory.push(background);
+                        let path = std::path::PathBuf::from(directory)
+                            .join(format!("{name}-{scale}.json"));
+                        let capture: Value =
+                            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+                        let paint = &capture["paint"];
+                        assert_eq!(paint["source_case"], name);
+                        assert_eq!(paint["view_scale"], scale);
+                        assert_eq!(paint["source_inputs"], *input);
+                        assert_eq!(paint["source_argb_input"], input["argb"]);
+                        assert_eq!(paint["target_initial_background"]["kind"], background);
+                        let raw = decode_frame_data(
+                            &paint["readback"]["rgba8_zlib_base64"],
+                            &paint["readback"]["sha256"],
+                            size,
+                        );
+                        assert_eq!(&raw, expected, "{name}/{scale}x {background}");
+                        assert_eq!(paint["native_vector_hex"], case["vector_hex"]);
+                        let hex = paint["native_vector_hex"].as_str().unwrap();
+                        assert!(hex.len().is_multiple_of(2));
+                        let vector: Vec<u8> = hex
+                            .as_bytes()
+                            .as_chunks::<2>()
+                            .0
+                            .iter()
+                            .map(|pair| {
+                                u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap()
+                            })
+                            .collect();
+                        assert_eq!(
+                            format!("{:x}", Sha256::digest(vector)),
+                            paint["native_vector_sha256"]
+                        );
+                        vectors.push(paint["native_vector_sha256"].clone());
+                    }
+                    assert_eq!(vectors[0], vectors[1]);
+                }
                 for (source, actual) in transparent
                     .as_chunks::<4>()
                     .0

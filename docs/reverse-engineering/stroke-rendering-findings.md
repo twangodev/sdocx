@@ -1374,9 +1374,10 @@ not establish device behavior or justify a general production profile.
 
 Local `tools/magicpen-phase/{diverse,minimum-dot,minimum-dot-color,cells/controls,cells/variable}/capture.py`
 scripts and their native receipts retain the detailed inputs and readbacks.
-The controls capture also supports `MAGIC_BACKGROUND=opaque`; its local
-`verify-native.py` checks the retained data. These workflows need the local
-adapter, scratch runtime and native libraries described below.
+The controls capture also supports `MAGIC_BACKGROUND=opaque`. The Rust test
+checks retained frames and can compare fresh captures when
+`SDOCX_MAGICPEN_CELL_CAPTURE_PREFIX` names their shared directory prefix. These
+workflows need the local adapter, scratch runtime and native libraries below.
 
 
 The local adapter `tmp/vector-parity-plan/magicpen-phase-followup/capture.py`
