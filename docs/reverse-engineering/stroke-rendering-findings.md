@@ -1340,10 +1340,12 @@ Two sequential synthetic host captures seeded the second stroke with the first f
 
 The Rust `native_edge_translation_preserves_overlapping_pixels` regression checks
 the retained native edge and translated frames, hashes and overlapping pixels.
-To run the local `tools/magicpen-phase/clip/translation.py` capture workflow,
-restore its two historical receipt paths from the tracked fixture first:
+The `edge_and_sequential_sources_match_native_vectors` Rust regression also
+checks their source geometry. To run the local `tools/magicpen-phase/clip/translation.py`
+capture workflow, restore its input and two historical receipts first:
 
 ```sh
+test ! -e tools/magicpen-phase/clip/inputs.json && jq -jr '.edge_and_stroke_inputs_original.edge_json' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/clip/inputs.json
 test ! -e tools/magicpen-phase/clip/native-receipt.json && jq '.edge_translation_controls.native' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/clip/native-receipt.json
 test ! -e tools/magicpen-phase/clip/translation-receipt.json && jq '.edge_translation_controls.translated' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/clip/translation-receipt.json
 ```
@@ -1369,6 +1371,7 @@ color, sequential-stroke and independent reentrant controls. To restore those ca
 
 ```sh
 test ! -e tools/magicpen-phase/minimum-dot-color/native-receipt.json && jq '.single_dot_color_controls' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/minimum-dot-color/native-receipt.json
+test ! -e tools/magicpen-phase/two-stroke/inputs.json && jq -jr '.edge_and_stroke_inputs_original.two_stroke_json' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/two-stroke/inputs.json
 test ! -e tools/magicpen-phase/two-stroke/native-receipt.json && jq '.two_stroke_controls' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/two-stroke/native-receipt.json
 test ! -e tools/magicpen-phase/reentrant/receipt.json && jq '. as $root | [.reentrant_controls[] | . as $row | . + {rgba_zlib: ($root.two_stroke_controls[] | select(.background == $row.background and .scale == $row.scale) | .rgba_zlib)}]' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/reentrant/receipt.json
 ```

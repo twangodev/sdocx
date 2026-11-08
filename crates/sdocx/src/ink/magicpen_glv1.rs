@@ -857,6 +857,72 @@ mod tests {
     }
 
     #[test]
+    fn edge_and_sequential_sources_match_native_vectors() {
+        use std::collections::BTreeSet;
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/magicpen-phase-export-host.json"
+        ))
+        .unwrap();
+        let inputs = &fixture["edge_and_stroke_inputs_original"];
+        let edge: Value = serde_json::from_str(inputs["edge_json"].as_str().unwrap()).unwrap();
+        let edge_cases = edge["cases"].as_array().unwrap();
+        let native = fixture["edge_translation_controls"]["native"]
+            .as_array()
+            .unwrap();
+        let translated = fixture["edge_translation_controls"]["translated"]
+            .as_array()
+            .unwrap();
+        assert_eq!(
+            (edge_cases.len(), native.len(), translated.len()),
+            (2, 6, 6)
+        );
+        let mut seen = BTreeSet::new();
+        for row in native {
+            let id = row["case"].as_str().unwrap();
+            let scale = row["scale"].as_u64().unwrap() as usize;
+            assert!([1, 2, 4].contains(&scale));
+            assert!(seen.insert((id, scale)));
+            let case = edge_cases.iter().find(|case| case["id"] == id).unwrap();
+            assert_eq!(row["vector_hex"], no_curve_vector_hex(case));
+            let mut translations = translated
+                .iter()
+                .filter(|item| item["case"] == id && item["scale"] == scale);
+            let moved = translations.next().expect("missing translated control");
+            assert!(
+                translations.next().is_none(),
+                "duplicate translated control"
+            );
+            let shift = moved["shift"].as_i64().unwrap() as f64;
+            assert_eq!(shift, if id == "left_edge" { 8.0 } else { -8.0 });
+            let mut shifted_case = case.clone();
+            for point in shifted_case["points"].as_array_mut().unwrap() {
+                point[0] = Value::from(point[0].as_f64().unwrap() + shift);
+            }
+            assert_eq!(
+                moved["translated_vector_hex"],
+                no_curve_vector_hex(&shifted_case)
+            );
+        }
+        assert_eq!(seen.len(), 6);
+
+        let input: Value =
+            serde_json::from_str(inputs["two_stroke_json"].as_str().unwrap()).unwrap();
+        let stroke_cases = input["cases"].as_array().unwrap();
+        let native = fixture["two_stroke_controls"].as_array().unwrap();
+        assert_eq!((stroke_cases.len(), native.len()), (2, 6));
+        for row in native {
+            let stages = row["stages"].as_array().unwrap();
+            assert_eq!(stages.len(), 2);
+            for stage in stages {
+                let id = stage["case"].as_str().unwrap();
+                let case = stroke_cases.iter().find(|case| case["id"] == id).unwrap();
+                assert_eq!(stage["vector_hex"], no_curve_vector_hex(case));
+            }
+        }
+    }
+
+    #[test]
     fn diverse_no_curve_sources_match_native_vectors_and_frame_hashes() {
         use base64::Engine;
         use sha2::{Digest, Sha256};
