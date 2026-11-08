@@ -669,6 +669,83 @@ mod tests {
     }
 
     #[test]
+    fn alias_paint_sources_match_native_vector_hashes() {
+        use serde_json::Value;
+        use sha2::{Digest, Sha256};
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-v5-scale-shell-native.json"
+        ))
+        .unwrap();
+        let original = &fixture["alias_paint_original"];
+        let scale: Value =
+            serde_json::from_str(original["scale_receipt_json"].as_str().unwrap()).unwrap();
+        let paths: Value =
+            serde_json::from_str(original["paths_receipt_json"].as_str().unwrap()).unwrap();
+        for (receipt, scale_controls) in [(&scale, true), (&paths, false)] {
+            let cases = receipt["cases"].as_object().unwrap();
+            assert_eq!(cases.len(), 3);
+            for (label, case) in cases {
+                let input = if scale_controls {
+                    &case["admission"]["Marker3"]["input"]
+                } else {
+                    &case["input"]
+                };
+                let points = input["points_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|point| {
+                        [
+                            f64::from(f32_from_bits_hex(point[0].as_str().unwrap())),
+                            f64::from(f32_from_bits_hex(point[1].as_str().unwrap())),
+                        ]
+                    })
+                    .collect();
+                let width = f32_from_bits_hex(input["pen_size_f32_bits"].as_str().unwrap());
+                let base = Input {
+                    samples: points,
+                    width,
+                    tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
+                    is_shape: false,
+                    fixed_width: false,
+                    wrapper_flag: false,
+                };
+                for (name, pen) in [("Marker3", PEN), ("StraightMarker", STRAIGHT_PEN)] {
+                    let factory = if scale_controls {
+                        &case["admission"][name]["factory"]
+                    } else {
+                        &case["factory"][name]
+                    };
+                    assert_eq!(factory["requested_canonical_pen_name"], pen);
+                    assert_eq!(factory["selected_v5_or_v1_actual"], "5");
+                    let mut stroke = page_stroke(&base);
+                    let rendering = stroke.rendering.as_mut().unwrap();
+                    rendering.pen_name = Some(pen.to_owned());
+                    rendering.advanced_settings =
+                        input["advanced_setting"].as_str().map(str::to_owned);
+                    rendering.style.initial_tolerance = None;
+                    let ink = prepare_for_page(&stroke).expect("native alias source is admitted");
+                    let vector: Vec<u8> = ink
+                        .points
+                        .iter()
+                        .flat_map(|point| [point.x as f32, point.y as f32])
+                        .flat_map(f32::to_le_bytes)
+                        .collect();
+                    assert_eq!(
+                        format!("{:x}", Sha256::digest(&vector)),
+                        case["vector_sha256"],
+                        "{label}/{name}"
+                    );
+                    if let Some(count) = case["callback_count"].as_u64() {
+                        assert_eq!(ink.points.len(), count as usize, "{label}/{name}");
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
     fn zigzag_source_and_host_frames_match_native_controls() {
         use base64::Engine;
         use serde_json::Value;

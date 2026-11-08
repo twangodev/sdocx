@@ -1547,6 +1547,15 @@ and `capture-state-v8.py` additionally trace state, and `diverse-v8.py` covers
 independent pairs. The capture and state receipts retain the native pins; the
 export comparator and subdivision verifier were retired.
 
+The `alias_paint_sources_match_native_vector_hashes` Rust test compares both
+Marker3 names against the retained native vector hashes for the scale and path
+controls. Restore the original receipts before running local recapture checks:
+
+```sh
+test ! -e tools/marker3-alias-paint/receipt.json && jq -jr '.alias_paint_original.scale_receipt_json' conformance/marker3-v5-scale-shell-native.json > tools/marker3-alias-paint/receipt.json
+test ! -e tools/marker3-alias-paint/receipt-more.json && jq -jr '.alias_paint_original.paths_receipt_json' conformance/marker3-v5-scale-shell-native.json > tools/marker3-alias-paint/receipt-more.json
+```
+
 The `zigzag_source_and_host_frames_match_native_controls` Rust test checks
 the Marker3 zigzag sampler against both native Drawing vectors and validates
 nine captured host frames. Two capture tools expect the original fixture and
