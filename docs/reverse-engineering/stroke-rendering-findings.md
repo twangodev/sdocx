@@ -1546,10 +1546,14 @@ test checks that descriptor. Neither native descriptor has been independently
 confirmed as the submitted GPU buffer. The local `tools/pencil2-second-source`
 and `tools/pencil2-note-source-v300` scripts and receipts retain the controls;
 recapture uses a fresh `SDOCX_PENCIL2_FRESH_FRAME_DIR`, local native libraries
-and incompletely pinned harness dependencies. The second-source geometry and
-geometry comparison uses its `geometry_test.sh`. The temporary host-math
-patch script was retired; its receipt is a historical measurement, while the
-separate native `sincos-trace.py` capture and receipt remain.
+and incompletely pinned harness dependencies. The second-source geometry
+comparison uses its `geometry_test.sh`. In the historical Debian glibc 2.41
+host intervention, three Rust-replay orientations had bits `bfba41b7` and
+produced sine/cosine bits `bf7e4a19`/`3dec5b1a`; this orientation was not
+independently traced at the native call. A separate f64 calculation cast to
+f32 retained the original differences. The temporary patch experiment and its
+derived receipt were retired; the separate native `sincos-trace.py` capture and
+receipt remain.
 
 A translated, pressure-scaled version of the 87-point source historically
 matched the full opaque host frame in canvas, PNG, image-backed SVG and both
