@@ -1476,10 +1476,10 @@ the native streams, four host frames and 2× capture provenance. Historical
 386,190/384,514/384,962 in resvg/MuPDF/PDFium; the loop control was
 27,410/23,402/23,353 versus 224,248/223,557/229,084. These host controls
 reduced error while overcovering support and do not establish device or
-saved-note parity. Local `tools/montblanc/eight-point/capture-{1x,2x}.py` and
-`tools/montblanc/extended-streams/capture.py` require the pinned native
-libraries, adapters, `MB_CASE` and project-local runtime; the paint captures
-also require `SDOCX_CAPTURE_ROOT` and the extended-paint helpers on `PYTHONPATH`.
+saved-note parity. The Rust `many_point_matches_native_streams` and
+`eight_point_native_frames_bound_profile_support_and_rgb_error` tests check the
+retained streams and frames. The local extended-stream capture requires pinned
+native libraries, adapters, `MB_CASE` and the project-local runtime.
 
 A synthetic ten-point loop yielded 48 native callbacks versus 60 from a
 historical sampler with its point-count guard widened. The first 36 numerical
