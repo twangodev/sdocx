@@ -578,6 +578,90 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "render")]
+    #[test]
+    fn alias_and_channel_native_frames_match_capture_buffers() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read as _;
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker4-v7-finger-paint-host.json"
+        ))
+        .unwrap();
+        let originals = &fixture["alias_channel_original_base64"];
+        let read_gzip = |name: &str| {
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(originals[name].as_str().unwrap())
+                .unwrap();
+            let mut raw = Vec::new();
+            flate2::read::GzDecoder::new(compressed.as_slice())
+                .read_to_end(&mut raw)
+                .unwrap();
+            raw
+        };
+        let read_json =
+            |name: &str| -> serde_json::Value { serde_json::from_slice(&read_gzip(name)).unwrap() };
+        let check_frame = |name: &str, expected: &serde_json::Value| {
+            let rgba = read_gzip(name);
+            assert_eq!(rgba.len(), 1024 * 512 * 4);
+            assert_eq!(format!("{:x}", Sha256::digest(&rgba)), *expected, "{name}");
+        };
+        for name in ["loop", "turn"] {
+            let receipt = read_json(&format!("alias-control/{name}-paint.json"));
+            assert_eq!(receipt["draw_count"], 1);
+            assert_eq!(receipt["gl_error"], 0);
+            check_frame(
+                &format!("alias-control/{name}-paint.rgba.gz"),
+                &receipt["rgba_sha256"],
+            );
+            let uploads = receipt["pre_draw_native_vbo_uploads"].as_array().unwrap();
+            assert_eq!(uploads.len(), 1);
+            let hex = uploads[0]["dataHex"].as_str().unwrap().as_bytes();
+            let (pairs, remainder) = hex.as_chunks::<2>();
+            assert!(remainder.is_empty());
+            let data: Vec<_> = pairs
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect();
+            assert_eq!(
+                data.len() as u64,
+                receipt["producer_bytes"].as_u64().unwrap()
+            );
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&data)),
+                receipt["producer_sha256"]
+            );
+            assert_eq!(uploads[0]["dataSha256"], receipt["producer_sha256"]);
+        }
+        let bridge: serde_json::Value = serde_json::from_str(
+            fixture["alias_controls_original"]["bridged_receipt_json"]
+                .as_str()
+                .unwrap(),
+        )
+        .unwrap();
+        check_frame(
+            "alias-control/marker-10-bridged.rgba.gz",
+            &bridge["frames"][1]["rgba_sha256"],
+        );
+        let paired = read_json("channel-controls/paired-receipt.json");
+        let source = fixture["channel_controls_original"]["geometry"]
+            .as_str()
+            .unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(source.as_bytes())),
+            paired["pins"]["tools/marker4_v7/channel-controls/geometry.json"]
+        );
+        let cases = paired["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 3);
+        for case in cases {
+            let name = case["case"].as_str().unwrap();
+            check_frame(
+                &format!("channel-controls/{name}.rgba.gz"),
+                &case["rgba_sha256"],
+            );
+        }
+    }
+
     #[test]
     fn v7_finger_budget_is_atomic_and_bounded() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
