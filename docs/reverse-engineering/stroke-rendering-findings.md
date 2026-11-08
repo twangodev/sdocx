@@ -1830,6 +1830,16 @@ retains the trace and probe receipts; restore them if needed:
 for f in caller-receipt.json matrix-decisive-receipt.json matrix-probe-receipt.json receipt.json; do test ! -e "tools/pencil2-offset-trace/$f" && jq -r --arg f "$f" '.offset_trace_original[$f]' crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json | base64 -d | gzip -dc > "tools/pencil2-offset-trace/$f"; done
 ```
 
+Synthetic Drawing matrix controls recorded offsets close to the input matrix
+translations across twelve tested matrices; direct-RT controls used a different
+offset and do not establish a general mapping. Two native texture uploads matched
+the expanded public assets byte for byte. These host controls and a conditional
+colored-overlap replay are retained in the same fixture; restore them if needed:
+
+```sh
+for f in colored-overlap-info.json colored-overlap-receipt.json drawing-offset-affine-receipt.json drawing-offset-matrix-receipt.json drawing-phase-control-receipt.json drawing-texture-identity-receipt.json; do test ! -e "tools/pencil2-public-replay/$f" && jq -r --arg f "$f" '.drawing_replay_original[$f]' crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json | base64 -d | gzip -dc > "tools/pencil2-public-replay/$f"; done
+```
+
 Historical source-cell SVG opacity strata reduced measured error on one
 note-derived host scene and separate synthetic scenes, but produced multi-MB
 SVGs and retained substantial reader differences; a separately generated PDF

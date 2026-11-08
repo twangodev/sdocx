@@ -18,6 +18,87 @@ fn floats<const N: usize>(hex: &str) -> [f32; N] {
 }
 
 #[test]
+fn drawing_replay_controls_preserve_offset_and_texture_evidence() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/pencil2-offset-lifecycle-native.json"
+    ))
+    .unwrap();
+    let originals = fixture["drawing_replay_original"].as_object().unwrap();
+    let pins = [
+        (
+            "colored-overlap-info.json",
+            "e1afffed091fa352e75b0a197038093580309e16cb5ea4b4c2fedd5d6466e3ad",
+        ),
+        (
+            "colored-overlap-receipt.json",
+            "358fda0e93b9f916cbd91bfbe6a2c5e41788f4ca6c6e5bea56bdf74833a63a6b",
+        ),
+        (
+            "drawing-offset-affine-receipt.json",
+            "f606d5ff42013bbcd2fa65ab5688b946bbc2346b5451ae0e26862adc8615d794",
+        ),
+        (
+            "drawing-offset-matrix-receipt.json",
+            "eb32774372279266a5bcd3bd12bb10d81b73e6a4f01ee3cf18d0e468b08700be",
+        ),
+        (
+            "drawing-phase-control-receipt.json",
+            "a31ef5e82ff7cbee20e0684f56372f872cac5dc619aecd1169b9ea71c5df1537",
+        ),
+        (
+            "drawing-texture-identity-receipt.json",
+            "c306480676535e5ce2a5226f8d4d9ba674f7ca8656534d195d0baa181c490967",
+        ),
+    ];
+    assert_eq!(originals.len(), pins.len());
+    let mut receipts = std::collections::BTreeMap::new();
+    for (name, hash) in pins {
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(originals[name].as_str().unwrap())
+            .unwrap();
+        let mut bytes = Vec::new();
+        flate2::read::GzDecoder::new(compressed.as_slice())
+            .read_to_end(&mut bytes)
+            .unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(&bytes)), hash, "{name}");
+        receipts.insert(
+            name,
+            serde_json::from_slice::<serde_json::Value>(&bytes).unwrap(),
+        );
+    }
+    let phase = &receipts["drawing-phase-control-receipt.json"];
+    for name in [
+        "drawing-offset-affine-receipt.json",
+        "drawing-offset-matrix-receipt.json",
+    ] {
+        let cases = receipts[name]["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 6);
+        for case in cases {
+            assert_eq!(case["draw_gl_error"], 0);
+            assert_eq!(case["final_gl_error"], 0);
+            assert_eq!(case["geometry_sha256"], phase["drawing"]["geometry_sha256"]);
+            for axis in 0..2 {
+                let actual = case["uniform2"][0][3][axis].as_f64().unwrap();
+                let translation = case["input_matrix"][12 + axis].as_f64().unwrap();
+                assert!((actual - translation).abs() < 0.00001, "{name} axis {axis}");
+            }
+        }
+    }
+    let textures = &receipts["drawing-texture-identity-receipt.json"]["results"];
+    for kind in ["grain", "point"] {
+        assert_eq!(textures[kind]["equal"], true);
+        assert_eq!(
+            textures[kind]["reconstructed_rgba_sha256"],
+            textures[kind]["native_upload_sha256"]
+        );
+    }
+    assert_eq!(
+        receipts["colored-overlap-receipt.json"]["native_changed_pixels"],
+        156
+    );
+}
+
+#[test]
 fn offset_trace_receipts_preserve_native_matrix_probe() {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../../../tests/fixtures/pencil2-offset-lifecycle-native.json"
