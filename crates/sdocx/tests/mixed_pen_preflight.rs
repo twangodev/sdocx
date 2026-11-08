@@ -39,6 +39,37 @@ fn native_loader_constructor_and_factory_evidence_remains_consistent() {
             .sum::<u64>(),
         8_025
     );
+    let loader = read("mixed-pen-loader-preflight/receipt-v2.json");
+    assert_eq!(loader["no_mapping_overlap"], true);
+    assert_eq!(loader["unresolved_total"], 8_025);
+    assert!(
+        loader["runtime"]["unicorn_module"]
+            .as_str()
+            .unwrap()
+            .starts_with("__SDOCX_WORKSPACE__/")
+    );
+    let loader_libraries = loader["libraries"].as_array().unwrap();
+    assert_eq!(loader_libraries.len(), libraries.len());
+    let mut ranges = Vec::new();
+    for mapped in loader_libraries {
+        let relocation = libraries
+            .iter()
+            .find(|v| v["name"] == mapped["name"])
+            .unwrap();
+        assert_eq!(mapped["sha256"], relocation["sha256"]);
+        assert_eq!(
+            mapped["unresolved_relocations"],
+            relocation["unresolved_relocations"]
+        );
+        let hex = |v: &Value| {
+            u64::from_str_radix(v.as_str().unwrap().trim_start_matches("0x"), 16).unwrap()
+        };
+        let range = (hex(&mapped["base"]), hex(&mapped["mapped_end"]));
+        assert!(range.0 < range.1);
+        ranges.push(range);
+    }
+    ranges.sort_unstable();
+    assert!(ranges.windows(2).all(|pair| pair[0].1 <= pair[1].0));
 
     let mut preflight_hash = None;
     for (file, label, names) in [
