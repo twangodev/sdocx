@@ -1692,19 +1692,14 @@ fixture retains the inputs and streams. The Rust sampler test checks all ten
 size/path pairs. Full repeated render logs were retired.
 
 The original narrow-width state traces are preserved in the tracked width-state
-fixture. Restore them for the local capture workflow without overwriting files:
-
-```sh
-for f in state-receipt.json state-v8-receipt.json; do test ! -e "tools/montblanc/narrow-probe/$f" && jq -jr --arg name "$f" '.narrow_state_original[$name]' conformance/montblanc-wide-width-state-native.json > "tools/montblanc/narrow-probe/$f"; done
-```
+fixture and checked by `native_narrow_size_selection_matches_sampler`.
 
 Local acquisition under `tools/montblanc/narrow-probe` requires the native
 runtime in `tools/montblanc/many-point-paint`, `SDOCX_CAPTURE_ROOT`,
 `MB_CASE` from the chosen fixture input, and `PYTHONPATH` containing the scratch
 runtime and `tools/montblanc/extended-paint/conformance`. `capture.py` writes a
-fresh host capture and prints the callback stream on stderr; `capture-state.py`
-and `capture-state-v8.py` additionally trace state, and `diverse-v8.py` covers
-independent pairs. The capture and state receipts retain the native pins; the
+fresh host capture and prints the callback stream on stderr; `diverse-v8.py`
+covers independent pairs. The capture and state receipts retain the native pins; the
 export comparator and subdivision verifier were retired.
 
 The `alias_paint_sources_match_native_vector_hashes` Rust test compares both
