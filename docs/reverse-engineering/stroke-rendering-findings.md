@@ -1550,6 +1550,7 @@ original inputs for the local capture workflow with:
 ```sh
 test ! -e tools/marker4_v7/channel-controls/geometry.json && jq -jr '.channel_controls_original.geometry' conformance/marker4-v7-finger-paint-host.json > tools/marker4_v7/channel-controls/geometry.json
 test ! -e tools/marker4_v7/channel-controls/receipt.json && jq -jr '.channel_controls_original.receipt' conformance/marker4-v7-finger-paint-host.json > tools/marker4_v7/channel-controls/receipt.json
+for f in intermediate/geometry.json intermediate/receipt.json wide-extra/receipt.json width4-extra/receipt.json scale-extra/receipt.json repeat-loop-control/receipt.json; do test ! -e "tools/marker4_v7/public-finger/$f" && jq -r --arg name "$f" '.finger_width_captures_gzip_base64[$name]' conformance/marker4-v7-finger-paint-host.json | base64 -d | gzip -dc > "tools/marker4_v7/public-finger/$f"; done
 ```
 
 A note-derived Marker4 V8 host probe found that the parser's per-addition f32

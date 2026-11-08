@@ -433,6 +433,108 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "render")]
+    #[test]
+    fn v7_intermediate_widths_match_native_geometry() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read as _;
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker4-v7-finger-paint-host.json"
+        ))
+        .unwrap();
+        let originals = &fixture["finger_width_captures_gzip_base64"];
+        let read = |name: &str, expected: &str| -> serde_json::Value {
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(originals[name].as_str().unwrap())
+                .unwrap();
+            let mut raw = Vec::new();
+            flate2::read::GzDecoder::new(compressed.as_slice())
+                .read_to_end(&mut raw)
+                .unwrap();
+            assert_eq!(format!("{:x}", Sha256::digest(&raw)), expected, "{name}");
+            serde_json::from_slice(&raw).unwrap()
+        };
+        let geometry = read(
+            "intermediate/geometry.json",
+            "7e986dac58bc300612d995ec6f9a21081390bb787d4cb8a0267ab15fae872e62",
+        );
+        for (name, hash, count) in [
+            (
+                "intermediate/receipt.json",
+                "5de8ee8dcd528957745a5dc25f98f1927a5cd7aac68d75bfbf9e942bf9df988d",
+                30,
+            ),
+            (
+                "wide-extra/receipt.json",
+                "5063dac6af545a91374cc126fc1134fa0d588ba3ed70ed5f745c0b94352c03f0",
+                8,
+            ),
+            (
+                "width4-extra/receipt.json",
+                "0521f9be29fd229b2fa59d4d8865d0ed9ddbbe51c9a6b7f727cade5d734e6b1d",
+                5,
+            ),
+            (
+                "scale-extra/receipt.json",
+                "6c18fbc76b0ce2496d5109e3b7880ba5d2b5bfaeccbd3e6671471cc82386f095",
+                4,
+            ),
+        ] {
+            let receipt = read(name, hash);
+            assert_eq!(receipt["cases"].as_array().unwrap().len(), count);
+            if name != "wide-extra/receipt.json" {
+                assert_eq!(
+                    receipt["geometry_sha256"],
+                    "7e986dac58bc300612d995ec6f9a21081390bb787d4cb8a0267ab15fae872e62"
+                );
+            }
+        }
+        let repeated = read(
+            "repeat-loop-control/receipt.json",
+            "f10fbc30612f8afd75e55c01a4702df66275d0e4df5b3db105c10f42a1a21802",
+        );
+        assert_eq!(repeated["frames"].as_array().unwrap().len(), 2);
+        assert_ne!(
+            repeated["frames"][0]["rgba_sha256"],
+            repeated["frames"][1]["rgba_sha256"]
+        );
+        let cases = geometry["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 15);
+        for case in cases {
+            let mut stroke = reference().stroke;
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.advanced_settings = Some("7;".into());
+            rendering.tool_type_raw = 0;
+            rendering.style.pen_size = Some(case["size"].as_f64().unwrap() as f32);
+            for (i, sample) in case["samples"].as_array().unwrap().iter().enumerate() {
+                stroke.points.push(Point {
+                    x: sample[0].as_f64().unwrap(),
+                    y: sample[1].as_f64().unwrap(),
+                });
+                stroke.pressures.push(sample[2].as_f64().unwrap());
+                stroke.tilts.push(sample[3].as_f64().unwrap());
+                stroke.timestamps.push(i as i64 * 10);
+            }
+            let ink = prepare_v7_finger(&stroke).unwrap();
+            let ends: Vec<_> = case["sample_ends"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_u64().unwrap() as usize)
+                .collect();
+            assert_eq!(ink.sample_ends, ends, "{}", case["name"]);
+            let dots = case["dots"].as_array().unwrap();
+            assert_eq!(ink.points.len(), dots.len(), "{}", case["name"]);
+            for (point, dot) in ink.points.iter().zip(dots) {
+                assert!((point.x - dot[0].as_f64().unwrap()).abs() < 1e-4);
+                assert!((point.y - dot[1].as_f64().unwrap()).abs() < 1e-4);
+                assert!((ink.stamp.height - 2. * (dot[2].as_f64().unwrap() + 0.5)).abs() < 1e-4);
+                assert!((ink.stamp.angle - dot[3].as_f64().unwrap()).abs() < 1e-4);
+            }
+        }
+    }
+
     #[test]
     fn v7_finger_budget_is_atomic_and_bounded() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
