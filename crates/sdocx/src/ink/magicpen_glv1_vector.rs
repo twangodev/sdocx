@@ -66,14 +66,27 @@ pub(super) fn source_contour_path(records: &[[u32; 3]], scale: u32) -> Option<St
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::Engine;
     use serde_json::Value;
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+
+    fn decode_native_frame(case: &Value, data_key: &str, hash_key: &str, size: usize) -> Vec<u8> {
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(case[data_key].as_str().unwrap())
+            .unwrap();
+        let mut bytes = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .take((size + 1) as u64)
+            .read_to_end(&mut bytes)
+            .unwrap();
+        assert_eq!(bytes.len(), size);
+        assert_eq!(format!("{:x}", Sha256::digest(&bytes)), case[hash_key]);
+        bytes
+    }
 
     #[test]
     fn native_edge_translation_preserves_overlapping_pixels() {
-        use base64::Engine;
-        use sha2::{Digest, Sha256};
-        use std::io::Read;
-
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../../conformance/magicpen-phase-export-host.json"
         ))
@@ -93,20 +106,6 @@ mod tests {
             case
         }
 
-        let decode = |case: &Value, data_key: &str, hash_key: &str, size: usize| {
-            let compressed = base64::engine::general_purpose::STANDARD
-                .decode(case[data_key].as_str().unwrap())
-                .unwrap();
-            let mut bytes = Vec::new();
-            flate2::read::ZlibDecoder::new(compressed.as_slice())
-                .take((size + 1) as u64)
-                .read_to_end(&mut bytes)
-                .unwrap();
-            assert_eq!(bytes.len(), size);
-            assert_eq!(format!("{:x}", Sha256::digest(&bytes)), case[hash_key]);
-            bytes
-        };
-
         for (name, shift) in [("left_edge", 8_isize), ("right_edge", -8)] {
             for scale in [1_usize, 2, 4] {
                 let original = find(originals, name, scale);
@@ -116,19 +115,20 @@ mod tests {
                 assert_eq!(translated["overlap_changed_pixels"], 0);
                 let width = 32 * scale;
                 let size = width * width * 4;
-                let before = decode(
+                let before = decode_native_frame(
                     original,
                     "transparent_rgba_zlib",
                     "transparent_sha256",
                     size,
                 );
-                let after = decode(
+                let after = decode_native_frame(
                     translated,
                     "translated_rgba_zlib",
                     "translated_sha256",
                     size,
                 );
-                let _opaque = decode(original, "opaque_rgba_zlib", "opaque_sha256", size);
+                let _opaque =
+                    decode_native_frame(original, "opaque_rgba_zlib", "opaque_sha256", size);
                 for y in 0..width {
                     for x in 0..width {
                         let translated_x = x as isize + shift * scale as isize;
@@ -144,6 +144,52 @@ mod tests {
                     }
                 }
             }
+        }
+    }
+
+    #[test]
+    fn native_cell_frames_match_opaque_background_composition() {
+        use std::collections::BTreeSet;
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/magicpen-phase-export-host.json"
+        ))
+        .unwrap();
+        for group in ["standard", "variable"] {
+            let cases = fixture["cell_composition_controls"][group]
+                .as_array()
+                .unwrap();
+            assert_eq!(cases.len(), 24);
+            let mut names = BTreeSet::new();
+            let mut pairs = BTreeSet::new();
+            for case in cases {
+                let name = case["case"].as_str().unwrap();
+                let scale = case["scale"].as_u64().unwrap() as usize;
+                assert!([1, 2, 4].contains(&scale));
+                names.insert(name);
+                assert!(pairs.insert((name, scale)), "duplicate {group} control");
+                assert_eq!(case["backed_rgb_error"], 0);
+                let size = (32 * scale).pow(2) * 4;
+                let transparent =
+                    decode_native_frame(case, "transparent_rgba_zlib", "transparent_sha256", size);
+                let opaque = decode_native_frame(case, "opaque_rgba_zlib", "opaque_sha256", size);
+                for (source, actual) in transparent
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(opaque.as_chunks::<4>().0.iter())
+                {
+                    assert_eq!(actual[3], 255);
+                    for (channel, background) in [64_u16, 128, 192].into_iter().enumerate() {
+                        let alpha = u16::from(source[3]);
+                        let expected = (u16::from(source[channel])
+                            + (background * (255 - alpha) + 127) / 255)
+                            .min(255) as u8;
+                        assert_eq!(actual[channel], expected, "{group}/{name}/{scale}x");
+                    }
+                }
+            }
+            assert_eq!(names.len(), 8);
         }
     }
 

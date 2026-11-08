@@ -1349,7 +1349,16 @@ test ! -e tools/magicpen-phase/clip/translation-receipt.json && jq '.edge_transl
 ```
 
 Both extracts reproduce the original bytes; native and scratch-runtime
-prerequisites remain separate.
+prerequisites remain separate. The `native_cell_frames_match_opaque_background_composition`
+Rust regression checks the retained standard and variable-radius frame pairs.
+To restore their receipt paths for the local cell capture workflows:
+
+```sh
+test ! -e tools/magicpen-phase/cells/controls/native-receipt.json && jq '.cell_composition_controls.standard' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/cells/controls/native-receipt.json
+test ! -e tools/magicpen-phase/cells/variable/native-receipt.json && jq '.cell_composition_controls.variable' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/cells/variable/native-receipt.json
+```
+
+These extracts also reproduce the original bytes.
 
 ## Converted Marker2 and InkPen2 trajectories
 
