@@ -4,11 +4,8 @@ This independent synthetic four-point RTV1 host-Mesa capture uses a 63×47 trans
 
 On the 39 native ink pixels, direct-row candidate versus ordinary RGB L1 is 16 versus 1957 in resvg, 85 versus 4110 in MuPDF and 67 versus 3952 in PDFium. Full-frame MuPDF error includes the paper-color conversion. Flipped rows give much larger errors. This single synthetic stroke does not establish saved-note or device parity or general orientation and composition behavior.
 
-Capture from the repository root using the local Unicorn runtime and dependencies documented in the parent README:
-
-```sh
-PYTHONPATH=scratch/straightinkpen2-alias:scratch/apk-analysis-runtime/python:scratch/apk-analysis-runtime/binutils-aarch64/usr/bin /tmp/sdocx-unicorn-venv/bin/python tools/inkpen2-v1-tablet-half/viewport_native.py --print-capture --width 1440 --height 2560 --matrix-scale 0.5 --matrix-translate-x 16.25 --matrix-translate-y 17.375 --output-width 63 --output-height 47 --color-argb 0xffff0000 --input-json "$PWD/tools/inkpen2-v1-tablet-half/fractional-v222/input.json" > /tmp/ink-v222-native.json
-```
+The Rust `fractional_odd_viewport_matches_native_frame` test checks the captured
+geometry and compares the half-grid alpha against the native frame.
 
 Historical comparisons used resvg 0.45.1, MuPDF 1.28.2 and PDFium
 150.0.7869.0, compositing the native premultiplied frame over #fcfcfc. A clean
@@ -16,5 +13,4 @@ replay at `a4460e0a7f624d001e17b3b557adda1e61af2669` reproduced the original
 four export hashes and metrics. The export hook, patch and comparator have
 been retired. The hybrid receipt retains their historical source identities
 alongside unique native geometry, matrix, framebuffer and GL evidence; it does
-not validate current reader output. Native recapture requires the pinned local
-scratch support, DSOs and Python environment documented in the parent README.
+not validate current reader output.

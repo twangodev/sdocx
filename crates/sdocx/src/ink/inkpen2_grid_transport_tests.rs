@@ -185,6 +185,58 @@ fn zero_width_native_frames_match_explicit_grid_model() {
 }
 
 #[test]
+fn fractional_odd_viewport_matches_native_frame() {
+    use sha2::{Digest, Sha256};
+    use std::io::Read as _;
+
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/inkpen2-v1-tablet-half/fractional-v222/receipt.json"
+    ))
+    .unwrap();
+    let capture = &receipt["capture"];
+    assert_eq!(capture["output_size"], serde_json::json!([63, 47]));
+    let geometry: Vec<u8> = capture["geometry_hex"]
+        .as_str()
+        .unwrap()
+        .as_bytes()
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+        .collect();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&geometry)),
+        capture["geometry_sha256"]
+    );
+    let mut rgba = Vec::new();
+    flate2::read::ZlibDecoder::new(
+        &include_bytes!("../../../../tools/inkpen2-v1-tablet-half/fractional-v222/frame.rgba.zlib")
+            [..],
+    )
+    .read_to_end(&mut rgba)
+    .unwrap();
+    assert_eq!(rgba.len(), 63 * 47 * 4);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&rgba)),
+        capture["rgba_sha256"]
+    );
+    let grid = model::grid(&geometry, 63, 47, 0.5, 16.25, 17.375, [2000, 200_000, 6144]).unwrap();
+    let mut sum = 0_u64;
+    let mut max = 0_u8;
+    for (index, pixel) in rgba.as_chunks::<4>().0.iter().enumerate() {
+        let alpha = grid
+            .get(&((index % 63) as i32, (index / 63) as i32))
+            .copied()
+            .unwrap_or(0);
+        let error = pixel[3].abs_diff(alpha);
+        sum += u64::from(error);
+        max = max.max(error);
+    }
+    assert!(sum <= 50, "native alpha error sum: {sum}");
+    assert!(max <= 2, "native alpha max error: {max}");
+}
+
+#[test]
 fn viewport_and_phase_controls_match_native_error_bounds() {
     use base64::Engine as _;
     use sha2::{Digest, Sha256};
