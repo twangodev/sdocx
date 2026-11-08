@@ -713,6 +713,62 @@ fn six_and_seven_point_profiles_and_boundaries() {
 }
 
 #[test]
+fn narrow_ten_point_native_counterexample_keeps_fallback() {
+    use sha2::{Digest, Sha256};
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/montblanc-narrow-probe.json"
+    ))
+    .unwrap();
+    let originals = &fixture["ten_point_negative_original"];
+    let receipt: serde_json::Value =
+        serde_json::from_str(originals["receipt.json"].as_str().unwrap()).unwrap();
+    let stream_text = originals["loop-stream.json"].as_str().unwrap();
+    let stream: serde_json::Value = serde_json::from_str(stream_text).unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(stream_text.as_bytes())),
+        receipt["native_stream_sha256"]
+    );
+    assert_eq!(
+        stream.as_array().unwrap().len(),
+        receipt["native_callback_count"].as_u64().unwrap() as usize
+    );
+    assert_eq!(receipt["sampler_callback_count"], 60);
+    let mismatch = &receipt["first_lane_difference"];
+    let row = mismatch["record_zero_based"].as_u64().unwrap() as usize;
+    let lane = mismatch["lane_zero_based"].as_u64().unwrap() as usize;
+    let bits = stream[row][1][lane].as_str().unwrap();
+    let bytes: [u8; 4] =
+        std::array::from_fn(|i| u8::from_str_radix(&bits[i * 2..i * 2 + 2], 16).unwrap());
+    assert_eq!(
+        f32::from_le_bytes(bytes),
+        mismatch["native_value"].as_f64().unwrap() as f32
+    );
+    assert_ne!(mismatch["native_value"], mismatch["sampler_value"]);
+    let input = &receipt["input"];
+    let points: Vec<_> = input["points"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| [p[0].as_f64().unwrap() as f32, p[1].as_f64().unwrap() as f32])
+        .collect();
+    let pressure: Vec<_> = input["pressure"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p.as_f64().unwrap() as f32)
+        .collect();
+    let mut stroke = source(&points, &pressure);
+    stroke.pen_width = input["pen_size"].as_f64().unwrap() as f32;
+    stroke.rendering.as_mut().unwrap().style.pen_size = Some(stroke.pen_width);
+    assert!(crate::ink::montblanc::prepare(&stroke).is_none());
+    let doc = document(stroke);
+    assert_eq!(
+        render_document_svg(&doc, &options())[0].svg,
+        render_document_svg(&doc, &RenderOptions::default())[0].svg
+    );
+}
+
+#[test]
 fn longer_profiles_preserve_point_count_boundaries() {
     let points: Vec<[f32; 2]> = (0..25)
         .map(|i| [i as f32 * 4.0, if i % 2 == 0 { -5.0 } else { 5.0 }])

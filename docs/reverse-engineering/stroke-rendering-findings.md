@@ -1447,6 +1447,12 @@ widening admission. The local `tools/montblanc/ten-negative` receipt and stream
 retain the input and pins. Recapture uses the narrow-probe harness and the
 native runtime described in `tools/montblanc/many-point-paint`; the retired
 comparison did not automatically assert every callback type.
+The original negative-control receipt and stream are preserved in the narrow
+fixture; restore them for local investigation without overwriting files:
+
+```sh
+for f in receipt.json loop-stream.json; do test ! -e "tools/montblanc/ten-negative/$f" && jq -jr --arg name "$f" '.ten_point_negative_original[$name]' conformance/montblanc-narrow-probe.json > "tools/montblanc/ten-negative/$f"; done
+```
 
 ## SimpleBrush long-stroke host controls
 
