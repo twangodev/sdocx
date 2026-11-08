@@ -1506,6 +1506,8 @@ fixture; restore them for local workflows without overwriting files:
 
 ```sh
 for k in full opaque; do f="tools/marker3-tool1-scale4-$k/receipt.json"; test ! -e "$f" && jq -r --arg name "$k/receipt.json" '.tool1_4x_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d | gzip -dc > "$f"; for n in short4 short6 fractional crossing; do f="tools/marker3-tool1-scale4-$k/$n.rgba.zlib"; test ! -e "$f" && jq -r --arg name "$k/$n.rgba.zlib" '.tool1_4x_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d > "$f"; done; done
+for f in marker3-tool1-paint/native.json marker3-tool1-paint/scale2-receipt.json marker3-tool1-paint/native-width-phase.json marker3-tool1-scale4/receipt.json; do test ! -e "tools/$f" && jq -r --arg name "$f" '.tool1_scale_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d | gzip -dc > "tools/$f"; done
+for f in marker3-tool1-paint/{crossing-tool1,fractional-tool1,short-tool1,short-tool2,short4-zero-tool1,short6-zero-tool1}.rgba.zlib marker3-tool1-scale4/{crossing,fractional,short}.rgba.zlib; do test ! -e "tools/$f" && jq -r --arg name "$f" '.tool1_scale_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d > "tools/$f"; done
 ```
 
 The Marker3 fractional-size receipt and scale-capture pins are preserved in the

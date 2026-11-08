@@ -82,6 +82,110 @@ mod tests {
     use serde::Deserialize;
 
     #[test]
+    fn tool_one_scale_frames_keep_native_alias_counterexample() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read as _;
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-v5-scale-shell-native.json"
+        ))
+        .unwrap();
+        let original = &fixture["tool1_scale_original_base64"];
+        let bytes = |name: &str| {
+            base64::engine::general_purpose::STANDARD
+                .decode(original[name].as_str().unwrap())
+                .unwrap()
+        };
+        let read = |name: &str| -> serde_json::Value {
+            let compressed = bytes(name);
+            let mut raw = Vec::new();
+            flate2::read::GzDecoder::new(compressed.as_slice())
+                .read_to_end(&mut raw)
+                .unwrap();
+            serde_json::from_slice(&raw).unwrap()
+        };
+        let native = read("marker3-tool1-paint/native.json");
+        let widths = read("marker3-tool1-paint/native-width-phase.json");
+        let scale2 = read("marker3-tool1-paint/scale2-receipt.json");
+        let scale4 = read("marker3-tool1-scale4/receipt.json");
+        assert_eq!(scale2["cases"].as_object().unwrap().len(), 2);
+        for name in ["fractional", "crossing"] {
+            assert_eq!(
+                native["cases"][name]["1"]["readback"]["sha256"],
+                native["cases"][name]["2"]["readback"]["sha256"]
+            );
+            assert_eq!(
+                native["cases"][name]["1"]["native_vector_sha256"],
+                native["cases"][name]["2"]["native_vector_sha256"]
+            );
+        }
+        assert_ne!(
+            native["cases"]["short"]["1"]["readback"]["sha256"],
+            native["cases"]["short"]["2"]["readback"]["sha256"]
+        );
+        let frames = [
+            (
+                "marker3-tool1-paint/crossing-tool1.rgba.zlib",
+                &native["cases"]["crossing"]["1"]["readback"],
+            ),
+            (
+                "marker3-tool1-paint/fractional-tool1.rgba.zlib",
+                &native["cases"]["fractional"]["1"]["readback"],
+            ),
+            (
+                "marker3-tool1-paint/short-tool1.rgba.zlib",
+                &native["cases"]["short"]["1"]["readback"],
+            ),
+            (
+                "marker3-tool1-paint/short-tool2.rgba.zlib",
+                &native["cases"]["short"]["2"]["readback"],
+            ),
+            (
+                "marker3-tool1-paint/short4-zero-tool1.rgba.zlib",
+                &widths["short4"]["readback"],
+            ),
+            (
+                "marker3-tool1-paint/short6-zero-tool1.rgba.zlib",
+                &widths["short6"]["readback"],
+            ),
+            (
+                "marker3-tool1-scale4/crossing.rgba.zlib",
+                &scale4["cases"]["crossing"]["native"]["readback"],
+            ),
+            (
+                "marker3-tool1-scale4/fractional.rgba.zlib",
+                &scale4["cases"]["fractional"]["native"]["readback"],
+            ),
+            (
+                "marker3-tool1-scale4/short.rgba.zlib",
+                &scale4["cases"]["short"]["native"]["readback"],
+            ),
+        ];
+        for (name, expected) in frames {
+            let compressed = bytes(name);
+            let mut rgba = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut rgba)
+                .unwrap();
+            assert_eq!(rgba.len(), 256 * 256 * 4, "{name}");
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&rgba)),
+                expected["sha256"],
+                "{name}"
+            );
+            assert_eq!(
+                rgba.as_chunks::<4>()
+                    .0
+                    .iter()
+                    .filter(|pixel| pixel[3] != 0)
+                    .count() as u64,
+                expected["nonzero_pixels"].as_u64().unwrap(),
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
     fn tool_one_four_x_native_frames_match_opaque_composition() {
         use base64::Engine as _;
         use sha2::{Digest, Sha256};
