@@ -1501,6 +1501,13 @@ test ! -e tools/simplebrush-v74/first-instance.rgba.zlib && jq -r '.isolated_nat
 
 ## Marker alias and channel host controls
 
+The tool-1 4× full and opaque native captures are retained in the scale-shell
+fixture; restore them for local workflows without overwriting files:
+
+```sh
+for k in full opaque; do f="tools/marker3-tool1-scale4-$k/receipt.json"; test ! -e "$f" && jq -r --arg name "$k/receipt.json" '.tool1_4x_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d | gzip -dc > "$f"; for n in short4 short6 fractional crossing; do f="tools/marker3-tool1-scale4-$k/$n.rgba.zlib"; test ! -e "$f" && jq -r --arg name "$k/$n.rgba.zlib" '.tool1_4x_original_base64[$name]' conformance/marker3-v5-scale-shell-native.json | base64 -d > "$f"; done; done
+```
+
 The Marker3 fractional-size receipt and scale-capture pins are preserved in the
 zero-width fixture; restore them for local capture without overwriting files:
 

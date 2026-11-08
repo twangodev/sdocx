@@ -81,6 +81,79 @@ mod tests {
     use crate::{BoundingBox, Stroke, StrokeProperties, StrokeRendering, StrokeStyle};
     use serde::Deserialize;
 
+    #[test]
+    fn tool_one_four_x_native_frames_match_opaque_composition() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read as _;
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-v5-scale-shell-native.json"
+        ))
+        .unwrap();
+        let originals = &fixture["tool1_4x_original_base64"];
+        let decoded = |name: &str| {
+            base64::engine::general_purpose::STANDARD
+                .decode(originals[name].as_str().unwrap())
+                .unwrap()
+        };
+        let receipt = |kind: &str| -> serde_json::Value {
+            let compressed = decoded(&format!("{kind}/receipt.json"));
+            let mut raw = Vec::new();
+            flate2::read::GzDecoder::new(compressed.as_slice())
+                .read_to_end(&mut raw)
+                .unwrap();
+            serde_json::from_slice(&raw).unwrap()
+        };
+        let full = receipt("full");
+        let opaque = receipt("opaque");
+        assert_eq!(full["cases"].as_object().unwrap().len(), 4);
+        assert_eq!(opaque["cases"].as_object().unwrap().len(), 4);
+        for name in ["short4", "short6", "fractional", "crossing"] {
+            let read_frame = |kind: &str| {
+                let compressed = decoded(&format!("{kind}/{name}.rgba.zlib"));
+                let mut rgba = Vec::new();
+                flate2::read::ZlibDecoder::new(compressed.as_slice())
+                    .read_to_end(&mut rgba)
+                    .unwrap();
+                assert_eq!(rgba.len(), 512 * 512 * 4);
+                rgba
+            };
+            let transparent = read_frame("full");
+            let background = read_frame("opaque");
+            let native = &full["cases"][name]["native"]["readback"];
+            let paired = &opaque["cases"][name];
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&transparent)),
+                native["sha256"]
+            );
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&background)),
+                paired["native_opaque_sha256"]
+            );
+            assert_eq!(native["sha256"], paired["native_transparent_sha256"]);
+            assert_eq!(
+                paired["prior_rgba"],
+                serde_json::json!([252, 252, 252, 255])
+            );
+            for (src, dst) in transparent
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .zip(background.as_chunks::<4>().0)
+            {
+                for channel in 0..3 {
+                    let prior = (252_u32 * (255 - u32::from(src[3])) + 127) / 255;
+                    assert_eq!(
+                        u32::from(src[channel]) + prior,
+                        u32::from(dst[channel]),
+                        "{name}"
+                    );
+                }
+                assert_eq!(dst[3], 255);
+            }
+        }
+    }
+
     #[derive(Deserialize)]
     struct Fixture {
         cases: Vec<Case>,
