@@ -828,6 +828,68 @@ mod tests {
     }
 
     #[test]
+    fn tool_two_interior_matches_native_tool_three_reference() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-native.json"
+        ))
+        .unwrap();
+        let receipt: Value =
+            serde_json::from_str(fixture["tool2_interior_original"].as_str().unwrap()).unwrap();
+        let reference: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-tool3-2x-interior.json"
+        ))
+        .unwrap();
+        let reference = reference["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["case"] == "a")
+            .unwrap();
+        let input = &receipt["input"];
+        let f32_word =
+            |v: &Value| f32::from_le_bytes(decode_hex(v.as_str().unwrap()).try_into().unwrap());
+        let points: Vec<_> = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| [f32_word(&p[0]), f32_word(&p[1])])
+            .collect();
+        let pressures: Vec<_> = input["pressure_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(f32_word)
+            .collect();
+        let samples = generate(NativeInput {
+            points: &points,
+            pressures: &pressures,
+            size: f32_word(&input["pen_size_f32_bits"]),
+            tool_type: 2,
+            curve_enabled: input["curve_enabled"].as_bool().unwrap(),
+            max_samples: 32_768,
+        })
+        .unwrap();
+        let bytes: Vec<_> = samples
+            .into_iter()
+            .flatten()
+            .flat_map(f32::to_le_bytes)
+            .collect();
+        assert_eq!(
+            bytes,
+            decode_hex(receipt["drawing_vector"]["vector_bytes"].as_str().unwrap())
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            receipt["drawing_vector"]["sha256"]
+        );
+        assert_eq!(
+            receipt["drawing_vector"]["sha256"],
+            reference["geometry_sha256"]
+        );
+        assert_eq!(receipt["frame"]["sha256"], reference["frame_sha256"]);
+    }
+
+    #[test]
     fn note_derived_short_movements_match_native_vectors() {
         let saved: serde_json::Value = serde_json::from_str(include_str!(
             "../../tests/assets/fountain-v14/saved-source-29.json"

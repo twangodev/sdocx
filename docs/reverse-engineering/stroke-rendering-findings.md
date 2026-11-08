@@ -1479,6 +1479,13 @@ for f in receipt.json loop-stream.json; do test ! -e "tools/montblanc/ten-negati
 
 ## SimpleBrush long-stroke host controls
 
+The tool-2 interior receipt is retained in the native geometry fixture and can
+be restored for the local workflow without overwriting an existing file:
+
+```sh
+test ! -e tools/simplebrush-tool2-interior/native-receipt.json && jq -jr '.tool2_interior_original' conformance/simplebrush-native.json > tools/simplebrush-tool2-interior/native-receipt.json
+```
+
 Synthetic tool-2 controls at 129 points/size 20 and reversed 256 points/size 8
 used a fractional 2× transform on a 256×256 host-Mesa target. Their complete
 streams match the Rust `folded_long_strokes_match_complete_native_geometry`
