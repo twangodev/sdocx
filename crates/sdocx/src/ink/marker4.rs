@@ -262,6 +262,126 @@ mod tests {
     }
 
     #[test]
+    fn v7_finger_alias_sources_match_native_drawing_and_bridge() {
+        use serde_json::Value;
+        use sha2::{Digest, Sha256};
+        use std::collections::BTreeSet;
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker4-v7-finger-paint-host.json"
+        ))
+        .unwrap();
+        let originals = &fixture["alias_controls_original"];
+        let drawing: Value =
+            serde_json::from_str(originals["drawing_receipt_json"].as_str().unwrap()).unwrap();
+        let bridge: Value =
+            serde_json::from_str(originals["bridged_receipt_json"].as_str().unwrap()).unwrap();
+        let source_float = |value: &Value| {
+            f32::from_bits(
+                u32::from_str_radix(value.as_str().unwrap(), 16)
+                    .unwrap()
+                    .swap_bytes(),
+            )
+        };
+        let register_float = |value: &Value| {
+            f32::from_bits(
+                u32::from_str_radix(value.as_str().unwrap().trim_start_matches("0x"), 16).unwrap(),
+            )
+        };
+        let cases = drawing["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 3);
+        let mut sizes = BTreeSet::new();
+        for case in cases {
+            let size = case["size"].as_u64().unwrap();
+            assert!(sizes.insert(size));
+            let inputs = case["inputs"].as_array().unwrap();
+            let routes = case["routes"].as_array().unwrap();
+            let registers = case["registers"].as_array().unwrap();
+            assert_eq!((inputs.len(), routes.len(), registers.len()), (2, 2, 33));
+            let mut names = BTreeSet::new();
+            for (input, route) in inputs.iter().zip(routes) {
+                let name = input["pen_name"].as_str().unwrap();
+                assert!(names.insert(name));
+                assert_eq!(input["advanced_setting"], "7;");
+                assert_eq!(input["tool_type"], 0);
+                assert_eq!(input["requested_size"].as_f64().unwrap(), size as f64);
+                assert_eq!(route["selected_drawable_version"], "v7");
+                let mut stroke = reference().stroke;
+                stroke.points = input["points_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|point| Point {
+                        x: f64::from(source_float(&point[0])),
+                        y: f64::from(source_float(&point[1])),
+                    })
+                    .collect();
+                stroke.pressures = input["pressure_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| f64::from(source_float(value)))
+                    .collect();
+                stroke.timestamps = input["timestamps_i32"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| value.as_i64().unwrap())
+                    .collect();
+                let rendering = stroke.rendering.as_mut().unwrap();
+                rendering.pen_name = Some(name.to_owned());
+                rendering.advanced_settings = Some("7;".into());
+                rendering.tool_type_raw = 0;
+                rendering.style.pen_size = Some(size as f32);
+                let ink = prepare_v7_finger(&stroke).expect("native finger control is admitted");
+                assert_eq!(ink.points.len(), registers.len());
+                for (point, record) in ink.points.iter().zip(registers) {
+                    let values = &record["float_registers"];
+                    let x = f64::from(register_float(&values[0]));
+                    let y = f64::from(register_float(&values[1]));
+                    let radius = f64::from(register_float(&values[2]));
+                    let angle = f64::from(register_float(&values[3]));
+                    assert!((point.x - x).abs() < 1e-4 && (point.y - y).abs() < 1e-4);
+                    assert!((ink.stamp.width - 1.54 * (radius + 0.5)).abs() < 1e-4);
+                    assert!((ink.stamp.height - 2.0 * (radius + 0.5)).abs() < 1e-4);
+                    assert!((ink.stamp.angle - angle).abs() < 1e-4);
+                }
+            }
+            assert_eq!(names.len(), 2);
+        }
+        assert_eq!(sizes, BTreeSet::from([4, 10, 35]));
+
+        let inputs = cases.iter().find(|case| case["size"] == 10).unwrap()["capture_sha256"]
+            .as_array()
+            .unwrap();
+        let frames = bridge["frames"].as_array().unwrap();
+        assert_eq!(frames.len(), 2);
+        assert_eq!(frames[0]["rgba_sha256"], frames[1]["rgba_sha256"]);
+        assert_eq!(frames[0]["producer_sha256"], frames[1]["producer_sha256"]);
+        for frame in frames {
+            assert!(inputs.contains(&frame["source_json_sha256"]));
+            assert_eq!(frame["source_dot_count"], 33);
+            assert_eq!(frame["producer_bytes"], 3168);
+            assert_eq!(frame["gl_error"], 0);
+            let uploads = frame["pre_draw_native_vbo_uploads"].as_array().unwrap();
+            assert_eq!(uploads.len(), 1);
+            let hex = uploads[0]["dataHex"].as_str().unwrap().as_bytes();
+            let (pairs, remainder) = hex.as_chunks::<2>();
+            assert!(remainder.is_empty());
+            let bytes: Vec<_> = pairs
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect();
+            assert_eq!(bytes.len(), 3168);
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&bytes)),
+                frame["producer_sha256"]
+            );
+            assert_eq!(uploads[0]["dataSha256"], frame["producer_sha256"]);
+        }
+    }
+
+    #[test]
     fn v7_finger_budget_is_atomic_and_bounded() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
             "../../../../tools/marker4_v7/public-finger/wide-extra/geometry.json"
