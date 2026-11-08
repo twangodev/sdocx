@@ -727,6 +727,47 @@ fn pattern_size(scale: f32, texture_width: i32, matrix: [f32; 4]) -> [f32; 2] {
 }
 
 #[test]
+fn phase_control_retains_native_pattern_and_frame() {
+    use sha2::{Digest, Sha256};
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/tapepen-pattern-scale-host.json"
+    ))
+    .unwrap();
+    let receipt: serde_json::Value =
+        serde_json::from_str(fixture["phase_control_original"].as_str().unwrap()).unwrap();
+    assert_eq!(
+        receipt["input"]["tape_pattern_asset"]["sha256"],
+        fixture["asset_svg_sha256"]
+    );
+    assert_eq!(receipt["input"]["pattern_index"], 1);
+    assert_eq!(receipt["input"]["pattern_scale_f32_bits"], "0000803f");
+    assert_eq!(
+        receipt["native_route"]["selected_drawable"],
+        "TapePenStrokeDrawableGLV1"
+    );
+    assert_eq!(pattern_size(1., 64, [1., 1., 0., 0.]), [64., 64.]);
+    let frame = &receipt["retained_native_frames"]["frames"]["phase-frame.rgba.zlib"];
+    let palette = frame["palette_rgba8"].as_array().unwrap();
+    let mut rgba = Vec::new();
+    for run in frame["runs"].as_array().unwrap() {
+        let count = run[0].as_u64().unwrap() as usize;
+        let pixel = palette[run[1].as_u64().unwrap() as usize]
+            .as_array()
+            .unwrap();
+        assert_eq!(pixel.len(), 4);
+        for _ in 0..count {
+            rgba.extend(pixel.iter().map(|v| v.as_u64().unwrap() as u8));
+        }
+    }
+    assert_eq!(rgba.len(), 256 * 256 * 4);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&rgba)),
+        receipt["rgba_sha256"]
+    );
+    assert_eq!(frame["rgba_sha256"], receipt["rgba_sha256"]);
+}
+
+#[test]
 fn compare_independent_native_uniform_words() {
     let identity = [1.0, 1.0, 0.0, 0.0];
     let transformed = [1.5, 0.75, 24.0, 16.0];

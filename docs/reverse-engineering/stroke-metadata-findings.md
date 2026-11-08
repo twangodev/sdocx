@@ -138,6 +138,12 @@ IDs 1–9 and resolves the unchanged ID as `tape_pattern_%02d` from Android raw
 resources before caching it. The [resource hashes](../../conformance/tapepen-pattern-scale-host.json)
 cover those nine packaged SVGs. An existing or overridden cache can bypass
 that load, and the host captures explicitly supply their asset bytes.
+The phase-control receipt is retained in that fixture; restore it for local
+capture without overwriting an existing file:
+
+```sh
+test ! -e tools/tapepen-public-drawing/phase-receipt.json && jq -jr '.phase_control_original' conformance/tapepen-pattern-scale-host.json > tools/tapepen-public-drawing/phase-receipt.json
+```
 
 A [paired host asset control](../../conformance/tapepen-pattern-scale-host.json)
 injected the pinned pattern 1 and 2 SVGs into the cleared native store with
