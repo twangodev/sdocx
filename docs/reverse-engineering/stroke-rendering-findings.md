@@ -1547,7 +1547,9 @@ confirmed as the submitted GPU buffer. The local `tools/pencil2-second-source`
 and `tools/pencil2-note-source-v300` scripts and receipts retain the controls;
 recapture uses a fresh `SDOCX_PENCIL2_FRESH_FRAME_DIR`, local native libraries
 and incompletely pinned harness dependencies. The second-source geometry and
-host-math comparisons use its `geometry_test.sh` and `sincos-control.sh`.
+geometry comparison uses its `geometry_test.sh`. The temporary host-math
+patch script was retired; its receipt is a historical measurement, while the
+separate native `sincos-trace.py` capture and receipt remain.
 
 A translated, pressure-scaled version of the 87-point source historically
 matched the full opaque host frame in canvas, PNG, image-backed SVG and both
