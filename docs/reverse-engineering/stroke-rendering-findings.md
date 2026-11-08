@@ -1294,3 +1294,38 @@ local research inputs. The scripts use assertions, so run without optimized
 Python, and require new output paths. The factory probe accepts `--order
 pencil-first` for the reverse order and `--instruction-limit` to exercise a
 bounded failure. Unsupported relocations are not all trapped.
+
+## MagicPen host grid controls
+
+Three synthetic NoCurve trajectories of sizes 1, 2 and 12 tested colors and
+alpha at 1×, 2× and 4× on host Mesa. A scale-aware contour improved aggregate
+RGB error at 2× and 4× in resvg, MuPDF and PDFium, but the measurements used
+retired export prototypes and do not establish current replay, rotated-grid,
+nonwhite-background, saved-note or device parity.
+
+Four minimum-dot captures produced one nonzero pixel each, with alpha 43, 64,
+43 and 64 at the sampled quarter- and half-pixel positions. The opt-in
+`magicpen_host_minimum_dot_grid` requires 1× output, an asserted pixel origin
+and even 2×2 quad phase, and a single radius-0.5 record on a quarter-pixel
+phase within an even square page of 32–256 pixels, with x ≤ 200.5 and
+y ≤ 150.5. Intervening positions and page sizes are interpolated. See
+[rendering support](../rendering-support.md) for the public option.
+Fifteen separate color/alpha host controls were consistent with multiplying
+coverage by opacity; alpha 1 quantized to zero. Historical public comparisons
+had summed RGB errors 3, 12 and 10 in resvg, MuPDF and PDFium, respectively,
+with 12 native and exported support pixels each. Counts alone do not establish
+matching pixel positions or transparent-export parity.
+
+Experimental multi-stamp cell controls at 1×, 2× and 4× used maximum coverage
+and applied opacity once; all 24 opaque host frames matched premultiplied
+source-over of their transparent counterparts. A wider-radius set also had
+24 matching opaque/transparent pairs. The cell approach remains experimental:
+PDF reader error grew with area, and affine transforms, clipping, replay, output
+size and resource bounds remain unresolved. Its axis-aligned host results do
+not establish device behavior or justify a general production profile.
+
+Local `tools/magicpen-phase/{diverse,minimum-dot,minimum-dot-color,cells/controls,cells/variable}/capture.py`
+scripts and their native receipts retain the detailed inputs and readbacks.
+The controls capture also supports `MAGIC_BACKGROUND=opaque`; its local
+`verify-native.py` checks the retained data. These workflows need the local
+adapter, scratch runtime and native libraries documented in the parent notes.
