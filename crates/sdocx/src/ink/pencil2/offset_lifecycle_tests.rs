@@ -3,6 +3,9 @@
 // evidence. The trace replay models recorded cache transitions; it does not
 // test a production cache or native scheduling.
 use super::offset_candidate as candidate;
+use base64::Engine as _;
+use sha2::{Digest, Sha256};
+use std::io::Read as _;
 
 fn floats<const N: usize>(hex: &str) -> [f32; N] {
     assert_eq!(hex.len(), N * 8);
@@ -12,6 +15,74 @@ fn floats<const N: usize>(hex: &str) -> [f32; N] {
         });
         f32::from_le_bytes(bytes)
     })
+}
+
+#[test]
+fn offset_trace_receipts_preserve_native_matrix_probe() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/pencil2-offset-lifecycle-native.json"
+    ))
+    .unwrap();
+    let originals = fixture["offset_trace_original"].as_object().unwrap();
+    let pins = [
+        (
+            "caller-receipt.json",
+            "5b9ab935ad0085c51ce4e64edca6a3d69018e8e4f6c38635373ccb2213932813",
+        ),
+        (
+            "matrix-decisive-receipt.json",
+            "96802d5fbd5a50b6fc66bc1e7461a998ec38dd0a5f0ed1236da33aa23c891280",
+        ),
+        (
+            "matrix-probe-receipt.json",
+            "1f901ed55abcc5f25d6980380e98535311a4af9db1841dac563a741c7039c12c",
+        ),
+        (
+            "receipt.json",
+            "85b2efc72103921ae43958e3227f0fb813488a530e6be4bbc96938a726f2d1ee",
+        ),
+    ];
+    assert_eq!(originals.len(), pins.len());
+    let mut receipts = std::collections::BTreeMap::new();
+    for (name, hash) in pins {
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(originals[name].as_str().unwrap())
+            .unwrap();
+        let mut bytes = Vec::new();
+        flate2::read::GzDecoder::new(compressed.as_slice())
+            .read_to_end(&mut bytes)
+            .unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(&bytes)), hash, "{name}");
+        receipts.insert(
+            name,
+            serde_json::from_slice::<serde_json::Value>(&bytes).unwrap(),
+        );
+    }
+    let probe = &receipts["matrix-probe-receipt.json"];
+    let decisive = &receipts["matrix-decisive-receipt.json"];
+    assert_eq!(probe["binary_sha256"], fixture["binary_sha256"]);
+    assert_eq!(decisive["binary_sha256"], probe["binary_sha256"]);
+    for key in [
+        "matrix_cases",
+        "matrix_bitwise_matches",
+        "conventional_matrix_bitwise_differences",
+        "vector_normalization_cases",
+        "vector_normalization_bitwise_matches",
+    ] {
+        assert_eq!(probe[key], 300, "{key}");
+    }
+    assert_eq!(
+        floats::<16>(decisive["b"].as_str().unwrap())[0].to_bits(),
+        0x402a4789
+    );
+    assert_eq!(
+        floats::<16>(decisive["d"].as_str().unwrap())[0].to_bits(),
+        0xc00dc618
+    );
+    assert_eq!(
+        floats::<16>(decisive["matrix"].as_str().unwrap())[14].to_bits(),
+        0x40bb8e7a
+    );
 }
 
 #[test]

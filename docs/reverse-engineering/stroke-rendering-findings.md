@@ -1819,6 +1819,17 @@ host Mesa. The source captures are recoverable without overwriting local files:
 for f in viewport_1_5_receipt.json viewport_origin_{1,2,4,8,16}_receipt.json; do test ! -e "tools/pencil2_v14/$f" && jq -r --arg f "$f" '.viewport_controls_original[$f]' conformance/pencil2-v14-expanded-viewport-sweep-native.json | base64 -d | gzip -dc > "tools/pencil2_v14/$f"; done
 ```
 
+An isolated ARM64 grain-offset matrix probe matched the reconstructed operation
+order for 300 moderate finite cases; the conventional matrix formula differed
+in all 300. The anomaly is in a Z lane unused by the modeled XY uniform, and the
+probe does not establish full Drawing, device or unusual-float behavior. The
+[lifecycle fixture](../../crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json)
+retains the trace and probe receipts; restore them if needed:
+
+```sh
+for f in caller-receipt.json matrix-decisive-receipt.json matrix-probe-receipt.json receipt.json; do test ! -e "tools/pencil2-offset-trace/$f" && jq -r --arg f "$f" '.offset_trace_original[$f]' crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json | base64 -d | gzip -dc > "tools/pencil2-offset-trace/$f"; done
+```
+
 Historical source-cell SVG opacity strata reduced measured error on one
 note-derived host scene and separate synthetic scenes, but produced multi-MB
 SVGs and retained substantial reader differences; a separately generated PDF
