@@ -1496,10 +1496,16 @@ shipped GLES implementation, the vtable address point at RVA `0x6a0b0` maps
 that slot to `WaitForGpuCompletion` at `0x51730`; its body calls `glFinish`
 and GL error reporting. Dynamic symbol interposition can change binding. This
 static observation does not establish application queue order, Draw execution
-or a matrix handoff. The local `tools/pencil2-holder-slot/check.py` verifies the
-native DSO hash, symbols, relocations and instructions using system binutils
-and an unbundled ARM64 objdump runtime; transitive tool dependencies are not
-pinned.
+or a matrix handoff. To inspect the same pinned DSO with system binutils and
+the local ARM64 objdump, run the following from the repository root. The
+objdump runtime and transitive tool dependencies are not pinned.
+
+```sh
+printf '%s  %s\n' f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so | sha256sum -c
+nm -D -C scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so | rg 'vtable for SPen::GLES::ContextHolder|SPen::GLES::ContextHolder::WaitForGpuCompletion'
+readelf -rW scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so | rg '^000000000006a0d8 .*_ZN4SPen4GLES13ContextHolder20WaitForGpuCompletionEv'
+LD_LIBRARY_PATH="$PWD/scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu" scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump -d -C --start-address=0x51730 --stop-address=0x5174c scratch/apk-analysis-native/arm64-v8a/libSPenRenderer.so | rg '51738:.*glFinish@plt|51748:.*reportAndResetAllGLErrors'
+```
 
 A direct PDF Type 4 shading diagnostic transported four adjacent cells without
 observed seams at integer phase and 1×/2×/4×. Uniform and checkerboard RGB
