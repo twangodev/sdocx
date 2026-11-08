@@ -68,6 +68,85 @@ mod tests {
     use super::*;
     use serde_json::Value;
 
+    #[test]
+    fn native_edge_translation_preserves_overlapping_pixels() {
+        use base64::Engine;
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/magicpen-phase-export-host.json"
+        ))
+        .unwrap();
+        let controls = &fixture["edge_translation_controls"];
+        let originals = controls["native"].as_array().unwrap();
+        let translations = controls["translated"].as_array().unwrap();
+        assert_eq!(originals.len(), 6);
+        assert_eq!(translations.len(), 6);
+
+        fn find<'a>(cases: &'a [Value], name: &str, scale: usize) -> &'a Value {
+            let mut found = cases
+                .iter()
+                .filter(|case| case["case"] == name && case["scale"] == scale);
+            let case = found.next().expect("missing native edge control");
+            assert!(found.next().is_none(), "duplicate native edge control");
+            case
+        }
+
+        let decode = |case: &Value, data_key: &str, hash_key: &str, size: usize| {
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(case[data_key].as_str().unwrap())
+                .unwrap();
+            let mut bytes = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .take((size + 1) as u64)
+                .read_to_end(&mut bytes)
+                .unwrap();
+            assert_eq!(bytes.len(), size);
+            assert_eq!(format!("{:x}", Sha256::digest(&bytes)), case[hash_key]);
+            bytes
+        };
+
+        for (name, shift) in [("left_edge", 8_isize), ("right_edge", -8)] {
+            for scale in [1_usize, 2, 4] {
+                let original = find(originals, name, scale);
+                let translated = find(translations, name, scale);
+                assert_eq!(translated["shift"], shift);
+                assert_eq!(translated["overlap_rgba_error"], 0);
+                assert_eq!(translated["overlap_changed_pixels"], 0);
+                let width = 32 * scale;
+                let size = width * width * 4;
+                let before = decode(
+                    original,
+                    "transparent_rgba_zlib",
+                    "transparent_sha256",
+                    size,
+                );
+                let after = decode(
+                    translated,
+                    "translated_rgba_zlib",
+                    "translated_sha256",
+                    size,
+                );
+                let _opaque = decode(original, "opaque_rgba_zlib", "opaque_sha256", size);
+                for y in 0..width {
+                    for x in 0..width {
+                        let translated_x = x as isize + shift * scale as isize;
+                        if (0..width as isize).contains(&translated_x) {
+                            let left = (y * width + x) * 4;
+                            let right = (y * width + translated_x as usize) * 4;
+                            assert_eq!(
+                                &before[left..left + 4],
+                                &after[right..right + 4],
+                                "{name} at {scale}x, pixel ({x}, {y})"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fn float_records(hex: &str) -> Vec<[u32; 3]> {
         let bytes = hex.as_bytes();
         assert_eq!(bytes.len() % 24, 0);

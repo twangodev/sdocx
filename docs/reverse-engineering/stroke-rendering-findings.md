@@ -1338,6 +1338,19 @@ A mask readback inserted after native stamp drawing preserved all 48 existing ph
 
 Two sequential synthetic host captures seeded the second stroke with the first framebuffer. A separate reentrant Drawing probe produced identical final bytes on solid and patterned backgrounds at 1×, 2× and 4× while reusing the RTV1 receiver. A DrawObjectList probe with native Model initialization and host clock, UUID and queue adapters matched the solid reentrant frames at those scales; patterned captures also matched, while transparent captures had no independent reentrant baseline. The native bitmap-to-GL attachment identity, full queue/cache lifecycle, general list contents, serialized notes and Android behavior remain unverified. Local probes and their retained inputs and receipts are under `tools/magicpen-phase/{two-stroke,reentrant,object-list}`. Page-edge controls shifted eight source units inward retained the shared native region, but 4× interior undercoverage persisted, so clipping alone did not explain the error. Historical reader comparisons were made against dirty, incompletely pinned source snapshots; they do not attest a clean build or general backdrop fidelity.
 
+The Rust `native_edge_translation_preserves_overlapping_pixels` regression checks
+the retained native edge and translated frames, hashes and overlapping pixels.
+To run the local `tools/magicpen-phase/clip/translation.py` capture workflow,
+restore its two historical receipt paths from the tracked fixture first:
+
+```sh
+test ! -e tools/magicpen-phase/clip/native-receipt.json && jq '.edge_translation_controls.native' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/clip/native-receipt.json
+test ! -e tools/magicpen-phase/clip/translation-receipt.json && jq '.edge_translation_controls.translated' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/clip/translation-receipt.json
+```
+
+Both extracts reproduce the original bytes; native and scratch-runtime
+prerequisites remain separate.
+
 ## Converted Marker2 and InkPen2 trajectories
 
 A historical Marker2 host control reverses every channel of a saved Fountain
