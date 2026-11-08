@@ -4,7 +4,7 @@ One synthetic size-1 path used x coordinates `0,4,…,96`, y coordinates `0,2,4,
 
 Run `python3 tools/montblanc/twentyfive-investigation/clean-fixture.py` to check both compressed evidence hashes, all callback records and the complete 256×256 native frame. Despite its historical name, the script now performs native-only verification and writes no experimental source. The exact adapter recipe remains in that script.
 
-Native acquisition remains available through `tools/montblanc/narrow-probe/capture.py` and its preserved native adapters. Supply the recipe above through `MB_CASE` and use a fresh output path, following [the native capture prerequisites](../narrow-probe/README.md). Recapture requires local native binaries, Unicorn and host Mesa; retained capture metadata records the original environment. It is separate from verifying retained evidence.
+Native acquisition remains available through `tools/montblanc/narrow-probe/capture.py` and its preserved native adapters. Supply the recipe above through `MB_CASE` and use a fresh output path, following [the native capture prerequisites](../../../docs/reverse-engineering/stroke-rendering-findings.md#montblanc-narrow-host-controls). Recapture requires local native binaries, Unicorn and host Mesa; retained capture metadata records the original environment. It is separate from verifying retained evidence.
 
 The experimental sampler equality test and exporter/reader replay have been retired. The historical patched sampler matched the native callbacks, but maintained production still rejects 25 points; `longer_profiles_preserve_point_count_boundaries` checks that boundary. There is no claim that a maintained test reproduces the retired positive 25-point sampler experiment.
 

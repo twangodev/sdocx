@@ -1450,3 +1450,40 @@ source and reader versions and justify no renderer change. The local
 `tools/marker4_v8/paired` scripts and receipts retain input and native hashes;
 recapture requires unbundled scratch runners, native libraries and emulation.
 These observations do not establish Samsung-device or general PDF fidelity.
+
+## Independent serialized BrushPen control
+
+A synthetic Fountain-derived GLV10 frame changes a path delta and pressure
+seed before native `NewApplyBinary`; it is not a saved BrushPen note. Native
+Model attachment, Drawing and RTV1 use host adapters; complete note loading and
+device rendering are outside the control. Tracked fixtures under
+`crates/sdocx/tests/assets/brushpen-independent` and the
+`independent_serialized_brushpen_native` Rust test retain the payload, frame,
+native geometry, RGBA hashes and in-memory PNG/SVG/PDF checks. Historical PNG,
+resvg and PDFium results matched the native frame; MuPDF alpha differed by at
+most one over a sum of 76. These are bounded host results, not general PDF or
+device parity. The local `tools/brushpen-independent/capture.py` requires the
+scratch Unicorn runtime; principal native and adapter hashes are checked, but
+transitive adapters and the toolchain are not fully pinned.
+
+## Montblanc narrow host controls
+
+Synthetic six- and seven-point controls exercise sizes below 0.5. Native setter
+clamping selected 0.4 for tested sizes below it, and selected size was observed
+in width arithmetic. The tracked [narrow](../../conformance/montblanc-narrow-probe.json)
+and [independent streams](../../conformance/montblanc-narrow-independent-streams.json)
+retain the geometry. Paired host comparisons over three paths, five narrow sizes
+and 1×/2× found lower candidate union RGB error than the earlier 0.5 admission
+gate in resvg, MuPDF and PDFium, with native-support overcoverage and much
+larger SVG/PDF outputs. A four-subdivision experiment reduced SVG size but
+worsened every measured reader comparison; production retains eight. The
+experiments do not establish saved-note or device parity.
+
+Local acquisition under `tools/montblanc/narrow-probe` requires the native
+runtime in `tools/montblanc/many-point-paint`, `SDOCX_CAPTURE_ROOT`,
+`MB_CASE` from the chosen fixture input, and `PYTHONPATH` containing the scratch
+runtime and `tools/montblanc/extended-paint/conformance`. `capture.py` writes a
+fresh host capture and prints the callback stream on stderr; `capture-state.py`
+and `capture-state-v8.py` additionally trace state, and `diverse-v8.py` covers
+independent pairs. The capture and state receipts retain the native pins; the
+export comparator and subdivision verifier were retired.
