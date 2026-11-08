@@ -789,6 +789,80 @@ mod tests {
     use super::*;
     use serde_json::Value;
 
+    #[test]
+    fn diverse_no_curve_sources_match_native_vectors_and_frame_hashes() {
+        use base64::Engine;
+        use sha2::{Digest, Sha256};
+        use std::collections::BTreeSet;
+        use std::fmt::Write;
+        use std::io::Read;
+
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/magicpen-phase-export-host.json"
+        ))
+        .unwrap();
+        let capture = &fixture["diverse_capture_original"];
+        let inputs: Value = serde_json::from_str(capture["inputs_json"].as_str().unwrap()).unwrap();
+        let native: Vec<Value> =
+            serde_json::from_str(capture["native_receipt_json"].as_str().unwrap()).unwrap();
+        let cases = inputs["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 3);
+        assert_eq!(native.len(), 9);
+        let mut seen = BTreeSet::new();
+        for case in cases {
+            let id = case["id"].as_str().unwrap();
+            let points: Vec<[f32; 2]> = case["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|point| {
+                    [
+                        point[0].as_f64().unwrap() as f32,
+                        point[1].as_f64().unwrap() as f32,
+                    ]
+                })
+                .collect();
+            let pressure: Vec<f32> = case["pressure"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_f64().unwrap() as f32)
+                .collect();
+            let size = case["size"].as_f64().unwrap() as f32;
+            let records = source_glv1_no_curve(&points, &pressure, size);
+            let mut vector_hex = String::new();
+            for word in records.iter().flatten() {
+                for byte in word.to_le_bytes() {
+                    write!(vector_hex, "{byte:02x}").unwrap();
+                }
+            }
+            for scale in [1_usize, 2, 4] {
+                let mut rows = native
+                    .iter()
+                    .filter(|row| row["case"] == id && row["scale"] == scale);
+                let row = rows.next().expect("missing native diverse control");
+                assert!(rows.next().is_none(), "duplicate native diverse control");
+                assert!(seen.insert((id, scale)));
+                assert_eq!(row["vector_hex"], vector_hex, "{id} at {scale}x");
+                let compressed = base64::engine::general_purpose::STANDARD
+                    .decode(row["transparent_rgba_zlib"].as_str().unwrap())
+                    .unwrap();
+                let size = (32 * scale).pow(2) * 4;
+                let mut frame = Vec::new();
+                flate2::read::ZlibDecoder::new(compressed.as_slice())
+                    .take((size + 1) as u64)
+                    .read_to_end(&mut frame)
+                    .unwrap();
+                assert_eq!(frame.len(), size);
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(&frame)),
+                    row["transparent_sha256"]
+                );
+            }
+        }
+        assert_eq!(seen.len(), native.len());
+    }
+
     fn f32_bits(word: &str) -> f32 {
         f32::from_bits(u32::from_str_radix(word, 16).unwrap())
     }
