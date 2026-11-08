@@ -1368,18 +1368,12 @@ PDF reader error grew with area, and affine transforms, clipping, replay, output
 size and resource bounds remain unresolved. Its axis-aligned host results do
 not establish device behavior or justify a general production profile.
 
-Local `tools/magicpen-phase/{cells/controls,cells/variable}/capture.py`
-scripts and their native receipts retain the detailed inputs and readbacks.
-The controls capture also supports `MAGIC_BACKGROUND=opaque`. The Rust test
-checks retained frames and can compare fresh captures when
-`SDOCX_MAGICPEN_CELL_CAPTURE_PREFIX` names their shared directory prefix. These
-workflows need the local adapter, scratch runtime and native libraries below.
+The native receipts retain detailed inputs, readbacks and historical pins;
+those pins do not attest a clean current checkout. The Rust cell test can also
+compare fresh captures when `SDOCX_MAGICPEN_CELL_CAPTURE_PREFIX` names their
+shared directory prefix.
 
-
-The local adapter `tmp/vector-parity-plan/magicpen-phase-followup/capture.py`
-was pinned as SHA-256 `1e49677249ffb510ca862eba5e52d4321ad1b62fac7c3c55df475d27d9a0c0ec`; the mask input was pinned as `b716bcca3289d3a9f59eef6b26db2725bf97eabb3f96ee4ffa8125cc5d9eb7ca`. These workflows also require the archived native harness under `tmp/conformance-cleanup/native-capture-a241793` and local libraries and emulator/GLES dependencies under `scratch/apk-analysis-*`; they are not bundled. The native-only manifests retain historical pins and do not attest a clean current checkout.
-
-A mask readback inserted after native stamp drawing preserved all 48 existing phase-frame hashes. For opaque 1× controls the mask alpha equaled final alpha; overlaps and partial alpha remain unverified. The `magicpen_mask_phase` Rust integration test compares the retained masks against an idealized finite-quad model: support matched at every scale; at 1× seven of nine nonzero alphas matched and two differed by one, while all 36 at 2× and 192 at 4× matched. A one-pixel output translation changed a 2× phase alpha from 43 to 85, so a translation-invariant contour cannot reproduce both. A historical grid-cell diagnostic found RGB errors 6/6/6 at 1×, 0/36/0 at 2× and 0/48/0 at 4× in resvg/MuPDF/PDFium. It did not use the public exporters; per-pixel geometry depends on final scale and grows with area, so it is not admitted as a general vector profile. The local acquisition entry point is `tools/magicpen-phase/mask/run.py`.
+A mask readback inserted after native stamp drawing preserved all 48 existing phase-frame hashes. For opaque 1× controls the mask alpha equaled final alpha; overlaps and partial alpha remain unverified. The `magicpen_mask_phase` Rust integration test compares the retained masks against an idealized finite-quad model: support matched at every scale; at 1× seven of nine nonzero alphas matched and two differed by one, while all 36 at 2× and 192 at 4× matched. A one-pixel output translation changed a 2× phase alpha from 43 to 85, so a translation-invariant contour cannot reproduce both. A historical grid-cell diagnostic found RGB errors 6/6/6 at 1×, 0/36/0 at 2× and 0/48/0 at 4× in resvg/MuPDF/PDFium. It did not use the public exporters; per-pixel geometry depends on final scale and grows with area, so it is not admitted as a general vector profile.
 
 Two sequential synthetic host captures seeded the second stroke with the first framebuffer. A separate reentrant Drawing probe produced identical final bytes on solid and patterned backgrounds at 1×, 2× and 4× while reusing the RTV1 receiver. A DrawObjectList probe with native Model initialization and host clock, UUID and queue adapters matched the solid reentrant frames at those scales; patterned captures also matched, while transparent captures had no independent reentrant baseline. The native bitmap-to-GL attachment identity, full queue/cache lifecycle, general list contents, serialized notes and Android behavior remain unverified. The retained inputs and traces are in the phase fixture. Page-edge controls shifted eight source units inward retained the shared native region, but 4× interior undercoverage persisted, so clipping alone did not explain the error. Historical reader comparisons were made against dirty, incompletely pinned source snapshots; they do not attest a clean build or general backdrop fidelity.
 
@@ -1389,17 +1383,7 @@ The `edge_and_sequential_sources_match_native_vectors` Rust regression also
 checks their source geometry. The `native_cell_frames_match_opaque_background_composition`
 Rust regression checks the retained standard and variable-radius frame pairs.
 The `cell_no_curve_sources_match_native_vectors` Rust test also compares all
-16 source trajectories with their captured native vectors at each scale. To
-restore the original inputs and receipts for local cell capture workflows:
-
-```sh
-test ! -e tools/magicpen-phase/cells/controls/inputs.json && jq -jr '.cell_inputs_original.standard_json' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/cells/controls/inputs.json
-test ! -e tools/magicpen-phase/cells/variable/inputs.json && jq -jr '.cell_inputs_original.variable_json' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/cells/variable/inputs.json
-test ! -e tools/magicpen-phase/cells/controls/native-receipt.json && jq '.cell_composition_controls.standard' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/cells/controls/native-receipt.json
-test ! -e tools/magicpen-phase/cells/variable/native-receipt.json && jq '.cell_composition_controls.variable' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/cells/variable/native-receipt.json
-```
-
-These extracts also reproduce the original bytes. The Rust
+16 source trajectories with their captured native vectors at each scale. The Rust
 `native_minimum_dot_color_and_alpha_controls` and
 `native_sequential_stroke_frames_preserve_seed_handoff` tests check the retained
 color, sequential-stroke and independent reentrant controls. The
