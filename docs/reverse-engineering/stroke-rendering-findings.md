@@ -1633,6 +1633,15 @@ for f in alias-control/loop-paint.json alias-control/turn-paint.json channel-con
 for f in alias-control/{loop-paint,turn-paint,marker-10-bridged}.rgba.gz channel-controls/{line-low,loop-varying,turn-high}.rgba.gz; do test ! -e "tools/marker4_v7/$f" && jq -r --arg name "$f" '.alias_channel_original_base64[$name]' conformance/marker4-v7-finger-paint-host.json | base64 -d > "tools/marker4_v7/$f"; done
 ```
 
+Two dense saved Marker4 V7 trajectories matched the native host geometry and
+sample boundaries. Historical white-background RGB L1 errors for the public
+export were 32,325 / 34,857 / 75,006 and 46,561 / 49,347 / 104,857 in resvg /
+MuPDF / PDFium; generic fallback errors were much larger. These are bounded host
+controls, not device parity. Their source positions and channels are not
+anonymous, so the local native inputs and frames must remain private. The local
+`tools/marker4_v7/saved-dense-v312/replay.py` retains verification and capture
+entry points; it requires the pinned note, parser, native libraries and adapters.
+
 A note-derived Marker4 V8 host probe found that the parser's per-addition f32
 pressure recurrence, including its first difference from a historical f64
 recurrence at index 17, retained the same 341 geometry tuples at sizes 0.4 and
