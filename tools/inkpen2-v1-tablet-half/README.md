@@ -2,6 +2,8 @@
 
 Six synthetic tool-3 controls match tool-2 native geometry and RGBA bytes at 1440 × 2560 and 0.5×; see the retained [receipt](receipt.json). The scalable radial approximation remains excluded at this scale: historical local reader controls showed regressions, and a local length sweep established no safe threshold. The length-sweep evidence is not packaged in the tracked repository.
 
+The local acquisition scripts require `pins.json`, which is derivable from the tracked receipt. Before recapture, run `jq '.pins' tools/inkpen2-v1-tablet-half/receipt.json > tools/inkpen2-v1-tablet-half/pins.json`; its SHA-256 must be `cda0a3a403926af752d51856c87b4a6b893cfdd8a340e54960bc13404b477531`. The phase pin manifests also require those exact bytes.
+
 ## Explicit public half-grid viewport
 
 `RenderOptions::inkpen2_half_grid_viewport` opts into a fixed host-grid approximation for V1 InkPen2 and StraightInkPen2 on the 1440×2560 or 2560×1440 host profile. The caller asserts a whole-page, zero-translation, top-left viewport at exactly 0.5 output pixels per page unit, and supplies its output dimensions. A page whose dimensions do not match twice that viewport, a slice, replay, transformed descendant, translucent ink, enhanced antialiasing, or an unsupported stroke falls through to ordinary rendering. A PDF reader or SVG consumer must use the asserted raster grid; scalable output at other sizes or phases is not covered.
