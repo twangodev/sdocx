@@ -1298,11 +1298,7 @@ parity.
 The curved control fixture also retains the synthetic V1 tool matrix and a
 converted Fountain trajectory captured with V1 tool 1. The latter is a host
 setter control, not a saved AirBrush stroke; its isolated export experiment did
-not establish a production correction. Restore receipts when needed:
-
-```sh
-test ! -e tools/airbrush-note-v308/receipt.json && jq -jr '.converted_trajectory_original' conformance/airbrush-v1-curved-export-control.json > tools/airbrush-note-v308/receipt.json
-```
+not establish a production correction. Rust checks the retained source and frame.
 
 ## Historical mixed-pen loader and factory controls
 
