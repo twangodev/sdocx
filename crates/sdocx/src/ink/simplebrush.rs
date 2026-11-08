@@ -915,6 +915,30 @@ mod tests {
         };
         let (input_bytes, input) = read_json("alternate129.input.json");
         let (_, receipt) = read_json("receipt.json");
+        let summary = &fixture["alternate_tool0_native_summary"];
+        assert_eq!(
+            summary["capture_json_sha256"],
+            receipt["native_json_sha256"]
+        );
+        assert_eq!(
+            summary["native_geometry_sha256"],
+            receipt["native_geometry_sha256"]
+        );
+        assert_eq!(
+            summary["native_frame_sha256"],
+            receipt["native_frame_sha256"]
+        );
+        assert_eq!(summary["deferred_task_kinds"].as_array().unwrap().len(), 8);
+        for stage in ["vertex", "fragment"] {
+            let shader = &summary["embedded_shader"][stage];
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    Sha256::digest(shader["source"].as_str().unwrap().as_bytes())
+                ),
+                shader["sha256"]
+            );
+        }
         assert_eq!(
             format!("{:x}", Sha256::digest(&input_bytes)),
             receipt["input_json_sha256"]

@@ -1517,7 +1517,9 @@ used a fractional 2× transform on a 256×256 host-Mesa target. Their complete
 streams match the Rust `folded_long_strokes_match_complete_native_geometry`
 regression; a former one-lane final-coordinate discrepancy disappeared after
 SmPath distance clamping. The expanded-long fixture preserves the original
-receipt with geometry, full frames and capture pins. Restore it for recapture:
+receipt with geometry, full frames and capture pins. For the alternate tool-0
+control it also retains native shader source, queue task kinds, and event-array
+fingerprints; the repeated full trace was retired. Restore local inputs if needed:
 
 ```sh
 test ! -e conformance/simplebrush-long-audit/receipt.json && jq -r '.long_audit_original_gzip_base64' conformance/simplebrush-expanded-long-native.json | base64 -d | gzip -dc > conformance/simplebrush-long-audit/receipt.json
