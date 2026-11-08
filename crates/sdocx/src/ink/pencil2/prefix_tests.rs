@@ -220,6 +220,99 @@ fn nominal_period_native_overlap_is_not_identical() {
 }
 
 #[test]
+fn origin_prefix_controls_preserve_linked_native_evidence() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../conformance/pencil2-v14-page-prefix-native.json"
+    ))
+    .unwrap();
+    let originals = fixture["origin_prefix_controls_original"]
+        .as_object()
+        .unwrap();
+    let pins = [
+        (
+            "blend-receipt.json",
+            "788df3410b3142a000ec0feab5b9b87f0e069fa46df35ad3d9ca301c695382f0",
+        ),
+        (
+            "cpu-stage-receipt.json",
+            "29c51285cf122cd3898c6958a4cf9fae9c9ec7f796dfb284b60990d3f29ac1c7",
+        ),
+        (
+            "original-shader-blend-receipt.json",
+            "64c2af10ea5552cbea24ded0dd3851201a2ba32a04715fda99b48254197b0025",
+        ),
+        (
+            "original-shader-float-receipt.json",
+            "b10bbd39e3dc8271672e1fb16301398869fadc4d42466ca974442376ba513f34",
+        ),
+        (
+            "prefix-receipt.json",
+            "09eefc80052a8905cba01c05319ccef5803a3655f00e85601e96c20ba2823d1b",
+        ),
+        (
+            "rgba8-background-sweep-receipt.json",
+            "2dd92cb12f77d85505eb6b1c256f981a51fea96c36ad9b61c21a3c17c10caac0",
+        ),
+    ];
+    assert_eq!(originals.len(), pins.len());
+    let mut receipts = BTreeMap::new();
+    for (name, hash) in pins {
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(originals[name].as_str().unwrap())
+            .unwrap();
+        let mut original = Vec::new();
+        flate2::read::GzDecoder::new(compressed.as_slice())
+            .read_to_end(&mut original)
+            .unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(&original)), hash, "{name}");
+        receipts.insert(
+            name,
+            serde_json::from_slice::<serde_json::Value>(&original).unwrap(),
+        );
+    }
+    let prefix = &receipts["prefix-receipt.json"];
+    let cpu = &receipts["cpu-stage-receipt.json"];
+    let float = &receipts["original-shader-float-receipt.json"];
+    let backgrounds = &receipts["rgba8-background-sweep-receipt.json"];
+    assert_eq!(prefix["instance_count"], 84);
+    assert_eq!(prefix["first_different_prefix"], 62);
+    for row in prefix["prefixes"].as_array().unwrap() {
+        assert_eq!(
+            row["native"] != row["host"],
+            row["count"].as_u64().unwrap() >= 62
+        );
+    }
+    assert_eq!(prefix["geometry_sha256"], cpu["geometry_sha256"]);
+    assert_eq!(
+        prefix["geometry_sha256"],
+        float["results"]["geometry_sha256"]
+    );
+    assert_eq!(prefix["geometry_sha256"], backgrounds["geometry_sha256"]);
+    assert_eq!(
+        prefix["native_frame_zlib_sha256"],
+        cpu["native_frame_zlib_sha256"]
+    );
+    assert_eq!(
+        prefix["native_frame_zlib_sha256"],
+        float["results"]["frame_sha256"]
+    );
+    assert_eq!(
+        prefix["native_frame_zlib_sha256"],
+        backgrounds["full_frame_zlib_sha256"]
+    );
+    assert_eq!(cpu["native_float_receipt_sha256"], pins[3].1);
+    assert_eq!(backgrounds["background_count"], 256);
+    assert_eq!(
+        backgrounds["mismatching_backgrounds_by_quantized_alpha"]["52"],
+        0
+    );
+    assert_eq!(
+        backgrounds["mismatching_backgrounds_by_quantized_alpha"]["53"],
+        256
+    );
+}
+
+#[test]
 fn viewport_origin_controls_preserve_native_capture_and_baseline() {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../../conformance/pencil2-v14-expanded-viewport-sweep-native.json"

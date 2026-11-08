@@ -1797,6 +1797,18 @@ contract. The local `tools/pencil2_v14` prefix, varying and original-clipping
 scripts and receipts retain these controls. No production correction follows
 from them alone.
 
+Another synthetic origin-offset prefix control first differs from the host model
+at prefix 62 of 84. An isolated original-shader RGBA8 background sweep matched
+quantized alpha 52 across all 256 tested backgrounds; an RGBA32F diagnostic can
+change shader precision and does not establish the RGBA8 sub-byte result. These
+bounded host controls are preserved in the
+[prefix fixture](../../conformance/pencil2-v14-page-prefix-native.json). Restore
+the original receipts if needed:
+
+```sh
+for f in blend cpu-stage original-shader-blend original-shader-float prefix rgba8-background-sweep; do n="$f-receipt.json"; test ! -e "tools/pencil2-origin-offset/$n" && jq -r --arg n "$n" '.origin_prefix_controls_original[$n]' conformance/pencil2-v14-page-prefix-native.json | base64 -d | gzip -dc > "tools/pencil2-origin-offset/$n"; done
+```
+
 Six synthetic viewport controls are retained in the existing
 [viewport fixture](../../conformance/pencil2-v14-expanded-viewport-sweep-native.json).
 One- and two-pixel origin shifts preserved the recorded frames; shifts of four,
