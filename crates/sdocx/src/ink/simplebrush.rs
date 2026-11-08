@@ -673,6 +673,88 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "render")]
+    #[test]
+    fn retained_long_stroke_sources_and_frames_match_native() {
+        use base64::Engine as _;
+        use std::io::Read as _;
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-expanded-long-native.json"
+        ))
+        .unwrap();
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(fixture["long_audit_original_gzip_base64"].as_str().unwrap())
+            .unwrap();
+        let mut original = Vec::new();
+        flate2::read::GzDecoder::new(compressed.as_slice())
+            .read_to_end(&mut original)
+            .unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&original)),
+            "f9097445173605bf185c2c79aa4c58efb96493aa951453a9901ef6875879ee48"
+        );
+        let receipt: Value = serde_json::from_slice(&original).unwrap();
+        let f32_word = |v: &Value| {
+            let bytes: [u8; 4] = decode_hex(v.as_str().unwrap()).try_into().unwrap();
+            f32::from_le_bytes(bytes)
+        };
+        for name in ["129", "256"] {
+            let case = &receipt["cases"][name];
+            let source = &case["native_input"];
+            let points: Vec<_> = source["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| [f32_word(&p[0]), f32_word(&p[1])])
+                .collect();
+            let pressures: Vec<_> = source["pressure_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(f32_word)
+                .collect();
+            let samples = generate(NativeInput {
+                points: &points,
+                pressures: &pressures,
+                size: f32_word(&source["pen_size_f32_bits"]),
+                tool_type: source["tool_type"].as_i64().unwrap() as i32,
+                curve_enabled: source["curve_enabled"].as_bool().unwrap(),
+                max_samples: 32_768,
+            })
+            .unwrap();
+            assert_eq!(
+                samples.len() as u64,
+                case["geometry_records"].as_u64().unwrap()
+            );
+            let bytes: Vec<_> = samples
+                .into_iter()
+                .flatten()
+                .flat_map(f32::to_le_bytes)
+                .collect();
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&bytes)),
+                case["geometry_sha256"]
+            );
+            let frame =
+                &receipt["retained_native_frames"]["frames"][format!("{name}-frame.rgba.zlib")];
+            let palette = frame["palette_rgba8"].as_array().unwrap();
+            let mut rgba = Vec::new();
+            for run in frame["runs"].as_array().unwrap() {
+                let count = run[0].as_u64().unwrap() as usize;
+                let pixel = palette[run[1].as_u64().unwrap() as usize]
+                    .as_array()
+                    .unwrap();
+                assert_eq!(pixel.len(), 4);
+                for _ in 0..count {
+                    rgba.extend(pixel.iter().map(|v| v.as_u64().unwrap() as u8));
+                }
+            }
+            assert_eq!(rgba.len(), 256 * 256 * 4);
+            assert_eq!(format!("{:x}", Sha256::digest(&rgba)), case["frame_sha256"]);
+            assert_eq!(frame["sha256"], case["frame_sha256"]);
+        }
+    }
+
     #[test]
     fn note_derived_short_movements_match_native_vectors() {
         let saved: serde_json::Value = serde_json::from_str(include_str!(

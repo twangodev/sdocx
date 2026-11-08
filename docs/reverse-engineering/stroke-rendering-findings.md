@@ -1460,8 +1460,14 @@ Synthetic tool-2 controls at 129 points/size 20 and reversed 256 points/size 8
 used a fractional 2× transform on a 256×256 host-Mesa target. Their complete
 streams match the Rust `folded_long_strokes_match_complete_native_geometry`
 regression; a former one-lane final-coordinate discrepancy disappeared after
-SmPath distance clamping. The local `conformance/simplebrush-long-audit/receipt.json`
-retains geometry, full frames and capture pins. On a prepared host,
+SmPath distance clamping. The expanded-long fixture preserves the original
+receipt with geometry, full frames and capture pins. Restore it for recapture:
+
+```sh
+test ! -e conformance/simplebrush-long-audit/receipt.json && jq -r '.long_audit_original_gzip_base64' conformance/simplebrush-expanded-long-native.json | base64 -d | gzip -dc > conformance/simplebrush-long-audit/receipt.json
+```
+
+On a prepared host,
 `tools/simplebrush-long-audit/capture.py` accepts `POINT_COUNT`, `PROBE_SIZE`
 and `VARIANT=reverse`; its scratch dependencies are not a clean-checkout
 runtime. Drawing tasks and target clearing were host controlled.
