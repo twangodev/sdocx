@@ -1838,6 +1838,14 @@ retains the trace and probe receipts; restore them if needed:
 for f in caller-receipt.json matrix-decisive-receipt.json matrix-probe-receipt.json receipt.json; do test ! -e "tools/pencil2-offset-trace/$f" && jq -r --arg f "$f" '.offset_trace_original[$f]' crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json | base64 -d | gzip -dc > "tools/pencil2-offset-trace/$f"; done
 ```
 
+Seven synthetic first-point controls and their native uniform observations are
+retained in the lifecycle fixture alongside the Rust offset tests. Restore the
+original receipt for the local capture workflow if needed:
+
+```sh
+test ! -e tools/pencil2-first-point-offset/receipt.json && jq -r '.first_point_capture_gzip_base64' crates/sdocx/tests/fixtures/pencil2-offset-lifecycle-native.json | base64 -d | gzip -dc > tools/pencil2-first-point-offset/receipt.json
+```
+
 Synthetic Drawing matrix controls recorded offsets close to the input matrix
 translations across twelve tested matrices; direct-RT controls used a different
 offset and do not establish a general mapping. Two native texture uploads matched
