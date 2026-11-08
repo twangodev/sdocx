@@ -2883,6 +2883,49 @@ mod serialized_native_controls {
     }
 
     #[test]
+    fn serialized_glv1_capture_inputs_and_stream_match_native_receipt() {
+        use sha2::{Digest, Sha256};
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/brushpen-serialized/receipt.json"
+        ))
+        .unwrap();
+        let decode = |name: &str| -> Vec<u8> {
+            let hex = fixture["v1_original_bytes_hex"][name]
+                .as_str()
+                .unwrap()
+                .as_bytes();
+            let (pairs, remainder) = hex.as_chunks::<2>();
+            assert!(remainder.is_empty());
+            pairs
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect()
+        };
+        let hash = |bytes: &[u8]| format!("{:x}", Sha256::digest(bytes));
+        let capture = &fixture["cases"]["v1"];
+        assert_eq!(hash(&decode("v1-frame.bin")), capture["frame_sha256"]);
+        assert_eq!(hash(&decode("v1-table.bin")), capture["table_sha256"]);
+        let compressed = decode("v1-native-stream.zlib");
+        assert_eq!(
+            hash(&compressed),
+            "3130711798d011ddd825ed1e13540146e9de1a086b9a5c3a1459d2cc2382fd2d"
+        );
+        let mut stream = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut stream)
+            .unwrap();
+        assert_eq!(
+            stream.len() as u64,
+            capture["native_stream_bytes"].as_u64().unwrap()
+        );
+        assert_eq!(
+            stream.len() as u64,
+            capture["native_records"].as_u64().unwrap() * 44
+        );
+        assert_eq!(hash(&stream), capture["native_stream_sha256"]);
+    }
+
+    #[test]
     fn matches_controlled_serialized_glv10_native_streams() {
         let stroke = crate::decode::decode_stroke(
             include_bytes!("../../../../conformance/brushpen-serialized/v10-payload.bin"),

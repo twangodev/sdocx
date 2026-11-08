@@ -335,6 +335,13 @@ receipt and can be restored for the local capture workflow with:
 test ! -e conformance/brushpen-serialized/controls-receipt.json && jq -jr '.controls_receipt_original' conformance/brushpen-serialized/receipt.json > conformance/brushpen-serialized/controls-receipt.json
 ```
 
+The three synthetic V1 capture inputs are encoded in that same fixture. Restore
+them without overwriting existing files before using the native capture workflow:
+
+```sh
+for f in v1-frame.bin v1-table.bin v1-native-stream.zlib; do test ! -e "conformance/brushpen-serialized/$f" && jq -r --arg name "$f" '.v1_original_bytes_hex[$name]' conformance/brushpen-serialized/receipt.json | tr '[:lower:]' '[:upper:]' | basenc --base16 --decode > "conformance/brushpen-serialized/$f"; done
+```
+
 Two-submission host controls exercised translated, varying-pressure and distinct-color
 strokes on controlled priors. The Rust host canvas matched the captured overlap frames
 for those cases. These observations do not establish general page composition or
