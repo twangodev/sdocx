@@ -1526,3 +1526,44 @@ at 1×; 2× and 4× improved for the sampled cases but retained reader-dependent
 errors. Actual texture transforms, shader precision, stamp geometry, wrapping,
 quantization and repeated blending remain open. Neither this component control
 nor the mesh experiment establishes device, saved-note or general PDF parity.
+
+## Pencil2 source and clipping controls
+
+Two note-derived Fountain trajectories were reused as fresh setter-built
+Pencil2 V14 inputs, not as saved Pencil2 strokes. For an 87-point source, the
+pre-Update native descriptor and Rust sampler produced 83 records; lane 8 of
+three records differed by one f32 ULP. A host-only `sincosf` intervention
+matched those records, without establishing portable or device behavior. A
+separate 231-point source produced 124 records with two one-ULP differences in
+lane 8; the maintained `note_source_preserves_native_geometry_except_two_known_ulp_lanes`
+test checks that descriptor. Neither native descriptor has been independently
+confirmed as the submitted GPU buffer. The local `tools/pencil2-second-source`
+and `tools/pencil2-note-source-v300` scripts and receipts retain the controls;
+recapture uses a fresh `SDOCX_PENCIL2_FRESH_FRAME_DIR`, local native libraries
+and incompletely pinned harness dependencies. The second-source geometry and
+host-math comparisons use its `geometry_test.sh` and `sincos-control.sh`.
+
+A translated, pressure-scaled version of the 87-point source historically
+matched the full opaque host frame in canvas, PNG, image-backed SVG and both
+PDF readers. This used an intervened queue, explicit native Update/Draw and a
+setter-built object; it does not establish saved Pencil2 admission, ordinary
+queue behavior or device fidelity. The local `tools/pencil2-changed-input`
+receipt records the historical hashes; native acquisition uses
+`tools/pencil2-control/native-capture.py` and a fresh frame directory.
+
+A synthetic negative-Y 2× prefix control observed a one-pixel paint difference
+around a nearest-mask row boundary. A recompiled shader diagnostic showed
+viewport-dependent coordinates on opposite sides of that boundary; a separate
+original-shader intervention directly reproduced the paint difference. Neither
+measures the original varying or establishes the full clipping/interpolation
+contract. The local `tools/pencil2_v14` prefix, varying and original-clipping
+scripts and receipts retain these controls. No production correction follows
+from them alone.
+
+Historical source-cell SVG opacity strata reduced measured error on one
+note-derived host scene and separate synthetic scenes, but produced multi-MB
+SVGs and retained substantial reader differences; a separately generated PDF
+was not the public exporter. The prototypes were retired. Geometry, phase,
+translucent export, transforms, cross-reader coverage and resource limits
+remain unresolved, so these controls do not justify production dispatch or
+claim device parity.
