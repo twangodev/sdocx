@@ -237,6 +237,110 @@ fn viewport_and_phase_controls_match_native_error_bounds() {
 }
 
 #[test]
+fn colored_native_overlap_matches_explicit_grid_transport() {
+    use base64::Engine as _;
+    use sha2::{Digest, Sha256};
+    use std::io::Read as _;
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/inkpen2-v1-screen-paint-native.json"
+    ))
+    .unwrap();
+    let originals = &fixture["half_grid_color_original"];
+    let read = |name: &str| -> serde_json::Value {
+        serde_json::from_str(originals[name].as_str().unwrap()).unwrap()
+    };
+    let frame = |capture: &serde_json::Value| {
+        let data = base64::engine::general_purpose::STANDARD
+            .decode(capture["rgba_zlib_base64"].as_str().unwrap())
+            .unwrap();
+        let mut rgba = Vec::new();
+        flate2::read::ZlibDecoder::new(data.as_slice())
+            .read_to_end(&mut rgba)
+            .unwrap();
+        assert_eq!(rgba.len(), 64 * 48 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&rgba)),
+            capture["rgba_sha256"]
+        );
+        rgba
+    };
+    let white = read("white-native-turn.json");
+    frame(&white);
+    for name in [
+        "nonwhite-native-turn.json",
+        "overlap-native.json",
+        "overlap-colors-native.json",
+    ] {
+        let receipt = read(name);
+        for target in ["transparent", "background"] {
+            frame(&receipt["captures"][target]);
+        }
+    }
+    let receipt = read("overlap-colors-native.json");
+    let capture = &receipt["captures"]["transparent"];
+    let decode = |name: &str| {
+        capture[name]
+            .as_str()
+            .unwrap()
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect::<Vec<_>>()
+    };
+    // The overlap capture's geometry field was overwritten by the second
+    // stroke. The first stroke is retained in the pinned turn receipt.
+    let source: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/inkpen2-v1-tablet-half/receipt.json"
+    ))
+    .unwrap();
+    let first = source["cases"]["turn"]["geometry_hex"]
+        .as_str()
+        .unwrap()
+        .as_bytes()
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+        .collect::<Vec<_>>();
+    let second = decode("second_geometry_hex");
+    let svg = transport_colored(
+        Grid {
+            width: 64,
+            height: 48,
+            translation: [16., 16.],
+        },
+        &[(&first, [255, 0, 0]), (&second, [0, 0, 255])],
+        [4000, 400_000, 12_288, 1_000_000],
+    )
+    .unwrap();
+    let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+    let mut pixels = resvg::tiny_skia::Pixmap::new(64, 48).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pixels.as_mut(),
+    );
+    let native = frame(capture);
+    let mut l1 = 0_u64;
+    for y in 0..48 {
+        for x in 0..64 {
+            let a = (y * 64 + x) * 4;
+            let b = ((47 - y) * 64 + x) * 4;
+            for c in 0..4 {
+                l1 += u64::from(pixels.data()[a + c].abs_diff(native[b + c]));
+            }
+        }
+    }
+    assert!(
+        l1 <= receipt["measurements"]["svg_premultiplied_rgba_l1"]
+            .as_u64()
+            .unwrap()
+    );
+}
+
+#[test]
 fn explicit_final_grid_source_public_transport() {
     use base64::Engine as _;
     use std::io::Read as _;
