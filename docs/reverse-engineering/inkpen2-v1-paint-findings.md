@@ -140,4 +140,4 @@ PY
 
 The [tool-2/tool-3](../../tools/inkpen2-v1-tool3/receipt.json) and [extended](../../tools/inkpen2-v1-tool3/extended-receipt.json) host receipts retain paired geometry and frame hashes. The uncurved zigzag supports the native tool alias only; the public profile uses its standard curve. The `inkpen2_v1_tool3_native_alias_exports`, `inkpen2_v1_tool3_extended_native_alias_exports` and `inkpen2_v1_landscape_expanded_exports` Rust tests check public SVG and direct PDF equality; the extended test validates decoded native hashes. The PDF reference composites transparent host frames over paper. Reader comparisons are historical and do not establish saved-note, Android device, arbitrary-transform or complete application parity.
 
-Local recapture uses `tools/inkpen2-v1-tool3/capture.py` and `extended_capture.py`. They require the native prerequisites of `tools/inkpen-capture/inkpen2_v1_paint_native.py` and output JSON for comparison with their receipts. The Rust export tests require the `pdf` feature.
+The Rust export tests require the `pdf` feature.
