@@ -14865,6 +14865,65 @@ mod tests {
     }
 
     #[test]
+    fn airbrush_converted_trajectory_capture_preserves_source_and_frame() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        use std::io::Read as _;
+
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/airbrush-v1-curved-export-control.json"
+        ))
+        .unwrap();
+        let receipt: serde_json::Value =
+            serde_json::from_str(fixture["converted_trajectory_original"].as_str().unwrap())
+                .unwrap();
+        let source = include_bytes!("../../../tools/marker2-note-v306/receipt.json");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(source)),
+            receipt["source_sha256"]
+        );
+        let source: serde_json::Value = serde_json::from_slice(source).unwrap();
+        let decode_hex = |s: &str| -> Vec<u8> {
+            s.as_bytes()
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect()
+        };
+        let actual_points = decode_hex(receipt["input"]["points"]["data_hex"].as_str().unwrap());
+        let expected_points: Vec<u8> = source["input"]["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|point| point.as_array().unwrap().iter())
+            .flat_map(|coordinate| {
+                let bits = decode_hex(coordinate.as_str().unwrap());
+                let value = f32::from_le_bytes(bits.try_into().unwrap());
+                (value + 100.).to_le_bytes()
+            })
+            .collect();
+        assert_eq!(actual_points, expected_points);
+        assert_eq!(actual_points.len() / 8, 57);
+        assert_eq!(
+            decode_hex(receipt["vector_hex"].as_str().unwrap()).len(),
+            19 * 16
+        );
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(receipt["frame"]["data_base64"].as_str().unwrap())
+            .unwrap();
+        let mut frame = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut frame)
+            .unwrap();
+        assert_eq!(frame.len(), 256 * 256 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&frame)),
+            receipt["frame"]["sha256"]
+        );
+    }
+
+    #[test]
     fn saved_v1_airbrush_tool_matrix_matches_native_vectors() {
         use sha2::{Digest, Sha256};
         let fixture: serde_json::Value = serde_json::from_str(include_str!(

@@ -1285,11 +1285,14 @@ transport also left RGB differences and is not an independent paint reconstructi
 These host observations do not establish device, saved-note or arbitrary-scale
 parity.
 
-The synthetic V1 tool-matrix receipt is preserved in the curved control fixture.
-Restore it for the local capture workflow without overwriting an existing file:
+The curved control fixture also retains the synthetic V1 tool matrix and a
+converted Fountain trajectory captured with V1 tool 1. The latter is a host
+setter control, not a saved AirBrush stroke; its isolated export experiment did
+not establish a production correction. Restore receipts when needed:
 
 ```sh
 test ! -e tools/pen-capture/airbrush_v1_tool_receipt.json && jq -jr '.tool_matrix_original' conformance/airbrush-v1-curved-export-control.json > tools/pen-capture/airbrush_v1_tool_receipt.json
+test ! -e tools/airbrush-note-v308/receipt.json && jq -jr '.converted_trajectory_original' conformance/airbrush-v1-curved-export-control.json > tools/airbrush-note-v308/receipt.json
 ```
 
 ## Historical mixed-pen loader and factory controls
