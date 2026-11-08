@@ -1390,16 +1390,13 @@ Two sequential synthetic host captures seeded the second stroke with the first f
 The Rust `native_edge_translation_preserves_overlapping_pixels` regression checks
 the retained native edge and translated frames, hashes and overlapping pixels.
 The `edge_and_sequential_sources_match_native_vectors` Rust regression also
-checks their source geometry. To run the local `tools/magicpen-phase/clip/translation.py`
-capture workflow, restore its input and two historical receipts first:
+checks their source geometry. Restore the input for the local edge capture with:
 
 ```sh
 test ! -e tools/magicpen-phase/clip/inputs.json && jq -jr '.edge_and_stroke_inputs_original.edge_json' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/clip/inputs.json
-test ! -e tools/magicpen-phase/clip/native-receipt.json && jq '.edge_translation_controls.native' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/clip/native-receipt.json
-test ! -e tools/magicpen-phase/clip/translation-receipt.json && jq '.edge_translation_controls.translated' conformance/magicpen-phase-export-host.json > tools/magicpen-phase/clip/translation-receipt.json
 ```
 
-Both extracts reproduce the original bytes; native and scratch-runtime
+The input reproduces the original bytes; native and scratch-runtime
 prerequisites remain separate. The `native_cell_frames_match_opaque_background_composition`
 Rust regression checks the retained standard and variable-radius frame pairs.
 The `cell_no_curve_sources_match_native_vectors` Rust test also compares all
