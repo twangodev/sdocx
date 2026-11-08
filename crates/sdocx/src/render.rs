@@ -14865,6 +14865,86 @@ mod tests {
     }
 
     #[test]
+    fn saved_v1_airbrush_tool_matrix_matches_native_vectors() {
+        use sha2::{Digest, Sha256};
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/airbrush-v1-curved-export-control.json"
+        ))
+        .unwrap();
+        let native: serde_json::Value =
+            serde_json::from_str(fixture["tool_matrix_original"].as_str().unwrap()).unwrap();
+        let input = &fixture["input"];
+        let mut document = public_airbrush_v2_document();
+        let stroke = document.pages[0].strokes_mut().next().unwrap();
+        stroke.points = input["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| Point {
+                x: p[0].as_f64().unwrap(),
+                y: p[1].as_f64().unwrap(),
+            })
+            .collect();
+        stroke.pressures = input["pressure"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_f64().unwrap())
+            .collect();
+        stroke.tilts = input["tilt"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_f64().unwrap())
+            .collect();
+        stroke.orientations = input["orientation"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_f64().unwrap())
+            .collect();
+        stroke.timestamps = input["timestamps"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_i64().unwrap())
+            .collect();
+        stroke.pen_width = input["size"].as_f64().unwrap() as f32;
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.advanced_settings = None;
+        rendering.style.pen_size = Some(stroke.pen_width);
+        rendering.style.color_argb = Some(0x8044ee11);
+        for tool in [0, 1, 2, 3] {
+            stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
+            let output = crate::ink::airbrush::saved_from_stroke(stroke, true);
+            if tool == 1 {
+                assert!(output.is_none());
+                continue;
+            }
+            let output = output.unwrap();
+            let bytes: Vec<u8> = output
+                .rows
+                .iter()
+                .flatten()
+                .flat_map(|v| v.to_le_bytes())
+                .collect();
+            let case = &native["cases"][tool.to_string()];
+            assert_eq!(
+                output.rows.len() as u64,
+                case["producer_record_count"].as_u64().unwrap()
+            );
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&bytes)),
+                case["producer_vector_sha256"]
+            );
+        }
+        assert_ne!(
+            native["cases"]["1"]["producer_vector_sha256"],
+            native["cases"]["2"]["producer_vector_sha256"]
+        );
+    }
+
+    #[test]
     fn saved_v1_profile_keeps_unsupported_fallbacks() {
         let mut document = public_airbrush_v2_document();
         document.pages[0]
