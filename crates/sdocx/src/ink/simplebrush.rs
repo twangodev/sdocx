@@ -755,6 +755,78 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "render")]
+    #[test]
+    fn ordered_native_queue_logs_match_retained_mapping() {
+        use base64::Engine as _;
+        use std::io::Read as _;
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-fringe-width-comparison.json"
+        ))
+        .unwrap();
+        let originals = &fixture["ordered_queue_original_gzip_base64"];
+        let read = |name: &str| {
+            let compressed = base64::engine::general_purpose::STANDARD
+                .decode(originals[name].as_str().unwrap())
+                .unwrap();
+            let mut raw = Vec::new();
+            flate2::read::GzDecoder::new(compressed.as_slice())
+                .read_to_end(&mut raw)
+                .unwrap();
+            raw
+        };
+        let mapping: Value = serde_json::from_slice(&read("queue-mapping-receipt.json")).unwrap();
+        let first: Value = serde_json::from_slice(&read("drain-first-receipt.json")).unwrap();
+        let pure: Value = serde_json::from_str(
+            fixture["ordered_overlap_original"]["receipt"]
+                .as_str()
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(first["dispatched"].as_array().unwrap().len(), 8);
+        for (i, entry) in first["dispatched"].as_array().unwrap().iter().enumerate() {
+            assert_eq!(entry["sequence"].as_u64().unwrap(), i as u64);
+        }
+        assert_eq!(first["verdict"]["draw_forwarded_once"], true);
+        assert_eq!(first["verdict"]["paint_clean"], true);
+        for name in ["long-short", "short-long"] {
+            let path = format!("tools/simplebrush-v69/{name}.json");
+            let raw = read(&format!("{name}.json"));
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&raw)),
+                mapping["input_sha256"][&path]
+            );
+            let capture: Value = serde_json::from_slice(&raw).unwrap();
+            let queue = capture["queue_submissions"].as_array().unwrap();
+            assert_eq!(queue.len(), 16);
+            let mapped = &mapping["cases"][&path];
+            let tail = mapped["sequences_8_to_15"].as_array().unwrap();
+            assert_eq!(tail.len(), 8);
+            for (i, row) in queue.iter().enumerate() {
+                assert_eq!(row["sequence"].as_u64().unwrap(), i as u64);
+                assert_eq!(row["accepted"], true);
+                assert_eq!(row["sequence"], pure["cases"][name]["task_sequences"][i]);
+                if i >= 8 {
+                    let summary = &tail[i - 8];
+                    assert_eq!(summary["sequence"], row["sequence"]);
+                    assert_eq!(summary["phase"], row["phase"]);
+                    assert_eq!(summary["vtable"], row["task_vtable_symbol"]);
+                    assert_eq!(summary["payload_hex"], row["task_bytes_at_submission"]);
+                }
+            }
+            for field in [
+                "delete_8_matches_transport_6",
+                "delete_14_matches_transport_12",
+                "render_rt_equal",
+                "render_canvas_equal",
+                "release_tasks_same_payload",
+            ] {
+                assert_eq!(mapped[field], true, "{name}: {field}");
+            }
+            assert_eq!(mapped["release_argument"], 0);
+        }
+    }
+
     #[test]
     fn note_derived_short_movements_match_native_vectors() {
         let saved: serde_json::Value = serde_json::from_str(include_str!(

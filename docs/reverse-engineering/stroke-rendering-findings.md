@@ -1502,6 +1502,7 @@ comparison fixture; restore them for local replay without overwriting files:
 ```sh
 test ! -e tools/simplebrush-v69/drain-pure-receipt.json && jq -jr '.ordered_overlap_original.receipt' conformance/simplebrush-fringe-width-comparison.json > tools/simplebrush-v69/drain-pure-receipt.json
 for f in long-short short-long; do test ! -e "tools/simplebrush-v69/$f-pure.rgba.zlib" && jq -r --arg name "$f" '.ordered_overlap_original.frames_hex[$name]' conformance/simplebrush-fringe-width-comparison.json | tr '[:lower:]' '[:upper:]' | basenc --base16 --decode > "tools/simplebrush-v69/$f-pure.rgba.zlib"; done
+for f in drain-first-receipt.json long-short.json short-long.json queue-mapping-receipt.json; do test ! -e "tools/simplebrush-v69/$f" && jq -r --arg name "$f" '.ordered_queue_original_gzip_base64[$name]' conformance/simplebrush-fringe-width-comparison.json | base64 -d | gzip -dc > "tools/simplebrush-v69/$f"; done
 ```
 
 A historical gradient-stop change helped those two overlaps without showing a
