@@ -419,6 +419,101 @@ fn mixed_scene_native_frames_and_line_defaults_are_preserved() {
 }
 
 #[test]
+fn native_color_matrix_preserves_alpha_and_grid_transport() {
+    use base64::Engine as _;
+    use sha2::{Digest, Sha256};
+    use std::io::Read as _;
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/inkpen2-v1-screen-paint-native.json"
+    ))
+    .unwrap();
+    let packed = base64::engine::general_purpose::STANDARD
+        .decode(
+            fixture["color_matrix_original_gzip_base64"]
+                .as_str()
+                .unwrap(),
+        )
+        .unwrap();
+    let mut original = Vec::new();
+    flate2::read::GzDecoder::new(packed.as_slice())
+        .read_to_end(&mut original)
+        .unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&original)),
+        "bf7289ea03c49cb59103067d7647036587c7ab509fd079740491c30c074c6520"
+    );
+    let receipt: serde_json::Value = serde_json::from_slice(&original).unwrap();
+    let cases = receipt["cases"].as_object().unwrap();
+    assert_eq!(cases.len(), 10);
+    for (name, row) in cases {
+        let data = base64::engine::general_purpose::STANDARD
+            .decode(row["rgba_zlib_base64"].as_str().unwrap())
+            .unwrap();
+        let mut rgba = Vec::new();
+        flate2::read::ZlibDecoder::new(data.as_slice())
+            .read_to_end(&mut rgba)
+            .unwrap();
+        assert_eq!(rgba.len(), 64 * 48 * 4);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&rgba)),
+            row["rgba_sha256"],
+            "{name}"
+        );
+        let geometry = row["geometry_hex"]
+            .as_str()
+            .unwrap()
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&geometry)),
+            row["geometry_sha256"]
+        );
+        if name.ends_with(":transparent") {
+            let argb = row["source_color_argb"].as_u64().unwrap() as u32;
+            let color = [(argb >> 16) as u8, (argb >> 8) as u8, argb as u8];
+            let svg = transport_colored(
+                Grid {
+                    width: 64,
+                    height: 48,
+                    translation: [16., 16.],
+                },
+                &[(&geometry, color)],
+                [2000, 200_000, 6144, 500_000],
+            )
+            .unwrap();
+            let tree = resvg::usvg::Tree::from_str(&svg, &Default::default()).unwrap();
+            let mut pixels = resvg::tiny_skia::Pixmap::new(64, 48).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixels.as_mut(),
+            );
+            let mut error = 0_u64;
+            for y in 0..48 {
+                for x in 0..64 {
+                    let a = (y * 64 + x) * 4;
+                    let b = ((47 - y) * 64 + x) * 4;
+                    for c in 0..4 {
+                        error += u64::from(pixels.data()[a + c].abs_diff(rgba[b + c]));
+                    }
+                }
+            }
+            assert!(error <= 200, "{name}: RGBA error {error}");
+        }
+    }
+    for background in ["transparent", "white"] {
+        assert_eq!(
+            cases[&format!("80336699:{background}")]["rgba_sha256"],
+            cases[&format!("20336699:{background}")]["rgba_sha256"]
+        );
+    }
+}
+
+#[test]
 fn explicit_final_grid_source_public_transport() {
     use base64::Engine as _;
     use std::io::Read as _;
