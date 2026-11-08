@@ -99,11 +99,11 @@ The optional export hook, reader comparator, and derived PDF receipt were remove
 
 Historical local synthetic landscape controls compared 2560 × 1440 with 1440 × 2560 at 1× and 2×. Their sampled native geometry and host-Mesa frames matched the portrait counterparts, and public SVG and direct PDF reduced aggregate error against generic output in resvg, MuPDF and PDFium. The original control covered tools 2 and 3; expanded tool-3 controls sampled both pen names and null or literal `1;` settings. The [landscape](../../tools/inkpen2-v1-landscape/receipt.json) and [expanded](../../tools/inkpen2-v1-landscape-expanded/receipt.json) receipts retain the captured streams and frames; the historical reader-comparison scaffolding is not packaged. Other trajectories extrapolate from these host controls. The V1 landscape profile admits both names and settings at those scales. The separate [experimental half-grid viewport](../../tools/inkpen2-v1-tablet-half/README.md) opts into an asserted fixed 0.5× grid with per-stroke fallback and page work limits. Device and saved-note parity remain unverified.
 
-Three original half-grid control receipts are preserved in the screen-paint
+Original half-grid control receipts are preserved in the screen-paint
 fixture; restore them for the local capture workflows without overwriting files:
 
 ```sh
-for f in integer-phase.json translated-phase.json zero-width-native.json; do test ! -e "tools/inkpen2-v1-tablet-half/$f" && jq -jr --arg name "$f" '.half_grid_controls_original[$name]' conformance/inkpen2-v1-screen-paint-native.json > "tools/inkpen2-v1-tablet-half/$f"; done
+for f in integer-phase.json zero-width-native.json; do test ! -e "tools/inkpen2-v1-tablet-half/$f" && jq -jr --arg name "$f" '.half_grid_controls_original[$name]' conformance/inkpen2-v1-screen-paint-native.json > "tools/inkpen2-v1-tablet-half/$f"; done
 test ! -e tools/inkpen2-v1-tablet-half/phase-pins.json && jq -jr '.half_grid_more_original["phase-pins.json"]' conformance/inkpen2-v1-screen-paint-native.json > tools/inkpen2-v1-tablet-half/phase-pins.json
 for f in white-native-turn.json nonwhite-native-turn.json overlap-native.json overlap-colors-native.json; do test ! -e "tools/inkpen2-v1-tablet-half/$f" && jq -jr --arg name "$f" '.half_grid_color_original[$name]' conformance/inkpen2-v1-screen-paint-native.json > "tools/inkpen2-v1-tablet-half/$f"; done
 for f in mixed-scene-native-line-getters-receipt.json mixed-scene-native-line-receipt-v2.json mixed-scene-offset-input.json mixed-scene-rotated-input.json; do test ! -e "tools/inkpen2-v1-tablet-half/$f" && jq -jr --arg name "$f" '.mixed_scene_original[$name]' conformance/inkpen2-v1-screen-paint-native.json > "tools/inkpen2-v1-tablet-half/$f"; done

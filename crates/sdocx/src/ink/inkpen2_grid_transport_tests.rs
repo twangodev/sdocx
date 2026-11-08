@@ -128,7 +128,60 @@ fn zero_width_native_frames_match_explicit_grid_model() {
     assert_eq!(matching["rgba_sha256"], zero["cases"][0]["rgba_sha256"]);
     // The historical predictor recorded a known error at this quad phase.
     assert_eq!(matching["metrics"]["mismatches"], 4);
-    assert_eq!(translated["cases"].as_array().unwrap().len(), 8);
+    let captures: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/inkpen2-v1-tablet-half/receipt.json"
+    ))
+    .unwrap();
+    let translated_cases = translated["cases"].as_array().unwrap();
+    assert_eq!(translated_cases.len(), 8);
+    for row in translated_cases {
+        let name = row["case"].as_str().unwrap();
+        let hex = captures["cases"][name]["geometry_hex"].as_str().unwrap();
+        let geometry: Vec<_> = hex
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect();
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(row["rgba_zlib_base64"].as_str().unwrap())
+            .unwrap();
+        let mut rgba = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut rgba)
+            .unwrap();
+        assert_eq!(rgba.len(), 64 * 48 * 4);
+        assert_eq!(format!("{:x}", Sha256::digest(&rgba)), row["rgba_sha256"]);
+        let dx = row["translation"][0].as_f64().unwrap();
+        let dy = row["translation"][1].as_f64().unwrap();
+        let grid = model::grid(
+            &geometry,
+            64,
+            48,
+            0.5,
+            16. + dx,
+            16. + dy,
+            [2000, 200_000, 6144],
+        )
+        .unwrap();
+        let mut sum = 0_u64;
+        let mut max = 0_u8;
+        for (index, pixel) in rgba.as_chunks::<4>().0.iter().enumerate() {
+            let alpha = grid
+                .get(&((index % 64) as i32, (index / 64) as i32))
+                .copied()
+                .unwrap_or(0);
+            let error = pixel[3].abs_diff(alpha);
+            sum += u64::from(error);
+            max = max.max(error);
+        }
+        assert!(
+            sum <= row["metrics"]["absolute_error"].as_u64().unwrap(),
+            "{name}: {dx}, {dy}"
+        );
+        assert!(max <= 1, "{name}: {dx}, {dy}");
+    }
 }
 
 #[test]
