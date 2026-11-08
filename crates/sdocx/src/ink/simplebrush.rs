@@ -619,6 +619,61 @@ mod tests {
     }
 
     #[test]
+    fn ordered_native_overlap_frames_preserve_capture_observations() {
+        use std::io::Read as _;
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/simplebrush-fringe-width-comparison.json"
+        ))
+        .unwrap();
+        let original = &fixture["ordered_overlap_original"];
+        let receipt: Value = serde_json::from_str(original["receipt"].as_str().unwrap()).unwrap();
+        let mut frames = Vec::new();
+        for name in ["long-short", "short-long"] {
+            let case = &receipt["cases"][name];
+            let compressed = decode_hex(original["frames_hex"][name].as_str().unwrap());
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&compressed)),
+                case["compressed_sha256"]
+            );
+            let mut frame = Vec::new();
+            flate2::read::ZlibDecoder::new(compressed.as_slice())
+                .read_to_end(&mut frame)
+                .unwrap();
+            assert_eq!(frame.len(), 256 * 256 * 4);
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&frame)),
+                case["frame_sha256"]
+            );
+            assert_eq!(case["gles_draw_count"], 2);
+            assert_eq!(
+                frame
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .filter(|p| p[3] != 0)
+                    .count(),
+                5288
+            );
+            assert_eq!(case["nonzero_alpha_pixels"], 5288);
+            frames.push(frame);
+        }
+        let first = frames[0].as_chunks::<4>().0;
+        let second = frames[1].as_chunks::<4>().0;
+        assert_eq!(
+            first.iter().zip(second).filter(|(a, b)| a != b).count(),
+            328
+        );
+        assert_eq!(
+            first
+                .iter()
+                .zip(second)
+                .filter(|(a, b)| a[3] != b[3])
+                .count(),
+            2
+        );
+    }
+
+    #[test]
     fn note_derived_short_movements_match_native_vectors() {
         let saved: serde_json::Value = serde_json::from_str(include_str!(
             "../../tests/assets/fountain-v14/saved-source-29.json"

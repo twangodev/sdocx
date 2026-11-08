@@ -1470,6 +1470,13 @@ not fully pinned. Two ordered overlap captures under `tools/simplebrush-v69`
 retained all 5,288 native alpha-support pixels in resvg with respective summed
 RGBA errors 22,080 and 21,159 after a post-export transform. This is not a
 public transform API or native PDF export result.
+Their original pure-drain receipt and frames are preserved in the fringe
+comparison fixture; restore them for local replay without overwriting files:
+
+```sh
+test ! -e tools/simplebrush-v69/drain-pure-receipt.json && jq -jr '.ordered_overlap_original.receipt' conformance/simplebrush-fringe-width-comparison.json > tools/simplebrush-v69/drain-pure-receipt.json
+for f in long-short short-long; do test ! -e "tools/simplebrush-v69/$f-pure.rgba.zlib" && jq -r --arg name "$f" '.ordered_overlap_original.frames_hex[$name]' conformance/simplebrush-fringe-width-comparison.json | tr '[:lower:]' '[:upper:]' | basenc --base16 --decode > "tools/simplebrush-v69/$f-pure.rgba.zlib"; done
+```
 
 A historical gradient-stop change helped those two overlaps without showing a
 general single-stroke improvement; an eight-sector prototype worsened the
