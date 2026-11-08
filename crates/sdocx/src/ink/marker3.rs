@@ -1338,6 +1338,46 @@ mod tests {
     }
 
     #[test]
+    fn fractional_saved_size_matches_native_integer_width_control() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/marker3-v5-zero-width-native.json"
+        ))
+        .unwrap();
+        let originals = &fixture["fraction_scale_original"];
+        let receipt: serde_json::Value =
+            serde_json::from_str(originals["fraction.json"].as_str().unwrap()).unwrap();
+        let pins: serde_json::Value =
+            serde_json::from_str(originals["scale-hashes.json"].as_str().unwrap()).unwrap();
+        assert_eq!(
+            pins["scratch/apk-analysis-native/arm64-v8a/libSPenMarker3.so"],
+            "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5"
+        );
+        let native = &receipt["frames"];
+        assert_eq!(
+            native["fractional"]["drawing-paint-positive.rgba"],
+            native["integer"]["drawing-paint-positive.rgba"]
+        );
+        assert_ne!(
+            native["fractional"]["drawing-paint-positive.rgba"],
+            native["next"]["drawing-paint-positive.rgba"]
+        );
+        let caller = caller_fixture();
+        let mut stroke = caller_stroke(&caller["cases"]["marker3_linked_saved1:5:tool2:curve1"]);
+        let mut sample = |size| {
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            prepare(&stroke).unwrap()
+        };
+        let integer = sample(1.);
+        let fractional = sample(1.9);
+        let next = sample(2.);
+        assert_eq!(integer.points, fractional.points);
+        assert_eq!(integer.radii, fractional.radii);
+        assert_eq!(integer.sample_ends, fractional.sample_ends);
+        assert!(integer.radii.iter().all(|&r| r == 1.));
+        assert!(next.radii.iter().all(|&r| r == 1.5));
+    }
+
+    #[test]
     fn saved_size_controls_radius_independently_of_presentation_width() {
         let fixture = caller_fixture();
         let case = &fixture["cases"]["marker3_linked_saved1:5:tool2:curve1"];

@@ -1501,6 +1501,14 @@ test ! -e tools/simplebrush-v74/first-instance.rgba.zlib && jq -r '.isolated_nat
 
 ## Marker alias and channel host controls
 
+The Marker3 fractional-size receipt and scale-capture pins are preserved in the
+zero-width fixture; restore them for local capture without overwriting files:
+
+```sh
+test ! -e tools/marker3-fraction/receipt.json && jq -jr '.fraction_scale_original["fraction.json"]' conformance/marker3-v5-zero-width-native.json > tools/marker3-fraction/receipt.json
+test ! -e tools/marker3-scale/hashes.json && jq -jr '.fraction_scale_original["scale-hashes.json"]' conformance/marker3-v5-zero-width-native.json > tools/marker3-scale/hashes.json
+```
+
 Synthetic Marker3/StraightMarker tool-2 pairs were captured through native
 Drawing and a host RTV1 bridge, including clipped, fractional, self-crossing
 and explicit-empty-setting paths. The paired controls compare complete frames,
