@@ -99,6 +99,13 @@ The optional export hook, reader comparator, and derived PDF receipt were remove
 
 Historical local synthetic landscape controls compared 2560 × 1440 with 1440 × 2560 at 1× and 2×. Their sampled native geometry and host-Mesa frames matched the portrait counterparts, and public SVG and direct PDF reduced aggregate error against generic output in resvg, MuPDF and PDFium. The original control covered tools 2 and 3; expanded tool-3 controls sampled both pen names and null or literal `1;` settings. The [landscape](../../tools/inkpen2-v1-landscape/receipt.json) and [expanded](../../tools/inkpen2-v1-landscape-expanded/receipt.json) receipts retain the captured streams and frames; the historical reader-comparison scaffolding is not packaged. Other trajectories extrapolate from these host controls. The V1 landscape profile admits both names and settings at those scales. The separate [experimental half-grid viewport](../../tools/inkpen2-v1-tablet-half/README.md) opts into an asserted fixed 0.5× grid with per-stroke fallback and page work limits. Device and saved-note parity remain unverified.
 
+Three original half-grid control receipts are preserved in the screen-paint
+fixture; restore them for the local capture workflows without overwriting files:
+
+```sh
+for f in integer-phase.json translated-phase.json zero-width-native.json; do test ! -e "tools/inkpen2-v1-tablet-half/$f" && jq -jr --arg name "$f" '.half_grid_controls_original[$name]' conformance/inkpen2-v1-screen-paint-native.json > "tools/inkpen2-v1-tablet-half/$f"; done
+```
+
 
 The [tool-2/tool-3](../../tools/inkpen2-v1-tool3/receipt.json) and [extended](../../tools/inkpen2-v1-tool3/extended-receipt.json) host receipts retain paired geometry and frame hashes. The uncurved zigzag supports the native tool alias only; the public profile uses its standard curve. The `inkpen2_v1_tool3_native_alias_exports`, `inkpen2_v1_tool3_extended_native_alias_exports` and `inkpen2_v1_landscape_expanded_exports` Rust tests check public SVG and direct PDF equality; the extended test validates decoded native hashes. The PDF reference composites transparent host frames over paper. Reader comparisons are historical and do not establish saved-note, Android device, arbitrary-transform or complete application parity.
 

@@ -74,6 +74,64 @@ fn transport_colored(
 }
 
 #[test]
+fn zero_width_native_frames_match_explicit_grid_model() {
+    use base64::Engine as _;
+    use sha2::{Digest, Sha256};
+    use std::io::Read as _;
+
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../conformance/inkpen2-v1-screen-paint-native.json"
+    ))
+    .unwrap();
+    let originals = &fixture["half_grid_controls_original"];
+    let read = |name: &str| -> serde_json::Value {
+        serde_json::from_str(originals[name].as_str().unwrap()).unwrap()
+    };
+    let zero = read("zero-width-native.json");
+    let integer = read("integer-phase.json");
+    let translated = read("translated-phase.json");
+    assert_eq!(zero["cases"].as_array().unwrap().len(), 3);
+    for row in zero["cases"].as_array().unwrap() {
+        let geometry = row["geometry_hex"]
+            .as_str()
+            .unwrap()
+            .as_bytes()
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect::<Vec<_>>();
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(row["rgba_zlib_base64"].as_str().unwrap())
+            .unwrap();
+        let mut rgba = Vec::new();
+        flate2::read::ZlibDecoder::new(compressed.as_slice())
+            .read_to_end(&mut rgba)
+            .unwrap();
+        assert_eq!(rgba.len(), 64 * 48 * 4);
+        assert_eq!(format!("{:x}", Sha256::digest(&rgba)), row["rgba_sha256"]);
+        let grid = model::grid(&geometry, 64, 48, 0.5, 17., 17., [1, 1000, 1000]).unwrap();
+        for (i, pixel) in rgba.as_chunks::<4>().0.iter().enumerate() {
+            let alpha = grid
+                .get(&((i % 64) as i32, (i / 64) as i32))
+                .copied()
+                .unwrap_or(0);
+            assert_eq!(pixel[3], alpha);
+        }
+    }
+    let integer_cases = integer["cases"].as_array().unwrap();
+    assert_eq!(integer_cases.len(), 8);
+    let matching = integer_cases
+        .iter()
+        .find(|row| row["case"] == "short" && row["translation"] == serde_json::json!([1, 1]))
+        .unwrap();
+    assert_eq!(matching["rgba_sha256"], zero["cases"][0]["rgba_sha256"]);
+    // The historical predictor recorded a known error at this quad phase.
+    assert_eq!(matching["metrics"]["mismatches"], 4);
+    assert_eq!(translated["cases"].as_array().unwrap().len(), 8);
+}
+
+#[test]
 fn explicit_final_grid_source_public_transport() {
     use base64::Engine as _;
     use std::io::Read as _;
