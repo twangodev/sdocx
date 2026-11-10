@@ -17,3 +17,28 @@ The script checks the base source and native library pins. It also requires the 
 The tracked page-context, prefix and viewport controls exercise scale, projection and interpolation. Disabling Mesa's optional linear rasterizer leaves the recorded page prefixes unchanged; instrumented vertex feedback changes the result and is not an oracle for the original interpolation. The expanded-viewport frames and nominal-period translated frames match Rust; original clipped frames retain discrepancies. Changes in projection, interpolation and grain prevent attributing those differences solely to clipping.
 
 The [Drawing test assets](../../crates/sdocx/src/ink/pencil2/test_assets/drawing/README.md) retain frames and receipts for repeated and independent strokes, origin offsets and translated public replay. Historical capture scripts may write fresh copies outside those canonical assets; compare outputs before removing them, and preserve hash-pinned scripts.
+
+## Viewport shader diagnostics
+
+`expanded_viewport_shader_control.py` runs all nine shader modes: `grain`, `mask`,
+`mask_coord`, `mask_coord_fraction`, `mask_sample`, `mask_lod`,
+`mask_texcoord_fraction`, `mask_texcoord_bits_x`, and `mask_texcoord_bits_y`.
+It replaces the six separate `mask_*_control.py` scripts. All nine original
+receipts are retained unchanged under `cases[mode]` in
+[`pencil2-v14-viewport-shaders-native.json`](../../conformance/pencil2-v14-viewport-shaders-native.json).
+Their script paths and hashes describe the historical producers. The bundle's
+`capture_program_sha256` values pin the exact injected programs produced by those
+scripts; the shared runner produces the same programs and input streams.
+
+Verify all modes without native libraries, or write a fresh capture separately:
+
+```sh
+python3 tools/pencil2_v14/expanded_viewport_shader_control.py --check
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 tools/pencil2_v14/expanded_viewport_shader_control.py --mode mask_coord --output /tmp/pencil2-mask-coord.json
+```
+
+The runner reads the tracked compressed base directly. Native capture still
+requires its pinned local libraries and emulator. These modes deliberately
+instrument shader output; they are diagnostic evidence, not unmodified paint
+or device parity. `--check` verifies inputs, shader bytes, and generated programs;
+it does not execute native drawing.
