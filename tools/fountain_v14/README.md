@@ -14,6 +14,15 @@ SVG-derived PDF to native pixels in MuPDF and PDFium. Current tests retain
 in-memory native-frame, SVG, PNG and PDF construction checks.
 Translucent PDF carriers are not covered.
 
+The enhanced-AA composite regression shares
+[`fountain-v14-real-source-rgba-native.json`](../../conformance/fountain-v14-real-source-rgba-native.json)
+with the integration suite. It checks all 36 retained mask/prior/output cases
+across both origins, scales 1 and 2, three color/alpha values and three backdrops.
+Every byte and captured hash is checked; full-F32 mask sampling is a negative
+control with 18 differing output bytes. The fixture retains saved-stroke inputs,
+native stream/shader/library identities and capture-helper provenance. Replaying
+these receipts needs no native libraries; recapture uses the local inputs below.
+
 ```sh
 CARGO_TARGET_DIR=/tmp/sdocx-agent-target CARGO_INCREMENTAL=0 \
 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 \

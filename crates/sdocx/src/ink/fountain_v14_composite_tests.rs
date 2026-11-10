@@ -7,7 +7,7 @@ use std::io::Read;
 
 fn fixture() -> Value {
     serde_json::from_str(include_str!(
-        "../../tests/fixtures/fountain-v14-composite/native.json"
+        "../../../../conformance/fountain-v14-real-source-rgba-native.json"
     ))
     .unwrap()
 }

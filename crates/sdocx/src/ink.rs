@@ -902,7 +902,7 @@ fn legacy_marker_argb(stroke: &Stroke, allow_profile_settings: bool) -> Option<u
 // composite. That paint contract does not depend on V4's display-dependent
 // geometry; keep the geometry approximate while retaining saved source ARGB.
 // Fixed-width V1 paint is bounded to tool types 0–2 observed in
-// tools/inkpen-v1/high-scale-color-native.json.
+// crates/sdocx/tests/fixtures/inkpen-v1-high-scale-color-native.json.
 pub(crate) fn saved_inkpen_argb(stroke: &Stroke) -> Option<u32> {
     let rendering = stroke.rendering.as_ref()?;
     let properties = &rendering.properties;

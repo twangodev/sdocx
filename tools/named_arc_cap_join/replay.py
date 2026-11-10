@@ -129,10 +129,10 @@ result = subprocess.run(
         sys.executable,
         str(root / "tools/named_arc_moved/audit.py"),
         str(lib),
-        str(package / "target-trace.txt"),
+        str(root / "tools/named_arc_dash/target-trace.txt"),
     ],
     capture_output=True,
     check=True,
 )
-assert result.stdout == (package / "audit.txt").read_bytes()
+assert result.stdout == (root / "tools/named_arc_dash/audit.txt").read_bytes()
 print("Native Arc cap and join recordings and effective-target audit matched.")

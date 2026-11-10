@@ -606,7 +606,7 @@ mod tests {
     use serde_json::Value;
     use sha2::{Digest, Sha256};
 
-    const FIXTURE: &str = include_str!("../../tests/assets/crayon2-v2-native/fixture.json");
+    const FIXTURE: &str = include_str!("../../../../conformance/crayon2-v2-native.json");
     const BINARY: &[u8] = include_bytes!("../../tests/assets/crayon2-v2-native/records.bin");
 
     fn fixture() -> Value {
@@ -912,7 +912,7 @@ mod tests {
         let output = sample_stroke(&stroke, &parse_profile(&fixture())).unwrap();
         let mut native = Vec::new();
         flate2::read::ZlibDecoder::new(
-            &include_bytes!("../../tests/assets/crayon2-v2-native/independent-vector.z")[..],
+            &include_bytes!("../../../../tools/crayon2-independent-control/native-vector.z")[..],
         )
         .read_to_end(&mut native)
         .unwrap();
