@@ -47,6 +47,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.ruff_cache/
 cover/
 
 # Translations
@@ -105,6 +106,12 @@ target/
 # Reverse Engineering
 /tmp/
 /scratch/
+
+# Private note-derived native capture inputs and evidence.
+/conformance/pencil2-v14-backdrops/
+/conformance/pencil2-v14-real-backdrop-native.json
+/conformance/pencil2-v14-real-backdrop-full-native.json
+/tools/marker4_v7/saved-dense-v312/
 
 /web/.svelte-kit/
 /web/build/
