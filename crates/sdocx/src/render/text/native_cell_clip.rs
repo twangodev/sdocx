@@ -1,5 +1,3 @@
-#![cfg_attr(not(test), allow(dead_code))]
-
 #[derive(Debug, Clone, Copy)]
 pub(in crate::render) struct NativeCellTextClipContext {
     model_rect: [f32; 4],

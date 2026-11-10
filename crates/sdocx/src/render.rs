@@ -61,7 +61,6 @@ pub(crate) mod legacy_marker_vector;
 mod marker;
 #[cfg(all(test, feature = "serde"))]
 mod marker3;
-#[allow(dead_code)]
 mod oblique;
 pub use marker::PointMarkerTarget;
 #[cfg(feature = "pdf")]

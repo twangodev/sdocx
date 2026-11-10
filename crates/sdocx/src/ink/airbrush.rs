@@ -89,6 +89,7 @@ struct V2Input<'a> {
     counter_seed: u32,
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 struct V2StateSnapshot {
     counter: u32,
@@ -112,6 +113,7 @@ struct V2State {
 }
 
 impl V2State {
+    #[cfg(test)]
     fn snapshot(self) -> V2StateSnapshot {
         V2StateSnapshot {
             counter: self.counter,
@@ -128,12 +130,14 @@ impl V2State {
     }
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum V2CallKind {
     DrawLine,
     EndPen,
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct V2CallState {
     kind: V2CallKind,
@@ -146,9 +150,13 @@ struct V2Output {
     stamps: Vec<Stamp>,
     history_ends: Vec<usize>,
     terminal: std::ops::Range<usize>,
+    #[cfg(test)]
     calls: Vec<V2CallState>,
+    #[cfg(test)]
     redraw_before: V2StateSnapshot,
+    #[cfg(test)]
     redraw_after: V2StateSnapshot,
+    #[cfg(test)]
     final_state: V2StateSnapshot,
 }
 
@@ -326,7 +334,7 @@ fn saved_redraw_v2(input: V2Input<'_>) -> Option<V2Output> {
         tolerance,
         tool_type,
         source,
-        counter_seed,
+        counter_seed: _counter_seed,
     } = input;
     let spacing = v2_spacing(size)?;
     if history.is_empty()
@@ -349,8 +357,9 @@ fn saved_redraw_v2(input: V2Input<'_>) -> Option<V2Output> {
     if !tolerance.is_finite() || tolerance <= 0.0 {
         return None;
     }
+    #[cfg(test)]
     let redraw_before = V2StateSnapshot {
-        counter: counter_seed,
+        counter: _counter_seed,
         short_moves: 0,
         tolerance_bits: tolerance.to_bits(),
         flags: [1, 1, 0, 0, 0],
@@ -373,13 +382,16 @@ fn saved_redraw_v2(input: V2Input<'_>) -> Option<V2Output> {
         jitter: false,
     };
     let mut output = V2Output {
+        #[cfg(test)]
         redraw_before,
         ..V2Output::default()
     };
 
     for &current in history.iter().skip(1) {
+        #[cfg(test)]
         let entry = state.snapshot();
         v2_draw_line(&mut output, &mut state, current, spacing)?;
+        #[cfg(test)]
         output.calls.push(V2CallState {
             kind: V2CallKind::DrawLine,
             entry,
@@ -389,16 +401,20 @@ fn saved_redraw_v2(input: V2Input<'_>) -> Option<V2Output> {
     }
 
     output.terminal.start = output.stamps.len();
+    #[cfg(test)]
     let entry = state.snapshot();
     v2_end_pen(&mut output, &mut state, endpoint, spacing)?;
     output.terminal.end = output.stamps.len();
-    output.calls.push(V2CallState {
-        kind: V2CallKind::EndPen,
-        entry,
-        returned: state.snapshot(),
-    });
-    output.redraw_after = state.snapshot();
-    output.final_state = state.snapshot();
+    #[cfg(test)]
+    {
+        output.calls.push(V2CallState {
+            kind: V2CallKind::EndPen,
+            entry,
+            returned: state.snapshot(),
+        });
+        output.redraw_after = state.snapshot();
+        output.final_state = state.snapshot();
+    }
     Some(output)
 }
 
@@ -415,6 +431,7 @@ pub(crate) struct SavedV2Output {
 /// Reconstruct only the captured empty or `2;` saved ObjectStroke GLV2 paths.
 /// Saved playback derives MotionEvent source zero in the native wrapper; each
 /// redraw initializes fresh V2 state and resets its stamp counter.
+#[cfg(test)]
 pub(crate) fn saved_v2_from_stroke(stroke: &crate::Stroke) -> Option<SavedV2Output> {
     saved_from_stroke(stroke, false)
 }

@@ -1,7 +1,6 @@
 //! Shared, sample-addressable ink geometry for exports and interactive replay.
 use crate::{BoundingBox, Stroke, stroke_paint};
 use std::borrow::Cow;
-#[allow(dead_code)]
 pub(crate) mod airbrush;
 pub(crate) mod brushpen;
 pub use brushpen::sample_brushpen_glv10_host;
@@ -35,7 +34,6 @@ mod fountain;
 pub(crate) mod fountain_v14;
 // Native numeric regression only until caller context and RTV1 paint transport
 // are integrated; production InkPen rendering remains explicitly approximate.
-#[allow(dead_code)]
 mod inkpen;
 pub(crate) mod inkpen2;
 mod magicpen_glv1;

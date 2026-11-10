@@ -16,11 +16,12 @@ pub(super) struct RuntimeContext {
 }
 
 /// Geometry emitted by the V4 RTV1 callback. `radii` are the buffer radii
-/// (drawPoint radius + 0.5); `pre_add_radii` retain the distinct drawPoint
-/// values used for native bounds. `terminal` is the endPen suffix and is not
+/// (drawPoint radius + 0.5); tests retain the distinct drawPoint values in
+/// `pre_add_radii` to verify native bounds. `terminal` is the endPen suffix and is not
 /// folded into saved-sample attribution.
 pub(super) struct InkPenInk {
     pub points: Vec<Point>,
+    #[cfg(test)]
     pub pre_add_radii: Vec<f32>,
     pub radii: Vec<f32>,
     pub sample_ends: Vec<usize>,
@@ -171,6 +172,7 @@ struct Pass {
     alternate: bool,
     max_generated_dots: usize,
     points: Vec<Point>,
+    #[cfg(test)]
     pre_add_radii: Vec<f32>,
     radii: Vec<f32>,
     bounds: Bounds,
@@ -374,6 +376,7 @@ impl Pass {
             x: p.x as f64,
             y: p.y as f64,
         });
+        #[cfg(test)]
         self.pre_add_radii.push(r);
         self.radii.push(r + 0.5);
         true
@@ -651,6 +654,7 @@ fn path_emission(
 
 /// Prepare one saved V4 stroke for explicit host context. This function does
 /// not select the Drawing caller's StrokeType branch or infer runtime state.
+#[cfg(test)]
 pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> {
     prepare_bounded(s, context, MAX_GENERATED_DOTS)
 }
@@ -726,6 +730,7 @@ pub(super) fn prepare_bounded(
         alternate: false,
         max_generated_dots: max_generated_dots.min(MAX_GENERATED_DOTS),
         points: Vec::new(),
+        #[cfg(test)]
         pre_add_radii: Vec::new(),
         radii: Vec::new(),
         bounds: Bounds::new(),
@@ -812,6 +817,7 @@ pub(super) fn prepare_bounded(
     }
     Some(InkPenInk {
         points: pass.points,
+        #[cfg(test)]
         pre_add_radii: pass.pre_add_radii,
         radii: pass.radii,
         sample_ends,
@@ -823,6 +829,7 @@ pub(super) fn prepare_bounded(
 /// Test-only reconstruction of the saved InkPen V1 drawable. This remains a
 /// separate policy from V4 because V1 movement is distance/threshold based and
 /// does not consume timestamps or display resolution.
+#[cfg(test)]
 pub(super) fn prepare_v1(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> {
     prepare_v1_bounded(s, context, MAX_GENERATED_DOTS)
 }
@@ -885,6 +892,7 @@ pub(super) fn prepare_v1_bounded(
         alternate: false,
         max_generated_dots: max_generated_dots.min(MAX_GENERATED_DOTS),
         points: Vec::new(),
+        #[cfg(test)]
         pre_add_radii: Vec::new(),
         radii: Vec::new(),
         bounds: Bounds::new(),
@@ -918,6 +926,7 @@ pub(super) fn prepare_v1_bounded(
     pass.bounds.grow(1.);
     Some(InkPenInk {
         points: pass.points,
+        #[cfg(test)]
         pre_add_radii: pass.pre_add_radii,
         radii: pass.radii,
         sample_ends,
