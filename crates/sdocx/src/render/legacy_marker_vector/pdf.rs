@@ -20,21 +20,20 @@ pub(crate) struct Draw {
     pub(crate) owner: Option<String>,
     pub(crate) even_odd: bool,
 }
-struct LimitedOutput {
-    bytes: Vec<u8>,
+struct SerializedPdfByteCounter {
+    byte_count: usize,
     limit: usize,
 }
-impl Write for LimitedOutput {
+impl Write for SerializedPdfByteCounter {
     fn write(&mut self, data: &[u8]) -> io::Result<usize> {
-        if self
-            .bytes
-            .len()
+        let Some(next) = self
+            .byte_count
             .checked_add(data.len())
-            .is_none_or(|n| n > self.limit)
-        {
+            .filter(|count| *count <= self.limit)
+        else {
             return Err(io::Error::other("serialized PDF budget"));
-        }
-        self.bytes.extend_from_slice(data);
+        };
+        self.byte_count = next;
         Ok(data.len())
     }
     fn flush(&mut self) -> io::Result<()> {
@@ -240,12 +239,12 @@ pub(crate) fn prepare(plan: &Plan, bounds: [f32; 4], budget: &mut PageBudget) ->
     let form = w.add(Stream::new(dictionary!{"Type"=>"XObject","Subtype"=>"Form","FormType"=>1,"BBox"=>vec![0.into(),0.into(),1.into(),1.into()],"Resources"=>dictionary!{"ExtGState"=>states,"XObject"=>xobjects}},content.into_bytes()))?;
     let mut probe = w.doc.clone();
     probe.trailer.set("Root", form);
-    let mut serialized = LimitedOutput {
-        bytes: Vec::new(),
+    let mut serialized = SerializedPdfByteCounter {
+        byte_count: 0,
         limit: MAX_STAGE,
     };
     probe.save_to(&mut serialized).ok()?;
-    let estimated = w.bytes.max(serialized.bytes.len());
+    let estimated = w.bytes.max(serialized.byte_count);
     let next = PageBudget {
         work: budget.work,
         objects: budget.objects.checked_add(w.objects)?,
