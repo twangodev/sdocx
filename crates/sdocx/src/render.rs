@@ -1105,7 +1105,7 @@ impl PreparedBodyText {
         slice: Option<PageSlice>,
     ) -> Option<Self> {
         let body = page.body_text_slice()?;
-        let full_body = page.single_page_continuous_body(document);
+        let full_body = page.single_page_continuous_body(document).cloned();
         let (text, source_range, first_page_index, last_page_index, detached) =
             if let Some(text) = full_body {
                 let source_range = 0..text.text.chars().count();

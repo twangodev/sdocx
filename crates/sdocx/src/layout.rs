@@ -194,7 +194,10 @@ impl LayoutPage {
     /// Validate the synthetic inspection node first so stale or edited layout
     /// pages do not get replaced by the authoritative metadata source.
     #[cfg(feature = "render")]
-    pub(crate) fn single_page_continuous_body(&self, document: &Document) -> Option<RichTextBox> {
+    pub(crate) fn single_page_continuous_body<'doc>(
+        &self,
+        document: &'doc Document,
+    ) -> Option<&'doc RichTextBox> {
         if document.metadata.page_mode != Some(1)
             || document.pages.len() != 1
             || self.source_page_index != 0
@@ -203,7 +206,7 @@ impl LayoutPage {
         }
         let body = document.metadata.note_text.as_ref()?;
         self.validated_inspection_ranges(document, &TextIndex::new(&body.text))?;
-        Some(body.clone())
+        Some(body)
     }
 
     /// Rebuild validated capture text from the authoritative document body.
