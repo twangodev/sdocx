@@ -46,7 +46,7 @@ pub(crate) fn parse_detailed_from_reader_with_progress<R: Read + Seek>(
 fn parse_archive_from_reader<R: Read + Seek>(
     mut reader: R,
     options: &ParseOptions,
-    retain_sources: bool,
+    retain_inspection_data: bool,
     observer: &mut dyn FnMut(Progress),
 ) -> Result<ParsedDocument> {
     observer(Progress::pending(ProgressStage::Archive));
@@ -122,7 +122,8 @@ fn parse_archive_from_reader<R: Read + Seek>(
             parsed_note.header.page_horizontal_padding,
             parsed_note.header.page_vertical_padding,
         ));
-        parsed_note.source_bytes = (retain_sources && options.retain_note_source).then_some(buf);
+        parsed_note.source_bytes =
+            (retain_inspection_data && options.retain_note_source).then_some(buf);
         note = Some(parsed_note);
     }
 
@@ -183,7 +184,7 @@ fn parse_archive_from_reader<R: Read + Seek>(
         decode_text_images(&mut note.title, &media, "note.note", &mut report)?;
         decode_text_images(&mut note.body, &media, "note.note", &mut report)?;
     }
-    if retain_sources {
+    if retain_inspection_data {
         if let Some(note) = &note {
             metadata.note_title = Some(note.title.clone());
             metadata.note_text = Some(note.body.clone());
@@ -247,7 +248,8 @@ fn parse_archive_from_reader<R: Read + Seek>(
             stored: StoredArchivePage {
                 archive_entry: name.clone(),
                 page: stored_page,
-                source_bytes: (retain_sources && options.retain_page_sources).then_some(buf),
+                source_bytes: (retain_inspection_data && options.retain_page_sources)
+                    .then_some(buf),
             },
         });
         observer(Progress::new(

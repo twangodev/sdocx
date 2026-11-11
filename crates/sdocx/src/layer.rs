@@ -40,7 +40,7 @@ pub(crate) fn parse_layer_metadata(
     let absolute_flexible_offset = reader.read_u32("flexible offset")? as usize;
     let properties = Mask::read(&mut reader)?;
     let fields = Mask::read(&mut reader)?;
-    let flexible_offset = if absolute_flexible_offset == 0 && !fields.has_other_bits(0) {
+    let flexible_offset = if absolute_flexible_offset == 0 && !fields.has_set_bits() {
         header.len()
     } else {
         absolute_flexible_offset
