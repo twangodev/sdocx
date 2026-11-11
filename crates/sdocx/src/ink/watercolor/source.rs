@@ -1,4 +1,6 @@
-use super::{DrawableVersion, MAX_INPUT_POINTS, SavedStrokeInput, sample_saved_stroke};
+use super::{
+    DrawableVersion, MAX_INPUT_POINTS, SampleError, SavedStrokeInput, sample_saved_stroke,
+};
 use crate::{InkRasterError, Stroke, StrokeStyle};
 
 pub(crate) fn prepare_stroke(
@@ -113,14 +115,13 @@ pub(crate) fn prepare_stroke(
         tool_type: 2,
         canvas: screen,
     };
-    let rows = sample_saved_stroke(input, version).map_err(|message| {
-        if message == "dab output limit exceeded" {
-            InkRasterError::WorkLimit
-        } else if message == "empty measured WaterColor curve" {
-            InkRasterError::UnsupportedStroke(message)
-        } else {
-            InkRasterError::InvalidStroke(message)
-        }
+    let rows = sample_saved_stroke(input, version).map_err(|error| match error {
+        SampleError::OutputLimit => InkRasterError::WorkLimit,
+        SampleError::EmptyCurve => InkRasterError::UnsupportedStroke(error.message()),
+        SampleError::InputContract
+        | SampleError::InvalidChannel
+        | SampleError::InvalidSpacing
+        | SampleError::InvalidPhase => InkRasterError::InvalidStroke(error.message()),
     })?;
     Ok((rows, color))
 }

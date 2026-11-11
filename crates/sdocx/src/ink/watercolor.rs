@@ -143,10 +143,35 @@ struct Dib {
     lanes: [f32; 6],
 }
 
+#[derive(Clone, Copy, Debug)]
+enum SampleError {
+    InputContract,
+    InvalidChannel,
+    EmptyCurve,
+    InvalidSpacing,
+    OutputLimit,
+    InvalidPhase,
+}
+
+impl SampleError {
+    fn message(self) -> &'static str {
+        match self {
+            Self::InputContract => {
+                "input outside the captured WaterColorBrush style/context contract"
+            }
+            Self::InvalidChannel => "non-finite or out-of-range sample channel",
+            Self::EmptyCurve => "empty measured WaterColor curve",
+            Self::InvalidSpacing => "invalid curve length or dab spacing",
+            Self::OutputLimit => "dab output limit exceeded",
+            Self::InvalidPhase => "phase outside the selected captured host math profile",
+        }
+    }
+}
+
 fn sample_saved_stroke(
     input: SavedStrokeInput<'_>,
     version: DrawableVersion,
-) -> Result<Vec<[f32; 6]>, &'static str> {
+) -> Result<Vec<[f32; 6]>, SampleError> {
     sample_saved_stroke_with_math(input, version, MathProfile::GlibcSincosfFma)
 }
 
@@ -154,7 +179,7 @@ fn sample_saved_stroke_with_math(
     input: SavedStrokeInput<'_>,
     version: DrawableVersion,
     math_profile: MathProfile,
-) -> Result<Vec<[f32; 6]>, &'static str> {
+) -> Result<Vec<[f32; 6]>, SampleError> {
     let n = input.points.len();
     if !(2..=MAX_INPUT_POINTS).contains(&n)
         || input.pressures.len() != n
@@ -168,7 +193,7 @@ fn sample_saved_stroke_with_math(
         || input.pen_size > 512.0
         || input.canvas.iter().any(|&d| d == 0 || d > 16_384)
     {
-        return Err("input outside the captured WaterColorBrush style/context contract");
+        return Err(SampleError::InputContract);
     }
     if input.points.iter().any(|p| {
         !p.x.is_finite()
@@ -182,7 +207,7 @@ fn sample_saved_stroke_with_math(
         || input.timestamps.iter().any(|t| i32::try_from(*t).is_err())
         || input.timestamps.windows(2).any(|w| w[1] <= w[0])
     {
-        return Err("non-finite or out-of-range sample channel");
+        return Err(SampleError::InvalidChannel);
     }
     // The captured AddPoint geometry lanes do not consume ARGB color; the
     // native paint/shader path applies color after this stream is built.
@@ -242,10 +267,10 @@ fn sample_saved_stroke_with_math(
         let curve = Quad::new(smooth, previous, midpoint);
         let length = curve.length;
         if length == 0. {
-            return Err("empty measured WaterColor curve");
+            return Err(SampleError::EmptyCurve);
         }
         if !length.is_finite() || !spacing.is_finite() || spacing <= 0.0 {
-            return Err("invalid curve length or dab spacing");
+            return Err(SampleError::InvalidSpacing);
         }
 
         let mut dt = times[i].wrapping_sub(previous_time);
@@ -258,7 +283,7 @@ fn sample_saved_stroke_with_math(
         let target_alpha = (length / dt as f32) * dimension_scale;
         let repeat = (length - residual) / spacing;
         if !repeat.is_finite() || repeat > MAX_OUTPUT_DABS as f32 {
-            return Err("dab output limit exceeded");
+            return Err(SampleError::OutputLimit);
         }
         let count = (repeat as i32).max(0) + 1;
         let count_f = count as f32;
@@ -270,7 +295,7 @@ fn sample_saved_stroke_with_math(
 
         while distance <= length {
             if output.len() == MAX_OUTPUT_DABS {
-                return Err("dab output limit exceeded");
+                return Err(SampleError::OutputLimit);
             }
             let p = curve.at(distance);
             let (sin, cos) = match math_profile {
@@ -284,7 +309,7 @@ fn sample_saved_stroke_with_math(
                 #[cfg(all(test, feature = "serde"))]
                 MathProfile::CapturePythonDoubleSinCos => None,
             }
-            .ok_or("phase outside the selected captured host math profile")?;
+            .ok_or(SampleError::InvalidPhase)?;
             output.push(Dib {
                 lanes: [
                     p.x,
