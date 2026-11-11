@@ -36,7 +36,6 @@ pub(crate) struct Plan {
 /// 1 and 2, at most 4096 source samples and 8192 generated stamps, and the
 /// canvas work budget are host bounds. These are not native limits.
 pub struct FountainV14Prepared {
-    stroke: Stroke,
     dots: super::super::fountain::Dots,
     scale: u32,
     outgoing_direction: crate::Point,
@@ -161,7 +160,6 @@ impl FountainV14Prepared {
             return Err(InkRasterError::WorkLimit);
         }
         Ok(Self {
-            stroke: stroke.clone(),
             dots,
             scale: context.pixels_per_unit,
             outgoing_direction,
@@ -184,15 +182,9 @@ pub(crate) fn prepare_snapshot(
     if context.pixels_per_unit != snapshot.scale {
         return Err(InkRasterError::InvalidContext);
     }
-    prepare_with_dots(
-        &snapshot.stroke,
-        context,
-        source_origin,
-        paint_argb,
-        true,
-        budget,
-        Some(&snapshot.dots),
-    )
+    let frame = RasterFrame::new(context, source_origin)?;
+    // Snapshot construction admitted this immutable geometry at the same scale.
+    prepare_dots(&snapshot.dots, frame, paint_argb, true, budget)
 }
 
 pub(crate) fn prepare(
@@ -203,15 +195,16 @@ pub(crate) fn prepare(
     direct: bool,
     budget: usize,
 ) -> Result<Plan, InkRasterError> {
-    prepare_with_dots(
+    let frame = RasterFrame::new(context, source_origin)?;
+    validate_source(stroke, context)?;
+    let dots = super::super::fountain::prepare_v14_with_output_scale(
         stroke,
-        context,
-        source_origin,
-        paint_argb,
-        direct,
-        budget,
-        None,
+        context.pixels_per_unit as f32,
     )
+    .ok_or(InkRasterError::UnsupportedStroke(
+        "saved Fountain V14 source",
+    ))?;
+    prepare_dots(&dots, frame, paint_argb, direct, budget)
 }
 
 fn validate_source(stroke: &Stroke, context: InkRasterContext) -> Result<(), InkRasterError> {
@@ -283,33 +276,39 @@ fn validate_source(stroke: &Stroke, context: InkRasterContext) -> Result<(), Ink
     Ok(())
 }
 
-fn prepare_with_dots(
-    stroke: &Stroke,
+/// Validated per-paint destination and crop, independent of source admission.
+struct RasterFrame {
     context: InkRasterContext,
     source_origin: [i32; 2],
+    pixel_count: usize,
+}
+
+impl RasterFrame {
+    fn new(context: InkRasterContext, source_origin: [i32; 2]) -> Result<Self, InkRasterError> {
+        let pixel_count = context.pixel_count()?;
+        if source_origin.iter().any(|v| v.unsigned_abs() > 16_384) {
+            return Err(InkRasterError::InvalidContext);
+        }
+        Ok(Self {
+            context,
+            source_origin,
+            pixel_count,
+        })
+    }
+}
+
+fn prepare_dots(
+    dots: &super::super::fountain::Dots,
+    frame: RasterFrame,
     paint_argb: u32,
     direct: bool,
     budget: usize,
-    supplied_dots: Option<&super::super::fountain::Dots>,
 ) -> Result<Plan, InkRasterError> {
-    let count = context.pixel_count()?;
-    if source_origin.iter().any(|v| v.unsigned_abs() > 16_384) {
-        return Err(InkRasterError::InvalidContext);
-    }
-    validate_source(stroke, context)?;
-    let generated;
-    let dots = if let Some(dots) = supplied_dots {
-        dots
-    } else {
-        generated = super::super::fountain::prepare_v14_with_output_scale(
-            stroke,
-            context.pixels_per_unit as f32,
-        )
-        .ok_or(InkRasterError::UnsupportedStroke(
-            "saved Fountain V14 source",
-        ))?;
-        &generated
-    };
+    let RasterFrame {
+        context,
+        source_origin,
+        pixel_count: count,
+    } = frame;
     if dots.points.len() > 8192 {
         return Err(InkRasterError::WorkLimit);
     }
@@ -509,5 +508,68 @@ impl Plan {
             pixels.push(over(prior, source));
         }
         Ok(pixels)
+    }
+}
+
+#[cfg(all(test, feature = "serde"))]
+mod tests {
+    use super::*;
+
+    fn source() -> Stroke {
+        serde_json::from_str(include_str!(
+            "../../../tests/assets/fountain-v14/saved-source-29.json"
+        ))
+        .unwrap()
+    }
+
+    fn context() -> InkRasterContext {
+        InkRasterContext {
+            width: 8,
+            height: 8,
+            pixels_per_unit: 1,
+            origin: InkRasterOrigin::TopLeft,
+        }
+    }
+
+    #[test]
+    fn frame_and_crop_rejections_precede_source_and_work_rejections() {
+        let mut stroke = source();
+        stroke.rendering = None;
+        let mut invalid_frame = context();
+        invalid_frame.width = 0;
+        assert!(matches!(
+            prepare(&stroke, invalid_frame, [0; 2], 0xff000000, true, 0),
+            Err(InkRasterError::InvalidContext)
+        ));
+        assert!(matches!(
+            prepare(&stroke, context(), [i32::MIN, 0], 0xff000000, true, 0),
+            Err(InkRasterError::InvalidContext)
+        ));
+        assert!(matches!(
+            prepare(&stroke, context(), [0; 2], 0xff000000, true, 0),
+            Err(InkRasterError::UnsupportedStroke(
+                "missing Fountain settings"
+            ))
+        ));
+    }
+
+    #[test]
+    fn snapshots_validate_each_paint_frame_and_crop_before_work() {
+        let snapshot =
+            FountainV14Prepared::new(&source(), context(), crate::Point { x: 0., y: 1. }).unwrap();
+        let mut invalid_frame = context();
+        invalid_frame.height = 0;
+        assert!(matches!(
+            prepare_snapshot(&snapshot, invalid_frame, [0; 2], 0xff000000, 0),
+            Err(InkRasterError::InvalidContext)
+        ));
+        assert!(matches!(
+            prepare_snapshot(&snapshot, context(), [i32::MIN, 0], 0xff000000, 0),
+            Err(InkRasterError::InvalidContext)
+        ));
+        assert!(matches!(
+            prepare_snapshot(&snapshot, context(), [0; 2], 0xff000000, 0),
+            Err(InkRasterError::WorkLimit)
+        ));
     }
 }
