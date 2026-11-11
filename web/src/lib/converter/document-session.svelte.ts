@@ -165,9 +165,12 @@ export class DocumentSession {
 
 	cancel(): void {
 		this.loadGeneration += 1;
-		this.client?.cancel();
-		this.clearDocument();
-		this.status = 'Processing cancelled';
+		try {
+			this.client?.cancel();
+		} finally {
+			this.clearDocument();
+			this.status = 'Processing cancelled';
+		}
 	}
 
 	async setColorMode(colorMode: ColorMode): Promise<void> {
