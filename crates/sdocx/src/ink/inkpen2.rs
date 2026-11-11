@@ -127,6 +127,12 @@ pub(crate) struct Output {
     pub final_alternation: bool,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RtvCallbackVersion {
+    V1,
+    V3,
+}
+
 struct Core<'a> {
     input: Input<'a>,
     output: Output,
@@ -142,14 +148,14 @@ struct Core<'a> {
     max_emissions: usize,
     rainbow_offset: f32,
     current_rgb: [f32; 3],
-    v1_callback: bool,
+    callback_version: RtvCallbackVersion,
 }
 
 impl<'a> Core<'a> {
     fn add_point(&mut self, p: P, radius: f32, rgb: [f32; 3]) -> Option<()> {
         // RTV1 clamps the drawable radius before AddPoint adds 0.75. This
         // branch is restricted to native geometry controls, not paint.
-        if self.v1_callback {
+        if self.callback_version == RtvCallbackVersion::V1 {
             if self.output.vertices.len() >= self.max_emissions {
                 return None;
             }
@@ -275,7 +281,7 @@ impl<'a> Core<'a> {
 
     fn finish(mut self) -> Option<Output> {
         let n = self.input.points.len();
-        let movement_end = if self.v1_callback {
+        let movement_end = if self.callback_version == RtvCallbackVersion::V1 {
             n.saturating_sub(1)
         } else {
             n
@@ -319,7 +325,7 @@ impl<'a> Core<'a> {
         let start = self.output.vertices.len();
         // V1 endPen uses the last sample as the quadratic endpoint and
         // tapers to 0.6 times the last movement radius.
-        if self.v1_callback {
+        if self.callback_version == RtvCallbackVersion::V1 {
             let endpoint = *self.input.points.last()?;
             let terminal = Quad::new(self.last, self.control, endpoint);
             let mut d = self.residual;
@@ -416,14 +422,18 @@ pub(crate) fn redraw(input: Input<'_>) -> Option<Output> {
 /// This is used by public dispatch to reject excessive vector expansion while
 /// leaving the diagnostic fixture path at its broader historical bound.
 pub(crate) fn redraw_bounded(input: Input<'_>, max_emissions: usize) -> Option<Output> {
-    redraw_with_mode(input, max_emissions, false)
+    redraw_with_callback(input, max_emissions, RtvCallbackVersion::V3)
 }
 
 pub(crate) fn redraw_v1_bounded(input: Input<'_>, max_emissions: usize) -> Option<Output> {
-    redraw_with_mode(input, max_emissions, true)
+    redraw_with_callback(input, max_emissions, RtvCallbackVersion::V1)
 }
 
-fn redraw_with_mode(input: Input<'_>, max_emissions: usize, v1: bool) -> Option<Output> {
+fn redraw_with_callback(
+    input: Input<'_>,
+    max_emissions: usize,
+    callback_version: RtvCallbackVersion,
+) -> Option<Output> {
     let n = input.points.len();
     let rt = input.runtime;
     if input.is_shape
@@ -470,10 +480,10 @@ fn redraw_with_mode(input: Input<'_>, max_emissions: usize, v1: bool) -> Option<
         max_emissions,
         rainbow_offset: input.rainbow.map_or(0.0, |rainbow| rainbow.offset),
         current_rgb: input.rgb.map(|channel| f32::from(channel) / 255.0),
-        v1_callback: v1,
+        callback_version,
     };
     core.output.sample_ends.push(0);
-    if v1 {
+    if callback_version == RtvCallbackVersion::V1 {
         core.add_point(first, input.size / 3., [0.; 3])?;
     }
     core.finish()
@@ -1101,7 +1111,7 @@ mod tests {
                 .map(f32_from_le_hex)
                 .collect();
             let tools = vec![i["tool_type"].as_i64().unwrap() as i32; points.len()];
-            let out = super::redraw_with_mode(
+            let out = super::redraw_with_callback(
                 Input {
                     points: &points,
                     times: &times,
@@ -1124,7 +1134,7 @@ mod tests {
                     },
                 },
                 10000,
-                true,
+                super::RtvCallbackVersion::V1,
             )
             .unwrap();
             let actual: Vec<u8> = out
@@ -1345,7 +1355,7 @@ mod tests {
                 .map(f32_from_le_hex)
                 .collect();
             let tools = vec![i["tool_type"].as_i64().unwrap() as i32; points.len()];
-            let out = super::redraw_with_mode(
+            let out = super::redraw_with_callback(
                 Input {
                     points: &points,
                     times: &times,
@@ -1368,7 +1378,7 @@ mod tests {
                     },
                 },
                 10000,
-                true,
+                super::RtvCallbackVersion::V1,
             )
             .unwrap();
             let actual: Vec<u8> = out
