@@ -326,10 +326,10 @@ impl<'a, Source: Copy> PendingRun<'a, Source> {
                 foreground: span.foreground,
                 style_bits: span.style_bits,
                 background: span.background,
-                object: span.flags & 2 != 0,
+                object: span.is_widget_object(),
             },
         );
-        if self.span.is_some_and(|span| span.flags & 1 != 0) {
+        if self.span.is_some_and(NativeDrawSpan::is_hyperlink) {
             paint.foreground = 0xff00_54ff;
             paint.style_bits |= 4;
         }

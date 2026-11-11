@@ -272,7 +272,7 @@ pub(in crate::render) fn native_paint_plan(
                     .resolved_style_at(scalar, theme, line.predefined)
                     .native_draw
                     .map_err(|_| Error::OutsideCertificate("span"))?;
-                if span.foreground >> 24 != 255 || span.flags & 2 != 0 {
+                if span.foreground >> 24 != 255 || span.is_widget_object() {
                     return Err(Error::OutsideCertificate("paint"));
                 }
                 let glyph_indices = entry.glyphs();

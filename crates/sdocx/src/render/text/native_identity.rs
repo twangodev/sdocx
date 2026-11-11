@@ -26,6 +26,14 @@ pub(in crate::render) enum NativeIdentityUnavailable {
 }
 
 impl NativeDrawSpan {
+    pub(super) fn is_hyperlink(&self) -> bool {
+        self.flags & 1 != 0
+    }
+
+    pub(super) fn is_widget_object(&self) -> bool {
+        self.flags & 2 != 0
+    }
+
     pub(super) fn measurement_style(&self) -> TextMeasureStyle {
         TextMeasureStyle {
             font_size: self.font_size,
