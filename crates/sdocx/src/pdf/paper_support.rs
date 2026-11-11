@@ -1437,9 +1437,20 @@ pub(super) fn render_singlex_pdf_paper_plan(
         return Err(super::PdfError::InvalidDpi);
     }
     let source_layout = layout.pages.first().ok_or(super::PdfError::EmptyDocument)?;
-    let mut scene_page = source_layout.clone();
-    scene_page.page.width = plan.note_width;
-    scene_page.page.height = plan.note_height;
+    let mut scene_page = crate::LayoutPage {
+        source_page_index: source_layout.source_page_index,
+        page: crate::Page {
+            uuid: source_layout.page.uuid.clone(),
+            width: plan.note_width,
+            height: plan.note_height,
+            content_bbox: source_layout.page.content_bbox,
+            background_color: source_layout.page.background_color,
+            template: source_layout.page.template,
+            background: source_layout.page.background.clone(),
+            objects: Vec::new(),
+        },
+        body_text: source_layout.body_text.clone(),
+    };
     scene_page.page.background.pdf_paper = None;
     let inspection_object_index = source_layout
         .single_page_continuous_body(document)
@@ -1459,7 +1470,6 @@ pub(super) fn render_singlex_pdf_paper_plan(
     }
     scene_page.body_text = body_text;
     let original_objects = &source_layout.page.objects;
-    scene_page.page.objects.clear();
     // PageSceneRequest borrows each page. Keep the page clones alive for the render call.
     let mut scene_pages = Vec::with_capacity(plan.output_pages.len());
     for output in &plan.output_pages {
