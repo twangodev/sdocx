@@ -4,15 +4,8 @@ import {
 	type ConverterClientPort,
 	type ProgressListener
 } from './client';
-import {
-	createExportManifest,
-	createZip,
-	downloadBlob,
-	pageFilename,
-	sanitizeStem,
-	svgToPng,
-	textBytes
-} from './files';
+import { downloadBlob, sanitizeStem } from './files';
+import { buildDocumentExport } from './document-export';
 import {
 	assertAcceptedFile,
 	isLargeFile,
@@ -93,6 +86,7 @@ export class DocumentSession {
 
 	destroy(): void {
 		this.loadGeneration += 1;
+		this.resetWork();
 		this.client?.destroy();
 		this.client = undefined;
 		this.releasePreviews();
@@ -164,7 +158,6 @@ export class DocumentSession {
 		} finally {
 			if (generation === this.loadGeneration) {
 				this.clearDocument();
-				this.phase = null;
 				this.status = 'Waiting for a document';
 			}
 		}
@@ -174,11 +167,6 @@ export class DocumentSession {
 		this.loadGeneration += 1;
 		this.client?.cancel();
 		this.clearDocument();
-		this.parsing = false;
-		this.rendering = false;
-		this.exporting = false;
-		this.exportProgress = '';
-		this.phase = null;
 		this.status = 'Processing cancelled';
 	}
 
@@ -238,60 +226,15 @@ export class DocumentSession {
 		const onProgress: ProgressListener = (event) => {
 			if (generation === this.loadGeneration && this.exporting) this.exportWork = event.progress;
 		};
-		const reports: PageRenderReport[] = [];
 		this.exportReports = [];
 		this.exportColorMode = colorMode;
 		await this.withExport(async () => {
-			if (!indices.length || indices.some((index) => !Number.isInteger(index) || index < 0 || index >= pageCount)) {
-				throw new Error('Select valid pages to export.');
-			}
-			let blob: Blob;
-			if (format === 'pdf') {
-				this.exportProgress = 'Generating PDF';
-				const result = await client.exportPdf(indices, colorMode, onProgress);
-				assertCurrent();
-				reports.push(...result.pages);
-				blob = new Blob([result.bytes], { type: 'application/pdf' });
-			} else if (format === 'json') {
-				this.exportWork = pendingProgress('inspecting');
-				blob = new Blob([await client.exportJson()], { type: 'application/json' });
-			} else if (format !== 'everything' && indices.length === 1) {
-				const result = await client.renderPage(indices[0], colorMode, onProgress);
-				assertCurrent();
-				reports.push(pageReport(result));
-				if (format === 'png') this.exportWork = pendingProgress('encoding');
-				blob = format === 'png' ? await svgToPng(result.svg, pngScale) : new Blob([result.svg], { type: 'image/svg+xml' });
-			} else {
-				const session = this;
-				async function* entries() {
-					if (format === 'everything') {
-						const json = await client.exportJson();
-						assertCurrent();
-						yield { name: 'document.json', bytes: textBytes(json) };
-						const manifest = createExportManifest(sourceName, pageCount, colorMode, pngScale);
-						yield { name: 'manifest.json', bytes: textBytes(JSON.stringify(manifest, null, 2)) };
-					}
-					for (const [position, index] of indices.entries()) {
-						assertCurrent();
-						session.exportProgress = `Rendering page ${position + 1} of ${indices.length}`;
-						const result = await client.renderPage(index, colorMode, onProgress);
-						assertCurrent();
-						reports.push(pageReport(result));
-						if (format === 'svg' || format === 'everything') {
-							yield { name: pageFilename(stem, index, 'svg'), bytes: textBytes(result.svg) };
-						}
-						if (format === 'png' || format === 'everything') {
-							session.exportWork = pendingProgress('encoding');
-							session.exportProgress = `Rasterizing page ${position + 1} of ${indices.length}`;
-							const png = await svgToPng(result.svg, pngScale);
-							assertCurrent();
-							yield { name: pageFilename(stem, index, 'png'), bytes: new Uint8Array(await png.arrayBuffer()) };
-						}
-						session.exportWork = pendingProgress('packaging');
-					}
-				}
-				blob = await createZip(entries());
-			}
+			const { blob, reports } = await buildDocumentExport({
+				client, format, pngScale, indices, pageCount, colorMode, stem, sourceName,
+				assertCurrent, onProgress,
+				onStatus: (status) => { this.exportProgress = status; },
+				onWork: (progress) => { this.exportWork = progress; }
+			});
 			assertCurrent();
 			downloadBlob(blob, filename);
 			this.exportReports = reports;
@@ -305,6 +248,7 @@ export class DocumentSession {
 		const pageCount = this.summary.pageCount;
 		const colorMode = this.colorMode;
 		const file = this.activeFile;
+		const isCurrent = () => generation === this.renderGeneration && loadGeneration === this.loadGeneration;
 		this.rendering = true;
 		this.phase = 'rendering';
 		this.progress = pendingProgress('preparing');
@@ -317,9 +261,9 @@ export class DocumentSession {
 			for (let index = 0; index < pageCount; index += 1) {
 				this.status = `Rendering page ${index + 1} of ${pageCount}`;
 				const result = await this.requireClient().renderPage(index, colorMode, (event) => {
-					if (generation === this.renderGeneration && loadGeneration === this.loadGeneration) this.progress = event.progress;
+					if (isCurrent()) this.progress = event.progress;
 				});
-				if (generation !== this.renderGeneration || loadGeneration !== this.loadGeneration) return;
+				if (!isCurrent()) return;
 				this.previewReports = [...this.previewReports, pageReport(result)];
 				if (file) this.onPageRendered?.({ file, pageIndex: index, svg: result.svg });
 				const url = URL.createObjectURL(new Blob([result.svg], { type: 'image/svg+xml' }));
@@ -328,9 +272,9 @@ export class DocumentSession {
 			}
 			this.status = `${pageCount} ${pageCount === 1 ? 'page' : 'pages'} rendered locally`;
 		} catch (cause) {
-			if (generation === this.renderGeneration) this.error = messageFrom(cause);
+			if (isCurrent()) this.error = messageFrom(cause);
 		} finally {
-			if (generation === this.renderGeneration) {
+			if (isCurrent()) {
 				this.rendering = false;
 				this.phase = this.error ? null : 'ready';
 				this.progress = null;
@@ -338,12 +282,19 @@ export class DocumentSession {
 		}
 	}
 
-	private clearDocument(): void {
+	private resetWork(): void {
+		this.renderGeneration += 1;
+		this.parsing = false;
+		this.rendering = false;
+		this.exporting = false;
+		this.phase = null;
 		this.progress = null;
 		this.exportWork = null;
-		this.exporting = false;
 		this.exportProgress = '';
-		this.renderGeneration += 1;
+	}
+
+	private clearDocument(): void {
+		this.resetWork();
 		this.releasePreviews();
 		this.previewReports = [];
 		this.exportReports = [];

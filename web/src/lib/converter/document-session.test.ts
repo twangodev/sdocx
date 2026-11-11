@@ -387,3 +387,85 @@ it('keeps vector rendering progress separate from export progress and clears it 
 	expect(session.error).toBe('');
 	session.destroy();
 });
+
+it('stops archive packaging when cancelled while reading encoded PNG bytes', async () => {
+	const client = clientWith(vi.fn(async () => ({ pageCount: 1, inspection: {} })));
+	client.renderPage = vi.fn(async index => svgResult(index));
+	client.exportJson = vi.fn(async () => '{}');
+	const pngBytes = deferred<ArrayBuffer>();
+	const readingPng = deferred<void>();
+	const png = new Blob(['png'], { type: 'image/png' });
+	vi.spyOn(png, 'arrayBuffer').mockImplementation(() => {
+		readingPng.resolve();
+		return pngBytes.promise;
+	});
+	vi.spyOn(files, 'svgToPng').mockResolvedValue(png);
+	const download = vi.spyOn(files, 'downloadBlob').mockImplementation(() => {});
+	const session = new DocumentSession({ createClient: () => client });
+	session.start();
+	await session.load(file('note.sdocx', Promise.resolve(new ArrayBuffer(1))));
+	const exporting = session.downloadExport({ format: 'everything', pageIndices: [], pngScale: 1 });
+	await readingPng.promise;
+	session.cancel();
+	pngBytes.resolve(new ArrayBuffer(3));
+	await exporting;
+
+	expect(download).not.toHaveBeenCalled();
+	expect(session.exportReports).toEqual([]);
+	expect(session.exportWork).toBeNull();
+	expect(session.error).toBe('');
+	session.destroy();
+});
+
+describe('document lifecycle reset ownership', () => {
+	it('clears loading state immediately when a pending worker load is closed', async () => {
+		const loaded = deferred<DocumentSummary>();
+		const client = clientWith(vi.fn(() => loaded.promise));
+		const session = new DocumentSession({ createClient: () => client });
+		session.start();
+		const loading = session.load(file('pending.sdocx', Promise.resolve(new ArrayBuffer(1))));
+		await Promise.resolve();
+		expect(session.parsing).toBe(true);
+		await session.close();
+		expect(session.parsing).toBe(false);
+		expect(session.rendering).toBe(false);
+		loaded.resolve(emptySummary);
+		await loading;
+		expect(session.parsing).toBe(false);
+		session.destroy();
+	});
+
+	it('does not carry rendering state into a zero-page replacement', async () => {
+		const rendered = deferred<SvgRenderResult>();
+		const client = clientWith(vi.fn().mockResolvedValueOnce({ pageCount: 1, inspection: {} }).mockResolvedValueOnce(emptySummary));
+		vi.mocked(client.renderPage).mockReturnValue(rendered.promise);
+		const session = new DocumentSession({ createClient: () => client });
+		session.start();
+		const older = session.load(file('rendering.sdocx', Promise.resolve(new ArrayBuffer(1))));
+		await vi.waitFor(() => expect(client.renderPage).toHaveBeenCalledOnce());
+		expect(session.rendering).toBe(true);
+		await session.load(file('empty.sdocx', Promise.resolve(new ArrayBuffer(1))));
+		expect(session.rendering).toBe(false);
+		rendered.resolve(svgResult());
+		await older;
+		expect(session.rendering).toBe(false);
+		expect(session.previewUrls).toEqual([]);
+		session.destroy();
+	});
+
+	it('resets work on destruction and ignores a late render failure', async () => {
+		const rendered = deferred<SvgRenderResult>();
+		const client = clientWith(vi.fn(async () => ({ pageCount: 1, inspection: {} })));
+		vi.mocked(client.renderPage).mockReturnValue(rendered.promise);
+		const session = new DocumentSession({ createClient: () => client });
+		session.start();
+		const loading = session.load(file('rendering.sdocx', Promise.resolve(new ArrayBuffer(1))));
+		await vi.waitFor(() => expect(client.renderPage).toHaveBeenCalledOnce());
+		session.destroy();
+		expect(session.rendering).toBe(false);
+		expect(session.parsing).toBe(false);
+		rendered.reject(new Error('late render failure'));
+		await loading;
+		expect(session.error).toBe('');
+	});
+});

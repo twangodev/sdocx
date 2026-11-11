@@ -78,8 +78,23 @@ export type ConverterRequest =
 	| { id: number; generation: number; type: 'exportJson' }
 	| { id: number; generation: number; type: 'dispose' };
 
-export type ConverterResult =
-	| { id: number; type: 'result'; value: DocumentSummary | unknown | string | null }
+export interface ConverterResponseMap {
+	load: DocumentSummary;
+	inspect: unknown;
+	debug: unknown;
+	renderPage: SvgRenderResult;
+	exportPdf: PdfRenderResult;
+	resolvePages: number[];
+	exportJson: string;
+	dispose: null;
+}
+
+export type ConverterOperation = ConverterRequest['type'];
+export type ConverterRequestPayload<Operation extends ConverterOperation = ConverterOperation> =
+	Operation extends ConverterOperation ? Omit<Extract<ConverterRequest, { type: Operation }>, 'id'> : never;
+
+export type ConverterResult<Operation extends ConverterOperation = ConverterOperation> =
+	| { id: number; type: 'result'; value: ConverterResponseMap[Operation] }
 	| { id: number; type: 'error'; message: string };
 
 export type ConverterEvent =

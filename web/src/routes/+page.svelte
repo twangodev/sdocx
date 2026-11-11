@@ -12,6 +12,7 @@
 	import UploadNotice from '$lib/components/UploadNotice.svelte';
 	import LibraryWorkspace from '$lib/components/library/LibraryWorkspace.svelte';
 	import { LibraryWorkspace as LibraryState } from '$lib/library/workspace.svelte';
+	import { errorMessage } from '$lib/library/model';
 	import { DocumentSession } from '$converter/document-session.svelte';
 	import { DocumentZoomCamera } from '$lib/viewer/document-zoom-camera.svelte';
 
@@ -19,7 +20,7 @@
 	const library = new LibraryState();
 	let activeLibraryDocument: { id: string; file: File } | null = null;
 	let temporary = $state(false);
-	let uploadGeneration = 0;
+	let documentRequest = 0;
 	let picker = $state<HTMLInputElement>();
 	let pageIndex = $state(0);
 	let detailsOpen = $state(true);
@@ -52,6 +53,7 @@
 		const stop = session.start();
 		const stopLibrary = library.start();
 		return () => {
+			documentRequest += 1;
 			workspace.goHome = undefined;
 			stopLibrary();
 			stop();
@@ -62,12 +64,23 @@
 	});
 
 	function goHome(): void {
-		uploadGeneration += 1;
+		cancelDocument();
+		library.search = '';
+		library.selectSource('all');
+	}
+
+	function cancelDocument(): void {
+		documentRequest += 1;
 		activeLibraryDocument = null;
 		temporary = false;
 		session.cancel();
-		library.search = '';
-		library.selectSource('all');
+	}
+
+	async function closeDocument(): Promise<void> {
+		documentRequest += 1;
+		activeLibraryDocument = null;
+		temporary = false;
+		await session.close();
 	}
 
 	function selectPage(nextPage: number): void {
@@ -84,11 +97,11 @@
 		zoom.fitSelectedPage();
 	}
 
-	async function loadDocument(file: File): Promise<void> {
-		const generation = ++uploadGeneration;
+	async function loadDocument(file: File, generation: number): Promise<void> {
+		if (generation !== documentRequest) return;
 		uploadNotice = null;
 		await session.load(file);
-		if (generation !== uploadGeneration) return;
+		if (generation !== documentRequest) return;
 		if (session.error || (session.activeFile === file && session.summary)) {
 			uploadNotice = {
 				codes:
@@ -106,29 +119,47 @@
 	}
 
 	async function openSaved(id: string): Promise<void> {
+		await loadSavedDocument(id, ++documentRequest);
+	}
+
+	async function loadSavedDocument(id: string, generation: number): Promise<void> {
+		if (generation !== documentRequest) return;
 		await library.perform(async () => {
-			const file = await library.service.openDocument(id);
-			temporary = false;
-			activeLibraryDocument = { id, file };
-			await loadDocument(file);
+			try {
+				const file = await library.service.openDocument(id);
+				if (generation !== documentRequest) return;
+				temporary = false;
+				activeLibraryDocument = { id, file };
+				await loadDocument(file, generation);
+			} catch (cause) {
+				if (generation === documentRequest) throw cause;
+			}
 		});
 	}
 
 	async function importFiles(files: File[]): Promise<void> {
 		if (library.importing || session.exporting) return;
-		await session.close();
-		const results = await library.importFiles(files);
-		if (files.length === 1 && !library.cancelled) {
-			const result = results[0];
-			if (result?.status === 'imported' || result?.status === 'duplicate')
-				await openSaved(result.document.id);
+		const generation = ++documentRequest;
+		try {
+			await session.close();
+			if (generation !== documentRequest) return;
+			const results = await library.importFiles(files);
+			if (generation !== documentRequest) return;
+			if (files.length === 1 && !library.cancelled) {
+				const result = results[0];
+				if (result?.status === 'imported' || result?.status === 'duplicate')
+					await loadSavedDocument(result.document.id, generation);
+			}
+		} catch (cause) {
+			if (generation === documentRequest) library.error = errorMessage(cause);
 		}
 	}
 
 	function openTemporary(file: File): void {
+		const generation = ++documentRequest;
 		activeLibraryDocument = null;
 		temporary = true;
-		void loadDocument(file);
+		void loadDocument(file, generation);
 	}
 
 	function onFileInput(event: Event): void {
@@ -167,7 +198,7 @@
 	/>
 	{#if session.parsing}
 		<ProcessingProgress progress={session.progress} detail={session.status} floating>
-			{#snippet actions()}<Button size={7} tone="ghost" onclick={() => session.cancel()}>Cancel</Button>{/snippet}
+			{#snippet actions()}<Button size={7} tone="ghost" onclick={cancelDocument}>Cancel</Button>{/snippet}
 		</ProcessingProgress>
 	{/if}
 	{#if session.error}<div class="fixed bottom-4 left-4 z-50">
@@ -219,9 +250,9 @@
 				onExport: (request) => exportResult(session.downloadExport(request)),
 				onResolvePages: (selection) => session.resolvePages(selection),
 				onPreview: (page, mode, onProgress) => session.renderExportPreview(page, mode, onProgress),
-				onCancel: () => session.cancel(),
+				onCancel: cancelDocument,
 				onReplace: () => picker?.click(),
-				onClose: () => void session.close()
+				onClose: () => void closeDocument()
 			}}
 		/>
 		<div class="relative flex min-h-0 min-w-0 flex-1">

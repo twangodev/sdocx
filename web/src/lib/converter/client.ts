@@ -3,7 +3,8 @@ import type {
 	ColorMode,
 	ConverterEvent,
 	ConverterProgress,
-	ConverterRequest,
+	ConverterRequestPayload,
+	ConverterResponseMap,
 	DocumentSummary,
 	PdfRenderResult,
 	SvgRenderResult,
@@ -15,12 +16,10 @@ type Pending = {
 	onProgress?: ProgressListener;
 };
 
+type StoppedWorkerState = { kind: 'failed' | 'closed'; error: Error };
+type WorkerState = { kind: 'running'; worker: Worker } | StoppedWorkerState;
+
 export type ProgressListener = (event: ConverterProgress) => void;
-type RequestPayload = ConverterRequest extends infer Request
-	? Request extends { id: number }
-		? Omit<Request, 'id'>
-		: never
-	: never;
 
 export interface ConverterClientPort {
 	load(bytes: ArrayBuffer, generation: number): Promise<DocumentSummary>;
@@ -36,18 +35,18 @@ export interface ConverterClientPort {
 }
 
 export class ConverterClient implements ConverterClientPort {
-	private worker: Worker;
+	private state: WorkerState;
 	private nextId = 1;
 	private generation = 0;
 	private readonly pending = new Map<number, Pending>();
 
 	constructor(private readonly onProgress?: ProgressListener) {
-		this.worker = this.createWorker();
+		this.state = { kind: 'running', worker: this.createWorker() };
 	}
 
 	async load(bytes: ArrayBuffer, generation: number): Promise<DocumentSummary> {
 		this.generation = generation;
-		return (await this.request({ type: 'load', generation, bytes }, [bytes])) as DocumentSummary;
+		return this.request({ type: 'load', generation, bytes }, [bytes]);
 	}
 
 	async debug(request: DebugRequest): Promise<unknown> {
@@ -59,24 +58,24 @@ export class ConverterClient implements ConverterClientPort {
 	}
 
 	async renderPage(pageIndex: number, colorMode: ColorMode, onProgress?: ProgressListener): Promise<SvgRenderResult> {
-		return (await this.request({
+		return this.request({
 			type: 'renderPage',
 			generation: this.generation,
 			pageIndex,
 			colorMode
-		}, [], onProgress)) as SvgRenderResult;
+		}, [], onProgress);
 	}
 
 	async exportPdf(pageIndices: number[], colorMode: ColorMode, onProgress?: ProgressListener): Promise<PdfRenderResult> {
-		return (await this.request({ type: 'exportPdf', generation: this.generation, pageIndices, colorMode }, [], onProgress)) as PdfRenderResult;
+		return this.request({ type: 'exportPdf', generation: this.generation, pageIndices, colorMode }, [], onProgress);
 	}
 
 	async resolvePages(selection: string): Promise<number[]> {
-		return (await this.request({ type: 'resolvePages', generation: this.generation, selection })) as number[];
+		return this.request({ type: 'resolvePages', generation: this.generation, selection });
 	}
 
 	async exportJson(): Promise<string> {
-		return (await this.request({ type: 'exportJson', generation: this.generation })) as string;
+		return this.request({ type: 'exportJson', generation: this.generation });
 	}
 
 	async dispose(generation: number): Promise<void> {
@@ -85,34 +84,66 @@ export class ConverterClient implements ConverterClientPort {
 	}
 
 	cancel(): void {
-		this.worker.terminate();
-		this.rejectPending(new Error('Processing cancelled.'));
-		this.worker = this.createWorker();
+		if (this.state.kind === 'closed') return;
+		this.stopWorker({ kind: 'failed', error: new Error('Processing cancelled.') });
+		this.state = { kind: 'running', worker: this.createWorker() };
 	}
 
 	destroy(): void {
-		this.worker.terminate();
-		this.rejectPending(new Error('Converter closed.'));
+		if (this.state.kind === 'closed') return;
+		this.stopWorker({ kind: 'closed', error: new Error('Converter closed.') });
 	}
 
 	private createWorker(): Worker {
 		const worker = new Worker(new URL('./converter.worker.ts', import.meta.url), { type: 'module' });
-		worker.onmessage = (event: MessageEvent<ConverterEvent>) => this.handleMessage(event.data);
+		worker.onmessage = (event: MessageEvent<ConverterEvent>) => {
+			const state = this.state;
+			if (state.kind === 'running' && worker === state.worker) this.handleMessage(event.data);
+		};
 		worker.onerror = (event) => {
-			this.rejectPending(new Error(event.message || 'The browser worker stopped unexpectedly.'));
+			const state = this.state;
+			if (state.kind !== 'running' || worker !== state.worker) return;
+			this.stopWorker({
+				kind: 'failed',
+				error: new Error(event.message || 'The browser worker stopped unexpectedly.')
+			});
 		};
 		return worker;
 	}
 
-	private request(
-		request: RequestPayload,
+	private stopWorker(next: StoppedWorkerState): void {
+		const previous = this.state;
+		this.state = next;
+		if (previous.kind === 'running') {
+			const worker = previous.worker;
+			worker.onmessage = null;
+			worker.onerror = null;
+			worker.terminate();
+		}
+		this.rejectPending(next.error);
+	}
+
+	private request<Request extends ConverterRequestPayload>(
+		request: Request,
 		transfer: Transferable[] = [],
 		onProgress?: ProgressListener
-	): Promise<unknown> {
+	): Promise<ConverterResponseMap[Request['type']]> {
+		const state = this.state;
+		if (state.kind !== 'running') return Promise.reject(state.error);
+		const worker = state.worker;
 		const id = this.nextId++;
 		return new Promise((resolve, reject) => {
-			this.pending.set(id, { resolve, reject, onProgress });
-			this.worker.postMessage({ ...request, id } as ConverterRequest, transfer);
+			this.pending.set(id, {
+				resolve: (value) => resolve(value as ConverterResponseMap[Request['type']]),
+				reject,
+				onProgress
+			});
+			try {
+				worker.postMessage({ ...request, id }, transfer);
+			} catch (cause) {
+				this.pending.delete(id);
+				reject(cause);
+			}
 		});
 	}
 

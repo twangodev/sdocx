@@ -2,6 +2,7 @@ import type { DebugRequest } from '$lib/debugger/model';
 import type {
 	ColorMode,
 	ConverterRequest,
+	ConverterResponseMap,
 	DocumentSummary,
 	PdfRenderResult,
 	SvgRenderResult,
@@ -34,7 +35,7 @@ export class ConverterWorkerSession {
 	) {}
 
 	async handle(request: ConverterRequest): Promise<unknown> {
-		if (request.type === 'load') return this.load(request);
+		if (request.type === 'load') return this.load(request) satisfies Promise<ConverterResponseMap['load']>;
 		if (request.type === 'dispose') {
 			if (request.generation < this.generation) return null;
 			this.generation = request.generation;
@@ -47,21 +48,21 @@ export class ConverterWorkerSession {
 			case 'debug': {
 				const session = this.requireSession();
 				if (!session.debug) throw new Error('Debugger unavailable');
-				return session.debug(request.request);
+				return session.debug(request.request) satisfies ConverterResponseMap['debug'];
 			}
 			case 'inspect':
-				return this.requireSession().inspection();
+				return this.requireSession().inspection() satisfies ConverterResponseMap['inspect'];
 			case 'renderPage':
-				return this.requireSession().renderPage(request.pageIndex, request.colorMode, this.observer(request));
+				return this.requireSession().renderPage(request.pageIndex, request.colorMode, this.observer(request)) satisfies ConverterResponseMap['renderPage'];
 			case 'exportPdf': {
 				const result = await this.requireSession().exportPdf(request.pageIndices, request.colorMode, this.observer(request));
 				this.assertCurrent(request.generation);
-				return result;
+				return result satisfies ConverterResponseMap['exportPdf'];
 			}
 			case 'resolvePages':
-				return this.requireSession().resolvePages(request.selection);
+				return this.requireSession().resolvePages(request.selection) satisfies ConverterResponseMap['resolvePages'];
 			case 'exportJson':
-				return JSON.stringify(this.requireSession().inspection(), null, 2);
+				return JSON.stringify(this.requireSession().inspection(), null, 2) satisfies ConverterResponseMap['exportJson'];
 		}
 	}
 
