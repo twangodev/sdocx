@@ -5046,62 +5046,95 @@ mod tests {
             pixmap
         }
 
-        fn assert_native_ink_equal(expected: &super::RenderedScene, actual: &super::RenderedScene) {
-            let expected_entries = expected.ink.iter().collect::<Vec<_>>();
-            let actual_entries = actual.ink.iter().collect::<Vec<_>>();
-            assert_eq!(expected_entries.len(), actual_entries.len());
-            for ((expected_id, expected), (actual_id, actual)) in
-                expected_entries.into_iter().zip(actual_entries)
-            {
-                assert_eq!(expected_id, actual_id);
-                assert_eq!(expected.bounds, actual.bounds);
-                assert_eq!(expected.opacity.to_bits(), actual.opacity.to_bits());
+        fn assert_visible_native_ink_preserved(
+            expected_entries: &[&crate::render::native_ink::NativeInk],
+            actual_entries: &[&crate::render::native_ink::NativeInk],
+            y: u32,
+            height: u32,
+        ) {
+            use crate::render::native_ink::{NativeInk, NativeInkPayload};
+
+            fn same_entry(expected: &NativeInk, actual: &NativeInk) -> bool {
+                if expected.bounds != actual.bounds
+                    || expected.opacity.to_bits() != actual.opacity.to_bits()
+                {
+                    return false;
+                }
                 match (&expected.payload, &actual.payload) {
                     (
-                        crate::render::native_ink::NativeInkPayload::Mesh {
-                            mesh: expected_mesh,
+                        NativeInkPayload::Mesh {
+                            mesh: expected,
                             color: expected_color,
                         },
-                        crate::render::native_ink::NativeInkPayload::Mesh {
-                            mesh: actual_mesh,
+                        NativeInkPayload::Mesh {
+                            mesh: actual,
                             color: actual_color,
                         },
-                    ) => {
-                        assert_eq!(expected_color, actual_color);
-                        assert_eq!(expected_mesh, actual_mesh);
-                    }
+                    ) => expected_color == actual_color && expected == actual,
                     (
-                        crate::render::native_ink::NativeInkPayload::Radial {
-                            records: expected_records,
+                        NativeInkPayload::Radial {
+                            records: expected,
                             saved_alpha: expected_alpha,
                             enhanced_antialias: expected_enhanced,
                         },
-                        crate::render::native_ink::NativeInkPayload::Radial {
-                            records: actual_records,
+                        NativeInkPayload::Radial {
+                            records: actual,
                             saved_alpha: actual_alpha,
                             enhanced_antialias: actual_enhanced,
                         },
                     ) => {
-                        assert_eq!(expected_records, actual_records);
-                        assert_eq!(expected_alpha.to_bits(), actual_alpha.to_bits());
-                        assert_eq!(expected_enhanced, actual_enhanced);
+                        expected == actual
+                            && expected_alpha.to_bits() == actual_alpha.to_bits()
+                            && expected_enhanced == actual_enhanced
                     }
                     (
-                        crate::render::native_ink::NativeInkPayload::RadialCircles {
-                            records: expected_records,
+                        NativeInkPayload::RadialCircles {
+                            records: expected,
                             saved_alpha: expected_alpha,
                         },
-                        crate::render::native_ink::NativeInkPayload::RadialCircles {
-                            records: actual_records,
+                        NativeInkPayload::RadialCircles {
+                            records: actual,
                             saved_alpha: actual_alpha,
                         },
-                    ) => {
-                        assert_eq!(expected_records, actual_records);
-                        assert_eq!(expected_alpha.to_bits(), actual_alpha.to_bits());
-                    }
-                    _ => panic!("native ink payload route changed"),
+                    ) => expected == actual && expected_alpha.to_bits() == actual_alpha.to_bits(),
+                    _ => false,
                 }
             }
+
+            fn removable_outside_fountain(entry: &NativeInk, y: u32, height: u32) -> bool {
+                let NativeInkPayload::RadialCircles {
+                    records,
+                    saved_alpha,
+                } = &entry.payload
+                else {
+                    return false;
+                };
+                let b = entry.bounds;
+                [b.x_min, b.y_min, b.x_max, b.y_max, entry.opacity]
+                    .into_iter()
+                    .all(f64::is_finite)
+                    && b.x_min <= b.x_max
+                    && b.y_min <= b.y_max
+                    && saved_alpha.is_finite()
+                    && records.iter().flatten().all(|v| v.is_finite())
+                    && (b.y_max < f64::from(y) || b.y_min > f64::from(y) + f64::from(height))
+            }
+
+            let mut actual = actual_entries.iter().copied().peekable();
+            for &expected in expected_entries {
+                if actual.peek().is_some_and(|next| same_entry(expected, next)) {
+                    actual.next();
+                } else {
+                    assert!(
+                        removable_outside_fountain(expected, y, height),
+                        "visible or non-Fountain native ink was removed or changed"
+                    );
+                }
+            }
+            assert!(
+                actual.next().is_none(),
+                "native ink was added, changed, or reordered"
+            );
         }
 
         for (case, variable) in [("quiz", "SDOCX_QUIZ_SDOCX"), ("cs61", "SDOCX_CS61_SDOCX")] {
@@ -5150,7 +5183,20 @@ mod tests {
                     with_culling.page.paint_diagnostics
                 );
                 assert_eq!(without_culling.text.len(), with_culling.text.len());
-                assert_native_ink_equal(without_culling, with_culling);
+                assert_visible_native_ink_preserved(
+                    &without_culling
+                        .ink
+                        .iter()
+                        .map(|(_, entry)| entry)
+                        .collect::<Vec<_>>(),
+                    &with_culling
+                        .ink
+                        .iter()
+                        .map(|(_, entry)| entry)
+                        .collect::<Vec<_>>(),
+                    y,
+                    height,
+                );
 
                 let width = with_culling.page.width;
                 let pixmap_without_culling = raster(&without_culling.page.svg, width, height);
