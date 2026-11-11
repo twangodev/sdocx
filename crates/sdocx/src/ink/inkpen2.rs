@@ -140,7 +140,6 @@ struct Core<'a> {
     no_emission: bool,
     alternation: bool,
     max_emissions: usize,
-    bounds: [f32; 4],
     rainbow_offset: f32,
     current_rgb: [f32; 3],
     v1_callback: bool,
@@ -190,10 +189,6 @@ impl<'a> Core<'a> {
         {
             return None;
         }
-        self.bounds[0] = self.bounds[0].min(p.x - r);
-        self.bounds[1] = self.bounds[1].min(p.y - r);
-        self.bounds[2] = self.bounds[2].max(p.x + r);
-        self.bounds[3] = self.bounds[3].max(p.y + r);
         self.output.vertices.push(vertex);
         self.no_emission = false;
         Some(())
@@ -473,12 +468,6 @@ fn redraw_with_mode(input: Input<'_>, max_emissions: usize, v1: bool) -> Option<
         no_emission: true,
         alternation: input.runtime.initial_alternation,
         max_emissions,
-        bounds: [
-            f32::INFINITY,
-            f32::INFINITY,
-            f32::NEG_INFINITY,
-            f32::NEG_INFINITY,
-        ],
         rainbow_offset: input.rainbow.map_or(0.0, |rainbow| rainbow.offset),
         current_rgb: input.rgb.map(|channel| f32::from(channel) / 255.0),
         v1_callback: v1,
