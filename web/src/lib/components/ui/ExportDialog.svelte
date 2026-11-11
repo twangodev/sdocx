@@ -33,6 +33,12 @@
 		};
 	}
 
+	type RangeValidation =
+		| { kind: 'idle' }
+		| { kind: 'checking'; selection: string }
+		| { kind: 'resolved'; selection: string; indices: number[] }
+		| { kind: 'invalid'; selection: string; message: string };
+
 	let { model, actions }: Props = $props();
 	let dialog: HTMLDialogElement;
 	let formatSelect: HTMLSelectElement;
@@ -44,10 +50,10 @@
 	let range = $state('');
 	let scale = $state<1 | 2>(1);
 	let currentPage = $state(0);
-	let rangeIndices = $state<number[]>([]);
-	let resolvedRange = $state<string | null>(null);
-	let validating = $state(false);
-	let rangeError = $state('');
+	let rangeValidation = $state<RangeValidation>({ kind: 'idle' });
+	const rangeIndices = $derived(rangeValidation.kind === 'resolved' ? rangeValidation.indices : []);
+	const validating = $derived(rangeValidation.kind === 'checking');
+	const rangeError = $derived(rangeValidation.kind === 'invalid' ? rangeValidation.message : '');
 	let error = $state('');
 	let submitting = $state(false);
 	let downloaded = $state(false);
@@ -59,7 +65,8 @@
 		: scope === 'current' ? [currentPage] : rangeIndices);
 	const details = $derived(exportDetails({ format, pageIndices, pngScale: scale }, model.pageCount, sanitizeStem(model.filename)));
 	const busy = $derived(submitting || model.exporting);
-	const validSelection = $derived(pageIndices.length > 0 && (!custom || (!validating && resolvedRange === range && !rangeError)));
+	const validSelection = $derived(pageIndices.length > 0 && (!custom ||
+		(rangeValidation.kind === 'resolved' && rangeValidation.selection === range)));
 
 	$effect(() => {
 		// Editing settings clears the previous result, without hiding the form.
@@ -71,22 +78,20 @@
 	$effect(() => {
 		const selection = range;
 		const pageCount = model.pageCount;
-		resolvedRange = null;
-		rangeIndices = [];
-		rangeError = '';
-		validating = custom;
+		rangeValidation = custom ? { kind: 'checking', selection } : { kind: 'idle' };
 		if (!custom) return;
 		let active = true;
 		const timer = setTimeout(async () => {
 			try {
 				const indices = await actions.onResolvePages(selection);
 				if (!active || pageCount !== model.pageCount) return;
-				rangeIndices = indices;
-				resolvedRange = selection;
+				rangeValidation = { kind: 'resolved', selection, indices };
 			} catch (cause) {
-				if (active) rangeError = cause instanceof Error ? cause.message : 'Could not validate these pages.';
-			} finally {
-				if (active) validating = false;
+				if (active) rangeValidation = {
+					kind: 'invalid',
+					selection,
+					message: cause instanceof Error ? cause.message : 'Could not validate these pages.'
+				};
 			}
 		}, 150);
 		return () => { active = false; clearTimeout(timer); };

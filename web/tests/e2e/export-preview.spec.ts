@@ -8,6 +8,10 @@ declare global {
 	interface Window {
 		exportPreviewBlobs: Map<string, Blob>;
 		exportPreviewTest: { hold: boolean; fail: boolean; pending: (() => void)[]; delivered: number; revoked: string[] };
+		rangeValidationTest: {
+			pending: Record<string, { resolve: (indices: number[]) => void; reject: (message: string) => void }>;
+			exportedPages: number[] | null;
+		};
 	}
 }
 
@@ -274,6 +278,60 @@ test('preview rejects stale results, retries failures, and releases its object U
 	const last = await dialog.locator('img').getAttribute('src');
 	await page.keyboard.press('Escape');
 	await expect.poll(() => page.evaluate(() => window.exportPreviewTest.revoked)).toContain(last);
+});
+
+test('custom ranges ignore obsolete success and failure while awaiting the current selection', async ({ page }) => {
+	await page.addInitScript(() => {
+		const controls = window.rangeValidationTest = {
+			pending: {} as Window['rangeValidationTest']['pending'],
+			exportedPages: null as number[] | null
+		};
+		const post = Worker.prototype.postMessage;
+		Worker.prototype.postMessage = function(message, options?: StructuredSerializeOptions | Transferable[]) {
+			if (message.type === 'resolvePages') {
+				controls.pending[message.selection] = {
+					resolve: (indices) => this.dispatchEvent(new MessageEvent('message', {
+						data: { id: message.id, type: 'result', value: indices }
+					})),
+					reject: (error) => this.dispatchEvent(new MessageEvent('message', {
+						data: { id: message.id, type: 'error', message: error }
+					}))
+				};
+				return;
+			}
+			if (message.type === 'exportPdf') controls.exportedPages = [...message.pageIndices];
+			post.call(this, message, options as StructuredSerializeOptions);
+		};
+	});
+	await openDocument(page);
+	await page.getByRole('button', { name: 'Export document', exact: true }).click();
+	const dialog = page.getByRole('dialog');
+	const range = dialog.getByLabel('Page range', { exact: true });
+	const download = dialog.getByRole('button', { name: 'Download PDF', exact: true });
+	await dialog.getByRole('radio', { name: 'Custom range' }).check();
+	for (const selection of ['1', '2', '3']) {
+		await range.fill(selection);
+		await expect.poll(() => page.evaluate((selection) =>
+			Boolean(window.rangeValidationTest.pending[selection]), selection
+		)).toBe(true);
+	}
+	await page.evaluate(async () => {
+		window.rangeValidationTest.pending['1'].resolve([0]);
+		window.rangeValidationTest.pending['2'].reject('Obsolete range error');
+		await new Promise(requestAnimationFrame);
+	});
+	await expect(download).toBeDisabled();
+	await expect(range).toHaveAttribute('aria-invalid', 'false');
+	await expect(dialog).not.toContainText('Obsolete range error');
+	await expect(dialog.locator('img')).toHaveCount(0);
+	await page.evaluate(() => window.rangeValidationTest.pending['3'].resolve([2]));
+	await expect(download).toBeEnabled();
+	await expect(dialog.getByAltText('Export preview of page 3')).toBeVisible();
+	await expect(dialog.locator('[data-export-filename]')).toHaveText('preview-page-003.pdf');
+	const downloaded = page.waitForEvent('download');
+	await download.click();
+	await downloaded;
+	expect(await page.evaluate(() => window.rangeValidationTest.exportedPages)).toEqual([2]);
 });
 
 for (const theme of ['light', 'dark']) {
