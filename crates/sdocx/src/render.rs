@@ -1834,156 +1834,24 @@ fn render_object(
         native_allowed && !matches!(object.content, PageObjectContent::Descendant(_));
     match object.content.leaf() {
         PageObjectContent::Stroke(stroke) => {
-            if native_allowed
+            let handled = native_allowed
                 && !context.replay
                 && context.slice.is_none()
-                && let Some(profile) = context.brush_policy.options.crayon2_grid_profile.as_ref()
-                && [context.page.width, context.page.height] == [profile.width, profile.height]
-                && stroke.color.is_some_and(|color| {
-                    let effective = context.theme.foreground_color(color);
-                    [effective.r, effective.g, effective.b]
-                        == [profile.rgba[0], profile.rgba[1], profile.rgba[2]]
-                            .map(|v| (v * 255.).round() as u8)
-                })
-                && let (Ok(phase_x), Ok(phase_y)) = (
-                    profile.phase_x.as_slice().try_into(),
-                    profile.phase_y.as_slice().try_into(),
-                )
-            {
-                let grid = crate::Crayon2HostGrid {
-                    phase_x,
-                    phase_y,
-                    point_atlas: &profile.point_atlas,
-                    background_texture: &profile.background_texture,
-                    width: profile.width,
-                    height: profile.height,
-                    clip_scale: profile.clip_scale,
-                    clip_translation: profile.clip_translation,
-                    background_scale: profile.background_scale,
-                    rgba: profile.rgba,
-                    background: None,
-                    max_samples: context.budgets.crayon2_grid_remaining.get(),
-                };
-                if let Ok((fragments, used)) = crate::ink::crayon2::sample_host_grid(stroke, &grid)
-                {
-                    for fragment in fragments {
-                        let color = format!(
-                            "#{:02x}{:02x}{:02x}",
-                            fragment.rgb[0], fragment.rgb[1], fragment.rgb[2]
-                        );
-                        let bounds = BoundingBox {
-                            x_min: f64::from(fragment.x),
-                            y_min: f64::from(fragment.y),
-                            x_max: f64::from(fragment.x + 1),
-                            y_max: f64::from(fragment.y + 1),
-                        };
-                        svg.push(
-                            rectangle(bounds, 0., 5)
-                                .fill(Paint::from_hex(&color))
-                                .fill_opacity(f64::from(fragment.alpha)),
-                        );
-                    }
-                    context
-                        .budgets
-                        .crayon2_grid_remaining
-                        .set(context.budgets.crayon2_grid_remaining.get() - used);
-                    *stroke_index += 1;
-                    progress.advance(1);
-                    return;
-                }
-            }
-            #[cfg(feature = "pdf")]
-            if native_allowed
-                && !context.replay
-                && context.slice.is_none()
-                && context.brush_policy.options.old_pencil_pdf_profile
-                && context.budgets.old_pencil_pdf_remaining_forms.get() > 0
-                && [context.page.width, context.page.height] == [1920, 1080]
-                && old_pencil::render_pdf(
+                && try_render_full_page_stroke(svg, stroke, context) == StrokeDispatch::Handled;
+            if !handled {
+                render_stroke(
                     svg,
                     stroke,
                     context.theme,
-                    &context.budgets.old_pencil_remaining_stamps,
-                    &context.budgets.old_pencil_remaining_points,
-                )
-            {
-                context
-                    .budgets
-                    .old_pencil_pdf_remaining_forms
-                    .set(context.budgets.old_pencil_pdf_remaining_forms.get() - 1);
-                *stroke_index += 1;
-                progress.advance(1);
-                return;
-            }
-            #[cfg(feature = "pdf")]
-            if native_allowed
-                && !context.replay
-                && context.slice.is_none()
-                && let Some(profile) = context.brush_policy.options.legacy_marker_vector_profile
-                && legacy_marker_vector::render(
-                    svg,
-                    stroke,
-                    context.theme,
+                    context.replay.then_some(*stroke_index),
+                    calligraphy_session,
+                    native_allowed,
                     [context.page.width, context.page.height],
-                    profile,
-                    &mut context.budgets.legacy_marker_budget.borrow_mut(),
-                )
-            {
-                *stroke_index += 1;
-                progress.advance(1);
-                return;
+                    context.brush_policy,
+                    &context.budgets,
+                    context.slice,
+                );
             }
-            if native_allowed
-                && !context.replay
-                && context.slice.is_none()
-                && let Some(view) = context.brush_policy.options.inkpen2_half_grid_viewport
-                && context
-                    .brush_policy
-                    .options
-                    .inkpen2_profile
-                    .is_some_and(|p| {
-                        matches!(
-                            (p.screen_width, p.screen_height),
-                            (1440, 2560) | (2560, 1440)
-                        )
-                    })
-                && view.width.checked_mul(2) == Some(context.page.width)
-                && view.height.checked_mul(2) == Some(context.page.height)
-                && let Some(rendering) = stroke.rendering.as_ref()
-                && rendering
-                    .style
-                    .color_argb
-                    .is_some_and(|argb| argb >> 24 == 255)
-                && let Some(ink) = prepare_inkpen2_internal(
-                    stroke,
-                    context.brush_policy.options.inkpen2_profile,
-                    context.theme,
-                    Some(InkPen2V1OutputScale::Half),
-                    true,
-                )
-                && inkpen2_half_grid::render(
-                    svg,
-                    &ink,
-                    view,
-                    &context.budgets.inkpen2_half_grid_budget,
-                )
-            {
-                *stroke_index += 1;
-                progress.advance(1);
-                return;
-            }
-            render_stroke(
-                svg,
-                stroke,
-                context.theme,
-                context.replay.then_some(*stroke_index),
-                calligraphy_session,
-                native_allowed,
-                [context.page.width, context.page.height],
-                context.brush_policy,
-                &context.budgets,
-                context.slice,
-            );
             *stroke_index += 1;
         }
         PageObjectContent::Element(element) => {
@@ -2005,6 +1873,126 @@ fn render_object(
         PageObjectContent::Descendant(_) => unreachable!("leaf unwraps descendant content"),
     }
     progress.advance(1);
+}
+
+fn try_render_full_page_stroke(
+    svg: &mut Scene,
+    stroke: &Stroke,
+    context: &CompositionContext<'_>,
+) -> StrokeDispatch {
+    if let Some(profile) = context.brush_policy.options.crayon2_grid_profile.as_ref()
+        && [context.page.width, context.page.height] == [profile.width, profile.height]
+        && stroke.color.is_some_and(|color| {
+            let effective = context.theme.foreground_color(color);
+            [effective.r, effective.g, effective.b]
+                == [profile.rgba[0], profile.rgba[1], profile.rgba[2]]
+                    .map(|v| (v * 255.).round() as u8)
+        })
+        && let (Ok(phase_x), Ok(phase_y)) = (
+            profile.phase_x.as_slice().try_into(),
+            profile.phase_y.as_slice().try_into(),
+        )
+    {
+        let grid = crate::Crayon2HostGrid {
+            phase_x,
+            phase_y,
+            point_atlas: &profile.point_atlas,
+            background_texture: &profile.background_texture,
+            width: profile.width,
+            height: profile.height,
+            clip_scale: profile.clip_scale,
+            clip_translation: profile.clip_translation,
+            background_scale: profile.background_scale,
+            rgba: profile.rgba,
+            background: None,
+            max_samples: context.budgets.crayon2_grid_remaining.get(),
+        };
+        if let Ok((fragments, used)) = crate::ink::crayon2::sample_host_grid(stroke, &grid) {
+            for fragment in fragments {
+                let color = format!(
+                    "#{:02x}{:02x}{:02x}",
+                    fragment.rgb[0], fragment.rgb[1], fragment.rgb[2]
+                );
+                let bounds = BoundingBox {
+                    x_min: f64::from(fragment.x),
+                    y_min: f64::from(fragment.y),
+                    x_max: f64::from(fragment.x + 1),
+                    y_max: f64::from(fragment.y + 1),
+                };
+                svg.push(
+                    rectangle(bounds, 0., 5)
+                        .fill(Paint::from_hex(&color))
+                        .fill_opacity(f64::from(fragment.alpha)),
+                );
+            }
+            context
+                .budgets
+                .crayon2_grid_remaining
+                .set(context.budgets.crayon2_grid_remaining.get() - used);
+            return StrokeDispatch::Handled;
+        }
+    }
+    #[cfg(feature = "pdf")]
+    if context.brush_policy.options.old_pencil_pdf_profile
+        && context.budgets.old_pencil_pdf_remaining_forms.get() > 0
+        && [context.page.width, context.page.height] == [1920, 1080]
+        && old_pencil::render_pdf(
+            svg,
+            stroke,
+            context.theme,
+            &context.budgets.old_pencil_remaining_stamps,
+            &context.budgets.old_pencil_remaining_points,
+        )
+    {
+        context
+            .budgets
+            .old_pencil_pdf_remaining_forms
+            .set(context.budgets.old_pencil_pdf_remaining_forms.get() - 1);
+        return StrokeDispatch::Handled;
+    }
+    #[cfg(feature = "pdf")]
+    if let Some(profile) = context.brush_policy.options.legacy_marker_vector_profile
+        && legacy_marker_vector::render(
+            svg,
+            stroke,
+            context.theme,
+            [context.page.width, context.page.height],
+            profile,
+            &mut context.budgets.legacy_marker_budget.borrow_mut(),
+        )
+    {
+        return StrokeDispatch::Handled;
+    }
+    if let Some(view) = context.brush_policy.options.inkpen2_half_grid_viewport
+        && context
+            .brush_policy
+            .options
+            .inkpen2_profile
+            .is_some_and(|p| {
+                matches!(
+                    (p.screen_width, p.screen_height),
+                    (1440, 2560) | (2560, 1440)
+                )
+            })
+        && view.width.checked_mul(2) == Some(context.page.width)
+        && view.height.checked_mul(2) == Some(context.page.height)
+        && let Some(rendering) = stroke.rendering.as_ref()
+        && rendering
+            .style
+            .color_argb
+            .is_some_and(|argb| argb >> 24 == 255)
+        && let Some(ink) = prepare_inkpen2_internal(
+            stroke,
+            context.brush_policy.options.inkpen2_profile,
+            context.theme,
+            Some(InkPen2V1OutputScale::Half),
+            true,
+        )
+        && inkpen2_half_grid::render(svg, &ink, view, &context.budgets.inkpen2_half_grid_budget)
+    {
+        return StrokeDispatch::Handled;
+    }
+    StrokeDispatch::Fallback
 }
 
 fn render_line_background(
