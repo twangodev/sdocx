@@ -50,7 +50,13 @@ pub struct FountainV14Prepared {
 /// At most 256 distinct objects are retained; this is a host resource bound.
 pub struct FountainV14Scene {
     direction: crate::Point,
-    entries: Vec<(u64, u64, u32, FountainV14Prepared)>,
+    entries: Vec<SceneEntry>,
+}
+
+struct SceneEntry {
+    object: u64,
+    revision: u64,
+    prepared: FountainV14Prepared,
 }
 
 impl Default for FountainV14Scene {
@@ -79,10 +85,12 @@ impl FountainV14Scene {
         context: InkRasterContext,
     ) -> Result<&FountainV14Prepared, InkRasterError> {
         context.pixel_count()?;
-        let index = self.entries.iter().position(|entry| entry.0 == object);
+        let index = self.entries.iter().position(|entry| entry.object == object);
         if let Some(i) = index {
-            if self.entries[i].1 == revision && self.entries[i].2 == context.pixels_per_unit {
-                return Ok(&self.entries[i].3);
+            if self.entries[i].revision == revision
+                && self.entries[i].prepared.scale == context.pixels_per_unit
+            {
+                return Ok(&self.entries[i].prepared);
             }
         } else if self.entries.len() >= 256 {
             return Err(InkRasterError::WorkLimit);
@@ -94,7 +102,11 @@ impl FountainV14Scene {
         }
         let prepared = FountainV14Prepared::new(stroke, context, self.direction)?;
         let direction = prepared.outgoing_direction();
-        let entry = (object, revision, context.pixels_per_unit, prepared);
+        let entry = SceneEntry {
+            object,
+            revision,
+            prepared,
+        };
         let i = match index {
             Some(i) => {
                 self.entries[i] = entry;
@@ -106,7 +118,7 @@ impl FountainV14Scene {
             }
         };
         self.direction = direction;
-        Ok(&self.entries[i].3)
+        Ok(&self.entries[i].prepared)
     }
 }
 
