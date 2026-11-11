@@ -308,12 +308,13 @@ fn order_page_records(
             .push_back(index);
     }
 
-    let mut selected = vec![false; records.len()];
-    let mut ordered_indexes = Vec::with_capacity(records.len());
+    let mut remaining = records.into_iter().map(Some).collect::<Vec<_>>();
+    let mut ordered = Vec::with_capacity(remaining.len());
     for page_id in page_ids {
         if let Some(index) = indexes_by_id.get_mut(page_id).and_then(VecDeque::pop_front) {
-            selected[index] = true;
-            ordered_indexes.push(index);
+            if let Some(record) = remaining[index].take() {
+                ordered.push(record);
+            }
         } else {
             report.warning(
                 DiagnosticCode::MissingPageEntry,
@@ -322,25 +323,18 @@ fn order_page_records(
             );
         }
     }
-    for (index, was_selected) in selected.iter().enumerate() {
-        if !was_selected {
-            report.warning(
-                DiagnosticCode::UnlistedPageEntry,
-                Some(records[index].stored.archive_entry.clone()),
-                format!(
-                    "page {} is not listed in pageIdInfo.dat",
-                    records[index].stored.page.header.uuid
-                ),
-            );
-            ordered_indexes.push(index);
-        }
+    for record in remaining.into_iter().flatten() {
+        report.warning(
+            DiagnosticCode::UnlistedPageEntry,
+            Some(record.stored.archive_entry.clone()),
+            format!(
+                "page {} is not listed in pageIdInfo.dat",
+                record.stored.page.header.uuid
+            ),
+        );
+        ordered.push(record);
     }
-
-    let mut records = records.into_iter().map(Some).collect::<Vec<_>>();
-    ordered_indexes
-        .into_iter()
-        .filter_map(|index| records[index].take())
-        .collect()
+    ordered
 }
 
 fn report_unknown_object_types(
@@ -634,8 +628,20 @@ mod tests {
 
     #[test]
     fn orders_pages_by_page_id_info_then_preserves_unlisted_order() {
-        let pages = vec![page("second"), page("unlisted"), page("first")];
-        let ids = vec!["first".to_string(), "second".to_string()];
+        let pages = vec![
+            page("second"),
+            page("unlisted"),
+            page("first"),
+            page("another-unlisted"),
+        ];
+        let ids = [
+            "missing-before",
+            "first",
+            "missing-between",
+            "second",
+            "first",
+        ]
+        .map(str::to_owned);
 
         let records = pages
             .into_iter()
@@ -680,14 +686,61 @@ mod tests {
         assert_eq!(
             ordered
                 .iter()
-                .map(|record| record.semantic.uuid.as_str())
+                .map(|record| (
+                    record.semantic.uuid.as_str(),
+                    record.stored.page.header.uuid.as_str(),
+                    record.stored.archive_entry.as_str(),
+                ))
                 .collect::<Vec<_>>(),
-            vec!["first", "second", "unlisted"]
+            [
+                ("first", "first", "first.page"),
+                ("second", "second", "second.page"),
+                ("unlisted", "unlisted", "unlisted.page"),
+                (
+                    "another-unlisted",
+                    "another-unlisted",
+                    "another-unlisted.page"
+                ),
+            ]
         );
-        assert_eq!(report.diagnostics.len(), 1);
+        use crate::DiagnosticCode::{MissingPageEntry, UnlistedPageEntry};
         assert_eq!(
-            report.diagnostics[0].code,
-            crate::DiagnosticCode::UnlistedPageEntry
+            report
+                .diagnostics
+                .iter()
+                .map(|diagnostic| (
+                    diagnostic.code,
+                    diagnostic.archive_entry.as_deref(),
+                    diagnostic.message.as_str(),
+                ))
+                .collect::<Vec<_>>(),
+            [
+                (
+                    MissingPageEntry,
+                    Some("pageIdInfo.dat"),
+                    "page manifest references missing page missing-before"
+                ),
+                (
+                    MissingPageEntry,
+                    Some("pageIdInfo.dat"),
+                    "page manifest references missing page missing-between"
+                ),
+                (
+                    MissingPageEntry,
+                    Some("pageIdInfo.dat"),
+                    "page manifest references missing page first"
+                ),
+                (
+                    UnlistedPageEntry,
+                    Some("unlisted.page"),
+                    "page unlisted is not listed in pageIdInfo.dat"
+                ),
+                (
+                    UnlistedPageEntry,
+                    Some("another-unlisted.page"),
+                    "page another-unlisted is not listed in pageIdInfo.dat"
+                ),
+            ]
         );
     }
 
