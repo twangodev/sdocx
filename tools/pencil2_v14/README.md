@@ -2,6 +2,31 @@
 
 These controls use synthetic inputs, ARM64 emulation and host Mesa. They do not establish Android device, saved-note or general renderer parity.
 
+## Maintained edge and projection controls
+
+`run_control.py` shares record mixing, alpha isolation and capture handling for
+the `edge`, `horizontal` and `projection` variants. `streams.py` exposes those
+record operations for import. `control_adapter.py` contains the finite checked
+source hooks required by the historical harness, whose draw state is local to
+`capture()`. It reads the compressed base archive directly and verifies its
+historical hash. The three original producer scripts and their receipts retain
+their original bytes and identities.
+
+```sh
+python3 tools/pencil2_v14/run_control.py edge --check
+python3 tools/pencil2_v14/run_control.py horizontal --check
+python3 tools/pencil2_v14/run_control.py projection --check
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 tools/pencil2_v14/run_control.py horizontal --output /tmp/pencil2-horizontal-new.json
+```
+
+`--check` validates retained stream hashes, historical producer hashes and exact
+generated-program hashes without running native drawing. The program pins were
+established by comparing all three maintained programs byte for byte with the
+historical producers' source transformations. Fresh captures require a new
+output path and record the maintained schema, variant and helper hashes; they
+do not replace or claim to have produced historical receipts. Native execution
+of the maintained entrypoint has not been validated during this refactor.
+
 ## Mixed RGB capture
 
 The capture uses the tracked compressed base source and pinned local native inputs. From the repository root, restore the base source to the path expected by the unchanged capture script, then run it:
