@@ -29,7 +29,7 @@ interface WasmModule {
 let modulePromise: Promise<WasmModule> | undefined;
 
 async function loadModule(): Promise<WasmModule> {
-	modulePromise ??= (async () => {
+	const pending = modulePromise ??= (async () => {
 		const moduleUrl = `${self.location.origin}/wasm/sdocx_wasm.js`;
 		const wasmUrl = `${self.location.origin}/wasm/sdocx_wasm_bg.wasm`;
 		const module = (await import(/* @vite-ignore */ moduleUrl)) as WasmModule;
@@ -37,7 +37,12 @@ async function loadModule(): Promise<WasmModule> {
 		return module;
 	})();
 
-	return modulePromise;
+	try {
+		return await pending;
+	} catch (error) {
+		if (modulePromise === pending) modulePromise = undefined;
+		throw error;
+	}
 }
 
 function callOrRead<T>(value: T | (() => T), receiver: object): T {
