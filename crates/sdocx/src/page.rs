@@ -121,7 +121,6 @@ impl PageDecoder<'_, '_> {
                 )),
                 error => error,
             })?;
-        self.stroke_resources.resolve_formula(&mut formula);
         match formula.select_render_source(self.document_metadata, false, None) {
             crate::formula::FormulaRenderSelection::StrokeFallback { strokes } => {
                 content = Some(PageObjectContent::Container(
@@ -140,6 +139,7 @@ impl PageDecoder<'_, '_> {
                 result_rect: Some(result_rect),
                 ..
             } => {
+                self.stroke_resources.resolve_formula(&mut formula);
                 let bounds = crate::formula::bounds::formula_drawn_bounds(
                     &formula,
                     self.stroke_resources.is_complete(),
