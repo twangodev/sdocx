@@ -40,7 +40,7 @@ struct ScreenQuad {
     t_gradient: [f32; 2],
 }
 
-/// Paint captured 11-float RTV1 records into a transparent bottom-left RGBA8 target.
+/// Paint captured 11-float RTV1 records over an existing bottom-left premultiplied RGBA8 target.
 /// This reproduces one specific host-Mesa sampler profile, not portable GLES behavior.
 pub(crate) fn paint(
     records: &[[f32; 11]],

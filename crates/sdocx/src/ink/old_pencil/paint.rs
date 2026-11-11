@@ -321,8 +321,8 @@ fn triangle_indices(triangle: usize) -> [usize; 3] {
 }
 
 /// Render a bounded list of VBO-equivalent `[x, y, half_width, tile_id]`
-/// records through the captured Pencil material profile. Production-side
-/// callers can pass records from `old_pencil::sample_saved_stroke` after the
+/// records through the captured Pencil material profile. Test callers can
+/// pass records from `old_pencil::sample_saved_stroke` after the
 /// source geometry profile guard succeeds.
 pub fn render_records(
     records: &[[f32; 4]],

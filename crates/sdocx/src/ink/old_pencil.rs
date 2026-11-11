@@ -11,8 +11,8 @@
 
 use super::path::{P, Quad};
 
-// The V17 paint model is a test-only conditional host profile, like the
-// sibling BrushPen paint child. It is not wired into production dispatch.
+// The V17 paint model is a test-only conditional host profile.
+// It is not wired into production dispatch.
 #[cfg(test)]
 mod paint;
 
