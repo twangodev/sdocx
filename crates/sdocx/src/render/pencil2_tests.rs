@@ -1,4 +1,5 @@
 //! Paired scene transport controls for the fixed-resolution Pencil2 hypothesis.
+use super::vector::Image;
 use super::*;
 use crate::ink::pencil2::{device_raster, mixed_rgb_tests};
 

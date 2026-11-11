@@ -1,4 +1,5 @@
-use super::*;
+use super::vector::{FinishedRetainedScene, Image, Scene, Svg, ViewBox};
+use super::{RenderedPage, RenderedScene};
 
 pub(crate) fn raster_scene(width: u32, height: u32, png: &[u8]) -> RenderedScene {
     let mut scene = Scene::new(Svg::new().width(width).height(height).view_box(
@@ -12,7 +13,7 @@ pub(crate) fn raster_scene(width: u32, height: u32, png: &[u8]) -> RenderedScene
             .stretched()
             .pixelated(),
     );
-    let vector::FinishedRetainedScene {
+    let FinishedRetainedScene {
         svg,
         text,
         ink,

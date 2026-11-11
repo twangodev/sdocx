@@ -242,7 +242,7 @@ fn object_bounds(span: &RichTextObjectSpan) -> Result<BoundingBox, ObjectDiagnos
             if !valid_bounds(image.bbox) {
                 return Err(ObjectDiagnosticKind::InvalidBounds);
             }
-            Ok(crate::render::image_drawn_bbox(image))
+            Ok(crate::render::images::image_drawn_bbox(image))
         }
         Some(RichTextObjectContent::Table(table)) => {
             if !valid_bounds(table.bbox) {
