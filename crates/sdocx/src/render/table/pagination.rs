@@ -1,6 +1,6 @@
 use super::{
-    ObjectDiagnosticKind, PreparedTable, RenderTheme, RichTextTable, TextRenderer, native_add,
-    native_measured_height, native_sub,
+    ObjectDiagnosticKind, PreparedTable, RenderTheme, RichTextTable, TextLayout, TextRenderer,
+    VerticalExclusion, native_add, native_measured_height, native_sub,
 };
 use crate::BoundingBox;
 
@@ -36,6 +36,39 @@ pub(super) struct BandList {
     pub rectangles: Vec<BoundingBox>,
 }
 
+/// One cell's projection of ordered padding into line and cursor constraints.
+/// Global table bands remain separate because they certify page ownership.
+pub(super) struct CellBandConstraints<'a> {
+    pub padding_rectangles: Vec<&'a BoundingBox>,
+    pub exclusions: Vec<VerticalExclusion>,
+    pub height_limit: f32,
+    pub width: i32,
+}
+
+impl CellBandConstraints<'_> {
+    fn spans_width(rect: &BoundingBox, width: i32) -> bool {
+        rect.x_min <= 0.0 && rect.x_max >= f64::from(width)
+    }
+
+    pub fn intersects_partial_band(&self, layout: &TextLayout) -> bool {
+        self.padding_rectangles
+            .iter()
+            .filter(|rect| !Self::spans_width(rect, self.width))
+            .any(|rect| {
+                layout
+                    .lines
+                    .iter()
+                    .any(|line| line.bottom > rect.y_min && line.top < rect.y_max)
+            })
+    }
+}
+
+fn padding_spacing_capacity(rectangles: &[&BoundingBox]) -> f32 {
+    rectangles.get(1).map_or(f32::MAX, |second| {
+        second.y_min as f32 - rectangles[0].y_max as f32
+    })
+}
+
 impl BandList {
     pub fn new(rectangles: Vec<BoundingBox>) -> Result<Self, ObjectDiagnosticKind> {
         let rectangles = rectangles
@@ -68,11 +101,25 @@ impl BandList {
         rectangles
     }
 
+    pub fn cell_constraints(&self, width: i32) -> CellBandConstraints<'_> {
+        let padding_rectangles = self.padding_rectangles();
+        let height_limit = padding_spacing_capacity(&padding_rectangles);
+        let exclusions = padding_rectangles
+            .iter()
+            .filter(|rect| CellBandConstraints::spans_width(rect, width))
+            .map(|rect| VerticalExclusion::obstacle(rect.y_min, rect.y_max))
+            .collect();
+        CellBandConstraints {
+            padding_rectangles,
+            exclusions,
+            height_limit,
+            width,
+        }
+    }
+
+    #[cfg(test)]
     pub fn spacing_capacity(&self) -> f32 {
-        let rectangles = self.padding_rectangles();
-        rectangles.get(1).map_or(f32::MAX, |second| {
-            second.y_min as f32 - rectangles[0].y_max as f32
-        })
+        padding_spacing_capacity(&self.padding_rectangles())
     }
 
     fn for_row(&self, top: f64) -> Result<Self, ObjectDiagnosticKind> {

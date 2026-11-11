@@ -40,7 +40,7 @@ pub(super) use paint::render_table;
 
 use borders::Edge;
 
-use pagination::BandList;
+use pagination::{BandList, CellBandConstraints};
 
 pub(super) struct PreparedTable {
     pub measured_bbox: BoundingBox,
@@ -787,15 +787,7 @@ impl PreparedTable {
             .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
         let source = &table.rows[row_index].cells[column_index];
         let bounds = cell_text_bounds(cell.frame)?;
-        let width = bounds.x_max as i32;
-        let padding_rectangles = bands.padding_rectangles();
-        let full_width = |rect: &&BoundingBox| rect.x_min <= 0.0 && rect.x_max >= f64::from(width);
-        let exclusions = padding_rectangles
-            .iter()
-            .copied()
-            .filter(full_width)
-            .map(|rect| VerticalExclusion::obstacle(rect.y_min, rect.y_max))
-            .collect::<Vec<_>>();
+        let constraints = bands.cell_constraints(bounds.x_max as i32);
         let styled = StyledText::new(&source.content, TextContext::Flow, renderer.settings);
         let theme = CellFill::resolve(&table.style, table.rows[row_index].index, source, theme)
             .theme(theme);
@@ -804,11 +796,11 @@ impl PreparedTable {
             TextFrame {
                 bbox: bounds,
                 gravity: Some(0),
-                exclusions: &exclusions,
+                exclusions: &constraints.exclusions,
             },
             super::text::NativeCellTextConstraints {
-                width,
-                height_limit: bands.spacing_capacity(),
+                width: constraints.width,
+                height_limit: constraints.height_limit,
             },
             theme,
             renderer,
@@ -816,17 +808,7 @@ impl PreparedTable {
         if !valid_cell_layout(&layout) {
             return Err(ObjectDiagnosticKind::InvalidBounds);
         }
-        if padding_rectangles
-            .iter()
-            .copied()
-            .filter(|rect| !full_width(rect))
-            .any(|rect| {
-                layout
-                    .lines
-                    .iter()
-                    .any(|line| line.bottom > rect.y_min && line.top < rect.y_max)
-            })
-        {
+        if constraints.intersects_partial_band(&layout) {
             return Err(ObjectDiagnosticKind::UnsupportedContent);
         }
         let first_line_height = Some(
@@ -848,7 +830,7 @@ impl PreparedTable {
                 .unwrap_or(0.0)
         };
         let measured_height = if source.content.text.is_empty() {
-            empty_cell_height(&styled, source, width, bands, theme, renderer)?
+            empty_cell_height(&styled, source, &constraints, theme, renderer)?
         } else {
             native_add(
                 last_line_bottom,
@@ -993,8 +975,7 @@ impl PreparedTable {
 fn empty_cell_height(
     styled: &StyledText<'_>,
     source: &RichTextTableCell,
-    width: i32,
-    bands: &BandList,
+    constraints: &CellBandConstraints<'_>,
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Result<f64, ObjectDiagnosticKind> {
@@ -1024,15 +1005,15 @@ fn empty_cell_height(
         })
         .map_or(0.0, |marker| marker.reserved_width()) as f32;
     let cursor_height = styled.caret_line_height(0) as f32;
-    let sorted_bands = bands.padding_rectangles();
-    let maximum_height = bands.spacing_capacity();
+    let sorted_bands = &constraints.padding_rectangles;
+    let maximum_height = constraints.height_limit;
     let line_height = if cursor_height > maximum_height {
         styled.font_size_at_caret(0) as f32
     } else {
         cursor_height
     };
     let original_left = margins[0] + left_indent as f32;
-    let original_right = (width as f32 - margins[2]) - right_indent as f32;
+    let original_right = (constraints.width as f32 - margins[2]) - right_indent as f32;
     let mut left = original_left;
     let mut right = original_right;
     let mut top = margins[1] + paragraph.spacing_before as f32;
@@ -2338,8 +2319,7 @@ pub(super) mod tests {
         empty_cell_height(
             &styled,
             source,
-            200,
-            &bands,
+            &bands.cell_constraints(200),
             RenderTheme::for_canvas(false),
             &renderer,
         )
