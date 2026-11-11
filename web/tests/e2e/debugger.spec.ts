@@ -284,6 +284,7 @@ test('sidebar preserves the viewer images, camera and gesture cache', async ({
 		'[data-page-index="0"] img[data-page-zoom-target]'
 	);
 	await expect(image).toBeVisible({ timeout: 60000 });
+	await image.evaluate((image: HTMLImageElement) => image.decode());
 	await expect
 		.poll(() =>
 			page
