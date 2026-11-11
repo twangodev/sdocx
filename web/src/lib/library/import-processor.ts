@@ -29,10 +29,13 @@ type SaveDocument = (
 	collectionId?: string
 ) => Promise<{ document: LibraryDocument; duplicate: boolean }>;
 
+interface ImportRun {
+	client?: ConverterClientPort;
+	cancelled: boolean;
+}
+
 export class ImportProcessor {
-	private client: ConverterClientPort | null = null;
-	private cancelled = false;
-	private running = false;
+	private activeRun: ImportRun | undefined;
 	private generation = 0;
 
 	constructor(
@@ -42,29 +45,33 @@ export class ImportProcessor {
 	) {}
 
 	cancel(): void {
-		this.cancelled = true;
-		this.client?.cancel();
+		const run = this.activeRun;
+		if (!run) return;
+		run.cancelled = true;
+		this.destroyClient(run);
 	}
 
 	async run(files: File[], options: ImportOptions = {}): Promise<ImportOutcome[]> {
-		if (this.running) throw new Error('An import is already running.');
-		this.running = true;
-		this.cancelled = false;
+		if (this.activeRun) throw new Error('An import is already running.');
+		const run: ImportRun = { cancelled: false };
+		this.activeRun = run;
 		const results: ImportOutcome[] = [];
 		try {
 			let current: ImportProgress | undefined;
 			const update = (work: ProcessingProgress) => {
-				if (this.cancelled || !current) return;
+				if (this.activeRun !== run || run.cancelled || !current) return;
 				current = { ...current, work };
 				options.onProgress?.(current);
 			};
-			this.client = this.createClient((event) => {
+			const client = this.createClient((event) => {
 				if (event.generation === this.generation) update(event.progress);
 			});
+			run.client = client;
 			for (const file of files) {
-				if (this.cancelled) break;
+				if (run.cancelled) break;
 				current = { completed: results.length, total: files.length, filename: file.name };
 				update(pendingProgress('reading'));
+				if (run.cancelled) break;
 				let prepared: PreparedDocument | undefined;
 				let result: ImportOutcome;
 				try {
@@ -73,25 +80,29 @@ export class ImportProcessor {
 						result = { filename: file.name, status: 'skipped' };
 					} else {
 						const bytes = await file.arrayBuffer();
+						if (run.cancelled) break;
 						update(pendingProgress('hashing'));
+						if (run.cancelled) break;
 						const digest = await crypto.subtle.digest('SHA-256', bytes);
 						const contentHash = Array.from(new Uint8Array(digest), (byte) =>
 							byte.toString(16).padStart(2, '0')
 						).join('');
-						if (this.cancelled) break;
-						const summary = await this.client.load(bytes, ++this.generation);
-						if (this.cancelled) break;
+						if (run.cancelled) break;
+						const summary = await client.load(bytes, ++this.generation);
+						if (run.cancelled) break;
 						let thumbnail: Blob | null = null;
 						if (summary.pageCount > 0) {
 							try {
-								const result = await this.client.renderPage(0, 'auto');
+								const result = await client.renderPage(0, 'auto');
+								if (run.cancelled) break;
 								update(pendingProgress('encoding'));
+								if (run.cancelled) break;
 								thumbnail = await this.thumbnail(result.svg);
 							} catch {
 								/* Thumbnails are optional derived assets. */
 							}
 						}
-						if (this.cancelled) break;
+						if (run.cancelled) break;
 						prepared = {
 							file,
 							contentHash,
@@ -100,6 +111,7 @@ export class ImportProcessor {
 							thumbnail
 						};
 						update(pendingProgress('saving'));
+						if (run.cancelled) break;
 						const saved = await this.save(prepared, options.collectionId);
 						result = {
 							filename: file.name,
@@ -108,7 +120,7 @@ export class ImportProcessor {
 						};
 					}
 				} catch (error) {
-					if (this.cancelled) break;
+					if (run.cancelled) break;
 					result = {
 						filename: file.name,
 						status: 'failed',
@@ -124,13 +136,26 @@ export class ImportProcessor {
 					filename: file.name
 				});
 				current = undefined;
-				await this.client.dispose(++this.generation);
+				if (run.cancelled) break;
+				try {
+					await client.dispose(++this.generation);
+				} catch (error) {
+					if (!run.cancelled) throw error;
+				}
 			}
 			return results;
 		} finally {
-			this.client?.destroy();
-			this.client = null;
-			this.running = false;
+			try {
+				this.destroyClient(run);
+			} finally {
+				this.activeRun = undefined;
+			}
 		}
+	}
+
+	private destroyClient(run: ImportRun): void {
+		const client = run.client;
+		run.client = undefined;
+		client?.destroy();
 	}
 }
