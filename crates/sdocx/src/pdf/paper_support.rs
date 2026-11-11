@@ -23,25 +23,11 @@ fn obj_dict<'a>(doc: &'a Document, object: &'a Object) -> Result<&'a Dictionary,
 
 fn inherited<'a>(
     doc: &'a Document,
-    mut page: &'a Dictionary,
+    page: &'a Dictionary,
     key: &[u8],
 ) -> Result<&'a Object, String> {
-    let mut seen = HashSet::<ObjectId>::new();
-    loop {
-        if let Ok(value) = page.get(key) {
-            return Ok(value);
-        }
-        let parent = page
-            .get(b"Parent")
-            .map_err(|_| format!("missing inherited {:?}", String::from_utf8_lossy(key)))?;
-        let Object::Reference(parent_id) = parent else {
-            return Err("page Parent must be an indirect reference".into());
-        };
-        if !seen.insert(*parent_id) {
-            return Err("cycle in page Parent chain".into());
-        }
-        page = obj_dict(doc, parent)?;
-    }
+    inherited_optional(doc, page, key)?
+        .ok_or_else(|| format!("missing inherited {:?}", String::from_utf8_lossy(key)))
 }
 
 fn deref<'a>(doc: &'a Document, mut object: &'a Object) -> Result<&'a Object, String> {
@@ -62,13 +48,24 @@ fn deref<'a>(doc: &'a Document, mut object: &'a Object) -> Result<&'a Object, St
 
 fn inherited_optional<'a>(
     doc: &'a Document,
-    page: &'a Dictionary,
+    mut page: &'a Dictionary,
     key: &[u8],
 ) -> Result<Option<&'a Object>, String> {
-    match inherited(doc, page, key) {
-        Ok(value) => Ok(Some(value)),
-        Err(error) if error.starts_with("missing inherited") => Ok(None),
-        Err(error) => Err(error),
+    let mut seen = HashSet::<ObjectId>::new();
+    loop {
+        if let Ok(value) = page.get(key) {
+            return Ok(Some(value));
+        }
+        let Ok(parent) = page.get(b"Parent") else {
+            return Ok(None);
+        };
+        let Object::Reference(parent_id) = parent else {
+            return Err("page Parent must be an indirect reference".into());
+        };
+        if !seen.insert(*parent_id) {
+            return Err("cycle in page Parent chain".into());
+        }
+        page = obj_dict(doc, parent)?;
     }
 }
 
