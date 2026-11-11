@@ -1206,10 +1206,8 @@ fn plan_admitted_singlex_pdf_paper(
     let mut imported_record_count = 0_usize;
     let mut ordinary_pages_started = false;
     for segment in segments {
-        let imported = !segment.record_indices.is_empty();
-        if imported
-            && (ordinary_pages_started || segment.record_indices.len() != segment.slices.len())
-        {
+        let imported = matches!(segment, paper_segments::Segment::Imported(_));
+        if imported && ordinary_pages_started {
             return Err(reject(
                 output_pages.len(),
                 "PDF-paper records must map one-to-one to an imported prefix segment",
@@ -1218,14 +1216,8 @@ fn plan_admitted_singlex_pdf_paper(
         if !imported {
             ordinary_pages_started = true;
         }
-        let segment_records = if imported {
-            segment.record_indices
-        } else {
-            Vec::new()
-        };
-        for (slice_index, slice) in segment.slices.into_iter().enumerate() {
-            let imported_source = if imported {
-                let record_index = segment_records[slice_index];
+        for (record_index, slice) in segment.into_slices() {
+            let imported_source = if let Some(record_index) = record_index {
                 if record_index != imported_record_count {
                     return Err(reject(
                         output_pages.len(),

@@ -76,10 +76,30 @@ pub(super) struct NoteSlice {
     pub(super) height: i32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct ImportedSlice {
+    pub(super) record_index: usize,
+    pub(super) slice: NoteSlice,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) struct Segment {
-    pub(super) record_indices: Vec<usize>,
-    pub(super) slices: Vec<NoteSlice>,
+pub(super) enum Segment {
+    Imported(Vec<ImportedSlice>),
+    Ordinary(Vec<NoteSlice>),
+}
+
+impl Segment {
+    pub(super) fn into_slices(self) -> impl Iterator<Item = (Option<usize>, NoteSlice)> {
+        let (imported, ordinary) = match self {
+            Self::Imported(pages) => (Some(pages), None),
+            Self::Ordinary(slices) => (None, Some(slices)),
+        };
+        imported
+            .into_iter()
+            .flatten()
+            .map(|page| (Some(page.record_index), page.slice))
+            .chain(ordinary.into_iter().flatten().map(|slice| (None, slice)))
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -171,65 +191,46 @@ impl<Q: SegmentQueries> Planner<'_, Q> {
                 ])
             });
 
-            let (height, attach_record, append_allowed) = if let Some(record) = record {
+            let (height, attach_record) = if let Some(record) = record {
                 let top_delta = (y as f32 - record.rectangle.0[1]).abs();
                 let truncated_delta = trunc_i32(top_delta)?;
                 if truncated_delta < 2 {
                     let selected = trunc_i32(record.rectangle.0[3] - y as f32)?;
-                    (
-                        stored_height(selected, self.default_height),
-                        Some(record),
-                        false,
-                    )
+                    (stored_height(selected, self.default_height), Some(record))
                 } else {
-                    (
-                        stored_height(truncated_delta, self.default_height),
-                        None,
-                        true,
-                    )
+                    (stored_height(truncated_delta, self.default_height), None)
                 }
             } else {
                 (
                     self.normal_height(y, strip_bottom, self.records.get(cursor).copied())?,
                     None,
-                    true,
                 )
             };
 
+            let slice = NoteSlice { y, height };
             if let Some(record) = attach_record {
-                let can_group = segments
-                    .last()
-                    .is_some_and(|segment| !segment.record_indices.is_empty())
+                let can_group = matches!(segments.last(), Some(Segment::Imported(_)))
                     && previous_pdf_record.is_some_and(|previous: ResolvedRecord<'_>| {
                         previous.source_key == record.source_key
                             && previous.page_index.checked_add(1) == Some(record.page_index)
                     });
-                if !can_group {
-                    segments.push(Segment {
-                        record_indices: Vec::new(),
-                        slices: Vec::new(),
-                    });
+                let page = ImportedSlice {
+                    record_index: record.source_record_index,
+                    slice,
+                };
+                if can_group {
+                    let Some(Segment::Imported(pages)) = segments.last_mut() else {
+                        unreachable!("PDF segment")
+                    };
+                    pages.push(page);
+                } else {
+                    segments.push(Segment::Imported(vec![page]));
                 }
-                let segment = segments.last_mut().expect("PDF segment");
-                segment.slices.push(NoteSlice { y, height });
-                segment.record_indices.push(record.source_record_index);
                 previous_pdf_record = Some(record);
+            } else if let Some(Segment::Ordinary(slices)) = segments.last_mut() {
+                slices.push(slice);
             } else {
-                let append_to_current = append_allowed
-                    && segments
-                        .last()
-                        .is_some_and(|segment| segment.record_indices.is_empty());
-                if !append_to_current {
-                    segments.push(Segment {
-                        record_indices: Vec::new(),
-                        slices: Vec::new(),
-                    });
-                }
-                segments
-                    .last_mut()
-                    .expect("ordinary segment")
-                    .slices
-                    .push(NoteSlice { y, height });
+                segments.push(Segment::Ordinary(vec![slice]));
             }
             planned_slices += 1;
 
@@ -238,11 +239,7 @@ impl<Q: SegmentQueries> Planner<'_, Q> {
             // content probes therefore cannot change this topology. Checked advance below
             // excludes the signed-overflow case where native wrapping could continue the loop.
             y = y.checked_add(height).ok_or(PlanError::ArithmeticOverflow)?;
-            if y < self.note_height
-                && segments
-                    .last()
-                    .is_some_and(|s| !s.record_indices.is_empty())
-            {
+            if y < self.note_height && matches!(segments.last(), Some(Segment::Imported(_))) {
                 cursor = cursor.checked_add(1).ok_or(PlanError::ArithmeticOverflow)?;
             }
         }
@@ -384,12 +381,20 @@ mod tests {
         let record = record("quiz.pdf", 0, [0.0, 0.0, 1812.0, 1485.0], 0);
         let segments = plan_segments(1812, 15372, 1527, &[record], &queries()).unwrap();
         assert_eq!(segments.len(), 2);
-        assert_eq!(segments[0].record_indices, [0]);
-        assert_eq!(segments[0].slices, [NoteSlice { y: 0, height: 1485 }]);
+        assert_eq!(
+            segments[0],
+            Segment::Imported(vec![ImportedSlice {
+                record_index: 0,
+                slice: NoteSlice { y: 0, height: 1485 },
+            }])
+        );
+        let Segment::Ordinary(slices) = &segments[1] else {
+            panic!("expected ordinary tail");
+        };
         // Observed from SingleX on the ConstructLoad-loaded archive, not a
         // synthetic WNote (see the Single-mode findings).
         assert_eq!(
-            segments[1].slices,
+            slices.as_slice(),
             [
                 1485, 3012, 4539, 6066, 7593, 9120, 10647, 12174, 13701, 15228
             ]
@@ -499,8 +504,19 @@ mod tests {
             })
             .collect::<Vec<_>>();
         let segments = plan_segments(1080, 27952, 1527, &records, &queries()).unwrap();
-        assert_eq!(segments[0].record_indices.len(), 20);
-        assert_eq!(segments[0].slices.len(), 20);
+        assert_eq!(
+            segments[0],
+            Segment::Imported(
+                spans
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, (y, height))| ImportedSlice {
+                        record_index: index,
+                        slice: NoteSlice { y, height },
+                    })
+                    .collect()
+            )
+        );
     }
 
     #[test]
@@ -508,15 +524,26 @@ mod tests {
         for offset in [3.0, 7.0] {
             let record = record("paper.pdf", 0, [0.0, offset, 100.0, 100.0], 0);
             let segments = plan_segments(100, 200, 100, &[record], &queries()).unwrap();
+            let Segment::Ordinary(prefix) = &segments[0] else {
+                panic!("expected ordinary prefix");
+            };
             assert_eq!(
-                segments[0].slices[0],
+                prefix[0],
                 NoteSlice {
                     y: 0,
                     height: offset as i32
                 }
             );
-            assert_eq!(segments[1].record_indices, [0]);
-            assert_eq!(segments[1].slices[0].y, offset as i32);
+            assert_eq!(
+                segments[1],
+                Segment::Imported(vec![ImportedSlice {
+                    record_index: 0,
+                    slice: NoteSlice {
+                        y: offset as i32,
+                        height: 100 - offset as i32
+                    },
+                }])
+            );
         }
     }
 
@@ -529,9 +556,15 @@ mod tests {
         assert!(
             no_hit
                 .iter()
-                .all(|segment| segment.record_indices.is_empty())
+                .all(|segment| matches!(segment, Segment::Ordinary(_)))
         );
-        assert_eq!(hit[0].record_indices, [0]);
+        assert_eq!(
+            hit[0],
+            Segment::Imported(vec![ImportedSlice {
+                record_index: 0,
+                slice: NoteSlice { y: 0, height: 100 },
+            }])
+        );
     }
 
     #[test]
@@ -547,7 +580,10 @@ mod tests {
             };
             let record = record("paper.pdf", 0, [0.0, 1600.0, 1812.0, 1700.0], 0);
             let segments = plan_segments(1812, 2000, 1527, &[record], &qs).unwrap();
-            assert_eq!(segments[0].slices[0].height, expected);
+            let Segment::Ordinary(slices) = &segments[0] else {
+                panic!("expected ordinary prefix");
+            };
+            assert_eq!(slices[0].height, expected);
         }
     }
 
@@ -563,7 +599,10 @@ mod tests {
         };
         let record = record("paper.pdf", 0, [0.0, 2000.0, 100.0, 2500.0], 0);
         let segments = plan_segments(100, 3000, 1527, &[record], &qs).unwrap();
-        assert_eq!(segments[0].slices[0], NoteSlice { y: 0, height: 1000 });
+        let Segment::Ordinary(slices) = &segments[0] else {
+            panic!("expected ordinary prefix");
+        };
+        assert_eq!(slices[0], NoteSlice { y: 0, height: 1000 });
     }
 
     #[test]
