@@ -1,9 +1,8 @@
 use crate::render::table;
 use crate::render::{
     Clip, ClipPath, Definitions, Group, Line, ObjectDiagnostic, ObjectDiagnosticKind, ObjectKind,
-    Paint, RenderTheme, Scene, Styled, StyledText, TextContext, TextRenderer, argb_color,
-    color_hex, decimal, paint_text_layout_with_target, rectangle, render_text_frame, text,
-    viewport::Viewport,
+    Paint, RenderTheme, Scene, Styled, StyledText, TextContext, TextRenderer, argb_rgb, color_hex,
+    decimal, paint_text_layout_with_target, rectangle, render_text_frame, text, viewport::Viewport,
 };
 use crate::{BoundingBox, MediaAsset};
 
@@ -346,7 +345,7 @@ fn paint_table_outline(
                 .ry(decimal(f64::from(outline.ry), 5))
                 .fill(Paint::None)
                 .stroke(Paint::from_hex(&color_hex(
-                    &theme.foreground_color(argb_color(outline.color)),
+                    &theme.foreground_color(argb_rgb(outline.color)),
                 )))
                 .stroke_opacity(decimal(f64::from(outline.color >> 24) / 255.0, 6))
                 .stroke_width(decimal(f64::from(outline.width), 5)),
@@ -408,7 +407,7 @@ pub(super) fn paint_table_border(
             .x2(x2)
             .y2(y2 + offset_y)
             .stroke(Paint::from_hex(&color_hex(
-                &theme.foreground_color(argb_color(path.style.color)),
+                &theme.foreground_color(argb_rgb(path.style.color)),
             )))
             .stroke_opacity(decimal(f64::from(path.style.color >> 24) / 255.0, 6))
             .stroke_width(width),

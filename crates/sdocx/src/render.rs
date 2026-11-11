@@ -2139,7 +2139,7 @@ fn render_element(
             if let Some(text) = &shape.text {
                 let theme = match shape.fill {
                     crate::ShapePaint::Solid(argb) => theme.on_surface(
-                        theme.foreground_color(argb_color(argb)),
+                        theme.foreground_color(argb_rgb(argb)),
                         f64::from((argb >> 24) as u8) / 255.0,
                     ),
                     _ => theme,
@@ -3137,14 +3137,6 @@ fn report_drawing_layout_issues(renderer: &TextRenderer<'_>, drawing: &TextRende
     renderer.report_owned_object_issues(&drawing.scoped_object_diagnostics());
 }
 
-fn argb_color(argb: u32) -> Color {
-    Color {
-        r: (argb >> 16) as u8,
-        g: (argb >> 8) as u8,
-        b: argb as u8,
-    }
-}
-
 #[derive(Debug, PartialEq)]
 enum MagicPenMinimumDot {
     Invisible,
@@ -3266,7 +3258,7 @@ fn magicpen_v1_vector_path(
 }
 
 fn magicpen_source_color(stroke: &Stroke, argb: u32) -> Option<Color> {
-    stroke.color.or(Some(argb_color(argb)))
+    stroke.color.or(Some(argb_rgb(argb)))
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -4368,7 +4360,7 @@ fn prepare_inkpen2_internal(
     let argb = rendering.style.color_argb?;
     if v1_scale.is_some()
         && (!(0.2..=12.0).contains(&size)
-            || stroke.color.is_some_and(|color| color != argb_color(argb)))
+            || stroke.color.is_some_and(|color| color != argb_rgb(argb)))
     {
         return None;
     }
@@ -4525,15 +4517,15 @@ fn prepare_inkpen2_internal(
             bounds = Some(current);
         }
     }
-    let source_color = stroke.color.or(Some(argb_color(argb)));
+    let source_color = stroke.color.or(Some(argb_rgb(argb)));
     let color = if active_rainbow {
         // The native palette supplies each stamp's RGB. Keep the saved base
         // color intact for alpha/fallback semantics; never theme-map stops.
-        argb_color(argb)
+        argb_rgb(argb)
     } else {
         source_color
             .map(|color| theme.foreground_color(color))
-            .unwrap_or_else(|| argb_color(argb))
+            .unwrap_or_else(|| argb_rgb(argb))
     };
     Some(crate::ink::PreparedInkPen2V9 {
         per_stamp_rgb: active_rainbow,

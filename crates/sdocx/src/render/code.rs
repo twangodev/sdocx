@@ -15,9 +15,7 @@ use super::vector::{
     Data, Group, LineJoin, ObjectKind, Paint, Path, Rectangle, Scene, Styled, Transform, color_hex,
     decimal,
 };
-use super::{
-    RenderTheme, argb_color, paint_text_layout_in_viewport, rectangle, viewport::Viewport,
-};
+use super::{RenderTheme, argb_rgb, paint_text_layout_in_viewport, rectangle, viewport::Viewport};
 
 pub(super) struct PreparedCode {
     copy: BoundingBox,
@@ -59,7 +57,7 @@ pub(super) fn paint(
     viewport: Option<Viewport>,
 ) {
     let settings = renderer.settings;
-    let background = argb_color(if theme.is_dark() { 0x333333 } else { 0xefefef });
+    let background = argb_rgb(if theme.is_dark() { 0x333333 } else { 0xefefef });
     let theme = theme.on_background(background);
     let fill = color_hex(&background);
     let stroke = if theme.is_dark() {
@@ -217,7 +215,7 @@ fn prepare_code_frame(
     renderer: &TextRenderer<'_>,
 ) -> Result<PreparedCode, ObjectDiagnosticKind> {
     let settings = renderer.settings;
-    let background = super::argb_color(if theme.is_dark() { 0x333333 } else { 0xefefef });
+    let background = super::argb_rgb(if theme.is_dark() { 0x333333 } else { 0xefefef });
     let theme = theme.on_background(background);
     let split_rectangles = renderer.table_split_rects(constraint, candidate_top);
     let geometry = NativeCodeGeometry::new(
