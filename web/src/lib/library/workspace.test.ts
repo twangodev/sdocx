@@ -208,3 +208,80 @@ describe('library workspace lifecycle', () => {
 		expect(snapshot).toHaveBeenCalledTimes(reads);
 	});
 });
+
+describe('library visible notes', () => {
+	it('updates the cached view when source, search, sort, or snapshot changes', () => {
+		const { workspace } = harness();
+		const metadata = {
+			original: 'note.sdocx',
+			thumbnail: null,
+			contentHash: 'hash',
+			size: 1,
+			pageCount: 1
+		};
+		workspace.snapshot = {
+			documents: [
+				{
+					...metadata,
+					id: 'a',
+					title: 'Zoology',
+					filename: 'lecture.sdocx',
+					importedAt: 20,
+					favorite: true
+				},
+				{
+					...metadata,
+					id: 'b',
+					title: 'Algebra',
+					filename: 'math.sdocx',
+					importedAt: 10,
+					favorite: false
+				}
+			],
+			collections: [{ id: 'course', name: 'Course' }],
+			memberships: [{ collectionId: 'course', documentId: 'b' }]
+		};
+		const ids = () => workspace.visible.map((note) => note.id);
+		expect(ids()).toEqual(['a', 'b']);
+		workspace.sort = 'title';
+		expect(ids()).toEqual(['b', 'a']);
+		workspace.search = 'LECTURE';
+		expect(ids()).toEqual(['a']);
+		workspace.search = '';
+		workspace.source = { collectionId: 'course' };
+		expect(ids()).toEqual(['b']);
+		workspace.source = 'favorites';
+		expect(ids()).toEqual(['a']);
+		workspace.snapshot = {
+			...workspace.snapshot,
+			documents: workspace.snapshot.documents.map((note) => ({ ...note, favorite: !note.favorite }))
+		};
+		expect(ids()).toEqual(['b']);
+	});
+
+	it('reevaluates the recent cutoff when a refreshed snapshot arrives', async () => {
+		const { workspace, snapshot, start } = harness();
+		const now = vi.spyOn(Date, 'now').mockReturnValue(100 * 86400000);
+		const note = {
+			id: 'recent',
+			title: 'Recent',
+			filename: 'recent.sdocx',
+			importedAt: Date.now(),
+			favorite: false,
+			original: 'recent.sdocx',
+			thumbnail: null,
+			contentHash: 'hash',
+			size: 1,
+			pageCount: 1
+		};
+		snapshot.mockResolvedValueOnce({ ...empty, documents: [note] });
+		workspace.source = 'recent';
+		start();
+		await workspace.importFiles([]);
+		expect(workspace.visible.map((note) => note.id)).toEqual(['recent']);
+		now.mockReturnValue(131 * 86400000);
+		snapshot.mockResolvedValueOnce({ ...empty, documents: [note] });
+		await workspace.refresh();
+		expect(workspace.visible).toEqual([]);
+	});
+});

@@ -20,6 +20,7 @@ export class LibraryWorkspace {
 	sort = $state<LibrarySort>('newest');
 	view = $state<'grid' | 'list'>('grid');
 	selected = $state<string[]>([]);
+	private visibleList = $derived(visibleDocuments(this.snapshot, this.source, this.search, this.sort));
 	scrollTop = 0;
 	loading = $state(true);
 	importing = $state(false);
@@ -47,7 +48,7 @@ export class LibraryWorkspace {
 	});
 
 	get visible() {
-		return visibleDocuments(this.snapshot, this.source, this.search, this.sort);
+		return this.visibleList;
 	}
 	get collectionId() {
 		return typeof this.source === 'object' ? this.source.collectionId : undefined;
