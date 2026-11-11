@@ -13,6 +13,12 @@ export class LibraryService {
 		private readonly changed: () => void = () => {}
 	) {}
 
+	async closeWhenIdle(shouldClose: () => boolean): Promise<void> {
+		await this.exclusive(async () => {
+			if (shouldClose()) this.catalog.close();
+		});
+	}
+
 	private async mutate<T>(action: () => Promise<T>): Promise<T> {
 		try {
 			return await this.exclusive(action);

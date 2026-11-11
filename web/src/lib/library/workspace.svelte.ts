@@ -93,7 +93,9 @@ export class LibraryWorkspace {
 			this.available = false;
 			this.loading = false;
 			this.importer.cancel();
-			this.service.catalog.close();
+			void this.service.closeWhenIdle(() => !this.lifecycle).catch((error) => {
+				if (!this.lifecycle) this.error = errorMessage(error);
+			});
 		};
 		lifecycle.ready = this.initialize(lifecycle);
 		return lifecycle.stop;

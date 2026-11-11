@@ -20,7 +20,7 @@ beforeEach(() => {
 	browser = new EventTarget();
 	channels = [];
 	vi.stubGlobal('window', browser);
-	vi.stubGlobal('navigator', { storage: { getDirectory: vi.fn() }, locks: {} });
+	vi.stubGlobal('navigator', { storage: { getDirectory: vi.fn() }, locks: { request: (_name: string, action: () => unknown) => Promise.resolve().then(action) } });
 	vi.stubGlobal('BroadcastChannel', class {
 		close = vi.fn();
 		postMessage = vi.fn();
@@ -92,6 +92,7 @@ describe('library workspace lifecycle', () => {
 
 	it('makes old cleanup idempotent without closing a newer lifecycle resources', async () => {
 		const { workspace, close, start } = harness();
+		const closing = vi.spyOn(workspace.service, 'closeWhenIdle');
 		const stopOld = start();
 		await workspace.importFiles([]);
 		start();
@@ -99,8 +100,19 @@ describe('library workspace lifecycle', () => {
 		stopOld();
 		expect(channels[0].close).toHaveBeenCalledOnce();
 		expect(channels[1].close).not.toHaveBeenCalled();
-		expect(close).toHaveBeenCalledOnce();
+		await closing.mock.results[0].value;
+		expect(close).not.toHaveBeenCalled();
 		expect(workspace.available).toBe(true);
+	});
+
+	it('reports a failed idle close without rejecting synchronous cleanup', async () => {
+		const { workspace, start } = harness();
+		const closing = vi.spyOn(workspace.service, 'closeWhenIdle').mockRejectedValue(new Error('Close failed'));
+		const stop = start();
+		await workspace.importFiles([]);
+		expect(stop).not.toThrow();
+		await expect(closing.mock.results[0].value).rejects.toThrow('Close failed');
+		expect(workspace.error).toBe('Close failed');
 	});
 
 	it('starts a snapshot refresh when the active browser regains focus', async () => {
