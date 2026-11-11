@@ -47,19 +47,26 @@ function harness() {
 	};
 	return { workspace, open, close, recover, snapshot, start };
 }
-async function settle() {
-	for (let i = 0; i < 8; i++) await Promise.resolve();
-}
 
 describe('library workspace lifecycle', () => {
 	it('ignores obsolete initialization failure and finalization during restart', async () => {
 		const { workspace, recover, start } = harness();
 		const oldRecovery = deferred<void>(), newRecovery = deferred<void>();
-		recover.mockReturnValueOnce(oldRecovery.promise).mockReturnValueOnce(newRecovery.promise);
-		start(); await settle();
-		start(); await settle();
+		const oldRecoveryStarted = deferred<void>(), newRecoveryStarted = deferred<void>();
+		recover.mockImplementationOnce(() => {
+			oldRecoveryStarted.resolve();
+			return oldRecovery.promise;
+		}).mockImplementationOnce(() => {
+			newRecoveryStarted.resolve();
+			return newRecovery.promise;
+		});
+		start();
+		const oldInitialization = workspace.importFiles([]);
+		await oldRecoveryStarted.promise;
+		start();
+		await newRecoveryStarted.promise;
 		oldRecovery.reject(new Error('obsolete recovery'));
-		await settle();
+		await oldInitialization;
 		expect(workspace.error).toBe('');
 		expect(workspace.loading).toBe(true);
 		expect(workspace.available).toBe(false);
@@ -74,10 +81,11 @@ describe('library workspace lifecycle', () => {
 		const oldOpen = deferred<typeof workspace.service.catalog>();
 		open.mockReturnValueOnce(Dexie.Promise.resolve(oldOpen.promise));
 		start();
+		const oldInitialization = workspace.importFiles([]);
 		start();
 		await workspace.importFiles([]);
 		oldOpen.resolve(workspace.service.catalog);
-		await settle();
+		await oldInitialization;
 		expect(recover).toHaveBeenCalledOnce();
 		expect(workspace.available).toBe(true);
 	});
@@ -95,17 +103,34 @@ describe('library workspace lifecycle', () => {
 		expect(workspace.available).toBe(true);
 	});
 
-	it('admits background refresh failures only for the latest request', async () => {
+	it('starts a snapshot refresh when the active browser regains focus', async () => {
+		const { workspace, snapshot, start } = harness();
+		start(); await workspace.importFiles([]);
+		snapshot.mockClear();
+		browser.dispatchEvent(new Event('focus'));
+		expect(snapshot).toHaveBeenCalledOnce();
+	});
+
+	it('admits reported refresh failures only for the latest request', async () => {
 		const { workspace, snapshot, start } = harness();
 		start(); await workspace.importFiles([]);
 		const older = deferred<LibrarySnapshot>(), newer = deferred<LibrarySnapshot>();
-		snapshot.mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise);
-		browser.dispatchEvent(new Event('focus'));
-		browser.dispatchEvent(new Event('focus'));
+		const olderStarted = deferred<void>(), newerStarted = deferred<void>();
+		snapshot.mockImplementationOnce(() => {
+			olderStarted.resolve();
+			return older.promise;
+		}).mockImplementationOnce(() => {
+			newerStarted.resolve();
+			return newer.promise;
+		});
+		const olderAction = workspace.perform(async () => {});
+		await olderStarted.promise;
+		const newerAction = workspace.perform(async () => {});
+		await newerStarted.promise;
 		newer.reject(new Error('latest snapshot'));
-		await settle();
+		await newerAction;
 		older.reject(new Error('obsolete snapshot'));
-		await settle();
+		await olderAction;
 		expect(workspace.error).toBe('latest snapshot');
 	});
 
@@ -125,9 +150,14 @@ describe('library workspace lifecycle', () => {
 	it('does not start an import that was waiting on an obsolete initialization', async () => {
 		const { workspace, recover, start } = harness();
 		const pending = deferred<void>();
-		recover.mockReturnValueOnce(pending.promise);
+		const recoveryStarted = deferred<void>();
+		recover.mockImplementationOnce(() => {
+			recoveryStarted.resolve();
+			return pending.promise;
+		});
 		const run = vi.spyOn(ImportProcessor.prototype, 'run').mockResolvedValue([]);
-		const stop = start(); await settle();
+		const stop = start();
+		await recoveryStarted.promise;
 		const importing = workspace.importFiles([{} as File]);
 		stop(); start(); await workspace.importFiles([]);
 		pending.resolve();
@@ -140,13 +170,15 @@ describe('library workspace lifecycle', () => {
 		const { workspace, snapshot, start } = harness();
 		const pending = deferred<ImportOutcome[]>();
 		let options!: NonNullable<Parameters<ImportProcessor['run']>[1]>;
+		const importStarted = deferred<void>();
 		const run = vi.spyOn(ImportProcessor.prototype, 'run').mockImplementation((_files, next) => {
 			options = next ?? {};
+			importStarted.resolve();
 			return pending.promise;
 		});
 		start(); await workspace.importFiles([]);
 		const importing = workspace.importFiles([{} as File]);
-		await settle();
+		await importStarted.promise;
 		start(); await workspace.importFiles([]);
 		const reads = snapshot.mock.calls.length;
 		expect(await workspace.importFiles([{} as File])).toEqual([]);
