@@ -41,7 +41,6 @@ struct TriangleCoverage {
 
 #[derive(Debug)]
 pub(crate) struct Prepared {
-    rows: Vec<[f32; 4]>,
     coverage: Vec<[TriangleCoverage; 2]>,
     atlas_to_page: Vec<[[f64; 6]; 2]>,
     sample_ends: Vec<usize>,
@@ -183,7 +182,6 @@ pub(crate) fn prepare_source(
         .map(|row| native_uv_source_to_page(*row, half, viewport, pad_texels))
         .collect::<Option<Vec<_>>>()?;
     Some(SourcePreparation::Paint(Box::new(Prepared {
-        rows: source.rows,
         coverage,
         sample_ends: source.sample_ends,
         terminal: source.terminal,
@@ -199,7 +197,10 @@ pub(crate) fn prepare_source(
 
 pub(crate) fn render(scene: &mut Scene, prepared: &Prepared, replay_index: Option<usize>) -> bool {
     let mut stamp_masks = Vec::new();
-    if stamp_masks.try_reserve_exact(prepared.rows.len()).is_err() {
+    if stamp_masks
+        .try_reserve_exact(prepared.coverage.len())
+        .is_err()
+    {
         return false;
     }
     let image_key = prepared.png_key.clone();
@@ -267,7 +268,7 @@ pub(crate) fn render(scene: &mut Scene, prepared: &Prepared, replay_index: Optio
         let replay_parts = source_part_ends(
             &prepared.sample_ends,
             &prepared.terminal,
-            prepared.rows.len(),
+            prepared.coverage.len(),
         );
         for (index, masks) in stamp_masks.iter().enumerate() {
             let part = replay_index
