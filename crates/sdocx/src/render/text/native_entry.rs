@@ -5,6 +5,7 @@ pub(in crate::render) enum NativeEntryKind {
     Space = 1,
     Tab = 2,
     Unowned = 3,
+    ParagraphSeparator = 4,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -55,7 +56,7 @@ mod tests {
                 let owner = entry["utf16_slot"].as_u64().unwrap() as usize;
                 let unit = text.as_bytes()[owner];
                 if unit == b'\n' {
-                    assert_eq!(entry["kind"], 4);
+                    assert_eq!(entry["kind"], NativeEntryKind::ParagraphSeparator as u32);
                     assert_eq!(entry["drawable"], false);
                     continue;
                 }

@@ -6,6 +6,7 @@ use crate::text_index::TextSource;
 
 use super::layout::TextLayout;
 use super::measurement::{MeasuredGlyph, MeasuredRun};
+use super::native_entry::NativeEntryKind;
 use super::native_runs::{
     MAX_CACHED_GLYPHS, NativeCachedGlyph, NativeEmittedKind, NativeFontState, NativeGlyphCache,
     NativeRect, NativeRunEntry, NativeRunError, NativeRunOffset, native_runs,
@@ -124,7 +125,7 @@ pub(in crate::render) enum NativePaintPlanUnavailable {
 }
 
 struct PreparedEntry<'a> {
-    kind: u32,
+    kind: NativeEntryKind,
     advance: f32,
     position: [f32; 2],
     layout: NativeRect,
@@ -313,7 +314,7 @@ pub(in crate::render) fn native_paint_plan(
                     ink[3] + bands.baseline,
                 ]);
                 let current = PreparedEntry {
-                    kind: facts.kind as u32,
+                    kind: facts.kind,
                     advance: entry.advance(),
                     position: [position.left, bands.baseline],
                     layout: NativeRect([position.left, bands.top, position.right, bands.bottom]),
@@ -363,7 +364,7 @@ pub(in crate::render) fn native_paint_plan(
             .native_draw
             .map_err(|_| Error::OutsideCertificate("span"))?;
         prepared[slot] = Some(PreparedEntry {
-            kind: 4,
+            kind: NativeEntryKind::ParagraphSeparator,
             advance: 0.0,
             position: [left, bands.baseline],
             layout: NativeRect([left, bands.top, left, bands.bottom]),
@@ -381,7 +382,7 @@ pub(in crate::render) fn native_paint_plan(
     let entries: Vec<_> = prepared
         .iter()
         .map(|entry| NativeRunEntry {
-            kind: entry.kind,
+            kind: entry.kind as u32,
             direction: 0,
             advance: entry.advance,
             position: entry.position,
