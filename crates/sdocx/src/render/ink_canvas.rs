@@ -12,11 +12,14 @@ pub(crate) fn raster_scene(width: u32, height: u32, png: &[u8]) -> RenderedScene
             .stretched()
             .pixelated(),
     );
-    let text = scene.take_native_text();
-    let ink = scene.take_native_ink();
-    let text_error = scene.take_native_text_error();
+    let vector::FinishedRetainedScene {
+        svg,
+        text,
+        ink,
+        text_error,
+    } = scene.finish_retained();
     RenderedScene {
-        page: RenderedPage::new(0, width, height, scene.finish()),
+        page: RenderedPage::new(0, width, height, svg),
         text,
         ink,
         text_error,

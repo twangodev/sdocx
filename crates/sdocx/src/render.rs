@@ -979,7 +979,7 @@ impl DocumentTextCache {
                 observer(Progress::pending(ProgressStage::Preparing));
                 let layout_page = request.layout_page();
                 let slice = request.slice();
-                let (mut page, mut scene) = self.prepare_page(
+                let (mut page, scene) = self.prepare_page(
                     document,
                     layout_page,
                     options,
@@ -989,11 +989,14 @@ impl DocumentTextCache {
                     slice,
                     observer,
                 );
-                let text = scene.take_native_text();
-                let ink = scene.take_native_ink();
-                let text_error = scene.take_native_text_error();
                 observer(Progress::pending(ProgressStage::Finalizing));
-                page.svg = scene.finish();
+                let vector::FinishedRetainedScene {
+                    svg,
+                    text,
+                    ink,
+                    text_error,
+                } = scene.finish_retained();
+                page.svg = svg;
                 observer(Progress::new(
                     ProgressStage::Pages,
                     index + 1,

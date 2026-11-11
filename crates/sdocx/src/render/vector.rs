@@ -166,6 +166,14 @@ pub(super) struct Scene {
     #[cfg(feature = "pdf")]
     native_text_error: Option<String>,
 }
+#[cfg(feature = "pdf")]
+pub(super) struct FinishedRetainedScene {
+    pub svg: String,
+    pub text: super::text::native::NativeTextRegistry,
+    pub ink: super::native_ink::NativeInkRegistry,
+    pub text_error: Option<String>,
+}
+
 impl Scene {
     pub fn new(root: Svg) -> Self {
         Self {
@@ -234,7 +242,7 @@ impl Scene {
     pub fn native_text(&mut self) -> &mut super::text::native::NativeTextRegistry {
         self.native_text.as_mut().expect("retained text scene")
     }
-    #[cfg(feature = "pdf")]
+    #[cfg(all(test, feature = "pdf"))]
     pub fn take_native_text(&mut self) -> super::text::native::NativeTextRegistry {
         self.native_text.take().expect("retained text scene")
     }
@@ -242,7 +250,7 @@ impl Scene {
     pub fn native_ink(&mut self) -> &mut super::native_ink::NativeInkRegistry {
         self.native_ink.as_mut().expect("retained PDF scene")
     }
-    #[cfg(feature = "pdf")]
+    #[cfg(all(test, feature = "pdf"))]
     pub fn take_native_ink(&mut self) -> super::native_ink::NativeInkRegistry {
         self.native_ink.take().expect("retained PDF scene")
     }
@@ -250,7 +258,7 @@ impl Scene {
     pub fn reject_native_text(&mut self, message: String) {
         self.native_text_error.get_or_insert(message);
     }
-    #[cfg(feature = "pdf")]
+    #[cfg(all(test, feature = "pdf"))]
     pub fn take_native_text_error(&mut self) -> Option<String> {
         self.native_text_error.take()
     }
@@ -311,6 +319,20 @@ impl Scene {
             kind: PhantomData,
         }
     }
+    #[cfg(feature = "pdf")]
+    pub fn finish_retained(mut self) -> FinishedRetainedScene {
+        let text = self.native_text.take().expect("retained text scene");
+        let ink = self.native_ink.take().expect("retained PDF scene");
+        let text_error = self.native_text_error.take();
+        let svg = self.finish();
+        FinishedRetainedScene {
+            svg,
+            text,
+            ink,
+            text_error,
+        }
+    }
+
     pub fn finish(self) -> String {
         assert_eq!(self.elements.len(), 1);
         if self.elements[0].valid {
