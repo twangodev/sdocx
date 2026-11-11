@@ -409,10 +409,10 @@ fn parse_layers(
         )));
     }
 
-    let mut total_objects = 0_usize;
+    let mut declared_objects = 0_usize;
     let mut layers = Vec::with_capacity(layer_count);
     for _ in 0..layer_count {
-        layers.push(parse_layer(&mut reader, limits, &mut total_objects)?);
+        layers.push(parse_layer(&mut reader, limits, &mut declared_objects)?);
     }
 
     Ok((
@@ -427,7 +427,7 @@ fn parse_layers(
 fn parse_layer(
     reader: &mut Reader<'_>,
     limits: &ParseLimits,
-    total_objects: &mut usize,
+    declared_objects: &mut usize,
 ) -> Result<StoredLayer> {
     let header_offset = reader.position();
     let header_size = usize::try_from(reader.read_u32("layer header size")?)
@@ -450,11 +450,11 @@ fn parse_layer(
 
     let object_count = usize::try_from(reader.read_u32("layer object count")?)
         .map_err(|_| Error::Format("layer object count does not fit in memory".into()))?;
-    check_accumulated_object_limit(total_objects, object_count, limits)?;
+    reserve_declared_objects(declared_objects, object_count, limits)?;
 
     let mut objects = Vec::with_capacity(object_count);
     for _ in 0..object_count {
-        objects.push(parse_object(reader, limits, total_objects, 0)?);
+        objects.push(parse_object(reader, limits, declared_objects, 0)?);
     }
     let integrity_trailer = reader
         .read_bytes(INTEGRITY_TRAILER_SIZE, "layer integrity trailer")?
@@ -477,7 +477,7 @@ fn parse_layer(
 fn parse_object(
     reader: &mut Reader<'_>,
     limits: &ParseLimits,
-    total_objects: &mut usize,
+    declared_objects: &mut usize,
     depth: usize,
 ) -> Result<StoredObject> {
     if depth >= limits.max_object_nesting_depth {
@@ -507,13 +507,13 @@ fn parse_object(
         .try_into()
         .map_err(|_| Error::Format("invalid object integrity trailer".into()))?;
 
-    check_accumulated_object_limit(total_objects, child_count, limits)?;
+    reserve_declared_objects(declared_objects, child_count, limits)?;
     let mut children = Vec::with_capacity(child_count);
     for _ in 0..child_count {
         children.push(parse_object(
             reader,
             limits,
-            total_objects,
+            declared_objects,
             depth.saturating_add(1),
         )?);
     }
@@ -528,12 +528,12 @@ fn parse_object(
     })
 }
 
-fn check_accumulated_object_limit(
-    total_objects: &mut usize,
+fn reserve_declared_objects(
+    declared_objects: &mut usize,
     additional: usize,
     limits: &ParseLimits,
 ) -> Result<()> {
-    *total_objects = total_objects
+    *declared_objects = declared_objects
         .checked_add(additional)
         .ok_or(Error::LimitExceeded {
             resource: "objects per page",
@@ -543,7 +543,7 @@ fn check_accumulated_object_limit(
     check_limit(
         "objects per page",
         limits.max_objects_per_page,
-        *total_objects,
+        *declared_objects,
     )
 }
 
