@@ -141,9 +141,7 @@ fn supported_crop_png_metadata(bytes: &[u8]) -> Option<CropPngMetadata> {
     let mut offset = SIGNATURE.len();
     let mut saw_header = false;
     let mut sample_count = 0;
-    let mut saw_sbit = false;
     let mut significant_bits = None;
-    let mut saw_srgb = false;
     let mut srgb_intent = None;
     let mut saw_data = false;
     while offset.checked_add(12).is_some_and(|end| end <= bytes.len()) {
@@ -170,14 +168,18 @@ fn supported_crop_png_metadata(bytes: &[u8]) -> Option<CropPngMetadata> {
                 };
                 saw_header = true;
             }
-            b"sBIT" if saw_header && !saw_sbit && !saw_srgb && !saw_data => {
+            b"sBIT"
+                if saw_header
+                    && significant_bits.is_none()
+                    && srgb_intent.is_none()
+                    && !saw_data =>
+            {
                 if data.len() != sample_count || data.iter().any(|bits| !(1..=8).contains(bits)) {
                     return None;
                 }
                 significant_bits = Some(data.to_vec());
-                saw_sbit = true;
             }
-            b"sRGB" if saw_header && !saw_srgb && !saw_data && length == 1 => {
+            b"sRGB" if saw_header && srgb_intent.is_none() && !saw_data && length == 1 => {
                 srgb_intent = Some(match data[0] {
                     0 => png::SrgbRenderingIntent::Perceptual,
                     1 => png::SrgbRenderingIntent::RelativeColorimetric,
@@ -185,7 +187,6 @@ fn supported_crop_png_metadata(bytes: &[u8]) -> Option<CropPngMetadata> {
                     3 => png::SrgbRenderingIntent::AbsoluteColorimetric,
                     _ => return None,
                 });
-                saw_srgb = true;
             }
             b"IDAT" if saw_header => saw_data = true,
             b"IEND" if saw_header && saw_data && length == 0 => {
