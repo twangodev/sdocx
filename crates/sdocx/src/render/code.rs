@@ -1,4 +1,4 @@
-use crate::{BoundingBox, ObjectSpanLayoutConstraint, RichTextBox, RichTextCodeBlock};
+use crate::{BoundingBox, MediaAsset, ObjectSpanLayoutConstraint, RichTextBox, RichTextCodeBlock};
 
 mod native_geometry;
 
@@ -7,22 +7,38 @@ mod native_geometry_tests;
 
 use native_geometry::NativeCodeGeometry;
 
-use super::RenderTheme;
 use super::text::{
-    ObjectDiagnosticKind, StyledText, TextContext, TextFrame, TextLayout, TextRenderer,
+    self, ObjectDiagnosticKind, StyledText, TextContext, TextFrame, TextLayout, TextRenderer,
     VerticalExclusion, finite_native_geometry,
+};
+use super::vector::{
+    Data, Group, LineJoin, ObjectKind, Paint, Path, Rectangle, Scene, Styled, Transform, color_hex,
+    decimal,
+};
+use super::{
+    RenderTheme, argb_color, paint_text_layout_in_viewport, rectangle, viewport::Viewport,
 };
 
 pub(super) struct PreparedCode {
-    pub copy: BoundingBox,
+    copy: BoundingBox,
     pub panel_bbox: BoundingBox,
-    pub title_layout: Option<TextLayout>,
-    pub body_layout: Option<TextLayout>,
+    title_layout: Option<TextLayout>,
+    body_layout: Option<TextLayout>,
     pub min_first_page_height: f64,
     constraint: ObjectSpanLayoutConstraint,
 }
 
 impl PreparedCode {
+    #[cfg(test)]
+    pub(super) fn copy_bounds(&self) -> BoundingBox {
+        self.copy
+    }
+
+    #[cfg(test)]
+    pub(super) fn body_layout(&self) -> Option<&TextLayout> {
+        self.body_layout.as_ref()
+    }
+
     pub fn minimum_first_page_height(&self) -> Option<f64> {
         matches!(
             self.constraint,
@@ -31,6 +47,101 @@ impl PreparedCode {
         )
         .then_some(self.min_first_page_height)
     }
+}
+
+pub(super) fn paint(
+    svg: &mut Scene,
+    code: &crate::RichTextCodeBlock,
+    prepared: &PreparedCode,
+    media_assets: &[MediaAsset],
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+    viewport: Option<Viewport>,
+) {
+    let settings = renderer.settings;
+    let background = argb_color(if theme.is_dark() { 0x333333 } else { 0xefefef });
+    let theme = theme.on_background(background);
+    let fill = color_hex(&background);
+    let stroke = if theme.is_dark() {
+        "#5f5f5f"
+    } else {
+        "#dddddd"
+    };
+    let copy_size = settings.pixels(24.0);
+    let radius = settings.pixels(12.0);
+    let copy = prepared.copy;
+    let panel_bbox = prepared.panel_bbox;
+    svg.scope(Group::new().object(ObjectKind::CodeBlock), |svg| {
+        svg.push(
+            rectangle(panel_bbox, 0.0, 2)
+                .y(decimal(panel_bbox.y_min, 5))
+                .rx(decimal(radius, 2))
+                .fill(Paint::from_hex(&fill))
+                .stroke(Paint::from_hex(stroke))
+                .stroke_width(1),
+        );
+        if let (Some(title), Some(layout)) = (&code.title, &prepared.title_layout) {
+            let styled = StyledText::with_span_producer(
+                title,
+                TextContext::Flow,
+                settings,
+                text::TextSpanProducer::Drawing,
+            );
+            paint_text_layout_in_viewport(
+                svg,
+                &styled,
+                layout,
+                media_assets,
+                theme,
+                renderer,
+                viewport,
+            );
+        }
+        let icon_stroke = if theme.is_dark() {
+            "#b7b7b7"
+        } else {
+            "#8b8b8b"
+        };
+        let icon = Data::new()
+            .move_to((31, 25))
+            .vertical_line_by(-4)
+            .quadratic_curve_by((0., -8., 8., -8.))
+            .horizontal_line_by(17)
+            .quadratic_curve_by((8., 0., 8., 8.))
+            .vertical_line_by(29);
+        let icon_scale = copy_size / 72.0;
+        svg.push(
+            Group::new()
+                .transformed(Transform::matrix(
+                    [icon_scale, 0.0, 0.0, icon_scale, copy.x_min, copy.y_min],
+                    6,
+                    2,
+                ))
+                .fill(Paint::None)
+                .stroke(Paint::from_hex(icon_stroke))
+                .stroke_width(6)
+                .line_join(LineJoin::Round)
+                .add(Path::new().data(icon))
+                .add(Rectangle::new().x(15).y(23).width(31).height(38).rx(5)),
+        );
+        if let (Some(body), Some(layout)) = (&code.body, &prepared.body_layout) {
+            let styled = StyledText::with_span_producer(
+                body,
+                TextContext::Flow,
+                settings,
+                text::TextSpanProducer::Drawing,
+            );
+            paint_text_layout_in_viewport(
+                svg,
+                &styled,
+                layout,
+                media_assets,
+                theme,
+                renderer,
+                viewport,
+            );
+        }
+    });
 }
 
 fn valid_box(bbox: BoundingBox) -> bool {

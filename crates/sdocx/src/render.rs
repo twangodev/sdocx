@@ -3660,15 +3660,7 @@ fn paint_line_objects(
             let decision = preparation.resolve(&placement.prepared, body_clone);
             match decision {
                 ObjectDrawingDecision::BodyCode(code, prepared) => {
-                    render_prepared_code(
-                        svg,
-                        code,
-                        prepared,
-                        media_assets,
-                        theme,
-                        renderer,
-                        viewport,
-                    );
+                    code::paint(svg, code, prepared, media_assets, theme, renderer, viewport);
                     report_drawing_layout_issues(renderer, &drawing_renderer);
                     return;
                 }
@@ -3723,7 +3715,7 @@ fn paint_line_objects(
                         svg.scope(
                             Group::new().transformed(Transform::translate(0.0, shift, 5)),
                             |svg| {
-                                render_prepared_code(
+                                code::paint(
                                     svg,
                                     code,
                                     prepared,
@@ -4104,7 +4096,7 @@ fn render_embedded_object(
                     return None;
                 }
             };
-            render_prepared_code(
+            code::paint(
                 svg,
                 code,
                 &prepared,
@@ -4128,101 +4120,6 @@ fn report_drawing_layout_issues(renderer: &TextRenderer<'_>, drawing: &TextRende
             .collect::<Vec<_>>(),
     );
     renderer.report_owned_object_issues(&drawing.scoped_object_diagnostics());
-}
-
-fn render_prepared_code(
-    svg: &mut Scene,
-    code: &crate::RichTextCodeBlock,
-    prepared: &code::PreparedCode,
-    media_assets: &[MediaAsset],
-    theme: RenderTheme,
-    renderer: &TextRenderer<'_>,
-    viewport: Option<Viewport>,
-) {
-    let settings = renderer.settings;
-    let background = argb_color(if theme.is_dark() { 0x333333 } else { 0xefefef });
-    let theme = theme.on_background(background);
-    let fill = color_hex(&background);
-    let stroke = if theme.is_dark() {
-        "#5f5f5f"
-    } else {
-        "#dddddd"
-    };
-    let copy_size = settings.pixels(24.0);
-    let radius = settings.pixels(12.0);
-    let copy = prepared.copy;
-    let panel_bbox = prepared.panel_bbox;
-    svg.scope(Group::new().object(ObjectKind::CodeBlock), |svg| {
-        svg.push(
-            rectangle(panel_bbox, 0.0, 2)
-                .y(decimal(panel_bbox.y_min, 5))
-                .rx(decimal(radius, 2))
-                .fill(Paint::from_hex(&fill))
-                .stroke(Paint::from_hex(stroke))
-                .stroke_width(1),
-        );
-        if let (Some(title), Some(layout)) = (&code.title, &prepared.title_layout) {
-            let styled = StyledText::with_span_producer(
-                title,
-                TextContext::Flow,
-                settings,
-                text::TextSpanProducer::Drawing,
-            );
-            paint_text_layout_in_viewport(
-                svg,
-                &styled,
-                layout,
-                media_assets,
-                theme,
-                renderer,
-                viewport,
-            );
-        }
-        let icon_stroke = if theme.is_dark() {
-            "#b7b7b7"
-        } else {
-            "#8b8b8b"
-        };
-        let icon = Data::new()
-            .move_to((31, 25))
-            .vertical_line_by(-4)
-            .quadratic_curve_by((0., -8., 8., -8.))
-            .horizontal_line_by(17)
-            .quadratic_curve_by((8., 0., 8., 8.))
-            .vertical_line_by(29);
-        let icon_scale = copy_size / 72.0;
-        svg.push(
-            Group::new()
-                .transformed(Transform::matrix(
-                    [icon_scale, 0.0, 0.0, icon_scale, copy.x_min, copy.y_min],
-                    6,
-                    2,
-                ))
-                .fill(Paint::None)
-                .stroke(Paint::from_hex(icon_stroke))
-                .stroke_width(6)
-                .line_join(LineJoin::Round)
-                .add(Path::new().data(icon))
-                .add(Rectangle::new().x(15).y(23).width(31).height(38).rx(5)),
-        );
-        if let (Some(body), Some(layout)) = (&code.body, &prepared.body_layout) {
-            let styled = StyledText::with_span_producer(
-                body,
-                TextContext::Flow,
-                settings,
-                text::TextSpanProducer::Drawing,
-            );
-            paint_text_layout_in_viewport(
-                svg,
-                &styled,
-                layout,
-                media_assets,
-                theme,
-                renderer,
-                viewport,
-            );
-        }
-    });
 }
 
 fn argb_color(argb: u32) -> Color {

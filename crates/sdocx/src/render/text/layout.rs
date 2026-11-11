@@ -3076,8 +3076,8 @@ mod tests {
             &renderer,
         )
         .unwrap();
-        close(initial.copy.y_min, 506.0);
-        close(initial.copy.y_max, 578.0);
+        close(initial.copy_bounds().y_min, 506.0);
+        close(initial.copy_bounds().y_max, 578.0);
         close(initial.panel_bbox.y_max - initial.panel_bbox.y_min, 606.5);
         let mut content = text("\u{fffc}\nZ");
         content.font_size = Some(15.0);
@@ -3121,7 +3121,7 @@ mod tests {
         close(prepared.panel_bbox.y_max, 1150.75);
         close(line.baseline, f64::from(1150.751_f32));
         close(line.line.objects[0].object.height, 620.75);
-        let body = prepared.body_layout.as_ref().unwrap();
+        let body = prepared.body_layout().unwrap();
         close(body.lines[0].baseline, 707.0);
         close(body.lines[5].baseline, 1075.0);
         close(plan.lines[1].baseline, f64::from(1211.501_f32));
