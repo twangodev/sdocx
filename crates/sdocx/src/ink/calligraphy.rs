@@ -46,6 +46,7 @@ pub(super) struct EndPenOutput {
     /// Absent when native endPen takes the initial-point branch and builds no path.
     #[cfg(test)]
     pub(super) path_length: Option<f32>,
+    #[cfg(test)]
     pub(super) point_extent: f32,
     pub(super) state: SavedHistoryState,
 }
@@ -75,7 +76,8 @@ pub(super) struct SavedObjectStrokeOutput {
     pub(super) terminal: Option<EndPenOutput>,
     /// Combined actual AddPoint input records, with the common point extent.
     pub(super) vectors: Vec<[f32; 4]>,
-    pub(super) extents: Vec<f32>,
+    /// Common AddPoint extent for every history and terminal vector.
+    pub(super) extent: f32,
     pub(super) final_state: SavedHistoryState,
     #[cfg(test)]
     pub(super) event_time_ms: i64,
@@ -435,7 +437,7 @@ fn saved_object_stroke_redraw_bounded(
     } else {
         None
     };
-    let mut terminal = if let Some(history) = &history {
+    let terminal = if let Some(history) = &history {
         Some(terminal_end_pen_vectors_bounded(
             history.state,
             P {
@@ -448,9 +450,14 @@ fn saved_object_stroke_redraw_bounded(
     } else {
         None
     };
-    if let (Some(terminal), Some(width)) = (&mut terminal, input.fixed_width) {
-        terminal.point_extent = width.max(1.0);
-    }
+    #[cfg(test)]
+    let terminal = {
+        let mut terminal = terminal;
+        if let (Some(terminal), Some(width)) = (&mut terminal, input.fixed_width) {
+            terminal.point_extent = width.max(1.0);
+        }
+        terminal
+    };
     let mut vectors = Vec::new();
     if let Some(history) = &history {
         vectors.extend(history.vectors.iter().copied());
@@ -461,7 +468,6 @@ fn saved_object_stroke_redraw_bounded(
     let extent = input
         .fixed_width
         .map_or((input.pen_size * 0.5).max(1.0), |width| width.max(1.0));
-    let extents = vec![extent; vectors.len()];
     let final_state = terminal
         .as_ref()
         .map_or(retained, |terminal| terminal.state);
@@ -470,7 +476,7 @@ fn saved_object_stroke_redraw_bounded(
         #[cfg(test)]
         terminal,
         vectors,
-        extents,
+        extent,
         final_state,
         #[cfg(test)]
         event_time_ms,
@@ -540,6 +546,7 @@ fn terminal_end_pen_vectors_bounded(
             ]],
             #[cfg(test)]
             path_length: None,
+            #[cfg(test)]
             point_extent: (pen_size * 0.5).max(1.0),
             state,
         });
@@ -595,6 +602,7 @@ fn terminal_end_pen_vectors_bounded(
         vectors,
         #[cfg(test)]
         path_length: Some(length),
+        #[cfg(test)]
         point_extent: (pen_size * 0.5).max(1.0),
         state,
     })
@@ -1061,15 +1069,10 @@ fn saved_object_stroke_mesh_bounded(
     let mut lane_triangle_counts = [0usize; 3];
     let mut lane_prefixes = Vec::with_capacity(stroke.vectors.len() + 1);
     lane_prefixes.push(lane_triangle_counts);
-    for (vector, extent) in stroke
-        .vectors
-        .iter()
-        .copied()
-        .zip(stroke.extents.iter().copied())
-    {
+    for vector in stroke.vectors.iter().copied() {
         let frame_input = AddPointInput {
             vector,
-            extent,
+            extent: stroke.extent,
             gate_center: state.add_point.center,
             initial_edge: state.add_point.initial_edge,
             previous_edges: state.add_point.previous_edges,
@@ -1200,7 +1203,7 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
             .collect::<Option<Vec<_>>>()?;
         Some(u32::from_le_bytes(bytes.try_into().ok()?))
     };
-    for (index, (vector, extent)) in stroke.vectors.iter().zip(&stroke.extents).enumerate() {
+    for (index, vector) in stroke.vectors.iter().enumerate() {
         let captured = &captured_add_points[index];
         let expected_vector: [u32; 4] = captured["vector_bits"]
             .as_array()?
@@ -1210,7 +1213,7 @@ pub(super) fn saved_native_mesh_bridge() -> Option<[Vec<[f32; 4]>; 3]> {
             .try_into()
             .ok()?;
         if vector.map(f32::to_bits) != expected_vector
-            || extent.to_bits() != bits(captured["extent_bits"].as_str()?)?
+            || stroke.extent.to_bits() != bits(captured["extent_bits"].as_str()?)?
         {
             return None;
         }
@@ -2721,8 +2724,11 @@ mod tests {
                 .iter()
                 .map(|vector| vector.map(f32::to_bits))
                 .collect();
-            let actual_extents: Vec<u32> =
-                output.extents.iter().map(|value| value.to_bits()).collect();
+            let actual_extents: Vec<u32> = output
+                .vectors
+                .iter()
+                .map(|_| output.extent.to_bits())
+                .collect();
             let expected_values: Vec<[u32; 4]> = expected_vectors
                 .iter()
                 .map(|entry| {
@@ -3105,9 +3111,9 @@ mod tests {
                 );
                 assert_eq!(
                     reused
-                        .extents
+                        .vectors
                         .iter()
-                        .map(|v| v.to_bits())
+                        .map(|_| reused.extent.to_bits())
                         .collect::<Vec<_>>(),
                     fresh_vectors
                         .iter()
