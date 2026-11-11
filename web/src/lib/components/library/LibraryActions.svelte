@@ -2,30 +2,16 @@
 	import { Ellipsis, X } from '@lucide/svelte';
 	import { separator, type MenuLeaf } from '$lib/menu';
 	import type { LibraryWorkspace } from '$lib/library/workspace.svelte';
-	import type { Collection } from '$lib/library/model';
+	import type { LibraryDialogIntent } from '$lib/library/dialog-intent';
 	import CompactSelectMenu from '../ui/CompactSelectMenu.svelte';
 	import DropdownMenu from '../ui/DropdownMenu.svelte';
 	import IconButton from '../ui/IconButton.svelte';
 	import LibraryDialog from './LibraryDialog.svelte';
-	let {
-		library,
-		creating = $bindable(false),
-		removing = $bindable<string[] | null>(null)
-	}: {
+	let { library, dialog = $bindable(), onCreateCollection }: {
 		library: LibraryWorkspace;
-		creating?: boolean;
-		removing?: string[] | null;
+		dialog: LibraryDialogIntent | null;
+		onCreateCollection: () => void;
 	} = $props();
-	let editing = $state<Collection | null>(null);
-	let collectionName = $state('');
-	let removingCollection = $state<Collection | null>(null);
-	const removal = $derived(
-		removing
-			? { kind: 'notes' as const, ids: removing }
-			: removingCollection
-				? { kind: 'collection' as const, collection: removingCollection }
-				: null
-	);
 	const activeCollection = $derived(
 		library.snapshot.collections.find((collection) => collection.id === library.collectionId)
 	);
@@ -61,30 +47,28 @@
 		separator(),
 		{ kind: 'action', label: 'New collection…', action: 'create' }
 	]);
-	function closeEditor() {
-		creating = false;
-		editing = null;
-		collectionName = '';
-	}
-	function closeRemoval() {
-		removing = null;
-		removingCollection = null;
+	function closeDialog() {
+		dialog = null;
 	}
 	async function saveCollection() {
-		const collection = await library.service.saveCollection(collectionName, editing?.id);
-		if (!editing && library.selected.length)
-			await library.service.setMembership([...library.selected], collection.id, true);
+		const intent = dialog;
+		if (!intent || (intent.kind !== 'create-collection' && intent.kind !== 'rename-collection')) return;
+		const { collectionId, name } = intent;
+		const documentIds = intent.kind === 'create-collection' ? [...intent.documentIds] : [];
+		await library.service.saveCollection(name, collectionId);
+		if (documentIds.length) await library.service.setMembership(documentIds, collectionId, true);
 		await library.refresh();
 	}
 	async function confirmRemoval() {
-		if (!removal) return;
-		if (removal.kind === 'notes') await library.service.deleteDocuments(removal.ids);
-		else await library.service.deleteCollection(removal.collection.id);
+		const intent = dialog;
+		if (intent?.kind === 'delete-notes') await library.service.deleteDocuments([...intent.documentIds]);
+		else if (intent?.kind === 'delete-collection') await library.service.deleteCollection(intent.collectionId);
+		else return;
 		await library.refresh();
 	}
 	function runAction(action: Action) {
 		const ids = [...library.selected];
-		if (action === 'delete') removing = ids;
+		if (action === 'delete') dialog = { kind: 'delete-notes', documentIds: ids };
 		else if (action === 'download' && ids[0]) void library.downloadOriginal(ids[0]);
 		else if (action === 'favorite')
 			void library.perform(() => library.service.setFavorite(ids, !allFavorites));
@@ -105,7 +89,7 @@
 			value="Add to"
 			items={collectionItems}
 			onAction={(id) => {
-				if (id === 'create') creating = true;
+				if (id === 'create') onCreateCollection();
 				else
 					void library.perform(() =>
 						library.service.setMembership([...library.selected], id, true)
@@ -129,10 +113,10 @@
 			{ kind: 'action', label: 'Delete collection', action: 'delete', tone: 'danger' }
 		]}
 		onAction={(action) => {
-			if (action === 'rename') {
-				editing = activeCollection!;
-				collectionName = activeCollection!.name;
-			} else removingCollection = activeCollection!;
+			const collection = activeCollection;
+			if (!collection) return;
+			dialog = { kind: action === 'rename' ? 'rename-collection' : 'delete-collection',
+				collectionId: collection.id, name: collection.name };
 		}}
 	>
 		{#snippet children({ props })}<IconButton {...props} label="Collection actions" size={7}
@@ -141,33 +125,32 @@
 	</DropdownMenu>
 {/if}
 
-{#if creating || editing}
+{#if dialog?.kind === 'create-collection' || dialog?.kind === 'rename-collection'}
 	<LibraryDialog
-		title={editing ? 'Rename collection' : 'Create collection'}
+		title={dialog.kind === 'rename-collection' ? 'Rename collection' : 'Create collection'}
 		description="Organize notes without making extra copies."
 		confirmLabel="Save collection"
 		onConfirm={saveCollection}
-		onClose={closeEditor}
+		onClose={closeDialog}
 	>
 		<label class="block text-xs"
 			>Collection name<input
 				class="mt-2 w-full rounded border border-subtle bg-bg px-3 py-2 text-text"
 				required
 				maxlength="120"
-				bind:value={collectionName}
+				bind:value={dialog.name}
 			/></label
 		>
 	</LibraryDialog>
-{/if}
-{#if removal}
+{:else if dialog}
 	<LibraryDialog
-		title={removal.kind === 'notes' ? 'Delete notes from library?' : 'Delete collection?'}
+		title={dialog.kind === 'delete-notes' ? 'Delete notes from library?' : 'Delete collection?'}
 		destructive
-		description={removal.kind === 'notes'
-			? `Delete ${removal.ids.length} saved ${removal.ids.length === 1 ? 'note' : 'notes'} and their collection memberships from this browser? Files on your device are unaffected.`
-			: `Delete “${removal.collection.name}”? Its notes will remain in All notes.`}
-		confirmLabel={removal.kind === 'notes' ? 'Delete notes' : 'Delete collection'}
+		description={dialog.kind === 'delete-notes'
+			? `Delete ${dialog.documentIds.length} saved ${dialog.documentIds.length === 1 ? 'note' : 'notes'} and their collection memberships from this browser? Files on your device are unaffected.`
+			: `Delete “${dialog.name}”? Its notes will remain in All notes.`}
+		confirmLabel={dialog.kind === 'delete-notes' ? 'Delete notes' : 'Delete collection'}
 		onConfirm={confirmRemoval}
-		onClose={closeRemoval}
+		onClose={closeDialog}
 	/>
 {/if}

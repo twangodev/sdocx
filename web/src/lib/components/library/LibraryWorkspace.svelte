@@ -5,6 +5,7 @@
 	import type { LibraryWorkspace } from '$lib/library/workspace.svelte';
 	import type { LibraryDocument, LibrarySort, LibrarySource } from '$lib/library/model';
 	import type { NoteAction } from '$lib/library/note-menu';
+	import type { LibraryDialogIntent } from '$lib/library/dialog-intent';
 	import type { MenuLeaf } from '$lib/menu';
 	import Button from '../ui/Button.svelte';
 	import IconButton from '../ui/IconButton.svelte';
@@ -29,8 +30,7 @@
 		onTemporary: (file: File) => void;
 	} = $props();
 	let sidebarOpen = $state(false);
-	let creatingCollection = $state(false);
-	let removingNotes = $state<string[] | null>(null);
+	let dialog = $state<LibraryDialogIntent | null>(null);
 	let storageOpen = $state(false);
 	let scroller: HTMLDivElement;
 	let searchInput = $state<HTMLInputElement>();
@@ -58,7 +58,7 @@
 	}
 	function createCollection() {
 		sidebarOpen = false;
-		creatingCollection = true;
+		dialog = { kind: 'create-collection', collectionId: crypto.randomUUID(), name: '', documentIds: [...library.selected] };
 	}
 	function openStorage() {
 		sidebarOpen = false;
@@ -69,7 +69,7 @@
 		else if (action === 'favorite')
 			void library.perform(() => library.service.setFavorite([document.id], !document.favorite));
 		else if (action === 'download') void library.downloadOriginal(document.id);
-		else removingNotes = [document.id];
+		else dialog = { kind: 'delete-notes', documentIds: [document.id] };
 	}
 	onMount(() => {
 		scroller.scrollTop = library.scrollTop;
@@ -138,7 +138,7 @@
 				/>
 			{/if}
 			<h1 class:sr-only={library.selected.length > 0}>{library.title}</h1>
-			<LibraryActions {library} bind:creating={creatingCollection} bind:removing={removingNotes} />
+			<LibraryActions {library} bind:dialog onCreateCollection={createCollection} />
 			{#if hasNotes && !library.selected.length}
 				<div class="browse-controls">
 					<label class="search-field">
