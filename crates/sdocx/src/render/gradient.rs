@@ -183,7 +183,7 @@ impl Plan {
             return Err(PaintDiagnosticKind::UnrepresentableGradient);
         }
         let stops = match role {
-            PaintRole::Fill => project_stops(source)?,
+            PaintRole::Fill => project_stops(&source.stops)?,
             PaintRole::Outline => project_outline_stops(source)?,
         };
         let rotate = |point| {
@@ -277,8 +277,10 @@ fn bounds(bbox: BoundingBox) -> [f32; 4] {
     ]
 }
 
-fn project_stops(source: &ColorPaintSource) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
-    let saved = &source.stops[..source.stops.len().min(10)];
+fn project_stops(
+    stops: &[crate::GradientStopSource],
+) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
+    let saved = &stops[..stops.len().min(10)];
     let Some(first) = saved.first() else {
         return Err(PaintDiagnosticKind::InvalidGradient);
     };
@@ -363,7 +365,7 @@ fn project_outline_stops(
     source: &ColorPaintSource,
 ) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
     let stops = normalize_outline_stops(source)?;
-    project_normalized_outline_stops(source, stops)
+    project_stops(&stops)
 }
 
 /// Project a bounded descending two-stop linear line gradient. The native
@@ -411,16 +413,7 @@ fn project_linear_line_stops(
             },
         ]);
     }
-    project_normalized_outline_stops(source, stops)
-}
-
-fn project_normalized_outline_stops(
-    source: &ColorPaintSource,
-    stops: Vec<crate::GradientStopSource>,
-) -> Result<Vec<ProjectedStop>, PaintDiagnosticKind> {
-    let mut normalized = source.clone();
-    normalized.stops = stops;
-    project_stops(&normalized)
+    project_stops(&stops)
 }
 
 /// Project the recovered type-8 radial line cache for two stops and strict
@@ -481,7 +474,7 @@ fn project_radial_line_stops(
         ]);
     }
     if stops.len() != 2 {
-        return project_normalized_outline_stops(source, stops);
+        return project_stops(&stops);
     }
 
     let [high, low] = stops.as_slice() else {
@@ -490,7 +483,7 @@ fn project_radial_line_stops(
     let high_position = high.position.value();
     let low_position = low.position.value();
     if high_position <= low_position || high.argb == low.argb {
-        return project_normalized_outline_stops(source, stops);
+        return project_stops(&stops);
     }
 
     let cache_index = gradient_cache_index(low_position);
@@ -507,7 +500,7 @@ fn project_radial_line_stops(
         ]);
     }
     if !(1..256).contains(&cache_index) {
-        return project_normalized_outline_stops(source, stops);
+        return project_stops(&stops);
     }
     let boundary = f64::from(cache_index) / 256.0;
     Ok(vec![

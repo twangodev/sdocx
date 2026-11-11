@@ -904,7 +904,7 @@ fn rotation_has_one_addition_and_strict_positive_gate() {
 fn stops_keep_duplicates_quantize_and_pad_without_changing_source() {
     let source = source(&[0.100001, 0.5, 0.5, 0.9]);
     let original = source.clone();
-    let plan = project_stops(&source).unwrap();
+    let plan = project_stops(&source.stops).unwrap();
     assert_eq!(
         plan.iter().map(|s| s.offset).collect::<Vec<_>>(),
         [0.0, 6553.0 / 65536.0, 0.5, 0.5, 58982.0 / 65536.0, 1.0]
@@ -922,7 +922,7 @@ fn stops_keep_duplicates_quantize_and_pad_without_changing_source() {
 fn first_ten_and_singleton_ignore_only_unconsumed_positions() {
     let singleton = source(&[f32::NAN]);
     assert_eq!(
-        project_stops(&singleton).unwrap(),
+        project_stops(&singleton.stops).unwrap(),
         [
             ProjectedStop {
                 offset: 0.0,
@@ -936,12 +936,12 @@ fn first_ten_and_singleton_ignore_only_unconsumed_positions() {
     );
     let mut many = source(&[0.0; 11]);
     many.stops[10].position = PaintFloat32::from_bits(0x7fc12345);
-    let plan = project_stops(&many).unwrap();
+    let plan = project_stops(&many.stops).unwrap();
     assert_eq!(plan.len(), 11); // Ten saved zeros followed by the copied endpoint.
     assert_eq!(plan.last().unwrap().argb, many.stops[9].argb);
     many.stops[9].position = PaintFloat32::from_bits(0x7fc12345);
     assert!(matches!(
-        project_stops(&many),
+        project_stops(&many.stops),
         Err(PaintDiagnosticKind::InvalidGradient)
     ));
     for positions in [
@@ -952,7 +952,7 @@ fn first_ten_and_singleton_ignore_only_unconsumed_positions() {
         &[0.0, 1.1],
     ] {
         assert!(matches!(
-            project_stops(&source(positions)),
+            project_stops(&source(positions).stops),
             Err(PaintDiagnosticKind::InvalidGradient)
         ));
     }
@@ -1682,7 +1682,7 @@ fn descending_stops_project_only_when_last_positive_span_covers_full_range() {
     reversed.stops[0].argb = 0xff00_00ff;
     reversed.stops[1].argb = 0xffff_0000;
     assert_eq!(
-        project_stops(&reversed).unwrap(),
+        project_stops(&reversed.stops).unwrap(),
         [
             ProjectedStop {
                 offset: 0.0,
@@ -1701,7 +1701,7 @@ fn descending_stops_project_only_when_last_positive_span_covers_full_range() {
     equal.stops[2].argb = 0xff12_3456;
     equal.stops[3].argb = 0xff12_3456;
     assert_eq!(
-        project_stops(&equal).unwrap(),
+        project_stops(&equal.stops).unwrap(),
         [
             ProjectedStop {
                 offset: 0.0,
@@ -1720,7 +1720,7 @@ fn descending_stops_project_only_when_last_positive_span_covers_full_range() {
     late.stops[2].argb = 0xff11_2233;
     late.stops[3].argb = 0xff44_5566;
     assert_eq!(
-        project_stops(&late).unwrap(),
+        project_stops(&late.stops).unwrap(),
         [
             ProjectedStop {
                 offset: 0.0,
@@ -1739,12 +1739,12 @@ fn descending_partial_overwrite_stays_rejected_and_consumption_stays_capped() {
     // Endpoint extension appends a positive 0.5-to-1 span, so an earlier
     // full-range span is insufficient to describe the final cache.
     assert!(matches!(
-        project_stops(&source(&[0.0, 1.0, 0.5, 0.5])),
+        project_stops(&source(&[0.0, 1.0, 0.5, 0.5]).stops),
         Err(PaintDiagnosticKind::InvalidGradient)
     ));
 
     assert!(matches!(
-        project_stops(&source(&[0.1, 0.8, 0.2, 0.9])),
+        project_stops(&source(&[0.1, 0.8, 0.2, 0.9]).stops),
         Err(PaintDiagnosticKind::InvalidGradient)
     ));
 
@@ -1752,7 +1752,7 @@ fn descending_partial_overwrite_stays_rejected_and_consumption_stays_capped() {
     many.stops[8].argb = 0xff01_0203;
     many.stops[9].argb = 0xff04_0506;
     assert_eq!(
-        project_stops(&many).unwrap(),
+        project_stops(&many.stops).unwrap(),
         [
             ProjectedStop {
                 offset: 0.0,
