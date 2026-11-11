@@ -76,6 +76,12 @@ pub struct FontBook {
     native_registry: Option<Arc<registered_source::RegisteredFontRegistry>>,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct GlyphInkKey {
+    face_index: u32,
+    glyph_id: u16,
+}
+
 #[derive(Clone)]
 pub struct ResolvedFace {
     pub id: ID,
@@ -85,8 +91,8 @@ pub struct ResolvedFace {
     data: Arc<dyn AsRef<[u8]> + Send + Sync>,
     font_digest: [u8; 32],
     svg_family: Arc<str>,
-    svg_face_index: u32,
-    ink_bounds: Arc<Mutex<HashMap<u16, Option<rustybuzz::ttf_parser::Rect>>>>,
+    cached_face_index: u32,
+    ink_bounds: Arc<Mutex<HashMap<GlyphInkKey, Option<rustybuzz::ttf_parser::Rect>>>>,
     has_cbdt_table: bool,
     pub index: u32,
     pub metrics: FontMetrics,
@@ -407,7 +413,7 @@ impl FontBook {
                 .any(|record| record.tag == rustybuzz::ttf_parser::Tag::from_bytes(b"CBDT")),
             font_digest: svg_identity::data_digest(data.as_ref().as_ref()),
             svg_family: svg_identity::family(data.as_ref().as_ref(), index),
-            svg_face_index: index,
+            cached_face_index: index,
             data,
             ink_bounds: Arc::new(Mutex::new(HashMap::new())),
             index,
@@ -459,7 +465,7 @@ impl Default for FontBook {
 
 impl ResolvedFace {
     pub fn svg_family(&self) -> Arc<str> {
-        if self.index == self.svg_face_index {
+        if self.index == self.cached_face_index {
             self.svg_family.clone()
         } else {
             svg_identity::family(self.bytes(), self.index)
@@ -486,7 +492,14 @@ impl ResolvedFace {
 
     /// Matches the native bitmap-font gate: the selected face declares a CBDT table.
     pub fn is_bitmap_font(&self) -> bool {
-        self.has_cbdt_table
+        if self.index == self.cached_face_index {
+            return self.has_cbdt_table;
+        }
+        rustybuzz::ttf_parser::RawFace::parse(self.bytes(), self.index).is_ok_and(|face| {
+            face.table_records
+                .into_iter()
+                .any(|record| record.tag == rustybuzz::ttf_parser::Tag::from_bytes(b"CBDT"))
+        })
     }
 
     pub(crate) fn synthesis(
@@ -539,15 +552,19 @@ impl ResolvedFace {
             family: self.family.clone(),
         };
         let glyph_id = u16::try_from(glyph_id).map_err(|_| invalid())?;
+        let key = GlyphInkKey {
+            face_index: self.index,
+            glyph_id,
+        };
         let mut bounds = self.ink_bounds.lock().expect("glyph ink bounds cache lock");
-        if let Some(bounds) = bounds.get(&glyph_id) {
+        if let Some(bounds) = bounds.get(&key) {
             return Ok(*bounds);
         }
         let face = rustybuzz::Face::from_slice(self.bytes(), self.index).ok_or_else(invalid)?;
         let ink = face
             .as_ref()
             .glyph_bounding_box(rustybuzz::ttf_parser::GlyphId(glyph_id));
-        bounds.insert(glyph_id, ink);
+        bounds.insert(key, ink);
         Ok(ink)
     }
 
@@ -668,6 +685,66 @@ mod tests {
                 face.is_bitmap_font()
             );
             assert_eq!(face.clone().is_bitmap_font(), face.is_bitmap_font());
+        }
+    }
+
+    #[test]
+    fn shared_ink_cache_follows_the_current_collection_face() {
+        let book = font_book(super::collection_fixture::roboto_dejavu());
+        let original = book.resolve("Roboto", false, false).unwrap();
+        let target = book.resolve("DejaVu Sans", false, false).unwrap();
+        let glyph_id = 36_u32;
+        let raw_bounds = |index| {
+            rustybuzz::Face::from_slice(original.bytes(), index)
+                .unwrap()
+                .as_ref()
+                .glyph_bounding_box(rustybuzz::ttf_parser::GlyphId(glyph_id as u16))
+        };
+        let original_bounds = raw_bounds(original.index);
+        let target_bounds = raw_bounds(target.index);
+        assert_ne!(
+            original_bounds, target_bounds,
+            "fixture must distinguish collection faces"
+        );
+        assert_eq!(
+            original.glyph_ink_bounds(glyph_id).unwrap(),
+            original_bounds
+        );
+
+        let mut retargeted = original.clone();
+        retargeted.index = target.index;
+        assert_eq!(
+            retargeted.glyph_ink_bounds(glyph_id).unwrap(),
+            target_bounds
+        );
+        assert_eq!(
+            original.glyph_ink_bounds(glyph_id).unwrap(),
+            original_bounds
+        );
+
+        retargeted.index = u32::MAX;
+        assert!(matches!(
+            retargeted.glyph_ink_bounds(glyph_id),
+            Err(FontError::InvalidData { .. })
+        ));
+    }
+
+    #[test]
+    fn bitmap_gate_follows_the_current_collection_face() {
+        for bitmap_index in [0, 1] {
+            let mut collection = super::collection_fixture::roboto_dejavu();
+            retag_optional_table(&mut collection, bitmap_index, *b"CBDT");
+            let book = font_book(collection);
+            let original = book.resolve("Roboto", false, false).unwrap();
+            let target = book.resolve("DejaVu Sans", false, false).unwrap();
+            assert_eq!(original.is_bitmap_font(), bitmap_index == 0);
+            assert_eq!(target.is_bitmap_font(), bitmap_index == 1);
+            let mut retargeted = original.clone();
+            retargeted.index = target.index;
+            assert_eq!(retargeted.is_bitmap_font(), target.is_bitmap_font());
+            assert_eq!(original.is_bitmap_font(), bitmap_index == 0);
+            retargeted.index = original.index;
+            assert_eq!(retargeted.is_bitmap_font(), original.is_bitmap_font());
         }
     }
 
