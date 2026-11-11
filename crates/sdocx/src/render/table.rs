@@ -514,14 +514,14 @@ fn offset_rounded_rect(
     origin: [f64; 2],
 ) -> Result<BoundingBox, ObjectDiagnosticKind> {
     let rect = [
-        native_measured_height(rect.x_min)? as f32,
-        native_measured_height(rect.y_min)? as f32,
-        native_measured_height(rect.x_max)? as f32,
-        native_measured_height(rect.y_max)? as f32,
+        native_f32_value(rect.x_min)? as f32,
+        native_f32_value(rect.y_min)? as f32,
+        native_f32_value(rect.x_max)? as f32,
+        native_f32_value(rect.y_max)? as f32,
     ];
     let origin = [
-        native_measured_height(origin[0])? as f32,
-        native_measured_height(origin[1])? as f32,
+        native_f32_value(origin[0])? as f32,
+        native_f32_value(origin[1])? as f32,
     ];
     let [x_min, y_min, x_max, y_max] = super::native_translation::offset_rounded_rect(rect, origin)
         .ok_or(ObjectDiagnosticKind::InvalidBounds)?
@@ -630,9 +630,9 @@ fn drawable_half_border(table: &RichTextTable) -> f64 {
     })
 }
 
-fn native_measured_height(height: f64) -> Result<f64, ObjectDiagnosticKind> {
-    finite_native_geometry(height)
-        .map(|height| f64::from(height as f32))
+fn native_f32_value(value: f64) -> Result<f64, ObjectDiagnosticKind> {
+    finite_native_geometry(value)
+        .map(|value| f64::from(value as f32))
         .ok_or(ObjectDiagnosticKind::InvalidBounds)
 }
 
@@ -730,14 +730,14 @@ fn initialize_rows(
 }
 
 fn native_add(left: f64, right: f64) -> Result<f64, ObjectDiagnosticKind> {
-    native_measured_height(f64::from(
-        native_measured_height(left)? as f32 + native_measured_height(right)? as f32,
+    native_f32_value(f64::from(
+        native_f32_value(left)? as f32 + native_f32_value(right)? as f32,
     ))
 }
 
 fn native_sub(left: f64, right: f64) -> Result<f64, ObjectDiagnosticKind> {
-    native_measured_height(f64::from(
-        native_measured_height(left)? as f32 - native_measured_height(right)? as f32,
+    native_f32_value(f64::from(
+        native_f32_value(left)? as f32 - native_f32_value(right)? as f32,
     ))
 }
 
@@ -825,7 +825,7 @@ impl PreparedTable {
             layout
                 .lines
                 .last()
-                .map(|line| native_measured_height(line.bottom))
+                .map(|line| native_f32_value(line.bottom))
                 .transpose()?
                 .unwrap_or(0.0)
         };
@@ -1062,7 +1062,7 @@ fn empty_cell_height(
         return Err(ObjectDiagnosticKind::InvalidBounds);
     }
     let cursor_bottom = (top + cursor_height) + (centering as i32) as f32;
-    native_measured_height(f64::from(cursor_bottom + margins[3]))
+    native_f32_value(f64::from(cursor_bottom + margins[3]))
 }
 
 pub(super) fn table_drawn_bounds(table: &RichTextTable) -> BoundingBox {

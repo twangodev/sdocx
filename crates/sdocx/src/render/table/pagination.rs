@@ -1,6 +1,6 @@
 use super::{
     ObjectDiagnosticKind, PreparedTable, RenderTheme, RichTextTable, TextLayout, TextRenderer,
-    VerticalExclusion, native_add, native_measured_height, native_sub,
+    VerticalExclusion, native_add, native_f32_value, native_sub,
 };
 use crate::BoundingBox;
 
@@ -75,10 +75,10 @@ impl BandList {
             .into_iter()
             .map(|rect| {
                 Ok(BoundingBox {
-                    x_min: native_measured_height(rect.x_min)?,
-                    y_min: native_measured_height(rect.y_min)?,
-                    x_max: native_measured_height(rect.x_max)?,
-                    y_max: native_measured_height(rect.y_max)?,
+                    x_min: native_f32_value(rect.x_min)?,
+                    y_min: native_f32_value(rect.y_min)?,
+                    x_max: native_f32_value(rect.x_max)?,
+                    y_max: native_f32_value(rect.y_max)?,
                 })
             })
             .collect::<Result<Vec<_>, ObjectDiagnosticKind>>()?;
