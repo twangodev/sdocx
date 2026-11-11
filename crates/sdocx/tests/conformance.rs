@@ -593,7 +593,98 @@ fn image_fixture_renders_all_embedded_images_on_their_reference_pages() {
             .collect::<Vec<_>>(),
         [3, 2, 2]
     );
-    assert!(rendered[2].svg.contains("overflow=\"hidden\""));
+    fn decode_rgb8_png(bytes: &[u8]) -> (u32, u32, Vec<u8>) {
+        let mut reader = png::Decoder::new(std::io::Cursor::new(bytes))
+            .read_info()
+            .unwrap();
+        assert_eq!(reader.info().color_type, png::ColorType::Rgb);
+        assert_eq!(reader.info().bit_depth, png::BitDepth::Eight);
+        let mut pixels = vec![0; reader.output_buffer_size().unwrap()];
+        let frame = reader.next_frame(&mut pixels).unwrap();
+        pixels.truncate(frame.buffer_size());
+        (frame.width, frame.height, pixels)
+    }
+
+    fn collect_images<'a>(group: &'a resvg::usvg::Group, images: &mut Vec<&'a resvg::usvg::Image>) {
+        for node in group.children() {
+            match node {
+                resvg::usvg::Node::Group(group) => collect_images(group, images),
+                resvg::usvg::Node::Image(image) => images.push(image),
+                _ => {}
+            }
+        }
+    }
+
+    let cropped_spans = document
+        .metadata
+        .note_text
+        .as_ref()
+        .unwrap()
+        .object_spans
+        .iter()
+        .filter_map(|span| match span.content.as_ref() {
+            Some(sdocx::RichTextObjectContent::Image(image)) if image.crop_rect.is_some() => {
+                Some(image.as_ref())
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(cropped_spans.len(), 1);
+    let cropped = cropped_spans[0];
+    assert_eq!(cropped.crop_rect, Some([73, 50, 405, 222]));
+    let source = &document.metadata.media_assets[cropped.media_index.unwrap()].data;
+    let (source_width, source_height, source_pixels) = decode_rgb8_png(source);
+    assert_eq!((source_width, source_height), (451, 300));
+    let mut expected_crop = Vec::new();
+    for y in 50..222_usize {
+        expected_crop.extend_from_slice(&source_pixels[(y * 451 + 73) * 3..(y * 451 + 405) * 3]);
+    }
+
+    let tree = resvg::usvg::Tree::from_str(&rendered[2].svg, &Default::default()).unwrap();
+    let mut images = Vec::new();
+    collect_images(tree.root(), &mut images);
+    let crop_images = images
+        .into_iter()
+        .filter(|image| (image.size().width(), image.size().height()) == (332.0, 172.0))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        crop_images.len(),
+        1,
+        "page 3 contains one 332x172 source crop"
+    );
+    let image = crop_images[0];
+    let resvg::usvg::ImageKind::PNG(bytes) = image.kind() else {
+        panic!("the saved RGB crop remains a PNG image");
+    };
+    let (width, height, pixels) = decode_rgb8_png(bytes);
+    assert_eq!((width, height), (332, 172));
+    assert!(
+        pixels == expected_crop,
+        "crop selects the saved source pixels"
+    );
+
+    // Canvas bounds include the flow ancestors; saved placement can differ by
+    // less than one thousandth of a page unit after flow translation.
+    let actual = image.abs_bounding_box();
+    for (name, actual, expected) in [
+        ("x", actual.x(), cropped.bbox.x_min),
+        ("y", actual.y(), cropped.bbox.y_min),
+        (
+            "width",
+            actual.width(),
+            cropped.bbox.x_max - cropped.bbox.x_min,
+        ),
+        (
+            "height",
+            actual.height(),
+            cropped.bbox.y_max - cropped.bbox.y_min,
+        ),
+    ] {
+        assert!(
+            (f64::from(actual) - expected).abs() < 0.001,
+            "crop {name}: {actual} versus {expected}"
+        );
+    }
 }
 
 #[test]
