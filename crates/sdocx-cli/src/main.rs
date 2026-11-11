@@ -156,7 +156,7 @@ fn load_fonts(font_files: &[PathBuf]) -> Result<sdocx::fonts::FontBook, String> 
     Ok(sdocx::fonts::FontBook::new(std::sync::Arc::new(fontdb)))
 }
 
-fn svg_options(fonts: &sdocx::fonts::FontBook) -> resvg::usvg::Options<'static> {
+fn png_raster_options(fonts: &sdocx::fonts::FontBook) -> resvg::usvg::Options<'static> {
     resvg::usvg::Options {
         font_resolver: sdocx::fonts::svg_font_resolver(&fonts.database()),
         fontdb: fonts.database(),
@@ -374,16 +374,17 @@ fn write_page_bytes(path: &std::path::Path, bytes: &[u8]) -> Result<(), String> 
     Ok(())
 }
 
-fn write_rendered_page(
-    path: &std::path::Path,
-    svg: &str,
-    format: Format,
-    png_options: &resvg::usvg::Options<'_>,
-) -> Result<(), String> {
-    match format {
-        Format::Svg => write_svg(path, svg),
-        Format::Png => write_png(path, svg, png_options),
-        Format::Pdf => unreachable!("PDF output is written before individual page images"),
+enum PageWriter<'a> {
+    Svg,
+    Png(&'a resvg::usvg::Options<'static>),
+}
+
+impl PageWriter<'_> {
+    fn write(&self, path: &std::path::Path, svg: &str) -> Result<(), String> {
+        match self {
+            Self::Svg => write_svg(path, svg),
+            Self::Png(options) => write_png(path, svg, options),
+        }
     }
 }
 
@@ -436,7 +437,6 @@ fn convert(cli: Cli) -> Result<(), String> {
     let mut render_options = RenderOptions::default();
     render_options.marker2_output_scale = cli.marker2_at_2x.then_some(2);
     let fonts = load_fonts(&cli.font_files)?;
-    let svg_options = svg_options(&fonts);
 
     let output_base = cli
         .output
@@ -448,43 +448,51 @@ fn convert(cli: Cli) -> Result<(), String> {
     };
     let mut render_warnings = RenderWarnings::default();
 
-    if format == Format::Pdf {
-        let mut options = sdocx::PdfOptions::from_font_book(&fonts);
-        if let Some(dpi) = cli.pdf_dpi {
-            options.dpi = dpi;
-        }
-        options.pdf_paper_fixed_axis_size = cli.pdf_load_width;
-        let output = sdocx::render_layout_pages_pdf_detailed_with_fonts(
-            &doc,
-            &layout,
-            &page_indices,
-            &render_options,
-            &options,
-            &fonts,
-        )
-        .map_err(|error| error.to_string())?;
-        for page in &output.pages {
-            render_warnings.report(
-                (page.page_index, page.source_page_index),
-                &page.text_diagnostics,
-                &page.object_diagnostics,
-                &page.geometry_diagnostics,
-                &page.paint_diagnostics,
-                &page.background_diagnostics,
+    let png_options;
+    let writer = match format {
+        Format::Pdf => {
+            let mut options = sdocx::PdfOptions::from_font_book(&fonts);
+            if let Some(dpi) = cli.pdf_dpi {
+                options.dpi = dpi;
+            }
+            options.pdf_paper_fixed_axis_size = cli.pdf_load_width;
+            let output = sdocx::render_layout_pages_pdf_detailed_with_fonts(
+                &doc,
+                &layout,
+                &page_indices,
+                &render_options,
+                &options,
+                &fonts,
+            )
+            .map_err(|error| error.to_string())?;
+            for page in &output.pages {
+                render_warnings.report(
+                    (page.page_index, page.source_page_index),
+                    &page.text_diagnostics,
+                    &page.object_diagnostics,
+                    &page.geometry_diagnostics,
+                    &page.paint_diagnostics,
+                    &page.background_diagnostics,
+                );
+            }
+            let page_count = output.pages.len();
+            let pdf = output.bytes;
+            fs::write(&output_base, &pdf)
+                .map_err(|error| format!("failed to write {}: {error}", output_base.display()))?;
+            eprintln!(
+                "Wrote {} ({} bytes, {} pages)",
+                output_base.display(),
+                pdf.len(),
+                page_count
             );
+            return Ok(());
         }
-        let page_count = output.pages.len();
-        let pdf = output.bytes;
-        fs::write(&output_base, &pdf)
-            .map_err(|error| format!("failed to write {}: {error}", output_base.display()))?;
-        eprintln!(
-            "Wrote {} ({} bytes, {} pages)",
-            output_base.display(),
-            pdf.len(),
-            page_count
-        );
-        return Ok(());
-    }
+        Format::Svg => PageWriter::Svg,
+        Format::Png => {
+            png_options = png_raster_options(&fonts);
+            PageWriter::Png(&png_options)
+        }
+    };
 
     let mut text_cache = sdocx::DocumentTextCache::default();
     let rendered_pages: Vec<_> = page_indices
@@ -507,7 +515,7 @@ fn convert(cli: Cli) -> Result<(), String> {
     }
 
     if rendered_pages.len() == 1 {
-        write_rendered_page(&output_base, &rendered_pages[0].svg, format, &svg_options)?;
+        writer.write(&output_base, &rendered_pages[0].svg)?;
     } else {
         for (i, rendered_page) in page_indices.iter().zip(&rendered_pages) {
             let stem = output_base
@@ -519,7 +527,7 @@ fn convert(cli: Cli) -> Result<(), String> {
                 .and_then(|e| e.to_str())
                 .unwrap_or(format.ext());
             let path = output_base.with_file_name(format!("{stem}_page{i}.{ext}"));
-            write_rendered_page(&path, &rendered_page.svg, format, &svg_options)?;
+            writer.write(&path, &rendered_page.svg)?;
         }
     }
     Ok(())
@@ -572,22 +580,22 @@ mod tests {
         }
     }
 
-    fn svg_options(
+    fn png_raster_options(
         font_files: &[std::path::PathBuf],
     ) -> Result<resvg::usvg::Options<'static>, String> {
-        Ok(super::svg_options(&super::load_fonts(font_files)?))
+        Ok(super::png_raster_options(&super::load_fonts(font_files)?))
     }
 
     #[test]
     fn default_font_resources_keep_native_names_and_one_database() {
         let fonts = super::load_fonts(&[]).unwrap();
         assert!(fonts.native_name_config().is_some());
-        let options = super::svg_options(&fonts);
+        let options = super::png_raster_options(&fonts);
         assert!(std::sync::Arc::ptr_eq(&options.fontdb, &fonts.database()));
     }
 
     fn svg_to_png(svg: &str) -> Result<Vec<u8>, String> {
-        super::svg_to_png(svg, &svg_options(&[])?)
+        super::svg_to_png(svg, &png_raster_options(&[])?)
     }
 
     struct FontFile(std::path::PathBuf);
@@ -621,7 +629,7 @@ mod tests {
     #[test]
     fn explicit_font_file_wins_over_the_same_bundled_face() {
         use resvg::usvg::fontdb::{Family, Query, Source};
-        let bundled = svg_options(&[]).unwrap();
+        let bundled = png_raster_options(&[]).unwrap();
         let face = bundled.fontdb.faces().next().expect("bundled font");
         let data = bundled
             .fontdb
@@ -630,7 +638,7 @@ mod tests {
         let file = FontFile::new(&data);
         let explicit_fonts = super::load_fonts(std::slice::from_ref(&file.0)).unwrap();
         assert!(explicit_fonts.native_name_config().is_none());
-        let explicit = super::svg_options(&explicit_fonts);
+        let explicit = super::png_raster_options(&explicit_fonts);
         let selected = explicit
             .fontdb
             .query(&Query {
@@ -650,11 +658,11 @@ mod tests {
     fn missing_or_invalid_explicit_fonts_fail_instead_of_falling_back() {
         let invalid = FontFile::new(b"not a font");
         assert!(matches!(
-            svg_options(std::slice::from_ref(&invalid.0)),
+            png_raster_options(std::slice::from_ref(&invalid.0)),
             Err(message) if message.contains("no usable font faces")
         ));
         assert!(matches!(
-            svg_options(&[invalid.0.with_extension("missing")]),
+            png_raster_options(&[invalid.0.with_extension("missing")]),
             Err(message) if message.contains("cannot load font")
         ));
     }
