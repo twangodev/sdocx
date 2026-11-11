@@ -260,6 +260,28 @@ mod tests {
     }
 
     #[test]
+    fn json_bounds_preserve_the_padded_mask_at_integer_boundaries() {
+        let row: Value = serde_json::from_str(
+            r#"{"geometry":{"bounds":{"x_min":90.99999999999999,"y_min":8.0,"x_max":99.0,"y_max":12.0}}}"#,
+        )
+        .unwrap();
+        let options = InkOptions {
+            region: Some([0, 8, 107, 9]),
+            ..InkOptions::default()
+        };
+        let (mask, count) = stroke_regions(&[row], (107, 20), &options).unwrap();
+        assert_eq!(count, 1);
+        assert!(!mask[8 * 107 + 86]);
+        assert!(
+            mask[8 * 107 + 87],
+            "rounding the bound to 91.0 drops this pixel"
+        );
+        assert!(mask[8 * 107 + 101]);
+        assert!(!mask[8 * 107 + 102]);
+        assert_eq!(mask.iter().filter(|&&selected| selected).count(), 15);
+    }
+
+    #[test]
     fn profile_settings_and_region_select_only_requested_strokes() {
         let rows = [
             stroke("Marker4", "7;", 10.0, 10.0),
