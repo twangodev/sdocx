@@ -70,17 +70,28 @@ impl RichTextBox {
             })
             .collect();
 
-        let mut slice = self.clone();
-        slice.text = text.to_string();
-        slice.runs = runs;
-        slice.spans = spans;
-        slice.paragraphs = paragraphs;
-        slice.object_spans = object_spans;
-        slice.text_sections = vec![crate::types::RichTextSection {
+        let text = text.to_string();
+        let text_sections = vec![crate::types::RichTextSection {
             start_utf16: 0,
             length_utf16: i32::try_from(end_utf16.checked_sub(start_utf16)?).ok()?,
         }];
-        Some(slice)
+        Some(Self {
+            text_area_type: self.text_area_type,
+            bbox: self.bbox,
+            rotation_degrees: self.rotation_degrees,
+            text,
+            color: self.color,
+            highlight_color: self.highlight_color,
+            underline: self.underline,
+            font_size: self.font_size,
+            runs,
+            spans,
+            paragraphs,
+            object_spans,
+            text_sections,
+            margins: self.margins,
+            gravity: self.gravity,
+        })
     }
 }
 
