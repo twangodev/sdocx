@@ -2129,6 +2129,14 @@ fn assemble_prepared_output_pages(
         "Type" => "Pages", "Kids" => output_page_ids.iter().copied().map(Object::Reference).collect::<Vec<_>>(),
         "Count" => output_page_ids.len() as i64,
     }));
+    finish_assembled_pdf(output, catalog_id, tagged)
+}
+
+fn finish_assembled_pdf(
+    mut output: Document,
+    catalog_id: ObjectId,
+    tagged: TaggedOutput,
+) -> Result<Vec<u8>, String> {
     if tagged.has_tags {
         let root = tagged.finish(&mut output)?;
         output
@@ -3083,26 +3091,7 @@ fn assemble_overlay_only(
     }));
     let catalog_id =
         output.add_object(lopdf::dictionary! {"Type" => "Catalog", "Pages" => pages_root_id});
-    if tagged.has_tags {
-        let root = tagged.finish(&mut output)?;
-        output
-            .objects
-            .insert(tagged.root_id, Object::Dictionary(root));
-        let catalog = output
-            .get_object_mut(catalog_id)
-            .map_err(|e| e.to_string())?
-            .as_dict_mut()
-            .map_err(|e| e.to_string())?;
-        catalog.set("StructTreeRoot", tagged.root_id);
-        catalog.set("MarkInfo", lopdf::dictionary! { "Marked" => true });
-    }
-    output.trailer.set("Root", catalog_id);
-    if output.objects.len() > 2_000_000 {
-        return Err("assembled PDF exceeds 2,000,000 reachable and structural objects".into());
-    }
-    let mut bytes = Vec::new();
-    output.save_modern(&mut bytes).map_err(|e| e.to_string())?;
-    Ok(bytes)
+    finish_assembled_pdf(output, catalog_id, tagged)
 }
 
 fn is_annotation_dictionary(doc: &Document, dict: &Dictionary) -> bool {
