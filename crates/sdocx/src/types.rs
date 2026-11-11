@@ -56,13 +56,59 @@ pub struct DocumentMetadata {
     pub note_title: Option<RichTextBox>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PageMode {
+    PageList,
+    ContinuousCanvas,
+    Unknown(u16),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DocumentOrientation {
+    Portrait,
+    Landscape,
+    Unknown(i32),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BodyFontSizeAdjustment {
+    DeviceDefault,
+    Delta(i32),
+}
+
 impl DocumentMetadata {
+    pub fn page_mode(&self) -> Option<PageMode> {
+        self.page_mode.map(|raw| match raw {
+            0 => PageMode::PageList,
+            1 => PageMode::ContinuousCanvas,
+            other => PageMode::Unknown(other),
+        })
+    }
+
+    pub fn orientation(&self) -> Option<DocumentOrientation> {
+        self.orientation.map(|raw| match raw {
+            0 => DocumentOrientation::Portrait,
+            1 => DocumentOrientation::Landscape,
+            other => DocumentOrientation::Unknown(other),
+        })
+    }
+
+    pub fn body_font_size_adjustment(&self) -> Option<BodyFontSizeAdjustment> {
+        self.body_font_size_delta.map(|raw| match raw {
+            i32::MIN => BodyFontSizeAdjustment::DeviceDefault,
+            delta => BodyFontSizeAdjustment::Delta(delta),
+        })
+    }
+
     /// Scale logical text units from the oriented native default page size.
     pub fn document_density(&self) -> f32 {
         let Some((width, height)) = self.default_page_dimensions else {
             return 1.0;
         };
-        let axis = if self.orientation.unwrap_or(0) == 0 {
+        let axis = if matches!(
+            self.orientation(),
+            None | Some(DocumentOrientation::Portrait)
+        ) {
             width
         } else {
             height
@@ -1443,9 +1489,10 @@ impl Default for BoundingBox {
 #[cfg(test)]
 mod tests {
     use super::{
-        BulletType, DocumentMetadata, FormatVersion, HyperlinkType, LineSpacingType, ObjectType,
-        ParagraphAlignment, ParagraphDirection, PredefinedTextStyle, RichTextParagraph,
-        RichTextParagraphType, RichTextSpan, RichTextSpanType,
+        BodyFontSizeAdjustment, BulletType, DocumentMetadata, DocumentOrientation, FormatVersion,
+        HyperlinkType, LineSpacingType, ObjectType, PageMode, ParagraphAlignment,
+        ParagraphDirection, PredefinedTextStyle, RichTextParagraph, RichTextParagraphType,
+        RichTextSpan, RichTextSpanType,
     };
 
     fn paragraph(kind: RichTextParagraphType, values: &[u32]) -> RichTextParagraph {
@@ -1676,6 +1723,41 @@ mod tests {
         assert!(!ObjectType::Table.is_supported_by(FormatVersion(5399)));
         assert!(ObjectType::Table.is_supported_by(FormatVersion::TABLE_AND_CODE_BLOCK_OBJECTS));
         assert!(ObjectType::Stroke.is_supported_by(FormatVersion::INITIAL));
+    }
+
+    #[test]
+    fn metadata_semantic_views_preserve_absence_unknowns_and_font_sentinel() {
+        let mut metadata = DocumentMetadata::default();
+        assert_eq!(metadata.page_mode(), None);
+        assert_eq!(metadata.orientation(), None);
+        assert_eq!(metadata.body_font_size_adjustment(), None);
+        metadata.page_mode = Some(0);
+        metadata.orientation = Some(0);
+        metadata.body_font_size_delta = Some(i32::MIN);
+        assert_eq!(metadata.page_mode(), Some(PageMode::PageList));
+        assert_eq!(metadata.orientation(), Some(DocumentOrientation::Portrait));
+        assert_eq!(
+            metadata.body_font_size_adjustment(),
+            Some(BodyFontSizeAdjustment::DeviceDefault)
+        );
+        metadata.page_mode = Some(1);
+        metadata.orientation = Some(1);
+        metadata.body_font_size_delta = Some(-2);
+        assert_eq!(metadata.page_mode(), Some(PageMode::ContinuousCanvas));
+        assert_eq!(metadata.orientation(), Some(DocumentOrientation::Landscape));
+        assert_eq!(
+            metadata.body_font_size_adjustment(),
+            Some(BodyFontSizeAdjustment::Delta(-2))
+        );
+        metadata.page_mode = Some(u16::MAX);
+        metadata.orientation = Some(-1);
+        assert_eq!(metadata.page_mode(), Some(PageMode::Unknown(u16::MAX)));
+        assert_eq!(
+            metadata.orientation(),
+            Some(DocumentOrientation::Unknown(-1))
+        );
+        assert_eq!(metadata.page_mode, Some(u16::MAX));
+        assert_eq!(metadata.orientation, Some(-1));
     }
 
     #[test]

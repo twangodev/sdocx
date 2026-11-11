@@ -7,7 +7,14 @@ use crate::{Color, Error, ObjectMetadata, ParseLimits, Point, Result, Stroke, St
 pub(crate) fn decode_stroke(data: &[u8], limits: &ParseLimits) -> Result<Stroke> {
     let mut frames = Reader::new(data, "stroke object");
     let base = ObjectMetadata::read(&mut frames)?;
+    decode_stroke_after_base(base, frames, limits)
+}
 
+pub(crate) fn decode_stroke_after_base(
+    base: ObjectMetadata,
+    mut frames: Reader<'_>,
+    limits: &ParseLimits,
+) -> Result<Stroke> {
     let frame = Frame::read(&mut frames)?;
     frame.expect_kind(1)?;
     let channels = StrokeChannels::read(&frame, limits)?;

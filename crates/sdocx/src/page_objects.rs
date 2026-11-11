@@ -83,6 +83,19 @@ impl Page {
 }
 
 #[cfg(feature = "render")]
+#[derive(Clone, Copy)]
+enum TraversalOrder {
+    Stored,
+    Paint,
+}
+
+#[cfg(feature = "render")]
+struct ContextualObject<'a> {
+    object: &'a PageObject,
+    native_geometry_allowed: bool,
+}
+
+#[cfg(feature = "render")]
 impl Page {
     /// Accepted objects in paint order, including selected container parents.
     pub fn composed_objects(&self) -> impl Iterator<Item = &PageObject> {
@@ -101,38 +114,10 @@ impl Page {
     /// admission, including container parents and non-stroke objects. This
     /// permits callers to interleave their own handling of mixed page content.
     pub fn composed_objects_with_context(&self) -> Vec<(&PageObject, bool)> {
-        fn visit<'a>(object: &'a PageObject, allowed: bool, out: &mut Vec<(&'a PageObject, bool)>) {
-            let allowed = allowed && !matches!(object.content, PageObjectContent::Descendant(_));
-            out.push((object, allowed));
-            fn children<'a>(
-                content: &'a PageObjectContent,
-                allowed: bool,
-                out: &mut Vec<(&'a PageObject, bool)>,
-            ) {
-                match content {
-                    PageObjectContent::Container(objects) => {
-                        for object in objects {
-                            visit(object, allowed, out);
-                        }
-                    }
-                    PageObjectContent::Descendant(inner) => children(inner, false, out),
-                    _ => {}
-                }
-            }
-            children(&object.content, allowed, out);
-        }
-
-        use crate::composition::RenderPass;
         let mut objects = Vec::new();
-        for pass in [RenderPass::Base, RenderPass::Top, RenderPass::Masking] {
-            for root in self
-                .objects
-                .iter()
-                .filter(|root| root.render_pass() == Some(pass))
-            {
-                visit(root, true, &mut objects);
-            }
-        }
+        self.visit_contextual_objects(TraversalOrder::Paint, |entry| {
+            objects.push((entry.object, entry.native_geometry_allowed));
+        });
         objects
     }
 
@@ -153,7 +138,7 @@ impl Page {
     /// geometry for its entire subtree, including descendants inside a
     /// container.
     pub fn composed_strokes_with_context(&self) -> Vec<(&PageObject, &Stroke, bool)> {
-        self.contextual_strokes(false)
+        self.contextual_strokes(TraversalOrder::Stored)
     }
 
     /// Accepted strokes in composition paint order, with the renderer's
@@ -163,62 +148,65 @@ impl Page {
     pub fn composed_strokes_in_paint_order_with_context(
         &self,
     ) -> Vec<(&PageObject, &Stroke, bool)> {
-        self.contextual_strokes(true)
+        self.contextual_strokes(TraversalOrder::Paint)
     }
 
-    fn contextual_strokes(&self, paint_order: bool) -> Vec<(&PageObject, &Stroke, bool)> {
+    fn contextual_strokes(&self, order: TraversalOrder) -> Vec<(&PageObject, &Stroke, bool)> {
+        let mut strokes = Vec::new();
+        self.visit_contextual_objects(order, |entry| {
+            if let Some(stroke) = entry.object.content.as_stroke() {
+                strokes.push((entry.object, stroke, entry.native_geometry_allowed));
+            }
+        });
+        strokes
+    }
+
+    fn visit_contextual_objects<'a>(
+        &'a self,
+        order: TraversalOrder,
+        mut emit: impl FnMut(ContextualObject<'a>),
+    ) {
         fn visit<'a>(
             object: &'a PageObject,
-            native_allowed: bool,
-            out: &mut Vec<(&'a PageObject, &'a Stroke, bool)>,
+            native_geometry_allowed: bool,
+            emit: &mut impl FnMut(ContextualObject<'a>),
         ) {
-            let native_allowed =
-                native_allowed && !matches!(object.content, PageObjectContent::Descendant(_));
-            visit_content(object, &object.content, native_allowed, out);
-        }
-
-        fn visit_content<'a>(
-            object: &'a PageObject,
-            content: &'a PageObjectContent,
-            native_allowed: bool,
-            out: &mut Vec<(&'a PageObject, &'a Stroke, bool)>,
-        ) {
-            match content {
-                PageObjectContent::Stroke(stroke) => out.push((object, stroke, native_allowed)),
-                PageObjectContent::Container(children) => {
-                    for child in children {
-                        visit(child, native_allowed, out);
-                    }
+            let native_geometry_allowed = native_geometry_allowed
+                && !matches!(object.content, PageObjectContent::Descendant(_));
+            emit(ContextualObject {
+                object,
+                native_geometry_allowed,
+            });
+            if let Some(children) = object.content.children() {
+                for child in children {
+                    visit(child, native_geometry_allowed, emit);
                 }
-                PageObjectContent::Descendant(inner) => {
-                    visit_content(object, inner, false, out);
-                }
-                PageObjectContent::Element(_) => {}
             }
         }
 
-        let mut strokes = Vec::new();
-        if paint_order {
-            use crate::composition::RenderPass;
-            for pass in [RenderPass::Base, RenderPass::Top, RenderPass::Masking] {
+        match order {
+            TraversalOrder::Stored => {
                 for root in self
                     .objects
                     .iter()
-                    .filter(|root| root.render_pass() == Some(pass))
+                    .filter(|root| root.render_pass().is_some())
                 {
-                    visit(root, true, &mut strokes);
+                    visit(root, true, &mut emit);
                 }
             }
-        } else {
-            for root in self
-                .objects
-                .iter()
-                .filter(|root| root.render_pass().is_some())
-            {
-                visit(root, true, &mut strokes);
+            TraversalOrder::Paint => {
+                use crate::composition::RenderPass;
+                for pass in [RenderPass::Base, RenderPass::Top, RenderPass::Masking] {
+                    for root in self
+                        .objects
+                        .iter()
+                        .filter(|root| root.render_pass() == Some(pass))
+                    {
+                        visit(root, true, &mut emit);
+                    }
+                }
             }
         }
-        strokes
     }
 }
 

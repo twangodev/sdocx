@@ -173,6 +173,12 @@ impl StoredNote {
     }
 }
 
+#[derive(Clone, Copy)]
+enum NotePenSchema {
+    Compatible,
+    Current,
+}
+
 struct NoteMetadataDecoder<'a> {
     limits: &'a ParseLimits,
     entries: usize,
@@ -235,31 +241,13 @@ impl NoteMetadataDecoder<'_> {
                 11 => {
                     metadata.body_font_size_delta = Some(reader.read_i32("body font size delta")?)
                 }
-                12 => metadata.compatible_pen = Some(self.pen(&mut reader, false)?),
+                12 => {
+                    metadata.compatible_pen =
+                        Some(self.pen(&mut reader, NotePenSchema::Compatible)?)
+                }
                 13 => metadata.voices = Some(self.voices(&mut reader)?),
                 14 => metadata.attachments = Some(self.attachments(&mut reader)?),
-                15 => {
-                    let size = reader.read_u32("pen block size")?;
-                    let payload_size = size.checked_sub(4).ok_or_else(|| {
-                        Error::Format(
-                            "note metadata: pen block is smaller than its size prefix".into(),
-                        )
-                    })? as usize;
-                    let mut pen_reader = Reader::new(
-                        reader.read_bytes(payload_size, "pen block")?,
-                        "note pen block",
-                    );
-                    let mut pen = self.pen(&mut pen_reader, true)?;
-                    if pen_reader.remaining() != 0 {
-                        pen.extension = Some(NotePenExtension {
-                            fixed_opacity: pen_reader.read_u32("fixed opacity")? != 0,
-                            auto_size_enabled: pen_reader.read_u32("automatic size")? != 0,
-                            fit_ratio: pen_reader.read_f32("fit ratio")?,
-                        });
-                    }
-                    pen.trailing_data = self.trailing(&mut pen_reader)?;
-                    metadata.pen = Some(pen);
-                }
+                15 => metadata.pen = Some(self.current_pen_block(&mut reader)?),
                 16 => metadata.server_checkpoint = Some(reader.read_i64("server checkpoint")?),
                 17 => metadata.fixed_font = Some(self.string(&mut reader, "fixed font")?),
                 18 => {
@@ -399,7 +387,28 @@ impl NoteMetadataDecoder<'_> {
         Ok(voices)
     }
 
-    fn pen(&self, reader: &mut Reader<'_>, modern: bool) -> Result<NotePenSettings> {
+    fn current_pen_block(&self, reader: &mut Reader<'_>) -> Result<NotePenSettings> {
+        let size = reader.read_u32("pen block size")?;
+        let payload_size = size.checked_sub(4).ok_or_else(|| {
+            Error::Format("note metadata: pen block is smaller than its size prefix".into())
+        })? as usize;
+        let mut pen_reader = Reader::new(
+            reader.read_bytes(payload_size, "pen block")?,
+            "note pen block",
+        );
+        let mut pen = self.pen(&mut pen_reader, NotePenSchema::Current)?;
+        if pen_reader.remaining() != 0 {
+            pen.extension = Some(NotePenExtension {
+                fixed_opacity: pen_reader.read_u32("fixed opacity")? != 0,
+                auto_size_enabled: pen_reader.read_u32("automatic size")? != 0,
+                fit_ratio: pen_reader.read_f32("fit ratio")?,
+            });
+        }
+        pen.trailing_data = self.trailing(&mut pen_reader)?;
+        Ok(pen)
+    }
+
+    fn pen(&self, reader: &mut Reader<'_>, schema: NotePenSchema) -> Result<NotePenSettings> {
         let name = self.string(reader, "pen name")?;
         let size = reader.read_f32("pen size")?;
         let color = reader.read_u32("pen color")?;
@@ -408,10 +417,10 @@ impl NoteMetadataDecoder<'_> {
         let eraser_enabled = reader.read_u32("pen eraser enabled")? != 0;
         let size_level = reader.read_i32("pen size level")?;
         let particle_density = reader.read_i32("pen particle density")?;
-        let particle_size = modern
+        let particle_size = matches!(schema, NotePenSchema::Current)
             .then(|| reader.read_f32("pen particle size"))
             .transpose()?;
-        let fixed_width = modern
+        let fixed_width = matches!(schema, NotePenSchema::Current)
             .then(|| reader.read_u32("pen fixed width").map(|value| value != 0))
             .transpose()?;
         let hsv = [

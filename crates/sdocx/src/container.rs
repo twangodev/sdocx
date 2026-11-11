@@ -182,8 +182,15 @@ fn parse_archive_from_reader<R: Read + Seek>(
     if let Some(note) = &mut note {
         decode_text_images(&mut note.title, &media, "note.note", &mut report)?;
         decode_text_images(&mut note.body, &media, "note.note", &mut report)?;
-        metadata.note_title = Some(note.title.clone());
-        metadata.note_text = Some(note.body.clone());
+    }
+    if retain_sources {
+        if let Some(note) = &note {
+            metadata.note_title = Some(note.title.clone());
+            metadata.note_text = Some(note.body.clone());
+        }
+    } else if let Some(note) = note.take() {
+        metadata.note_title = Some(note.title);
+        metadata.note_text = Some(note.body);
     }
 
     let mut page_records = Vec::with_capacity(page_names.len());
@@ -475,38 +482,6 @@ fn check_u64_limit(resource: &'static str, limit: u64, actual: u64) -> Result<()
     }
 }
 
-#[cfg(test)]
-fn order_pages(pages: Vec<Page>, page_ids: &[String]) -> Vec<Page> {
-    let mut indexes_by_id: HashMap<String, VecDeque<usize>> = HashMap::new();
-    for (index, page) in pages.iter().enumerate() {
-        indexes_by_id
-            .entry(page.uuid.clone())
-            .or_default()
-            .push_back(index);
-    }
-
-    let mut selected = vec![false; pages.len()];
-    let mut ordered_indexes = Vec::with_capacity(pages.len());
-    for page_id in page_ids {
-        if let Some(index) = indexes_by_id.get_mut(page_id).and_then(VecDeque::pop_front) {
-            selected[index] = true;
-            ordered_indexes.push(index);
-        }
-    }
-    ordered_indexes.extend(
-        selected
-            .iter()
-            .enumerate()
-            .filter_map(|(index, selected)| (!selected).then_some(index)),
-    );
-
-    let mut pages: Vec<Option<Page>> = pages.into_iter().map(Some).collect();
-    ordered_indexes
-        .into_iter()
-        .filter_map(|index| pages[index].take())
-        .collect()
-}
-
 fn parse_optional_end_tag(
     data: &[u8],
     source: EndTagSource,
@@ -638,7 +613,7 @@ fn image_mime_type(lower: &str) -> Option<&'static str> {
 mod tests {
     use std::io::Cursor;
 
-    use super::{media_archive_id, order_pages, parse_from_reader};
+    use super::{ParsedPageRecord, media_archive_id, order_page_records, parse_from_reader};
     use crate::types::{BoundingBox, Page};
     use crate::{Error, ParseOptions};
 
@@ -660,14 +635,57 @@ mod tests {
         let pages = vec![page("second"), page("unlisted"), page("first")];
         let ids = vec!["first".to_string(), "second".to_string()];
 
-        let ordered = order_pages(pages, &ids);
+        let records = pages
+            .into_iter()
+            .map(|page| {
+                let uuid = page.uuid.clone();
+                ParsedPageRecord {
+                    semantic: page,
+                    stored: crate::StoredArchivePage {
+                        archive_entry: format!("{uuid}.page"),
+                        source_bytes: None,
+                        page: crate::StoredPage {
+                            integrity_offset: 0,
+                            header: crate::StoredPageHeader {
+                                raw_layer_offset: 0,
+                                property_offset: 0,
+                                unknown_08: 0,
+                                text_only_flag: 0,
+                                unknown_0d: 0,
+                                property_mask: 0,
+                                orientation: 0,
+                                width: 1,
+                                height: 1,
+                                offset_x: 0,
+                                offset_y: 0,
+                                uuid,
+                                modified_time_raw: None,
+                                format_version: None,
+                                minimum_format_version: None,
+                            },
+                            layers: crate::StoredPageLayers {
+                                current_layer_index: 0,
+                                layers: Vec::new(),
+                            },
+                        },
+                    },
+                }
+            })
+            .collect();
+        let mut report = crate::ParseReport::default();
+        let ordered = order_page_records(records, &ids, &mut report);
 
         assert_eq!(
             ordered
                 .iter()
-                .map(|page| page.uuid.as_str())
+                .map(|record| record.semantic.uuid.as_str())
                 .collect::<Vec<_>>(),
             vec!["first", "second", "unlisted"]
+        );
+        assert_eq!(report.diagnostics.len(), 1);
+        assert_eq!(
+            report.diagnostics[0].code,
+            crate::DiagnosticCode::UnlistedPageEntry
         );
     }
 

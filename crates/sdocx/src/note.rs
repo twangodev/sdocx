@@ -472,70 +472,8 @@ fn parse_text_common_with_load(
     let mut common = Reader::new(common_bytes, context);
 
     let text = common.read_utf16_u32("text", limits.max_text_characters)?;
-    let span_count = usize::try_from(common.read_u32("style span count")?)
-        .map_err(|_| Error::Format(format!("{context}: style span count is too large")))?;
-    check_limit("text spans", limits.max_text_spans, span_count)?;
-    let mut spans = if span_count == 0 {
-        load_context.retained_constructor_spans(&text)?
-    } else {
-        Vec::with_capacity(span_count)
-    };
-    for _ in 0..span_count {
-        let record_size = usize::from(common.read_u16("style span size")?);
-        if record_size < 16 {
-            return Err(Error::Format(format!(
-                "{context}: style span size {record_size} is smaller than 16"
-            )));
-        }
-        let record_bytes = common.read_bytes(record_size, "style span")?;
-        let mut record = Reader::new(record_bytes, context);
-        let kind = RichTextSpanType::from(record.read_u32("style span type")?);
-        let start_utf16 = record.read_u32("style span start")?;
-        let end_utf16 = record.read_u32("style span end")?;
-        let interval_type = SpanIntervalType::from(record.read_u32("style span interval type")?);
-        let payload = record
-            .read_bytes(record.remaining(), "style span payload")?
-            .to_vec();
-        spans.push(RichTextSpan {
-            kind,
-            start_utf16,
-            end_utf16,
-            interval_type,
-            payload,
-        });
-    }
-    check_limit("text spans", limits.max_text_spans, spans.len())?;
-
-    let paragraph_count = usize::try_from(common.read_u32("paragraph count")?)
-        .map_err(|_| Error::Format(format!("{context}: paragraph count is too large")))?;
-    check_limit(
-        "text paragraphs",
-        limits.max_text_paragraphs,
-        paragraph_count,
-    )?;
-    let mut paragraphs = Vec::with_capacity(paragraph_count);
-    for _ in 0..paragraph_count {
-        let record_size = usize::from(common.read_u16("paragraph size")?);
-        if record_size < 12 {
-            return Err(Error::Format(format!(
-                "{context}: paragraph size {record_size} is smaller than 12"
-            )));
-        }
-        let record_bytes = common.read_bytes(record_size, "paragraph")?;
-        let mut record = Reader::new(record_bytes, context);
-        let kind = RichTextParagraphType::from(record.read_u32("paragraph type")?);
-        let start_paragraph = record.read_u32("paragraph start")?;
-        let end_paragraph = record.read_u32("paragraph end")?;
-        let payload = record
-            .read_bytes(record.remaining(), "paragraph payload")?
-            .to_vec();
-        paragraphs.push(RichTextParagraph {
-            kind,
-            start_paragraph,
-            end_paragraph,
-            payload,
-        });
-    }
+    let spans = parse_text_style_spans(&mut common, limits, context, &text, load_context)?;
+    let paragraphs = parse_text_paragraphs(&mut common, limits, context)?;
 
     let margins = [
         common.read_f32("left text margin")?,
@@ -547,20 +485,7 @@ fn parse_text_common_with_load(
         return Err(Error::Format(format!("{context}: non-finite text margin")));
     }
     let gravity = Some(common.read_u8("text gravity")?);
-    let text_sections = if common.remaining() >= 2 {
-        let section_count = usize::from(common.read_u16("text section count")?);
-        check_limit("text sections", limits.max_pages, section_count)?;
-        let mut sections = Vec::with_capacity(section_count);
-        for _ in 0..section_count {
-            sections.push(RichTextSection {
-                start_utf16: common.read_u32("text section start")? as i32,
-                length_utf16: common.read_u32("text section length")? as i32,
-            });
-        }
-        sections
-    } else {
-        Vec::new()
-    };
+    let text_sections = parse_text_sections(&mut common, limits)?;
     let mut has_extensions = false;
     let object_spans = if common.remaining() >= 8 {
         let object_span_flags = common.read_u32("object span flags")?;
@@ -584,6 +509,109 @@ fn parse_text_common_with_load(
         text_sections,
         margins: Some(margins),
         gravity,
+    })
+}
+
+fn parse_text_style_spans(
+    reader: &mut Reader<'_>,
+    limits: &ParseLimits,
+    context: &'static str,
+    text: &str,
+    load_context: TextLoadContext,
+) -> Result<Vec<RichTextSpan>> {
+    let span_count = usize::try_from(reader.read_u32("style span count")?)
+        .map_err(|_| Error::Format(format!("{context}: style span count is too large")))?;
+    check_limit("text spans", limits.max_text_spans, span_count)?;
+    let mut spans = if span_count == 0 {
+        load_context.retained_constructor_spans(text)?
+    } else {
+        Vec::with_capacity(span_count)
+    };
+    for _ in 0..span_count {
+        let record_size = usize::from(reader.read_u16("style span size")?);
+        if record_size < 16 {
+            return Err(Error::Format(format!(
+                "{context}: style span size {record_size} is smaller than 16"
+            )));
+        }
+        let record_bytes = reader.read_bytes(record_size, "style span")?;
+        let mut record = Reader::new(record_bytes, context);
+        let kind = RichTextSpanType::from(record.read_u32("style span type")?);
+        let start_utf16 = record.read_u32("style span start")?;
+        let end_utf16 = record.read_u32("style span end")?;
+        let interval_type = SpanIntervalType::from(record.read_u32("style span interval type")?);
+        let payload = record
+            .read_bytes(record.remaining(), "style span payload")?
+            .to_vec();
+        spans.push(RichTextSpan {
+            kind,
+            start_utf16,
+            end_utf16,
+            interval_type,
+            payload,
+        });
+    }
+    check_limit("text spans", limits.max_text_spans, spans.len())?;
+
+    Ok(spans)
+}
+
+fn parse_text_paragraphs(
+    reader: &mut Reader<'_>,
+    limits: &ParseLimits,
+    context: &'static str,
+) -> Result<Vec<RichTextParagraph>> {
+    let paragraph_count = usize::try_from(reader.read_u32("paragraph count")?)
+        .map_err(|_| Error::Format(format!("{context}: paragraph count is too large")))?;
+    check_limit(
+        "text paragraphs",
+        limits.max_text_paragraphs,
+        paragraph_count,
+    )?;
+    let mut paragraphs = Vec::with_capacity(paragraph_count);
+    for _ in 0..paragraph_count {
+        let record_size = usize::from(reader.read_u16("paragraph size")?);
+        if record_size < 12 {
+            return Err(Error::Format(format!(
+                "{context}: paragraph size {record_size} is smaller than 12"
+            )));
+        }
+        let record_bytes = reader.read_bytes(record_size, "paragraph")?;
+        let mut record = Reader::new(record_bytes, context);
+        let kind = RichTextParagraphType::from(record.read_u32("paragraph type")?);
+        let start_paragraph = record.read_u32("paragraph start")?;
+        let end_paragraph = record.read_u32("paragraph end")?;
+        let payload = record
+            .read_bytes(record.remaining(), "paragraph payload")?
+            .to_vec();
+        paragraphs.push(RichTextParagraph {
+            kind,
+            start_paragraph,
+            end_paragraph,
+            payload,
+        });
+    }
+
+    Ok(paragraphs)
+}
+
+fn parse_text_sections(
+    reader: &mut Reader<'_>,
+    limits: &ParseLimits,
+) -> Result<Vec<RichTextSection>> {
+    Ok(if reader.remaining() >= 2 {
+        let section_count = usize::from(reader.read_u16("text section count")?);
+        check_limit("text sections", limits.max_pages, section_count)?;
+        let mut sections = Vec::with_capacity(section_count);
+        for _ in 0..section_count {
+            sections.push(RichTextSection {
+                start_utf16: reader.read_u32("text section start")? as i32,
+                length_utf16: reader.read_u32("text section length")? as i32,
+            });
+        }
+        sections
+    } else {
+        Vec::new()
     })
 }
 
@@ -1446,6 +1474,40 @@ mod tests {
                 parse_table_cell(&cell[..length], &ParseLimits::default(), "test cell", 0).is_err()
             );
         }
+    }
+
+    #[test]
+    fn constructor_spans_are_limited_before_reading_the_next_record() {
+        let mut data = 8_u32.to_le_bytes().to_vec();
+        data.extend_from_slice(&0_u32.to_le_bytes()); // Empty UTF-16 text.
+        data.extend_from_slice(&0_u32.to_le_bytes()); // No serialized spans or paragraph count.
+        let limits = ParseLimits {
+            max_text_spans: 1,
+            ..ParseLimits::default()
+        };
+        let result = super::parse_text_common_with_load(
+            &mut crate::binary::Reader::new(&data, "table cell text"),
+            &limits,
+            "table cell text",
+            0,
+            super::TextLoadContext::TableCell,
+        );
+        assert!(matches!(
+            result,
+            Err(crate::Error::LimitExceeded {
+                resource: "text spans",
+                limit: 1,
+                actual: 2,
+            })
+        ));
+        let result = parse_text_common(
+            &mut crate::binary::Reader::new(&data, "standard text"),
+            &limits,
+            "standard text",
+            0,
+        );
+        assert!(matches!(result, Err(crate::Error::Format(message))
+            if message.contains("truncated paragraph count")));
     }
 
     #[test]

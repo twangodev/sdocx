@@ -126,6 +126,36 @@ pub struct StoredPageHeader {
     pub minimum_format_version: Option<u32>,
 }
 
+impl StoredPageHeader {
+    /// Absolute offset of the page flexible-data block.
+    pub fn flexible_data_offset(&self) -> u32 {
+        self.property_offset
+    }
+
+    pub fn property_mask_byte_count(&self) -> u8 {
+        self.unknown_08
+    }
+
+    /// Low 32 bits of the page property mask.
+    pub fn property_mask_bits(&self) -> u32 {
+        self.text_only_flag
+    }
+
+    /// Whether property bit 0 marks this as a text-only page.
+    pub fn is_text_only(&self) -> bool {
+        self.property_mask_bits() & 1 != 0
+    }
+
+    pub fn flexible_field_mask_byte_count(&self) -> u8 {
+        self.unknown_0d
+    }
+
+    /// Low 32 bits selecting the page flexible fields.
+    pub fn flexible_field_mask_bits(&self) -> u32 {
+        self.property_mask
+    }
+}
+
 /// The layer collection stored in one physical page.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -238,11 +268,11 @@ pub fn parse_stored_page_bytes_with_limits(
 ) -> Result<StoredPage> {
     let mut reader = Reader::new(data, "page header");
     let raw_layer_offset = reader.read_u32("raw layer offset")?;
-    let property_offset = reader.read_u32("property offset")?;
-    let header_end = if property_offset == 0 {
+    let flexible_data_offset = reader.read_u32("property offset")?;
+    let header_end = if flexible_data_offset == 0 {
         raw_layer_offset
     } else {
-        property_offset
+        flexible_data_offset
     } as usize;
     if header_end > raw_layer_offset as usize || raw_layer_offset as usize > data.len() {
         return Err(Error::Format(
@@ -251,11 +281,11 @@ pub fn parse_stored_page_bytes_with_limits(
     }
     let mut reader = Reader::at(&data[..header_end], reader.position(), "page header")?;
     let properties = Mask::read(&mut reader)?;
-    let unknown_08 = properties.byte_count();
-    let text_only_flag = properties.low_u32();
+    let property_mask_byte_count = properties.byte_count();
+    let property_mask_bits = properties.low_u32();
     let fields = Mask::read(&mut reader)?;
-    let unknown_0d = fields.byte_count();
-    let property_mask = fields.low_u32();
+    let flexible_field_mask_byte_count = fields.byte_count();
+    let flexible_field_mask_bits = fields.low_u32();
     let orientation = reader.read_u32("page orientation")?;
     let width = reader.read_u32("page width")?;
     let height = reader.read_u32("page height")?;
@@ -276,11 +306,11 @@ pub fn parse_stored_page_bytes_with_limits(
         integrity_offset,
         header: StoredPageHeader {
             raw_layer_offset,
-            property_offset,
-            unknown_08,
-            text_only_flag,
-            unknown_0d,
-            property_mask,
+            property_offset: flexible_data_offset,
+            unknown_08: property_mask_byte_count,
+            text_only_flag: property_mask_bits,
+            unknown_0d: flexible_field_mask_byte_count,
+            property_mask: flexible_field_mask_bits,
             orientation,
             width,
             height,

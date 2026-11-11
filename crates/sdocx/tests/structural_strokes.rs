@@ -174,6 +174,71 @@ fn unreadable_base_metadata_still_reaches_the_supported_object_decoder() {
 }
 
 #[test]
+fn page_stroke_reuse_preserves_decoder_error_context_and_payload_offsets() {
+    let valid = stroke(1, 3, &compressed(false), 0, &[]);
+    let base_size = base().len();
+    let mut truncated_tail = valid.clone();
+    truncated_tail.push(0);
+    for (payload, offset, remaining) in [
+        (Vec::new(), 0, 0),
+        (base(), base_size, 0),
+        (truncated_tail, valid.len(), 1),
+    ] {
+        let raw = page(&[vec![object(1, &payload, &[])]], 0, &[]);
+        let stored = sdocx::parse_stored_page_bytes(&raw).unwrap();
+        let record = &stored.layers.layers[0].objects[0];
+        let direct = record
+            .decode_stroke(&raw, &ParseLimits::default())
+            .unwrap_err();
+        assert_eq!(
+            direct.to_string(),
+            format!(
+                "format error: stroke object: truncated frame size at offset 0x{offset:x} (need 4 bytes, have {remaining})",
+            )
+        );
+        let parsed = sdocx::parse_bytes(&archive(&raw)).unwrap_err();
+        assert_eq!(
+            parsed.to_string(),
+            format!(
+                "format error: page page: stroke at 0x{:x}: {}",
+                record.payload_offset,
+                direct.to_string().strip_prefix("format error: ").unwrap(),
+            )
+        );
+    }
+}
+
+#[test]
+fn hidden_malformed_strokes_skip_their_entire_subtree() {
+    let mut hidden = base();
+    hidden[11] &= !(1 << 3);
+    let raw = page(&[vec![object(1, &hidden, &[object(1, &[], &[])])]], 0, &[]);
+    let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+    assert!(parsed.document.pages[0].objects.is_empty());
+    assert_eq!(
+        parsed.stored_pages[0].page.layers.layers[0].objects[0]
+            .children
+            .len(),
+        1
+    );
+}
+
+#[test]
+fn malformed_child_precedes_parent_stroke_render_layer_resolution() {
+    let mut parent = stroke(1, 3, &compressed(false), 0, &[]);
+    parent[14..18].copy_from_slice(&(0x6000_u32 | (1 << 21)).to_le_bytes());
+    let without_child = sdocx::parse_bytes(&single(&parent)).unwrap_err();
+    assert!(without_child.to_string().contains("render layer ID"));
+    let raw = page(&[vec![object(1, &parent, &[object(1, &[], &[])])]], 0, &[]);
+    let stored = sdocx::parse_stored_page_bytes(&raw).unwrap();
+    let child_offset = stored.layers.layers[0].objects[0].children[0].payload_offset;
+    let error = sdocx::parse_bytes(&archive(&raw)).unwrap_err();
+    assert!(error.to_string().contains(&format!(
+        "stroke at 0x{child_offset:x}: stroke object: truncated frame size at offset 0x0"
+    )));
+}
+
+#[test]
 fn short_strokes_use_the_declared_count_and_property_selected_channels() {
     for properties in [0x25, 0x05, 0x65, 0x425] {
         let data = single(&stroke(properties, 3, &compressed(true), 0, &[]));
