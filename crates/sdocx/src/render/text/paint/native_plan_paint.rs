@@ -35,7 +35,7 @@ struct NativePaintGroup {
     #[cfg(feature = "pdf")]
     inkless_carrier: bool,
     #[cfg(feature = "pdf")]
-    paper_line: Option<(usize, usize, usize, f64, f64)>,
+    paper_line: Option<super::super::native::PaperLine>,
 }
 
 struct ProjectedPaintRun {
@@ -243,13 +243,13 @@ impl NativePaintDispatcher {
                 #[cfg(feature = "pdf")]
                 let paper_line = target.paper_body.then(|| {
                     let line = &layout.lines[first_line];
-                    (
-                        first_line,
-                        run.source.characters().start,
-                        run.source.characters().end,
-                        line.top,
-                        line.bottom,
-                    )
+                    super::super::native::PaperLine {
+                        line_index: first_line,
+                        source_char_start: run.source.characters().start,
+                        source_char_end: run.source.characters().end,
+                        top: line.top,
+                        bottom: line.bottom,
+                    }
                 });
                 groups_by_line
                     .entry(first_line)
@@ -313,9 +313,8 @@ impl NativePaintDispatcher {
                     .register(group.run.source.characters().start, block)
                 {
                     Ok(id) => {
-                        if let Some((line, start, end, top, bottom)) = group.paper_line {
-                            svg.native_text()
-                                .set_paper_line(id, line, start, end, top, bottom);
+                        if let Some(line) = group.paper_line {
+                            svg.native_text().set_paper_line(id, line);
                         }
                         node.native_id(id)
                     }

@@ -1515,12 +1515,16 @@ pub(super) fn render_singlex_pdf_paper_plan(
         let clip_top = f64::from(output.query_y);
         let clip_bottom =
             clip_top + output.physical_height * f64::from(plan.note_width) / output.physical_width;
-        for (_, line, start, end, top, bottom) in scene.text.paper_lines() {
+        for (_, line) in scene.text.paper_lines() {
             consider_paper_run_owner(
                 &mut owners,
-                (line, start, end),
+                (
+                    line.line_index,
+                    line.source_char_start,
+                    line.source_char_end,
+                ),
                 page_index,
-                (top, bottom),
+                (line.top, line.bottom),
                 (clip_top, clip_bottom),
             );
         }
@@ -1529,8 +1533,14 @@ pub(super) fn render_singlex_pdf_paper_plan(
         let nonowners = scene
             .text
             .paper_lines()
-            .filter_map(|(id, line, start, end, _, _)| {
-                let owner = owners.get(&(line, start, end)).map(|owner| owner.0);
+            .filter_map(|(id, line)| {
+                let owner = owners
+                    .get(&(
+                        line.line_index,
+                        line.source_char_start,
+                        line.source_char_end,
+                    ))
+                    .map(|owner| owner.0);
                 (owner != Some(page_index)).then_some((id, owner.is_none()))
             })
             .collect::<Vec<_>>();

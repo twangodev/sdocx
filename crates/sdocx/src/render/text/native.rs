@@ -86,13 +86,25 @@ pub(crate) struct NativeTextRegistry {
     next_source: usize,
 }
 
+/// A retained run's ownership within a continuous note's source line.
+/// Character offsets are half-open Unicode scalar indices, not UTF-16 or bytes.
+/// Vertical bounds use continuous note coordinates; registration prefers measured ink.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct PaperLine {
+    pub line_index: usize,
+    pub source_char_start: usize,
+    pub source_char_end: usize,
+    pub top: f64,
+    pub bottom: f64,
+}
+
 #[derive(Debug)]
 struct RegisteredText {
     block: NativeTextBlock,
     order: Vec<usize>,
     source_start: usize,
     visual_transform: Option<NativeTextVisualTransform>,
-    paper_line: Option<(usize, usize, usize, f64, f64)>,
+    paper_line: Option<PaperLine>,
     visual_only: bool,
     omit: bool,
 }
@@ -228,32 +240,30 @@ impl NativeTextRegistry {
             let start = block.source_start;
             let end = start + block.block.source.chars().count();
             let (top, bottom) = block.block.paper_ink_bounds().unwrap_or((top, bottom));
-            block.paper_line = Some((line, start, end, top, bottom));
+            block.paper_line = Some(PaperLine {
+                line_index: line,
+                source_char_start: start,
+                source_char_end: end,
+                top,
+                bottom,
+            });
         }
     }
 
-    pub fn set_paper_line(
-        &mut self,
-        id: NativeTextId,
-        line: usize,
-        start: usize,
-        end: usize,
-        top: f64,
-        bottom: f64,
-    ) {
+    pub fn set_paper_line(&mut self, id: NativeTextId, mut line: PaperLine) {
         let block = &mut self.blocks[id.0];
-        let (top, bottom) = block.block.paper_ink_bounds().unwrap_or((top, bottom));
-        block.paper_line = Some((line, start, end, top, bottom));
+        (line.top, line.bottom) = block
+            .block
+            .paper_ink_bounds()
+            .unwrap_or((line.top, line.bottom));
+        block.paper_line = Some(line);
     }
 
-    pub fn paper_lines(
-        &self,
-    ) -> impl Iterator<Item = (NativeTextId, usize, usize, usize, f64, f64)> + '_ {
-        self.blocks.iter().enumerate().filter_map(|(index, block)| {
-            block.paper_line.map(|(line, start, end, top, bottom)| {
-                (NativeTextId(index), line, start, end, top, bottom)
-            })
-        })
+    pub fn paper_lines(&self) -> impl Iterator<Item = (NativeTextId, PaperLine)> + '_ {
+        self.blocks
+            .iter()
+            .enumerate()
+            .filter_map(|(index, block)| block.paper_line.map(|line| (NativeTextId(index), line)))
     }
 
     pub fn set_visual_only(&mut self, id: NativeTextId) {
