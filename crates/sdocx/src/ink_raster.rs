@@ -257,27 +257,7 @@ impl InkRasterCanvas {
         mask: &[u8],
         depth: &[u8],
     ) -> Result<(), InkRasterError> {
-        if self.context
-            != (InkRasterContext {
-                width: 1920,
-                height: 1080,
-                pixels_per_unit: 1,
-                origin: InkRasterOrigin::TopLeft,
-            })
-            || self.pixels.iter().any(|p| *p != [0; 4])
-        {
-            return Err(InkRasterError::InvalidContext);
-        }
-        let work = 1920 * 1080 + 128 * 1024;
-        if self.remaining_submissions == 0 || self.remaining_work < work {
-            return Err(InkRasterError::WorkLimit);
-        }
-        let pixels = crate::ink::oilbrush3::paint::paint_source(stroke, mask, depth)
-            .map_err(InkRasterError::UnsupportedStroke)?;
-        self.pixels = pixels;
-        self.remaining_work -= work;
-        self.remaining_submissions -= 1;
-        Ok(())
+        self.paint_oilbrush3_host(stroke, mask, depth, [0; 4])
     }
 
     /// Paint the captured cold OilBrush3 control over its uniform opaque host page.
@@ -291,6 +271,16 @@ impl InkRasterCanvas {
         mask: &[u8],
         depth: &[u8],
     ) -> Result<(), InkRasterError> {
+        self.paint_oilbrush3_host(stroke, mask, depth, [41, 83, 127, 255])
+    }
+
+    fn paint_oilbrush3_host(
+        &mut self,
+        stroke: &Stroke,
+        mask: &[u8],
+        depth: &[u8],
+        initial: [u8; 4],
+    ) -> Result<(), InkRasterError> {
         if self.context
             != (InkRasterContext {
                 width: 1920,
@@ -298,7 +288,7 @@ impl InkRasterCanvas {
                 pixels_per_unit: 1,
                 origin: InkRasterOrigin::TopLeft,
             })
-            || self.pixels.iter().any(|p| *p != [41, 83, 127, 255])
+            || self.pixels.iter().any(|p| *p != initial)
         {
             return Err(InkRasterError::InvalidContext);
         }
@@ -306,12 +296,11 @@ impl InkRasterCanvas {
         if self.remaining_submissions == 0 || self.remaining_work < work {
             return Err(InkRasterError::WorkLimit);
         }
-        let pixels = crate::ink::oilbrush3::paint::paint_source_with_initial(
-            stroke,
-            mask,
-            depth,
-            [41, 83, 127, 255],
-        )
+        let pixels = if initial == [0; 4] {
+            crate::ink::oilbrush3::paint::paint_source(stroke, mask, depth)
+        } else {
+            crate::ink::oilbrush3::paint::paint_source_with_initial(stroke, mask, depth, initial)
+        }
         .map_err(InkRasterError::UnsupportedStroke)?;
         self.pixels = pixels;
         self.remaining_work -= work;
@@ -328,50 +317,57 @@ impl InkRasterCanvas {
         if self.remaining_submissions == 0 {
             return Err(InkRasterError::WorkLimit);
         }
-        if let InkRasterProfile::ColoredPencilV4Host {
-            pen_data_width,
-            pen_data_height,
-        } = profile
-        {
-            return self.paint_colored_pencil(stroke, [pen_data_width, pen_data_height], None);
-        }
-        if let InkRasterProfile::Pencil2V14 { inverse_scale } = profile {
-            return self.paint_pencil2_with_grain_offset(stroke, inverse_scale, [0., 0.], [0., 0.]);
-        }
-        let fountain = match profile {
+        match profile {
+            InkRasterProfile::ColoredPencilV4Host {
+                pen_data_width,
+                pen_data_height,
+            } => self.paint_colored_pencil(stroke, [pen_data_width, pen_data_height], None),
+            InkRasterProfile::Pencil2V14 { inverse_scale } => {
+                self.paint_pencil2_with_grain_offset(stroke, inverse_scale, [0., 0.], [0., 0.])
+            }
             InkRasterProfile::FountainPenV14Host {
                 source_origin,
                 paint_argb,
-            } => Some((source_origin, paint_argb, false)),
+            } => self.paint_fountain_v14(stroke, source_origin, paint_argb, false),
             InkRasterProfile::FountainPenV14DirectHost {
                 source_origin,
                 paint_argb,
-            } => Some((source_origin, paint_argb, true)),
-            _ => None,
-        };
-        if let Some((source_origin, paint_argb, direct)) = fountain {
-            let plan = crate::ink::fountain_v14::raster::prepare(
-                stroke,
-                self.context,
-                source_origin,
-                paint_argb,
-                direct,
-                self.remaining_work,
-            )?;
-            let pixels = plan.render(&self.pixels)?;
-            self.remaining_work -= plan.work();
-            self.remaining_submissions -= 1;
-            self.pixels = pixels;
-            return Ok(());
+            } => self.paint_fountain_v14(stroke, source_origin, paint_argb, true),
+            InkRasterProfile::WaterColorHostRtv1 {
+                screen_width,
+                screen_height,
+            } => self.paint_watercolor(stroke, [screen_width, screen_height]),
         }
-        let InkRasterProfile::WaterColorHostRtv1 {
-            screen_width,
-            screen_height,
-        } = profile
-        else {
-            unreachable!("Fountain profile returned above")
-        };
-        let (rows, argb) = watercolor::prepare_stroke(stroke, [screen_width, screen_height])?;
+    }
+
+    fn paint_fountain_v14(
+        &mut self,
+        stroke: &Stroke,
+        source_origin: [i32; 2],
+        paint_argb: u32,
+        direct: bool,
+    ) -> Result<(), InkRasterError> {
+        let plan = crate::ink::fountain_v14::raster::prepare(
+            stroke,
+            self.context,
+            source_origin,
+            paint_argb,
+            direct,
+            self.remaining_work,
+        )?;
+        let pixels = plan.render(&self.pixels)?;
+        self.remaining_work -= plan.work();
+        self.remaining_submissions -= 1;
+        self.pixels = pixels;
+        Ok(())
+    }
+
+    fn paint_watercolor(
+        &mut self,
+        stroke: &Stroke,
+        screen: [u32; 2],
+    ) -> Result<(), InkRasterError> {
+        let (rows, argb) = watercolor::prepare_stroke(stroke, screen)?;
         let mut matrix = [0.; 16];
         let scale = self.context.pixels_per_unit as f32;
         matrix[0] = 2. * scale / self.context.width as f32;
@@ -444,12 +440,7 @@ impl InkRasterCanvas {
         {
             return Err(InkRasterError::InvalidContext);
         }
-        self.paint_with_pencil_translation(
-            stroke,
-            InkRasterProfile::Pencil2V14 { inverse_scale },
-            translation,
-            [0., 0.],
-        )
+        self.paint_with_pencil_translation(stroke, inverse_scale, translation, [0., 0.])
     }
 
     /// Paint one Pencil2 submission with an explicitly captured native grain offset.
@@ -471,18 +462,13 @@ impl InkRasterCanvas {
         translation: [f32; 2],
         grain_offset: [f32; 2],
     ) -> Result<(), InkRasterError> {
-        self.paint_with_pencil_translation(
-            stroke,
-            InkRasterProfile::Pencil2V14 { inverse_scale },
-            translation,
-            grain_offset,
-        )
+        self.paint_with_pencil_translation(stroke, inverse_scale, translation, grain_offset)
     }
 
     fn paint_with_pencil_translation(
         &mut self,
         stroke: &Stroke,
-        profile: InkRasterProfile,
+        inverse_scale: InkRasterInverseScale,
         translation: [f32; 2],
         grain_offset: [f32; 2],
     ) -> Result<(), InkRasterError> {
@@ -496,19 +482,9 @@ impl InkRasterCanvas {
         if self.remaining_submissions == 0 {
             return Err(InkRasterError::WorkLimit);
         }
-        let inverse_scale = match profile {
-            InkRasterProfile::ColoredPencilV4Host { .. }
-            | InkRasterProfile::WaterColorHostRtv1 { .. }
-            | InkRasterProfile::FountainPenV14Host { .. }
-            | InkRasterProfile::FountainPenV14DirectHost { .. } => {
-                unreachable!("family raster branch returned above")
-            }
-            InkRasterProfile::Pencil2V14 {
-                inverse_scale: InkRasterInverseScale::One,
-            } => 1.,
-            InkRasterProfile::Pencil2V14 {
-                inverse_scale: InkRasterInverseScale::Half,
-            } => 0.5,
+        let inverse_scale = match inverse_scale {
+            InkRasterInverseScale::One => 1.,
+            InkRasterInverseScale::Half => 0.5,
         };
         let sampled =
             pencil2::prepare_stroke(stroke, inverse_scale).map_err(|error| match error {

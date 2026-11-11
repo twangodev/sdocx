@@ -35,8 +35,8 @@ impl InkRasterCanvas {
         if backdrop.length() as usize != count * 4 {
             return Err(js_error(sdocx::InkRasterError::InvalidBackdrop));
         }
-        let bytes = backdrop.to_vec();
-        let pixels = bytes.as_chunks::<4>().0.to_vec();
+        let mut pixels = vec![[0; 4]; count];
+        backdrop.copy_to(pixels.as_flattened_mut());
         let canvas = sdocx::InkRasterCanvas::from_pixels(context, pixels).map_err(js_error)?;
         Ok(Self { canvas })
     }

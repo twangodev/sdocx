@@ -27,6 +27,24 @@ assert.throws(() => new sdk.InkRasterCanvas(
   {width: 0, height: 192, pixels_per_unit: 1, origin: 'TopLeft'}, new Uint8Array()));
 
 for (const origin of ['TopLeft', 'BottomLeft']) {
+  const context = {width: 2, height: 2, pixels_per_unit: 1, origin};
+  const backdrop = new Uint8Array([
+    1, 2, 3, 4, 10, 20, 30, 64,
+    40, 50, 60, 128, 70, 80, 90, 255,
+  ]);
+  const expected = backdrop.slice();
+  const canvas = new sdk.InkRasterCanvas(context, backdrop);
+  try {
+    assert.deepEqual(canvas.pixels(), expected, 'backdrop RGBA bytes and row order are preserved');
+    backdrop.fill(0);
+    assert.deepEqual(canvas.pixels(), expected, 'canvas owns its backdrop after construction');
+  } finally { canvas.free(); }
+  for (const length of [15, 17]) {
+    assert.throws(() => new sdk.InkRasterCanvas(context, new Uint8Array(length)), /backdrop/i);
+  }
+}
+
+for (const origin of ['TopLeft', 'BottomLeft']) {
   for (const inverse of ['One', 'Half']) {
     const context = {width: 192, height: 192, pixels_per_unit: 1, origin};
     const backdrop = new Uint8Array(192 * 192 * 4);
