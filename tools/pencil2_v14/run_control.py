@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import sys
 import tempfile
 
 from control_adapter import SOURCE_RELATIVE, SOURCE_SHA256, prepare_program
@@ -36,6 +37,8 @@ def check_control(root, variant):
 
 
 def capture_control(root, variant):
+    if sys.flags.optimize:
+        raise ValueError("native capture requires assertions; run without Python optimization")
     streams = load_control_streams(root)
     program = prepare_program(root, variant)
     namespace = {"__name__": "edge_interior_capture", "__file__": str(root / SOURCE_RELATIVE),
