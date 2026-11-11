@@ -109,8 +109,9 @@ export class DocumentZoomCamera {
 	fitSelectedPage = (): void => {
 		const selectedPage = this.selectedPage();
 		this.fitPage();
+		const revision = this.revision;
 		requestAnimationFrame(() => {
-			if (this.pageFit && this.selectedPage() === selectedPage) {
+			if (revision === this.revision && this.visiblePageFit && this.selectedPage() === selectedPage) {
 				this.scrollToPage(selectedPage);
 			}
 		});
