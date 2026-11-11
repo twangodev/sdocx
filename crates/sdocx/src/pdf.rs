@@ -487,40 +487,48 @@ pub(crate) fn render_scenes_pdf_with_progress(
     )
 }
 
-fn render_pages_pdf_with_progress<'a>(
-    pages: impl IntoIterator<Item = PdfPage<'a>>,
-    options: &PdfOptions,
-    observer: &mut dyn FnMut(Progress),
-) -> Result<Vec<u8>, PdfError> {
-    if !options.dpi.is_finite() || options.dpi <= 0.0 {
-        return Err(PdfError::InvalidDpi);
+struct PreparedPdfPage<'a> {
+    tree: usvg::Tree,
+    size: Size,
+    text: Option<&'a NativeTextRegistry>,
+    ink: Option<&'a NativeInkRegistry>,
+    uses_airbrush: bool,
+}
+
+struct PdfPageParser<'a> {
+    options: &'a PdfOptions,
+    physical_families: SvgFontFamilies,
+    font_resolver: usvg::FontResolver<'static>,
+    data_resolver: usvg::ImageHrefDataResolverFn<'static>,
+}
+
+impl<'a> PdfPageParser<'a> {
+    fn new(options: &'a PdfOptions) -> Self {
+        let physical_families = SvgFontFamilies::new(&options.font_database);
+        let font_resolver = physical_families.usvg_resolver();
+        Self {
+            options,
+            physical_families,
+            font_resolver,
+            data_resolver: usvg::ImageHrefResolver::default_data_resolver(),
+        }
     }
-    let image_error = Mutex::new(None);
-    let font_error = Mutex::new(false);
-    let physical_families = SvgFontFamilies::new(&options.font_database);
-    let usvg::FontResolver {
-        select_font,
-        select_fallback,
-    } = physical_families.usvg_resolver();
-    let data_resolver = usvg::ImageHrefResolver::default_data_resolver();
-    let mut pdf = PdfDocument::new_with(SerializeSettings {
-        render_svg_glyph_fn: svg::render_svg_glyph,
-        ..Default::default()
-    });
-    let mut painter = NativePdfPainter::new(options.dpi);
-    let mut tags = TagTree::default();
-    let mut page_count = 0;
-    let mut retained_text = false;
-    let mut has_airbrush = false;
-    let mut ink_fields = Vec::new();
-    let pages = pages.into_iter();
-    let (lower, upper) = pages.size_hint();
-    let total = (upper == Some(lower)).then_some(lower);
-    observer(Progress::new(ProgressStage::WritingPdf, 0, total));
-    for (page_index, source) in pages.enumerate() {
-        page_count += 1;
+
+    fn prepare<'p>(
+        &self,
+        source: PdfPage<'p>,
+        page_index: usize,
+    ) -> Result<PreparedPdfPage<'p>, PdfError> {
+        let options = self.options;
+        let image_error = Mutex::new(None);
+        let font_error = Mutex::new(false);
+        let physical_families = &self.physical_families;
+        let usvg::FontResolver {
+            select_font,
+            select_fallback,
+        } = &self.font_resolver;
+        let data_resolver = &self.data_resolver;
         let rendered = source.page;
-        has_airbrush |= rendered.svg.contains("sdocx-airbrush-v2-r8-");
         if let Some(message) = source.text_error {
             return Err(PdfError::UnsupportedText {
                 page_index,
@@ -533,7 +541,6 @@ fn render_pages_pdf_with_progress<'a>(
             return Err(PdfError::InvalidPageSize { page_index });
         }
         let size = Size::from_wh(width, height).ok_or(PdfError::InvalidPageSize { page_index })?;
-        *font_error.lock().unwrap() = false;
         let strict_images = source.text.is_some();
         let svg_options = usvg::Options {
             fontdb: options.font_database.clone(),
@@ -611,11 +618,54 @@ fn render_pages_pdf_with_progress<'a>(
         {
             return Err(PdfError::InvalidPageSize { page_index });
         }
+        Ok(PreparedPdfPage {
+            tree,
+            size,
+            text: source.text,
+            ink: source.ink,
+            uses_airbrush: rendered.svg.contains("sdocx-airbrush-v2-r8-"),
+        })
+    }
+}
+
+fn render_pages_pdf_with_progress<'a>(
+    pages: impl IntoIterator<Item = PdfPage<'a>>,
+    options: &PdfOptions,
+    observer: &mut dyn FnMut(Progress),
+) -> Result<Vec<u8>, PdfError> {
+    if !options.dpi.is_finite() || options.dpi <= 0.0 {
+        return Err(PdfError::InvalidDpi);
+    }
+    let parser = PdfPageParser::new(options);
+    let mut pdf = PdfDocument::new_with(SerializeSettings {
+        render_svg_glyph_fn: svg::render_svg_glyph,
+        ..Default::default()
+    });
+    let mut painter = NativePdfPainter::new(options.dpi);
+    let mut tags = TagTree::default();
+    let mut page_count = 0;
+    let mut retained_text = false;
+    let mut has_airbrush = false;
+    let mut ink_fields = Vec::new();
+    let pages = pages.into_iter();
+    let (lower, upper) = pages.size_hint();
+    let total = (upper == Some(lower)).then_some(lower);
+    observer(Progress::new(ProgressStage::WritingPdf, 0, total));
+    for (page_index, source) in pages.enumerate() {
+        page_count += 1;
+        let PreparedPdfPage {
+            tree,
+            size,
+            text,
+            ink,
+            uses_airbrush,
+        } = parser.prepare(source, page_index)?;
+        has_airbrush |= uses_airbrush;
         let mut page = pdf.start_page_with(PageSettings::new(size));
         let mut surface = page.surface();
-        if let Some(registry) = source.text {
+        if let Some(registry) = text {
             retained_text = true;
-            let ink = source.ink.ok_or_else(|| {
+            let ink = ink.ok_or_else(|| {
                 PdfError::Conversion("retained PDF scene has no native ink registry".into())
             })?;
             let page_tags = draw_retained_page(
@@ -940,12 +990,17 @@ fn draw_retained_page(
     page_index: usize,
     painter: &mut NativePdfPainter,
 ) -> Result<Vec<TagGroup>, SvgError> {
+    let node_index = match (registry.len(), ink_registry.len()) {
+        (0, 0) => SvgNodeIndex::default(),
+        _ => SvgNodeIndex::new(tree.root()),
+    };
     let mut nodes = HashMap::with_capacity(registry.len());
     for (id, block) in registry.iter() {
-        let Some(usvg::Node::Text(text)) = tree.node_by_id(&id.svg_id()) else {
+        let svg_id = id.svg_id();
+        let Some(usvg::Node::Text(text)) = node_index.first(&svg_id) else {
             return Err(SvgError::Text(format!(
                 "retained text {} was lost during SVG parsing",
-                id.svg_id()
+                svg_id
             )));
         };
         nodes.insert(
@@ -955,18 +1010,19 @@ fn draw_retained_page(
     }
     let mut ink_entries = HashMap::with_capacity(ink_registry.len());
     for (id, entry) in ink_registry.iter() {
-        let count = count_node_ids(tree.root(), &id.svg_id());
+        let svg_id = id.svg_id();
+        let count = node_index.count(&svg_id);
         if count != 1 {
             return Err(SvgError::Ink(if count == 0 {
-                format!("retained native ink {} was pruned from SVG", id.svg_id())
+                format!("retained native ink {svg_id} was pruned from SVG")
             } else {
-                format!("retained native ink {} has duplicate SVG IDs", id.svg_id())
+                format!("retained native ink {svg_id} has duplicate SVG IDs")
             }));
         }
-        let Some(usvg::Node::Group(group)) = tree.node_by_id(&id.svg_id()) else {
+        let Some(usvg::Node::Group(group)) = node_index.first(&svg_id) else {
             return Err(SvgError::Ink(format!(
                 "retained native ink {} was lost during SVG parsing",
-                id.svg_id()
+                svg_id
             )));
         };
         ink_entries.insert(group.id().to_owned(), (id, entry));
@@ -1049,17 +1105,51 @@ fn draw_retained_page(
         .map(|tags| tags.into_iter().flatten().collect())
 }
 
-fn count_node_ids(group: &usvg::Group, id: &str) -> usize {
-    group
-        .children()
-        .iter()
-        .fold(usize::from(group.id() == id), |count, child| {
-            count
-                + match child {
-                    usvg::Node::Group(child_group) => count_node_ids(child_group, id),
-                    _ => usize::from(child.id() == id),
+/// Counts include the named root; lookup follows usvg and only returns children.
+#[derive(Default)]
+struct SvgNodeIndex<'a> {
+    occurrences: HashMap<&'a str, SvgNodeOccurrences<'a>>,
+}
+
+#[derive(Default)]
+struct SvgNodeOccurrences<'a> {
+    count: usize,
+    first: Option<&'a usvg::Node>,
+}
+
+impl<'a> SvgNodeIndex<'a> {
+    fn new(root: &'a usvg::Group) -> Self {
+        fn visit<'a>(group: &'a usvg::Group, index: &mut SvgNodeIndex<'a>) {
+            for child in group.children() {
+                if !child.id().is_empty() {
+                    let occurrence = index.occurrences.entry(child.id()).or_default();
+                    occurrence.count += 1;
+                    occurrence.first.get_or_insert(child);
                 }
-        })
+                if let usvg::Node::Group(group) = child {
+                    visit(group, index);
+                }
+            }
+        }
+        let mut index = Self::default();
+        if !root.id().is_empty() {
+            index.occurrences.entry(root.id()).or_default().count = 1;
+        }
+        visit(root, &mut index);
+        index
+    }
+
+    fn count(&self, id: &str) -> usize {
+        self.occurrences.get(id).map_or(0, |entry| entry.count)
+    }
+
+    fn first(&self, id: &str) -> Option<&'a usvg::Node> {
+        // usvg deliberately rejects empty IDs even when anonymous nodes exist.
+        if id.is_empty() {
+            return None;
+        }
+        self.occurrences.get(id).and_then(|entry| entry.first)
+    }
 }
 
 fn validate_png(bytes: &[u8]) -> Result<(), String> {
@@ -1453,6 +1543,47 @@ mod tests {
     }
 
     #[test]
+    fn node_index_counts_root_collisions_without_returning_the_root() {
+        let tree = usvg::Tree::from_str(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><g id="same"><g id="same"/></g></svg>"#,
+            &usvg::Options::default(),
+        ).unwrap();
+        let usvg::Node::Group(root) = tree.node_by_id("same").unwrap() else {
+            panic!("expected named group");
+        };
+        let index = SvgNodeIndex::new(root);
+        assert_eq!(index.count("same"), 2);
+        assert!(std::ptr::eq(
+            index.first("same").unwrap(),
+            &root.children()[0]
+        ));
+        let usvg::Node::Group(child) = &root.children()[0] else {
+            panic!("expected nested group");
+        };
+        let child_index = SvgNodeIndex::new(child);
+        assert_eq!(child_index.count("same"), 1);
+        assert!(child_index.first("same").is_none());
+    }
+
+    #[test]
+    fn node_index_keeps_first_depth_first_duplicate_and_ignores_empty_lookup() {
+        let tree = usvg::Tree::from_str(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><g id="parent"><g id="same"/></g><g id="same"/></svg>"#,
+            &usvg::Options::default(),
+        ).unwrap();
+        let index = SvgNodeIndex::new(tree.root());
+        assert_eq!(index.count("same"), 2);
+        assert!(std::ptr::eq(
+            index.first("same").unwrap(),
+            tree.node_by_id("same").unwrap()
+        ));
+        assert!(index.first("").is_none());
+        assert_eq!(index.count(""), 0);
+        assert!(index.first("missing").is_none());
+        assert_eq!(index.count("missing"), 0);
+    }
+
+    #[test]
     fn retained_pdf_rejects_duplicate_native_ink_svg_ids() {
         let id = "sdocx-native-ink-0";
         let tree = usvg::Tree::from_str(
@@ -1462,7 +1593,7 @@ mod tests {
             &usvg::Options::default(),
         )
         .unwrap();
-        assert_eq!(count_node_ids(tree.root(), id), 2);
+        assert_eq!(SvgNodeIndex::new(tree.root()).count(id), 2);
         let mut document = PdfDocument::new();
         let mut page =
             document.start_page_with(PageSettings::new(Size::from_wh(100.0, 100.0).unwrap()));

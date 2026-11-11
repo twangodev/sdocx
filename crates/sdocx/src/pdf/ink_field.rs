@@ -1064,32 +1064,17 @@ fn legacy_tiles(triangles: &[Triangle], bounds: BoundingBox) -> Result<Vec<Legac
     Ok(result)
 }
 
-fn legacy_type1_field_form(
+/// Emit legacy calculator tiles lazily, preserving the cumulative byte budget
+/// and the original function/shading allocation order.
+fn legacy_mask_resources(
     document: &mut Document,
-    mesh: &CoverageMesh,
-    color: [u8; 3],
+    tiles: &[LegacyTile],
     bounds: BoundingBox,
-) -> Result<Object, String> {
-    let triangles = triangles(mesh)?;
-    const MAX_TRIANGLES: usize = 16_384;
-    if triangles.len() > MAX_TRIANGLES {
-        return Err("native ink field exceeds triangle budget".into());
-    }
-    if triangles.is_empty() || triangles.iter().all(|triangle| plane(*triangle).3 == 0.0) {
-        return Err("native ink field has no non-degenerate coverage triangles".into());
-    }
-    for triangle in &triangles {
-        for [x, y, _] in triangle.0 {
-            if x < bounds.x_min || x > bounds.x_max || y < bounds.y_min || y > bounds.y_max {
-                return Err("native ink bounds do not contain every mesh vertex".into());
-            }
-        }
-    }
-    let tile_data = legacy_tiles(&triangles, bounds)?;
+) -> Result<(Dictionary, Vec<u8>), String> {
     let mut shadings = Dictionary::new();
-    let mut operators = Vec::with_capacity(tile_data.len());
+    let mut operators = Vec::with_capacity(tiles.len());
     let mut generated_code_bytes = 0usize;
-    for (index, (bbox, candidates)) in tile_data.iter().enumerate() {
+    for (index, (bbox, candidates)) in tiles.iter().enumerate() {
         let code = legacy_function_code(candidates, bounds)?;
         generated_code_bytes = generated_code_bytes
             .checked_add(code.len())
@@ -1136,12 +1121,21 @@ fn legacy_type1_field_form(
 
     let mut group_resources = Dictionary::new();
     group_resources.set("Shading", shadings);
+    Ok((group_resources, operators.join("\n").into_bytes()))
+}
+
+fn mesh_mask_form(
+    document: &mut Document,
+    color: [u8; 3],
+    mask_resources: Dictionary,
+    mask_stream: Vec<u8>,
+) -> Object {
     let mut group_dict = Dictionary::new();
     group_dict.set("Type", "XObject");
     group_dict.set("Subtype", "Form");
     group_dict.set("FormType", 1);
     group_dict.set("BBox", vec![0.into(), 0.into(), 1.into(), 1.into()]);
-    group_dict.set("Resources", group_resources);
+    group_dict.set("Resources", mask_resources);
     group_dict.set(
         "Group",
         Dictionary::from_iter([
@@ -1151,7 +1145,7 @@ fn legacy_type1_field_form(
             (b"K".to_vec(), Object::Boolean(false)),
         ]),
     );
-    let mask = document.add_object(Stream::new(group_dict, operators.join("\n").into_bytes()));
+    let mask = document.add_object(Stream::new(group_dict, mask_stream));
     let state = document.add_object(Dictionary::from_iter([(
         b"SMask".to_vec(),
         Object::Dictionary(Dictionary::from_iter([
@@ -1171,7 +1165,7 @@ fn legacy_type1_field_form(
     dict.set("FormType", 1);
     dict.set("BBox", vec![0.into(), 0.into(), 1.into(), 1.into()]);
     dict.set("Resources", resources);
-    Ok(Object::Stream(Stream::new(
+    Object::Stream(Stream::new(
         dict,
         format!(
             "/GS gs {} {} {} rg 0 0 1 1 re f",
@@ -1180,7 +1174,7 @@ fn legacy_type1_field_form(
             color[2] as f64 / 255.0
         )
         .into_bytes(),
-    )))
+    ))
 }
 
 #[cfg(test)]
@@ -1296,6 +1290,61 @@ fn radial_circles_field_form(
     )))
 }
 
+struct ValidatedMesh {
+    triangles: Vec<Triangle>,
+    bounds: BoundingBox,
+}
+
+impl ValidatedMesh {
+    fn new(mesh: &CoverageMesh, bounds: BoundingBox) -> Result<Self, String> {
+        let triangles = triangles(mesh)?;
+        if triangles.len() > MAX_FIELD_TRIANGLES {
+            return Err("native ink field exceeds triangle budget".into());
+        }
+        if triangles.is_empty() || triangles.iter().all(|triangle| plane(*triangle).3 == 0.0) {
+            return Err("native ink field has no non-degenerate coverage triangles".into());
+        }
+        for triangle in &triangles {
+            for [x, y, _] in triangle.0 {
+                if x < bounds.x_min || x > bounds.x_max || y < bounds.y_min || y > bounds.y_max {
+                    return Err("native ink bounds do not contain every mesh vertex".into());
+                }
+            }
+        }
+        Ok(Self { triangles, bounds })
+    }
+
+    fn plan(self, limits: ContourLimits) -> Result<MeshMaskPlan, String> {
+        match isocontour_stream_with_limits(&self.triangles, self.bounds, limits) {
+            Ok(stream) => Ok(MeshMaskPlan::Contours(stream)),
+            Err(ContourFailure::LegacyRequired(_reason)) => Ok(MeshMaskPlan::LegacyTiles {
+                tiles: legacy_tiles(&self.triangles, self.bounds)?,
+                bounds: self.bounds,
+            }),
+            Err(ContourFailure::Invalid(reason)) => Err(reason),
+        }
+    }
+}
+
+/// Own only the selected backend's intermediate data. Legacy calculator code
+/// remains lazy so a large field never stages every generated program at once.
+enum MeshMaskPlan {
+    Contours(Vec<u8>),
+    LegacyTiles {
+        tiles: Vec<LegacyTile>,
+        bounds: BoundingBox,
+    },
+}
+
+impl MeshMaskPlan {
+    fn into_resources(self, document: &mut Document) -> Result<(Dictionary, Vec<u8>), String> {
+        match self {
+            Self::Contours(stream) => Ok((Dictionary::new(), stream)),
+            Self::LegacyTiles { tiles, bounds } => legacy_mask_resources(document, &tiles, bounds),
+        }
+    }
+}
+
 fn mesh_field_form_with_limits(
     document: &mut Document,
     mesh: &CoverageMesh,
@@ -1303,73 +1352,9 @@ fn mesh_field_form_with_limits(
     bounds: BoundingBox,
     limits: ContourLimits,
 ) -> Result<Object, String> {
-    let triangles = triangles(mesh)?;
-    if triangles.len() > MAX_FIELD_TRIANGLES {
-        return Err("native ink field exceeds triangle budget".into());
-    }
-    if triangles.is_empty() || triangles.iter().all(|triangle| plane(*triangle).3 == 0.0) {
-        return Err("native ink field has no non-degenerate coverage triangles".into());
-    }
-    for triangle in &triangles {
-        for [x, y, _] in triangle.0 {
-            if x < bounds.x_min || x > bounds.x_max || y < bounds.y_min || y > bounds.y_max {
-                return Err("native ink bounds do not contain every mesh vertex".into());
-            }
-        }
-    }
-    let mask_stream = match isocontour_stream_with_limits(&triangles, bounds, limits) {
-        Ok(stream) => stream,
-        Err(ContourFailure::LegacyRequired(_reason)) => {
-            return legacy_type1_field_form(document, mesh, color, bounds);
-        }
-        Err(ContourFailure::Invalid(reason)) => return Err(reason),
-    };
-
-    let mut group_dict = Dictionary::new();
-    group_dict.set("Type", "XObject");
-    group_dict.set("Subtype", "Form");
-    group_dict.set("FormType", 1);
-    group_dict.set("BBox", vec![0.into(), 0.into(), 1.into(), 1.into()]);
-    group_dict.set("Resources", Dictionary::new());
-    group_dict.set(
-        "Group",
-        Dictionary::from_iter([
-            (b"S".to_vec(), Object::Name(b"Transparency".to_vec())),
-            (b"CS".to_vec(), Object::Name(b"DeviceGray".to_vec())),
-            (b"I".to_vec(), Object::Boolean(true)),
-            (b"K".to_vec(), Object::Boolean(false)),
-        ]),
-    );
-    let mask = document.add_object(Stream::new(group_dict, mask_stream));
-    let state = document.add_object(Dictionary::from_iter([(
-        b"SMask".to_vec(),
-        Object::Dictionary(Dictionary::from_iter([
-            (b"S".to_vec(), Object::Name(b"Luminosity".to_vec())),
-            (b"G".to_vec(), Object::Reference(mask)),
-            (b"BC".to_vec(), Object::Array(vec![0.into()])),
-            (b"TR".to_vec(), Object::Name(b"Identity".to_vec())),
-        ])),
-    )]));
-    let mut states = Dictionary::new();
-    states.set("GS", Object::Reference(state));
-    let mut resources = Dictionary::new();
-    resources.set("ExtGState", states);
-    let mut dict = Dictionary::new();
-    dict.set("Type", "XObject");
-    dict.set("Subtype", "Form");
-    dict.set("FormType", 1);
-    dict.set("BBox", vec![0.into(), 0.into(), 1.into(), 1.into()]);
-    dict.set("Resources", resources);
-    Ok(Object::Stream(Stream::new(
-        dict,
-        format!(
-            "/GS gs {} {} {} rg 0 0 1 1 re f",
-            color[0] as f64 / 255.0,
-            color[1] as f64 / 255.0,
-            color[2] as f64 / 255.0
-        )
-        .into_bytes(),
-    )))
+    let plan = ValidatedMesh::new(mesh, bounds)?.plan(limits)?;
+    let (resources, stream) = plan.into_resources(document)?;
+    Ok(mesh_mask_form(document, color, resources, stream))
 }
 
 fn radial_field_form(

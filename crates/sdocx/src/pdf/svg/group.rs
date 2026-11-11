@@ -1,3 +1,5 @@
+use std::{collections::HashMap, collections::hash_map::Entry, sync::Arc};
+
 use krilla::num::NormalizedF32;
 use krilla::surface::Surface;
 use usvg::{BlendMode, Node, Opacity};
@@ -108,11 +110,17 @@ fn reuse_key(group: &usvg::Group, budget: usize) -> Option<Vec<u32>> {
     (count >= 32 && key.len() <= budget).then_some(key)
 }
 
-pub(super) fn collect_reuse_candidates(
-    root: &usvg::Group,
-    counts: &mut std::collections::HashMap<Vec<u32>, usize>,
-    nodes: &mut std::collections::HashMap<usize, Vec<u32>>,
-) {
+/// Candidate fingerprints and emitted graphics belong to one SVG traversal.
+/// Equal fingerprints share their backing storage across all node occurrences.
+#[derive(Default)]
+pub(super) struct ReuseCache {
+    pub(super) nodes: HashMap<usize, Arc<[u32]>>,
+    pub(super) graphics: HashMap<Arc<[u32]>, krilla::graphic::Graphic>,
+}
+
+pub(super) fn collect_reuse_candidates(root: &usvg::Group) -> ReuseCache {
+    let mut counts = HashMap::<Arc<[u32]>, usize>::new();
+    let mut nodes = HashMap::new();
     // Markers may come from arbitrary SVG input. Limit all fingerprint work
     // and storage, and fall back to normal rendering when a limit is reached.
     let mut work = vec![root];
@@ -131,7 +139,17 @@ pub(super) fn collect_reuse_candidates(
             }
             if let Some(key) = reuse_key(group, remaining) {
                 remaining -= key.len();
-                *counts.entry(key.clone()).or_default() += 1;
+                let key = match counts.entry(Arc::from(key)) {
+                    Entry::Occupied(mut entry) => {
+                        *entry.get_mut() += 1;
+                        entry.key().clone()
+                    }
+                    Entry::Vacant(entry) => {
+                        let key = entry.key().clone();
+                        entry.insert(1);
+                        key
+                    }
+                };
                 nodes.insert(group as *const _ as usize, key);
             } else {
                 // Failed fingerprints can have consumed the whole allowance.
@@ -152,6 +170,10 @@ pub(super) fn collect_reuse_candidates(
         );
     }
     nodes.retain(|_, key| counts.get(key).copied().unwrap_or(0) >= 2);
+    ReuseCache {
+        nodes,
+        graphics: HashMap::new(),
+    }
 }
 
 pub(super) fn reuse_transform_is_safe(ctm: krilla::geom::Transform) -> bool {
@@ -186,13 +208,14 @@ pub(super) fn render(
         && reuse_transform_is_safe(group.abs_transform().to_krilla())
         && reuse_transform_is_safe(surface.ctm());
     if let Some(key) = process_context
-        .reuse_nodes
+        .reuse
+        .nodes
         .get(&(group as *const _ as usize))
         .cloned()
         && axis_aligned
         && !contains_native_ink(group, process_context)
     {
-        if let Some(graphic) = process_context.reusable_graphics.get(&key) {
+        if let Some(graphic) = process_context.reuse.graphics.get(&key) {
             surface.push_blend_mode(convert_blend_mode(&BlendMode::Normal));
             surface.draw_graphic(graphic.clone());
             surface.pop();
@@ -212,7 +235,7 @@ pub(super) fn render(
         surface.push_blend_mode(convert_blend_mode(&BlendMode::Normal));
         surface.draw_graphic(graphic.clone());
         surface.pop();
-        process_context.reusable_graphics.insert(key, graphic);
+        process_context.reuse.graphics.insert(key, graphic);
         return;
     }
     let native_ink = process_context.has_native_ink(group);
@@ -356,6 +379,19 @@ mod reuse_tests {
             })
             .count()
     }
+    #[test]
+    fn matching_candidates_share_fingerprint_storage_after_counting() {
+        let tree = usvg::Tree::from_str(&svg(true, false, false, ""), &Default::default()).unwrap();
+        let cache = super::collect_reuse_candidates(tree.root());
+        assert_eq!(cache.nodes.len(), 2);
+        let keys: Vec<_> = cache.nodes.values().collect();
+        assert!(std::sync::Arc::ptr_eq(keys[0], keys[1]));
+        // Only the two node occurrences retain the fingerprint; counting is
+        // finished and no rendered graphic has been cached yet.
+        assert_eq!(std::sync::Arc::strong_count(keys[0]), 2);
+        assert!(cache.graphics.is_empty());
+    }
+
     #[test]
     fn marked_blocks_require_matching_resolved_content_and_preserve_mixed_order() {
         let shared = pdf(&svg(true, false, false, ""));

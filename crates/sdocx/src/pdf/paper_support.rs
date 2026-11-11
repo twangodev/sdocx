@@ -796,6 +796,42 @@ pub(super) fn plan_singlex_pdf_paper(
     fixed_axis_profile: Option<super::paper_scale::FixedAxisProfile>,
     body_query_snapshot: Option<&ContinuousBodyQuerySnapshot>,
 ) -> Result<Option<SingleXPaperPlan>, PdfPaperAdmissionError> {
+    let Some(admitted) = admit_singlex_pdf_paper(
+        document,
+        layout,
+        page_indices,
+        fixed_axis_profile,
+        body_query_snapshot,
+    )?
+    else {
+        return Ok(None);
+    };
+    plan_admitted_singlex_pdf_paper(admitted).map(Some)
+}
+
+/// Source identities and saved objects admitted before native page segmentation.
+/// Keeping the bound PDF documents here makes planning and rendering share the
+/// same source graph, without repeating archive resolution.
+struct AdmittedSingleX<'a> {
+    records: &'a [PdfPaperRecord],
+    source_page_index: usize,
+    source_objects: Vec<(usize, &'a crate::PageObject)>,
+    prepared: PreparedPdfPaperRecords,
+    imported_sources: Vec<ImportedSourcePage>,
+    note_width: u32,
+    note_height: u32,
+    default_height_i32: i32,
+    fixed_axis_profile: Option<super::paper_scale::FixedAxisProfile>,
+    body_query_snapshot: Option<&'a ContinuousBodyQuerySnapshot>,
+}
+
+fn admit_singlex_pdf_paper<'a>(
+    document: &crate::Document,
+    layout: &'a crate::LayoutDocument,
+    page_indices: &[usize],
+    fixed_axis_profile: Option<super::paper_scale::FixedAxisProfile>,
+    body_query_snapshot: Option<&'a ContinuousBodyQuerySnapshot>,
+) -> Result<Option<AdmittedSingleX<'a>>, PdfPaperAdmissionError> {
     if page_indices.is_empty() {
         return Ok(None);
     }
@@ -1062,6 +1098,42 @@ pub(super) fn plan_singlex_pdf_paper(
         }
     }
 
+    Ok(Some(AdmittedSingleX {
+        records,
+        source_page_index: selected.source_page_index,
+        source_objects,
+        prepared,
+        imported_sources,
+        note_width,
+        note_height,
+        default_height_i32,
+        fixed_axis_profile,
+        body_query_snapshot,
+    }))
+}
+
+fn plan_admitted_singlex_pdf_paper(
+    admitted: AdmittedSingleX<'_>,
+) -> Result<SingleXPaperPlan, PdfPaperAdmissionError> {
+    let AdmittedSingleX {
+        records,
+        source_page_index,
+        source_objects,
+        prepared,
+        imported_sources,
+        note_width,
+        note_height,
+        default_height_i32,
+        fixed_axis_profile,
+        body_query_snapshot,
+    } = admitted;
+    let reject = |output_page_index, reason| PdfPaperAdmissionError::UnsupportedTopology {
+        output_page_index,
+        source_page_index,
+        record_count: records.len(),
+        reason,
+    };
+
     struct BodyQueries<'a> {
         snapshot: Option<&'a ContinuousBodyQuerySnapshot>,
     }
@@ -1269,12 +1341,12 @@ pub(super) fn plan_singlex_pdf_paper(
         return Err(reject(0, "native segmentation produced no output pages"));
     }
 
-    Ok(Some(SingleXPaperPlan {
+    Ok(SingleXPaperPlan {
         parsed_sources: prepared.sources,
         note_width,
         note_height,
         output_pages,
-    }))
+    })
 }
 
 fn rich_text_is_benign_blank(text: &crate::RichTextBox) -> bool {
@@ -1666,10 +1738,30 @@ fn parse_source_pdf(key: &str, bytes: &[u8]) -> Result<ParsedSource, String> {
     Ok(ParsedSource { doc, pages })
 }
 
-fn assemble_prepared_output_pages(
+/// Resolved identities admitted before allocating any output graph objects.
+struct ValidatedAssemblyInputs<'a> {
+    overlays: Vec<Document>,
+    pages: Vec<ValidatedAssemblyPage<'a>>,
+    selected_sources: HashSet<String>,
+}
+
+struct ValidatedAssemblyPage<'a> {
+    overlay_index: usize,
+    overlay_page_id: ObjectId,
+    imported: Option<ValidatedImportedPage<'a>>,
+}
+
+struct ValidatedImportedPage<'a> {
+    source_key: &'a str,
+    source_page_id: ObjectId,
+    display_to_source: [f64; 6],
+    clip: [f64; 4],
+}
+
+fn validate_assembly_inputs<'a>(
     parsed: &std::collections::BTreeMap<String, ParsedSource>,
-    output_pages: &[OutputPage<'_>],
-) -> Result<Vec<u8>, String> {
+    output_pages: &[OutputPage<'a>],
+) -> Result<ValidatedAssemblyInputs<'a>, String> {
     if output_pages.is_empty() {
         return Err("PDF paper output must contain at least one page".into());
     }
@@ -1677,11 +1769,11 @@ fn assemble_prepared_output_pages(
         return Err("PDF paper output exceeds 10,000 pages".into());
     }
     let mut overlays = Vec::<Document>::new();
-    let mut overlay_indices = Vec::with_capacity(output_pages.len());
+    let mut pages = Vec::with_capacity(output_pages.len());
     let mut overlay_by_buffer = HashMap::<(usize, usize), usize>::new();
     let mut selected_sources = HashSet::<String>::new();
     for page in output_pages {
-        let (bytes, number) = match page {
+        let (bytes, number, imported) = match page {
             OutputPage::Imported {
                 source_key,
                 source_page_index,
@@ -1715,12 +1807,21 @@ fn assemble_prepared_output_pages(
                     ));
                 }
                 selected_sources.insert((*source_key).to_owned());
-                (overlay_bytes, *overlay_page_number)
+                (
+                    overlay_bytes,
+                    *overlay_page_number,
+                    Some(ValidatedImportedPage {
+                        source_key,
+                        source_page_id: source.pages[&number],
+                        display_to_source: *display_to_source,
+                        clip: *clip,
+                    }),
+                )
             }
             OutputPage::OverlayOnly {
                 overlay_bytes,
                 overlay_page_number,
-            } => (overlay_bytes, *overlay_page_number),
+            } => (overlay_bytes, *overlay_page_number, None),
         };
         if bytes.len() > 1024 * 1024 * 1024 {
             return Err("overlay PDF exceeds the 1 GiB admission limit".into());
@@ -1753,12 +1854,12 @@ fn assemble_prepared_output_pages(
                     .into(),
             );
         }
-        overlay_indices.push(overlay_index);
+        pages.push(ValidatedAssemblyPage {
+            overlay_index,
+            overlay_page_id: overlay.get_pages()[&number],
+            imported,
+        });
     }
-    if selected_sources.is_empty() {
-        return assemble_overlay_only(output_pages, &overlays, &overlay_indices);
-    }
-
     // A single source catalog can be retained wholesale. Combining unrelated
     // catalogs would silently lose document-level rendering context (OCGs,
     // structure trees, output intents, AcroForm, etc.), so reject that case.
@@ -1774,34 +1875,41 @@ fn assemble_prepared_output_pages(
         }
     }
 
-    let mut output = Document::with_version("1.7");
+    Ok(ValidatedAssemblyInputs {
+        overlays,
+        pages,
+        selected_sources,
+    })
+}
+
+/// All identities needed before cloning catalog or page graphs. Annotation
+/// occurrence IDs remain distinct from canonical IDs used by cross-page links.
+struct AssemblyIdentities {
+    pages_root_id: ObjectId,
+    output_page_ids: Vec<ObjectId>,
+    tagged: TaggedOutput,
+    page_remaps: std::collections::BTreeMap<String, HashMap<ObjectId, ObjectId>>,
+    annotation_plans: std::collections::BTreeMap<String, AnnotationPlan>,
+}
+
+fn reserve_assembly_identities(
+    parsed: &std::collections::BTreeMap<String, ParsedSource>,
+    pages: &[ValidatedAssemblyPage<'_>],
+    overlays: &[Document],
+    selected_sources: &HashSet<String>,
+    output: &mut Document,
+) -> Result<AssemblyIdentities, String> {
     let pages_root_id = output.new_object_id();
-    let output_page_ids = (0..output_pages.len())
+    let output_page_ids = (0..pages.len())
         .map(|_| output.new_object_id())
         .collect::<Vec<_>>();
-    let mut tagged = TaggedOutput::new(&mut output);
-    for (index, spec) in output_pages.iter().enumerate() {
-        let overlay = &overlays[overlay_indices[index]];
-        let overlay_number = match spec {
-            OutputPage::Imported {
-                overlay_page_number,
-                ..
-            }
-            | OutputPage::OverlayOnly {
-                overlay_page_number,
-                ..
-            } => *overlay_page_number,
-        };
-        tagged.reserve_page_keys(overlay, overlay.get_pages()[&overlay_number])?;
-        if let OutputPage::Imported {
-            source_key,
-            source_page_index,
-            ..
-        } = spec
-        {
-            let source = parsed.get(*source_key).expect("validated source binding");
-            let number = u32::try_from(*source_page_index).unwrap() + 1;
-            tagged.reserve_page_keys(&source.doc, source.pages[&number])?;
+    let mut tagged = TaggedOutput::new(output);
+    for page in pages {
+        let overlay = &overlays[page.overlay_index];
+        tagged.reserve_page_keys(overlay, page.overlay_page_id)?;
+        if let Some(imported) = &page.imported {
+            let source = &parsed[imported.source_key];
+            tagged.reserve_page_keys(&source.doc, imported.source_page_id)?;
         }
     }
 
@@ -1810,22 +1918,12 @@ fn assemble_prepared_output_pages(
     // distinct page object and annotation /P target.
     let mut page_remaps =
         std::collections::BTreeMap::<String, std::collections::HashMap<ObjectId, ObjectId>>::new();
-    let mut object_maps =
-        std::collections::BTreeMap::<String, std::collections::HashMap<ObjectId, ObjectId>>::new();
-    for (spec, output_id) in output_pages.iter().zip(&output_page_ids) {
-        if let OutputPage::Imported {
-            source_key,
-            source_page_index,
-            ..
-        } = spec
-        {
-            let source = parsed.get(*source_key).expect("validated source binding");
-            let page_number = u32::try_from(*source_page_index).unwrap() + 1;
-            let source_id = source.pages[&page_number];
+    for (page, output_id) in pages.iter().zip(&output_page_ids) {
+        if let Some(imported) = &page.imported {
             page_remaps
-                .entry((*source_key).to_owned())
+                .entry(imported.source_key.to_owned())
                 .or_default()
-                .entry(source_id)
+                .entry(imported.source_page_id)
                 .or_insert(*output_id);
         }
     }
@@ -1834,26 +1932,21 @@ fn assemble_prepared_output_pages(
     // following any cross-page links. A shared source annotation has a distinct
     // identity on each occurrence, while external links use its first occurrence.
     let mut annotation_plans = std::collections::BTreeMap::<String, AnnotationPlan>::new();
-    for key in &selected_sources {
+    for key in selected_sources {
         annotation_plans.entry(key.clone()).or_default();
     }
-    for (spec, output_id) in output_pages.iter().zip(&output_page_ids) {
-        if let OutputPage::Imported {
-            source_key,
-            source_page_index,
-            ..
-        } = spec
-        {
-            let source = &parsed[*source_key];
+    for (page, output_id) in pages.iter().zip(&output_page_ids) {
+        if let Some(imported) = &page.imported {
+            let source = &parsed[imported.source_key];
             let page = source
                 .doc
-                .get_dictionary(source.pages[&(u32::try_from(*source_page_index).unwrap() + 1)])
+                .get_dictionary(imported.source_page_id)
                 .map_err(|e| e.to_string())?;
             if let Ok(annots) = page.get(b"Annots") {
                 let mut ids = Vec::new();
                 collect_annotation_ids(&source.doc, annots, &mut ids);
                 let plan = annotation_plans
-                    .entry((*source_key).to_owned())
+                    .entry(imported.source_key.to_owned())
                     .or_default();
                 for id in ids {
                     if plan.occurrences.contains_key(&(*output_id, id)) {
@@ -1884,6 +1977,39 @@ fn assemble_prepared_output_pages(
             }
         }
     }
+
+    Ok(AssemblyIdentities {
+        pages_root_id,
+        output_page_ids,
+        tagged,
+        page_remaps,
+        annotation_plans,
+    })
+}
+
+fn assemble_prepared_output_pages(
+    parsed: &std::collections::BTreeMap<String, ParsedSource>,
+    output_pages: &[OutputPage<'_>],
+) -> Result<Vec<u8>, String> {
+    let inputs = validate_assembly_inputs(parsed, output_pages)?;
+    let ValidatedAssemblyInputs {
+        overlays,
+        pages,
+        selected_sources,
+    } = inputs;
+    if selected_sources.is_empty() {
+        return assemble_overlay_only(&pages, &overlays);
+    }
+
+    let mut output = Document::with_version("1.7");
+    let AssemblyIdentities {
+        pages_root_id,
+        output_page_ids,
+        mut tagged,
+        page_remaps,
+        mut annotation_plans,
+    } = reserve_assembly_identities(parsed, &pages, &overlays, &selected_sources, &mut output)?;
+    let mut object_maps = std::collections::BTreeMap::<String, HashMap<ObjectId, ObjectId>>::new();
 
     // Clone the retained source catalog before page graphs so cycles and
     // references to selected pages can be remapped consistently.
@@ -1920,34 +2046,16 @@ fn assemble_prepared_output_pages(
     catalog.set("Pages", pages_root_id);
     let catalog_id = output.add_object(catalog);
 
-    for (index, (spec, output_id)) in output_pages.iter().zip(&output_page_ids).enumerate() {
-        let overlay = &overlays[overlay_indices[index]];
-        let overlay_number = match spec {
-            OutputPage::Imported {
-                overlay_page_number,
-                ..
-            }
-            | OutputPage::OverlayOnly {
-                overlay_page_number,
-                ..
-            } => *overlay_page_number,
-        };
-        match spec {
-            OutputPage::Imported {
-                source_key,
-                source_page_index,
-                display_to_source,
-                clip,
-                ..
-            } => {
-                let source = parsed.get(*source_key).expect("validated source binding");
-                let source_page_number = u32::try_from(*source_page_index).unwrap() + 1;
-                let source_page_id = source.pages[&source_page_number];
+    for (page, output_id) in pages.iter().zip(&output_page_ids) {
+        let overlay = &overlays[page.overlay_index];
+        let overlay_page_id = page.overlay_page_id;
+        match &page.imported {
+            Some(imported) => {
+                let source = &parsed[imported.source_key];
                 let page_dict = source
                     .doc
-                    .get_dictionary(source_page_id)
+                    .get_dictionary(imported.source_page_id)
                     .map_err(|e| e.to_string())?;
-                let overlay_page_id = overlay.get_pages()[&overlay_number];
                 let structure_key = if tagged.page_has_tags(overlay, overlay_page_id)? {
                     Some(tagged.allocate_key())
                 } else {
@@ -1956,11 +2064,13 @@ fn assemble_prepared_output_pages(
                 let mut cloner = GraphCloner::new(
                     &source.doc,
                     &mut output,
-                    page_remaps.get(*source_key),
-                    object_maps.entry((*source_key).to_owned()).or_default(),
+                    page_remaps.get(imported.source_key),
+                    object_maps
+                        .entry(imported.source_key.to_owned())
+                        .or_default(),
                     pages_root_id,
                 );
-                cloner.plan = annotation_plans.get_mut(*source_key);
+                cloner.plan = annotation_plans.get_mut(imported.source_key);
                 let mut page = cloner.clone_page(page_dict, *output_id)?;
                 drop(cloner);
                 let form_id = add_overlay_form(
@@ -1968,8 +2078,8 @@ fn assemble_prepared_output_pages(
                     &mut page,
                     overlay,
                     overlay_page_id,
-                    *display_to_source,
-                    *clip,
+                    imported.display_to_source,
+                    imported.clip,
                     structure_key,
                 )?;
                 if let Some(key) = structure_key {
@@ -1984,8 +2094,7 @@ fn assemble_prepared_output_pages(
                 }
                 output.objects.insert(*output_id, Object::Dictionary(page));
             }
-            OutputPage::OverlayOnly { .. } => {
-                let overlay_page_id = overlay.get_pages()[&overlay_number];
+            None => {
                 let overlay_page = overlay
                     .get_dictionary(overlay_page_id)
                     .map_err(|e| e.to_string())?;
@@ -2935,26 +3044,19 @@ fn parent_slot_mut(array: &mut Vec<Object>, mcid: i64) -> Result<&mut Object, St
 }
 
 fn assemble_overlay_only(
-    specs: &[OutputPage<'_>],
+    pages: &[ValidatedAssemblyPage<'_>],
     overlays: &[Document],
-    overlay_indices: &[usize],
 ) -> Result<Vec<u8>, String> {
     let mut output = Document::with_version("1.7");
     let pages_root_id = output.new_object_id();
-    let page_ids = (0..specs.len())
+    let page_ids = (0..pages.len())
         .map(|_| output.new_object_id())
         .collect::<Vec<_>>();
     let mut tagged = TaggedOutput::new(&mut output);
-    for (index, (spec, page_id)) in specs.iter().zip(&page_ids).enumerate() {
-        let OutputPage::OverlayOnly {
-            overlay_page_number,
-            ..
-        } = spec
-        else {
-            unreachable!("overlay-only assembly has no imported page")
-        };
-        let overlay = &overlays[overlay_indices[index]];
-        let source_page_id = overlay.get_pages()[overlay_page_number];
+    for (page, page_id) in pages.iter().zip(&page_ids) {
+        debug_assert!(page.imported.is_none());
+        let overlay = &overlays[page.overlay_index];
+        let source_page_id = page.overlay_page_id;
         let source_page = overlay
             .get_dictionary(source_page_id)
             .map_err(|e| e.to_string())?;

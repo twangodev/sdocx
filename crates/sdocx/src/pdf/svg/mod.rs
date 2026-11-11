@@ -139,9 +139,9 @@ pub(super) fn render_svg_glyph(
             tree.root()
                 .children()
                 .iter()
-                .any(node_requires_raster_filter)
+                .any(node_contains_unsupported_filter)
         },
-        node_requires_raster_filter,
+        node_contains_unsupported_filter,
     );
     if requires_raster_filter {
         return None;
@@ -259,27 +259,6 @@ fn root_view_box_transform(
     ))
 }
 
-fn node_requires_raster_filter(node: &usvg::Node) -> bool {
-    match node {
-        usvg::Node::Group(group) => {
-            (!group.filters().is_empty() && !colorize::is_supported(group))
-                || group.children().iter().any(node_requires_raster_filter)
-        }
-        usvg::Node::Image(image) => match image.kind() {
-            usvg::ImageKind::SVG(tree) => tree
-                .root()
-                .children()
-                .iter()
-                .any(node_requires_raster_filter),
-            _ => false,
-        },
-        usvg::Node::Path(path) => {
-            path_patterns(path).any(|root| root.children().iter().any(node_requires_raster_filter))
-        }
-        usvg::Node::Text(_) => false,
-    }
-}
-
 pub(super) type TextHook<'a> =
     dyn FnMut(&usvg::Text, &mut Surface<'_>) -> Result<bool, String> + 'a;
 pub(super) type InkHook<'a> = dyn FnMut(&usvg::Group, &mut Surface<'_>) -> Result<(), String> + 'a;
@@ -364,9 +343,7 @@ struct ProcessContext<'a, 'h, 'o> {
     ink_hook: Option<&'h mut InkHook<'o>>,
     error: Option<SvgError>,
     reuse_base_transform_safe: bool,
-    reuse_counts: std::collections::HashMap<Vec<u32>, usize>,
-    reuse_nodes: std::collections::HashMap<usize, Vec<u32>>,
-    reusable_graphics: std::collections::HashMap<Vec<u32>, krilla::graphic::Graphic>,
+    reuse: group::ReuseCache,
 }
 
 impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
@@ -381,9 +358,7 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
             ink_hook: None,
             error: None,
             reuse_base_transform_safe: false,
-            reuse_counts: Default::default(),
-            reuse_nodes: Default::default(),
-            reusable_graphics: Default::default(),
+            reuse: Default::default(),
         }
     }
 
@@ -645,7 +620,7 @@ fn render_tree_with_text<'h, 'o>(
         fc.set_cull_viewport(tree.root(), viewport);
     }
     fc.reuse_base_transform_safe = group::reuse_transform_is_safe(surface.ctm());
-    group::collect_reuse_candidates(tree.root(), &mut fc.reuse_counts, &mut fc.reuse_nodes);
+    fc.reuse = group::collect_reuse_candidates(tree.root());
     group::render(tree.root(), surface, &mut fc);
     fc.error.map_or(Ok(()), Err)
 }
