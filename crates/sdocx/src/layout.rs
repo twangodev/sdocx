@@ -8,6 +8,12 @@ use crate::types::{
     RichTextParagraphType,
 };
 
+mod source_identity;
+mod text_slice;
+
+use source_identity::SourceSnapshot;
+pub(crate) use source_identity::same_text_source;
+
 /// A presentation-oriented view of a parsed document.
 ///
 /// Physical `.page` records remain available on [`Document`]. This view omits
@@ -67,7 +73,7 @@ pub struct BodyTextReflow {
     pub first_page_index: usize,
     pub requested_page_index: usize,
     #[cfg_attr(feature = "serde", serde(skip))]
-    source_snapshot: Option<Arc<RichTextBox>>,
+    source_snapshot: Option<Arc<SourceSnapshot>>,
 }
 
 /// Source context measured together for a native page capture.
@@ -252,7 +258,7 @@ impl LayoutPage {
             || !reflow
                 .source_snapshot
                 .as_deref()
-                .is_some_and(|snapshot| same_text_source(snapshot, body))
+                .is_some_and(|snapshot| snapshot.matches(body))
             || saved_inspection_ranges(body, &index, visible_count).is_some()
         {
             return None;
@@ -304,145 +310,6 @@ impl LayoutPage {
     }
 }
 
-pub(crate) fn same_text_source(left: &RichTextBox, right: &RichTextBox) -> bool {
-    if left == right {
-        return true;
-    }
-    let mut left = left.clone();
-    let mut right = right.clone();
-    let mut left_floats = SourceFloats::default();
-    let mut right_floats = SourceFloats::default();
-    left_floats.text(&mut left);
-    right_floats.text(&mut right);
-    left_floats.0 == right_floats.0 && left == right
-}
-
-#[derive(Default)]
-struct SourceFloats(Vec<u64>);
-
-impl SourceFloats {
-    fn f32(&mut self, value: &mut f32) {
-        self.0.push(if *value == 0.0 {
-            0
-        } else {
-            u64::from(value.to_bits())
-        });
-        *value = 0.0;
-    }
-
-    fn f64(&mut self, value: &mut f64) {
-        self.0.push(if *value == 0.0 { 0 } else { value.to_bits() });
-        *value = 0.0;
-    }
-
-    fn bounds(&mut self, bounds: &mut crate::BoundingBox) {
-        for value in [
-            &mut bounds.x_min,
-            &mut bounds.y_min,
-            &mut bounds.x_max,
-            &mut bounds.y_max,
-        ] {
-            self.f64(value);
-        }
-    }
-
-    fn rotation(&mut self, rotation: &mut Option<f64>) {
-        if let Some(rotation) = rotation {
-            self.f64(rotation);
-        }
-    }
-
-    fn size(&mut self, size: &mut Option<f32>) {
-        if let Some(size) = size {
-            self.f32(size);
-        }
-    }
-
-    fn border(&mut self, border: &mut Option<crate::TableBorder>) {
-        let Some(border) = border else { return };
-        for edge in [
-            &mut border.left,
-            &mut border.top,
-            &mut border.right,
-            &mut border.bottom,
-        ] {
-            self.f32(&mut edge.width);
-            self.f32(&mut edge.start_radius);
-            self.f32(&mut edge.end_radius);
-        }
-    }
-
-    fn text(&mut self, text: &mut RichTextBox) {
-        self.bounds(&mut text.bbox);
-        self.rotation(&mut text.rotation_degrees);
-        self.size(&mut text.font_size);
-        if let Some(margins) = &mut text.margins {
-            for margin in margins {
-                self.f32(margin);
-            }
-        }
-        for object in &mut text.object_spans {
-            match object.content.as_mut() {
-                Some(RichTextObjectContent::Image(image)) => {
-                    self.bounds(&mut image.bbox);
-                    self.rotation(&mut image.rotation_degrees);
-                    if let Some(bounds) = &mut image.original_bbox {
-                        self.bounds(bounds);
-                    }
-                }
-                Some(RichTextObjectContent::Table(table)) => self.table(table),
-                Some(RichTextObjectContent::CodeBlock(code)) => {
-                    self.bounds(&mut code.bbox);
-                    self.rotation(&mut code.rotation_degrees);
-                    if let Some(title) = &mut code.title {
-                        self.text(title);
-                    }
-                    if let Some(body) = &mut code.body {
-                        self.text(body);
-                    }
-                }
-                None => {}
-            }
-        }
-    }
-
-    fn table(&mut self, table: &mut crate::RichTextTable) {
-        self.bounds(&mut table.bbox);
-        self.rotation(&mut table.rotation_degrees);
-        for width in &mut table.column_widths {
-            self.f32(width);
-        }
-        let style = &mut table.style;
-        self.size(&mut style.min_column_width);
-        self.size(&mut style.min_row_height);
-        if let Some(bounds) = &mut style.content_bbox {
-            self.bounds(bounds);
-        }
-        self.border(&mut style.border);
-        self.border(&mut style.default_cell_border);
-        for widths in [&mut style.min_column_widths, &mut style.max_column_widths]
-            .into_iter()
-            .flatten()
-        {
-            for width in widths {
-                self.f32(width);
-            }
-        }
-        self.size(&mut style.max_height);
-        self.size(&mut style.max_width);
-        for row in &mut table.rows {
-            self.size(&mut row.max_height);
-            self.size(&mut row.min_height);
-            self.f32(&mut row.height);
-            for cell in &mut row.cells {
-                self.border(&mut cell.border);
-                self.bounds(&mut cell.bbox);
-                self.text(&mut cell.content);
-            }
-        }
-    }
-}
-
 /// Build a visible-page view without changing the parsed storage model.
 pub fn layout_document(document: &Document) -> LayoutDocument {
     layout_document_with_progress(document, &mut |_| {})
@@ -485,7 +352,7 @@ pub fn layout_document_with_progress(
         .as_ref()
         .zip(text_index.as_ref())
         .filter(|(body, index)| saved_inspection_ranges(body, index, visible_count).is_none())
-        .map(|(body, _)| Arc::new(body.clone()));
+        .map(|(body, _)| Arc::new(SourceSnapshot::capture(body)));
     let mut progress =
         crate::progress::WorkProgress::new(observer, crate::ProgressStage::Layout, visible_count);
     let pages = document
@@ -785,118 +652,6 @@ fn balanced_line_ranges(text: &str, page_count: usize) -> Vec<Range<usize>> {
         start = end;
     }
     ranges
-}
-
-impl RichTextBox {
-    /// Return a logical character-indexed slice with intersecting style records rebased.
-    /// Font carets at either boundary retain their original interval policy.
-    pub fn slice_chars(&self, range: Range<usize>) -> Option<Self> {
-        self.slice_indexed(&TextIndex::new(&self.text), range)
-    }
-
-    fn slice_indexed(&self, index: &TextIndex<'_>, range: Range<usize>) -> Option<Self> {
-        let text = index.slice(range.clone())?;
-        let start_utf16 = index.char_to_utf16(range.start)?;
-        let end_utf16 = index.char_to_utf16(range.end)?;
-        let paragraph_range = paragraph_range_for_chars(index, range.clone())?;
-
-        let runs = self
-            .runs
-            .iter()
-            .filter_map(|run| {
-                if run.start >= run.end || run.end > index.len() {
-                    return None;
-                }
-                let start = run.start.max(range.start);
-                let end = run.end.min(range.end);
-                (start < end).then(|| crate::types::RichTextRun {
-                    start: start - range.start,
-                    end: end - range.start,
-                    bold: run.bold,
-                    italic: run.italic,
-                })
-            })
-            .collect();
-        let spans = self
-            .spans
-            .iter()
-            .filter_map(|span| slice_span(span, index, start_utf16..end_utf16))
-            .collect();
-        let paragraphs = self
-            .paragraphs
-            .iter()
-            .filter_map(|paragraph| {
-                let start = paragraph.start_paragraph.max(paragraph_range.start);
-                let end = paragraph.end_paragraph.min(paragraph_range.end);
-                (start < end).then(|| {
-                    let mut paragraph = paragraph.clone();
-                    paragraph.start_paragraph = start - paragraph_range.start;
-                    paragraph.end_paragraph = end - paragraph_range.start;
-                    paragraph
-                })
-            })
-            .collect();
-        let object_spans = self
-            .object_spans
-            .iter()
-            .filter_map(|object_span| {
-                let index = u32::try_from(object_span.text_index_utf16).ok()?;
-                (index >= start_utf16 && index < end_utf16).then(|| {
-                    let mut object_span = object_span.clone();
-                    object_span.text_index_utf16 =
-                        i32::try_from(index - start_utf16).unwrap_or(i32::MAX);
-                    object_span
-                })
-            })
-            .collect();
-
-        let mut slice = self.clone();
-        slice.text = text.to_string();
-        slice.runs = runs;
-        slice.spans = spans;
-        slice.paragraphs = paragraphs;
-        slice.object_spans = object_spans;
-        slice.text_sections = vec![crate::types::RichTextSection {
-            start_utf16: 0,
-            length_utf16: i32::try_from(end_utf16.checked_sub(start_utf16)?).ok()?,
-        }];
-        Some(slice)
-    }
-}
-
-fn slice_span(
-    span: &crate::RichTextSpan,
-    index: &TextIndex<'_>,
-    range: Range<u32>,
-) -> Option<crate::RichTextSpan> {
-    if span.start_utf16 > span.end_utf16
-        || index.utf16_to_char(span.start_utf16).is_none()
-        || index.utf16_to_char(span.end_utf16).is_none()
-    {
-        return None;
-    }
-    let start = span.start_utf16.max(range.start);
-    let end = span.end_utf16.min(range.end);
-    let font_caret = span.start_utf16 == span.end_utf16
-        && span.kind == crate::RichTextSpanType::FontSize
-        && range.start <= span.start_utf16
-        && span.start_utf16 <= range.end;
-    (start < end || font_caret).then(|| {
-        let mut span = span.clone();
-        span.start_utf16 = start - range.start;
-        span.end_utf16 = end - range.start;
-        span
-    })
-}
-
-fn paragraph_range_for_chars(index: &TextIndex<'_>, range: Range<usize>) -> Option<Range<u32>> {
-    let first = index.paragraph_index(range.start)?;
-    let count = index
-        .native_paragraphs()
-        .skip(usize::try_from(first).ok()?)
-        .take_while(|paragraph| paragraph.physical.start <= range.end)
-        .count();
-    Some(first..first.checked_add(u32::try_from(count).ok()?)?)
 }
 
 #[cfg(test)]
@@ -1282,6 +1037,54 @@ mod tests {
                 layout_option: crate::ObjectSpanLayoutOption::Block,
                 layout_constraint: crate::ObjectSpanLayoutConstraint::OverPages,
             });
+    }
+
+    #[test]
+    fn source_identity_preserves_nested_nan_payloads_and_accepts_signed_zero() {
+        let mut document = capture_document("ab\u{fffc}cd", &[]);
+        add_capture_object(&mut document);
+        let body = document.metadata.note_text.as_mut().unwrap();
+        let mut nested = body.clone();
+        nested.object_spans.clear();
+        nested.font_size = Some(f32::from_bits(0x7fc0_0011));
+        nested.bbox.x_min = f64::from_bits(0x7ff8_0000_0000_0011);
+        nested.bbox.y_min = -0.0;
+        let Some(RichTextObjectContent::CodeBlock(code)) = body.object_spans[0].content.as_mut()
+        else {
+            unreachable!()
+        };
+        code.body = Some(nested);
+        let snapshot = super::SourceSnapshot::capture(body);
+        let mut edited = body.clone();
+        let Some(RichTextObjectContent::CodeBlock(code)) = edited.object_spans[0].content.as_mut()
+        else {
+            unreachable!()
+        };
+        let nested = code.body.as_mut().unwrap();
+        nested.bbox.y_min = 0.0;
+        assert!(
+            snapshot.matches(&edited),
+            "signed zero must not invalidate a cloned NaN source"
+        );
+        let Some(RichTextObjectContent::CodeBlock(code)) = edited.object_spans[0].content.as_mut()
+        else {
+            unreachable!()
+        };
+        code.body.as_mut().unwrap().font_size = Some(f32::from_bits(0x7fc0_0012));
+        assert!(
+            !snapshot.matches(&edited),
+            "different f32 NaN payloads must invalidate source ownership"
+        );
+        let Some(RichTextObjectContent::CodeBlock(code)) = edited.object_spans[0].content.as_mut()
+        else {
+            unreachable!()
+        };
+        code.body.as_mut().unwrap().font_size = Some(f32::from_bits(0x7fc0_0011));
+        code.body.as_mut().unwrap().bbox.x_min = f64::from_bits(0x7ff8_0000_0000_0012);
+        assert!(
+            !snapshot.matches(&edited),
+            "different f64 NaN payloads must invalidate source ownership"
+        );
     }
 
     fn code_top(text: &RichTextBox) -> f64 {
