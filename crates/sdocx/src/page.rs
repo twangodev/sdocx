@@ -122,14 +122,14 @@ impl PageDecoder<'_, '_> {
                 error => error,
             })?;
         match formula.select_render_source(self.document_metadata, false, None) {
-            crate::formula::FormulaRenderSelection::StrokeFallback { strokes } => {
+            crate::formula::FormulaRenderSelection::StrokeFallback => {
                 content = Some(PageObjectContent::Container(
-                    strokes
-                        .into_iter()
+                    formula
+                        .into_fallback_strokes()
                         .map(|formula_stroke| PageObject {
                             render_layer: ObjectRenderLayer::Base,
                             source_offset: Some(object.payload_offset),
-                            content: PageObjectContent::Stroke(formula_stroke.stroke.clone()),
+                            content: PageObjectContent::Stroke(formula_stroke.stroke),
                         })
                         .collect(),
                 ));
