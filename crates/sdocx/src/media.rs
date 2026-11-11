@@ -3,8 +3,18 @@ use crate::{ArchiveResourceError, Error, ParseLimits, Result};
 use std::collections::{HashMap, HashSet};
 
 pub(crate) struct MediaResolver {
-    bindings: HashMap<u32, std::result::Result<usize, String>>,
+    bindings: HashMap<u32, std::result::Result<usize, ImageMediaError>>,
     inferred: bool,
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+pub(crate) enum ImageMediaError {
+    #[error(transparent)]
+    Binding(#[from] ArchiveResourceError),
+    #[error("media ID {id} names unsupported media {name}")]
+    UnsupportedAsset { id: u32, name: String },
+    #[error("image has no supported main media reference")]
+    MissingMainReference,
 }
 
 pub(crate) struct MediaBindings {
@@ -75,11 +85,11 @@ impl MediaResolver {
             .collect();
         let source = MediaBindings::new(manifest, names);
         for (id, name) in source.names {
-            let resolved = name.map_err(|error| error.to_string()).and_then(|name| {
+            let resolved = name.map_err(ImageMediaError::Binding).and_then(|name| {
                 indexes
                     .get(name.as_str())
                     .copied()
-                    .ok_or_else(|| format!("media ID {id} names unsupported media {name}"))
+                    .ok_or(ImageMediaError::UnsupportedAsset { id, name })
             });
             bindings.insert(id, resolved);
         }
@@ -89,12 +99,15 @@ impl MediaResolver {
         }
     }
 
-    pub(crate) fn resolve(&self, id: Option<u32>) -> std::result::Result<(usize, bool), String> {
-        let id = id.ok_or_else(|| "image has no supported main media reference".to_owned())?;
+    pub(crate) fn resolve(
+        &self,
+        id: Option<u32>,
+    ) -> std::result::Result<(usize, bool), ImageMediaError> {
+        let id = id.ok_or(ImageMediaError::MissingMainReference)?;
         match self.bindings.get(&id) {
             Some(Ok(index)) => Ok((*index, self.inferred)),
-            Some(Err(message)) => Err(message.clone()),
-            None => Err(format!("media ID {id} has no binding")),
+            Some(Err(error)) => Err(error.clone()),
+            None => Err(ArchiveResourceError::UnboundId { id }.into()),
         }
     }
 }

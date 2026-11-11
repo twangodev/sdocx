@@ -43,10 +43,10 @@ impl DecodedImage {
                     report.warning(DiagnosticCode::InferredImageMediaReference, Some(archive_entry.to_owned()), format!("{location}: media/mediaInfo.dat is absent; resolved media ID {} using a unique numeric filename prefix", self.image.media_id.unwrap()));
                 }
             }
-            Err(message) => report.warning(
+            Err(error) => report.warning(
                 DiagnosticCode::UnresolvedImageMedia,
                 Some(archive_entry.to_owned()),
-                format!("{location}: {message}"),
+                format!("{location}: {error}"),
             ),
         }
         Some(self.image)
