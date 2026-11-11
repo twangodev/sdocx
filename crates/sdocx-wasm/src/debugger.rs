@@ -161,25 +161,20 @@ impl Source {
     ) -> Result<String, String> {
         let r: Value = serde_json::from_str(request).map_err(|e| e.to_string())?;
         let limits = super::browser_parse_options().limits;
-        let resources = if r["kind"].as_str() == Some("object") {
-            if self.stroke_resources.is_none() {
-                let resources = if let Some(note) = &parsed.note {
-                    self.entry_index("note.note")
-                        .ok()
-                        .and_then(|index| self.entry(index).ok())
-                        .and_then(|bytes| note.metadata_with_limits(bytes, &limits).ok())
-                        .and_then(|metadata| metadata.string_table)
-                        .map(|table| sdocx::StrokeResources::new(&table))
-                        .unwrap_or_default()
-                } else {
-                    sdocx::StrokeResources::default()
-                };
-                self.stroke_resources = Some(resources);
-            }
-            self.stroke_resources.clone().unwrap_or_default()
-        } else {
-            sdocx::StrokeResources::default()
-        };
+        if r["kind"].as_str() == Some("object") && self.stroke_resources.is_none() {
+            let resources = if let Some(note) = &parsed.note {
+                self.entry_index("note.note")
+                    .ok()
+                    .and_then(|index| self.entry(index).ok())
+                    .and_then(|bytes| note.metadata_with_limits(bytes, &limits).ok())
+                    .and_then(|metadata| metadata.string_table)
+                    .map(|table| sdocx::StrokeResources::new(&table))
+                    .unwrap_or_default()
+            } else {
+                sdocx::StrokeResources::default()
+            };
+            self.stroke_resources = Some(resources);
+        }
         let mut result = match r["kind"].as_str().unwrap_or("") {
             "index" => {
                 let mut archive = self.archive()?;
@@ -302,16 +297,21 @@ impl Source {
                             }
                             _ => Value::Null,
                         };
+                        let base = decoded(base);
                         let stroke = if o.object_type == ObjectType::Stroke {
-                            decoded(o.decode_stroke(bytes, &limits).map(|mut stroke| {
-                                resources.resolve(&mut stroke);
+                            let stroke = o.decode_stroke(bytes, &limits);
+                            decoded(stroke.map(|mut stroke| {
+                                self.stroke_resources
+                                    .as_ref()
+                                    .expect("object requests initialize stroke resources")
+                                    .resolve(&mut stroke);
                                 stroke
                             }))
                         } else {
                             Value::Null
                         };
                         json!({"entry":entry,"offset":offset,"size":o.payload_size,"declaredSize":o.declared_size,"type":o.object_type,
-                            "integrity":o.integrity_trailer,"base":decoded(base),"flexible":flexible,"metadata":metadata,"stroke":stroke,"objects":nodes(&o.children)})
+                            "integrity":o.integrity_trailer,"base":base,"flexible":flexible,"metadata":metadata,"stroke":stroke,"objects":nodes(&o.children)})
                     }
                     "background" | "replay-svg" => {
                         let mut preview = layout
@@ -475,6 +475,26 @@ mod source_tests {
             assert_eq!(item["geometry"]["profile"], "FountainPen");
             assert_eq!(item["geometry"]["support"], "reconstructed");
         }
+        let request = json!({"kind":"object","page":0,"offset":items[0]["offset"]}).to_string();
+        let first: Value =
+            serde_json::from_str(&source.request(&parsed, &layout, &request).unwrap()).unwrap();
+        assert_eq!(
+            first["stroke"]["rendering"]["pen_name"].as_str().unwrap(),
+            items[0]["stroke"]["rendering"]["pen_name"]
+                .as_str()
+                .unwrap(),
+        );
+        let note_entry = source.entry_index("note.note").unwrap();
+        source
+            .request(
+                &parsed,
+                &layout,
+                &json!({"kind":"bytes","entry":note_entry,"offset":0,"length":1}).to_string(),
+            )
+            .unwrap();
+        let after_cache_replacement: Value =
+            serde_json::from_str(&source.request(&parsed, &layout, &request).unwrap()).unwrap();
+        assert_eq!(after_cache_replacement, first);
     }
 
     #[test]
