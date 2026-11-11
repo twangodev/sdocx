@@ -148,6 +148,136 @@ impl TextDiagnostics {
     }
 }
 
+/// Clones share published diagnostics and the current measurement collector.
+/// New measurement and planning scopes explicitly replace the collectors they own.
+#[derive(Clone, Default)]
+struct DiagnosticScope {
+    published_text: Rc<RefCell<TextDiagnostics>>,
+    published_objects: Rc<RefCell<Vec<SourceObjectDiagnostic>>>,
+    measurements: Rc<RefCell<TextDiagnostics>>,
+    owner: Option<SourceOwner>,
+    owner_locked: bool,
+    local_source: Option<Range<usize>>,
+}
+
+impl DiagnosticScope {
+    fn resolved_text(&self) -> Self {
+        Self {
+            owner_locked: self.owner.is_some(),
+            ..self.measurement_scope()
+        }
+    }
+
+    fn measurement_scope(&self) -> Self {
+        Self {
+            measurements: Default::default(),
+            local_source: None,
+            ..self.clone()
+        }
+    }
+
+    fn planning_scope(&self) -> Self {
+        Self {
+            published_text: Default::default(),
+            published_objects: Default::default(),
+            ..self.measurement_scope()
+        }
+    }
+
+    fn text_source(&self, source: Range<usize>) -> Self {
+        let mut scope = self.clone();
+        scope.local_source = Some(source.clone());
+        if !scope.owner_locked {
+            scope.owner = Some(SourceOwner::Text(source));
+        }
+        scope
+    }
+
+    fn object_source(&self, source: Range<usize>) -> Self {
+        let mut scope = self.clone();
+        if !scope.owner_locked {
+            scope.owner = Some(SourceOwner::Object(source));
+            scope.owner_locked = true;
+        }
+        scope
+    }
+
+    fn record(&self, diagnostic: TextDiagnostic) {
+        self.record_owned(SourceTextDiagnostic {
+            owner: self.owner.clone(),
+            diagnostic,
+        });
+    }
+
+    fn record_owned(&self, issue: SourceTextDiagnostic) {
+        self.published_text.borrow_mut().record(issue);
+    }
+
+    fn record_object(&self, issue: SourceObjectDiagnostic) {
+        let mut diagnostics = self.published_objects.borrow_mut();
+        if !diagnostics.contains(&issue) {
+            diagnostics.push(issue);
+        }
+    }
+
+    fn measurement_unsupported(&self, diagnostic: TextDiagnostic) {
+        if let Some(source) = &self.local_source
+            && matches!(
+                diagnostic.kind,
+                TextDiagnosticKind::UnsupportedMeasurementStyle
+                    | TextDiagnosticKind::UnsupportedMeasurementFont
+                    | TextDiagnosticKind::UnsupportedMeasurementShaping
+                    | TextDiagnosticKind::UnsupportedMeasurementBudget
+                    | TextDiagnosticKind::UnsupportedTabMeasurement
+            )
+        {
+            self.measurements.borrow_mut().record(SourceTextDiagnostic {
+                owner: Some(SourceOwner::Text(source.clone())),
+                diagnostic: diagnostic.clone(),
+            });
+        }
+        self.record(diagnostic);
+    }
+}
+
+#[derive(Clone)]
+struct TextFontResources<'a> {
+    book: &'a FontBook,
+    default_family: &'static str,
+    embedded_faces: Rc<RefCell<Vec<ResolvedFace>>>,
+}
+
+impl<'a> TextFontResources<'a> {
+    fn new(book: &'a FontBook) -> Self {
+        Self {
+            book,
+            default_family: "Roboto",
+            embedded_faces: Default::default(),
+        }
+    }
+
+    fn resolved_text(&self, default_family: &'static str) -> Self {
+        Self {
+            default_family,
+            ..self.clone()
+        }
+    }
+
+    fn planning_scope(&self) -> Self {
+        Self {
+            embedded_faces: Default::default(),
+            ..self.clone()
+        }
+    }
+
+    fn register_face(&self, face: &ResolvedFace) {
+        let mut faces = self.embedded_faces.borrow_mut();
+        if !faces.iter().any(|registered| registered.id == face.id) {
+            faces.push(face.clone());
+        }
+    }
+}
+
 #[derive(Clone)]
 pub(in crate::render) struct TextRenderer<'a> {
     pub settings: TextSettings,
@@ -155,18 +285,11 @@ pub(in crate::render) struct TextRenderer<'a> {
     pub object_page_ownership: ObjectPageOwnership,
     pub table_export_page: Option<crate::render::table::TableExportPage>,
     pub image_page_width: Option<u32>,
-    pub fonts: &'a FontBook,
     pub native_object_page_obstacles: Option<super::NativeObjectPageObstacles>,
     pub native_cell_page_obstacles: Option<super::NativeCellPageObstacles>,
-    default_family: &'static str,
-    faces: Rc<RefCell<Vec<ResolvedFace>>>,
-    diagnostics: Rc<RefCell<TextDiagnostics>>,
-    local_measurement_issues: Rc<RefCell<TextDiagnostics>>,
-    object_diagnostics: Rc<RefCell<Vec<SourceObjectDiagnostic>>>,
+    font_resources: TextFontResources<'a>,
+    diagnostics: DiagnosticScope,
     page_exclusions: Option<Rc<PageExclusions>>,
-    source_owner: Option<SourceOwner>,
-    source_owner_locked: bool,
-    local_source: Option<Range<usize>>,
 }
 
 impl<'a> TextRenderer<'a> {
@@ -177,18 +300,11 @@ impl<'a> TextRenderer<'a> {
             object_page_ownership: Default::default(),
             table_export_page: None,
             image_page_width: None,
-            fonts,
-            default_family: "Roboto",
-            faces: Default::default(),
+            font_resources: TextFontResources::new(fonts),
             diagnostics: Default::default(),
-            local_measurement_issues: Default::default(),
-            object_diagnostics: Default::default(),
             page_exclusions: None,
             native_object_page_obstacles: None,
             native_cell_page_obstacles: None,
-            source_owner: None,
-            source_owner_locked: false,
-            local_source: None,
         }
     }
 
@@ -238,7 +354,8 @@ impl<'a> TextRenderer<'a> {
     }
 
     pub fn default_cap_height_ratio(&self) -> Option<f64> {
-        self.fonts
+        self.font_resources
+            .book
             .resolve("sans-serif", false, false)
             .ok()?
             .metrics
@@ -252,56 +369,42 @@ impl<'a> TextRenderer<'a> {
             object_page_ownership: self.object_page_ownership,
             table_export_page: self.table_export_page,
             image_page_width: self.image_page_width,
-            fonts: self.fonts,
-            default_family,
-            faces: Rc::clone(&self.faces),
-            diagnostics: Rc::clone(&self.diagnostics),
-            local_measurement_issues: Default::default(),
-            object_diagnostics: Rc::clone(&self.object_diagnostics),
+            font_resources: self.font_resources.resolved_text(default_family),
+            diagnostics: self.diagnostics.resolved_text(),
             page_exclusions: None,
             native_object_page_obstacles: self.native_object_page_obstacles,
             native_cell_page_obstacles: self.native_cell_page_obstacles,
-            source_owner: self.source_owner.clone(),
-            source_owner_locked: self.source_owner.is_some(),
-            local_source: None,
         }
     }
 
     pub fn for_source(&self, source: Range<usize>) -> Self {
         let mut renderer = self.clone();
-        renderer.local_source = Some(source.clone());
-        if !renderer.source_owner_locked {
-            renderer.source_owner = Some(SourceOwner::Text(source));
-        }
+        renderer.diagnostics = self.diagnostics.text_source(source);
         renderer
     }
 
     pub fn for_object_source(&self, source: Range<usize>) -> Self {
         let mut renderer = self.clone();
-        if !renderer.source_owner_locked {
-            renderer.source_owner = Some(SourceOwner::Object(source));
-            renderer.source_owner_locked = true;
-        }
+        renderer.diagnostics = self.diagnostics.object_source(source);
         renderer
     }
 
     pub fn planning_scope(&self) -> Self {
-        let mut renderer = self.local_measurement_scope();
-        renderer.faces = Default::default();
-        renderer.diagnostics = Default::default();
-        renderer.object_diagnostics = Default::default();
+        let mut renderer = self.clone();
+        renderer.font_resources = self.font_resources.planning_scope();
+        renderer.diagnostics = self.diagnostics.planning_scope();
         renderer
     }
 
     pub fn local_measurement_scope(&self) -> Self {
         let mut renderer = self.clone();
-        renderer.local_measurement_issues = Default::default();
-        renderer.local_source = None;
+        renderer.diagnostics = self.diagnostics.measurement_scope();
         renderer
     }
 
     pub fn local_measurement_issues(&self, source: Range<usize>) -> Vec<SourceTextDiagnostic> {
-        self.local_measurement_issues
+        self.diagnostics
+            .measurements
             .borrow()
             .scoped()
             .into_iter()
@@ -312,11 +415,8 @@ impl<'a> TextRenderer<'a> {
             .collect()
     }
 
-    fn register_face(&self, face: &ResolvedFace) {
-        let mut faces = self.faces.borrow_mut();
-        if !faces.iter().any(|registered| registered.id == face.id) {
-            faces.push(face.clone());
-        }
+    pub fn font_book(&self) -> &'a FontBook {
+        self.font_resources.book
     }
 
     pub fn table_split_rects(
@@ -342,8 +442,13 @@ impl<'a> TextRenderer<'a> {
             _ => return None,
         };
         let request =
-            NativeFontNameRequest::new(family, Some(self.default_family), direction).ok()?;
-        let selection = self.fonts.resolve_native_name(&request).ok()?;
+            NativeFontNameRequest::new(family, Some(self.font_resources.default_family), direction)
+                .ok()?;
+        let selection = self
+            .font_resources
+            .book
+            .resolve_native_name(&request)
+            .ok()?;
         let native_style = selection.typeface_style();
         if native_style.weight() != 400 || native_style.italic() {
             return None;
@@ -351,7 +456,8 @@ impl<'a> TextRenderer<'a> {
         if selection.used_default_family()
             && let Some(family) = family.filter(|family| !family.is_empty())
             && self
-                .fonts
+                .font_resources
+                .book
                 .resolve(family, false, false)
                 .is_ok_and(|available| available.id != selection.face().id)
         {
@@ -390,7 +496,10 @@ impl<'a> TextRenderer<'a> {
         context: TextContext,
         direction: Direction,
     ) -> Option<(ResolvedFace, bool, bool)> {
-        let family = style.family.as_deref().unwrap_or(self.default_family);
+        let family = style
+            .family
+            .as_deref()
+            .unwrap_or(self.font_resources.default_family);
         if matches!(context, TextContext::Flow)
             && style.italic
             && let Some(face) = self.resolve_native(style.family.as_deref(), direction)
@@ -398,7 +507,11 @@ impl<'a> TextRenderer<'a> {
             return Some((face, false, true));
         }
         let bold = style.bold && matches!(context, TextContext::Placed);
-        match self.fonts.resolve_with_fallback(family, bold, style.italic) {
+        match self
+            .font_resources
+            .book
+            .resolve_with_fallback(family, bold, style.italic)
+        {
             Ok(selection) => {
                 if selection.used_fallback {
                     self.record(TextDiagnostic {
@@ -469,7 +582,7 @@ impl<'a> TextRenderer<'a> {
     }
 
     pub fn output_style_with_face(&self, style: &TextStyle, face: &ResolvedFace) -> TextStyle {
-        self.register_face(face);
+        self.font_resources.register_face(face);
         let mut output = style.clone();
         output.family = Some(face.svg_family().to_string());
         output
@@ -480,7 +593,7 @@ impl<'a> TextRenderer<'a> {
     }
 
     pub fn embed_fonts(&self, svg: &mut Scene) {
-        for face in self.faces.borrow().iter() {
+        for face in self.font_resources.embedded_faces.borrow().iter() {
             match EmbeddedFont::new(
                 &face.svg_family(),
                 face.weight.0,
@@ -499,11 +612,11 @@ impl<'a> TextRenderer<'a> {
     }
 
     pub fn diagnostics(&self) -> Vec<TextDiagnostic> {
-        self.diagnostics.borrow().public()
+        self.diagnostics.published_text.borrow().public()
     }
 
     pub fn scoped_diagnostics(&self) -> Vec<SourceTextDiagnostic> {
-        self.diagnostics.borrow().scoped()
+        self.diagnostics.published_text.borrow().scoped()
     }
 
     pub fn report_text_issues(&self, issues: &[SourceTextDiagnostic]) {
@@ -514,7 +627,7 @@ impl<'a> TextRenderer<'a> {
 
     pub fn object_diagnostics(&self) -> Vec<ObjectDiagnostic> {
         let mut diagnostics = Vec::new();
-        for issue in self.object_diagnostics.borrow().iter() {
+        for issue in self.diagnostics.published_objects.borrow().iter() {
             if !diagnostics.contains(&issue.diagnostic) {
                 diagnostics.push(issue.diagnostic);
             }
@@ -523,13 +636,13 @@ impl<'a> TextRenderer<'a> {
     }
 
     pub fn scoped_object_diagnostics(&self) -> Vec<SourceObjectDiagnostic> {
-        self.object_diagnostics.borrow().clone()
+        self.diagnostics.published_objects.borrow().clone()
     }
 
     pub fn report_object_issues(&self, issues: &[ObjectDiagnostic]) {
         for issue in issues {
             self.record_object_issue(SourceObjectDiagnostic {
-                owner: self.source_owner.clone(),
+                owner: self.diagnostics.owner.clone(),
                 diagnostic: *issue,
             });
         }
@@ -542,10 +655,7 @@ impl<'a> TextRenderer<'a> {
     }
 
     fn record_object_issue(&self, issue: SourceObjectDiagnostic) {
-        let mut diagnostics = self.object_diagnostics.borrow_mut();
-        if !diagnostics.contains(&issue) {
-            diagnostics.push(issue);
-        }
+        self.diagnostics.record_object(issue);
     }
 
     pub fn report_geometry_issues(&self, issues: &[TextDiagnostic]) {
@@ -557,8 +667,8 @@ impl<'a> TextRenderer<'a> {
     pub fn report_owned_geometry_issues(&self, issues: &[SourceTextDiagnostic]) {
         for issue in issues {
             let mut issue = issue.clone();
-            if self.source_owner_locked || issue.owner.is_none() {
-                issue.owner = self.source_owner.clone();
+            if self.diagnostics.owner_locked || issue.owner.is_none() {
+                issue.owner = self.diagnostics.owner.clone();
             }
             self.record_owned(issue);
         }
@@ -604,14 +714,16 @@ impl<'a> TextRenderer<'a> {
         }
         let style = styled.style_at(range.start, super::RenderTheme::for_canvas(false), None);
         self.record_owned(SourceTextDiagnostic {
-            owner: if self.source_owner_locked {
-                self.source_owner.clone()
+            owner: if self.diagnostics.owner_locked {
+                self.diagnostics.owner.clone()
             } else {
                 Some(SourceOwner::Text(range.clone()))
             },
             diagnostic: TextDiagnostic {
                 kind,
-                family: style.family.unwrap_or_else(|| self.default_family.into()),
+                family: style
+                    .family
+                    .unwrap_or_else(|| self.font_resources.default_family.into()),
                 codepoints,
             },
         });
@@ -671,24 +783,7 @@ impl<'a> TextRenderer<'a> {
             family: family.into(),
             codepoints: text.chars().map(u32::from).collect(),
         };
-        if let Some(source) = &self.local_source
-            && matches!(
-                diagnostic.kind,
-                TextDiagnosticKind::UnsupportedMeasurementStyle
-                    | TextDiagnosticKind::UnsupportedMeasurementFont
-                    | TextDiagnosticKind::UnsupportedMeasurementShaping
-                    | TextDiagnosticKind::UnsupportedMeasurementBudget
-                    | TextDiagnosticKind::UnsupportedTabMeasurement
-            )
-        {
-            self.local_measurement_issues
-                .borrow_mut()
-                .record(SourceTextDiagnostic {
-                    owner: Some(SourceOwner::Text(source.clone())),
-                    diagnostic: diagnostic.clone(),
-                });
-        }
-        self.record(diagnostic);
+        self.diagnostics.measurement_unsupported(diagnostic);
     }
 
     pub fn report_visible_line_issues(&self, styled: &StyledText<'_>, line: &WrappedLine) {
@@ -748,14 +843,11 @@ impl<'a> TextRenderer<'a> {
     }
 
     fn record(&self, diagnostic: TextDiagnostic) {
-        self.record_owned(SourceTextDiagnostic {
-            owner: self.source_owner.clone(),
-            diagnostic,
-        });
+        self.diagnostics.record(diagnostic);
     }
 
     fn record_owned(&self, issue: SourceTextDiagnostic) {
-        self.diagnostics.borrow_mut().record(issue);
+        self.diagnostics.record_owned(issue);
     }
 }
 
@@ -950,25 +1042,25 @@ mod tests {
         planner
             .resolve(&style("Roboto Mono"), TextContext::Placed)
             .unwrap();
-        assert!(planner.faces.borrow().is_empty());
+        assert!(planner.font_resources.embedded_faces.borrow().is_empty());
 
         let page = renderer(&fonts);
         let requested = style("Missing family");
         page.report_resolution(&requested, TextContext::Placed);
-        assert!(page.faces.borrow().is_empty());
+        assert!(page.font_resources.embedded_faces.borrow().is_empty());
         assert_eq!(
             page.diagnostics()[0].kind,
             TextDiagnosticKind::UnavailableFamily
         );
         page.output_style_with_face(&requested, &sans);
-        assert_eq!(page.faces.borrow().len(), 1);
-        assert_eq!(page.faces.borrow()[0].id, sans.id);
-        assert!(planner.faces.borrow().is_empty());
+        assert_eq!(page.font_resources.embedded_faces.borrow().len(), 1);
+        assert_eq!(page.font_resources.embedded_faces.borrow()[0].id, sans.id);
+        assert!(planner.font_resources.embedded_faces.borrow().is_empty());
 
         let generic = renderer(&fonts);
         generic.report_resolution(&style("sans-serif"), TextContext::Placed);
         assert!(generic.diagnostics().is_empty());
-        assert!(generic.faces.borrow().is_empty());
+        assert!(generic.font_resources.embedded_faces.borrow().is_empty());
     }
 
     #[test]
@@ -1190,17 +1282,23 @@ mod tests {
         let page_object_issues = page.scoped_object_diagnostics();
 
         let planner = page.planning_scope();
-        assert_eq!(planner.default_family, page.default_family);
+        assert_eq!(
+            planner.font_resources.default_family,
+            page.font_resources.default_family
+        );
         assert_eq!(planner.settings.scale, page.settings.scale);
         assert_eq!(
             planner.settings.font_size_delta,
             page.settings.font_size_delta
         );
         assert_eq!(planner.point_marker_target, page.point_marker_target);
-        assert_eq!(planner.source_owner, page.source_owner);
-        assert_eq!(planner.source_owner_locked, page.source_owner_locked);
-        assert!(std::ptr::eq(planner.fonts, page.fonts));
-        assert!(planner.faces.borrow().is_empty());
+        assert_eq!(planner.diagnostics.owner, page.diagnostics.owner);
+        assert_eq!(
+            planner.diagnostics.owner_locked,
+            page.diagnostics.owner_locked
+        );
+        assert!(std::ptr::eq(planner.font_book(), page.font_book()));
+        assert!(planner.font_resources.embedded_faces.borrow().is_empty());
         assert!(planner.scoped_diagnostics().is_empty());
         assert!(planner.scoped_object_diagnostics().is_empty());
 
@@ -1208,14 +1306,17 @@ mod tests {
         planner.output_style_with_face(&style("Roboto Mono"), &mono);
         planner.for_source(0..2).measurement_failed("sans-serif");
         planner.object_layout_unsupported(0);
-        assert_eq!(planner.faces.borrow().len(), 1);
-        assert_eq!(planner.faces.borrow()[0].id, mono.id);
+        assert_eq!(planner.font_resources.embedded_faces.borrow().len(), 1);
+        assert_eq!(
+            planner.font_resources.embedded_faces.borrow()[0].id,
+            mono.id
+        );
         assert_eq!(
             planner.scoped_diagnostics()[0].owner,
             Some(SourceOwner::Object(20..21))
         );
-        assert_eq!(page.faces.borrow().len(), 1);
-        assert_eq!(page.faces.borrow()[0].id, face.id);
+        assert_eq!(page.font_resources.embedded_faces.borrow().len(), 1);
+        assert_eq!(page.font_resources.embedded_faces.borrow()[0].id, face.id);
         assert_eq!(page.scoped_diagnostics(), page_text_issues);
         assert_eq!(page.scoped_object_diagnostics(), page_object_issues);
     }
@@ -1277,8 +1378,11 @@ mod tests {
         assert!(output.bold && output.italic && output.underline && output.strikethrough);
         assert_eq!(output.link_target, style.link_target);
         assert!(renderer.diagnostics().is_empty());
-        assert_eq!(renderer.faces.borrow().len(), 1);
-        assert_eq!(renderer.faces.borrow()[0].id, face.id);
+        assert_eq!(renderer.font_resources.embedded_faces.borrow().len(), 1);
+        assert_eq!(
+            renderer.font_resources.embedded_faces.borrow()[0].id,
+            face.id
+        );
     }
 
     #[test]

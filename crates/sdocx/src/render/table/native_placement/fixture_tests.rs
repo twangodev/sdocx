@@ -217,7 +217,7 @@ fn changed_stored_row_height_withdraws_cached_cell_clip_provenance() {
     let mut scene = crate::render::Scene::new(crate::render::Svg::new());
     #[cfg(feature = "pdf")]
     scene.retain_text();
-    crate::render::render_table(
+    crate::render::table::render_table(
         &mut scene,
         table,
         0,

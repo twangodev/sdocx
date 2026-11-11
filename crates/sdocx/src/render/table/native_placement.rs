@@ -408,19 +408,7 @@ impl NativeTableTextWriterWindow {
 }
 
 fn offset_rounded_rect(rect: [f32; 4], origin: [f32; 2]) -> Result<[f32; 4], NativeCellClipError> {
-    if !rect.into_iter().chain(origin).all(f32::is_finite) {
-        return Err(NativeCellClipError);
-    }
-    let shifted = std::array::from_fn::<_, 4, _>(|axis| rect[axis] + origin[axis % 2]);
-    if !shifted.into_iter().all(f32::is_finite) {
-        return Err(NativeCellClipError);
-    }
-    Ok([
-        shifted[0].floor(),
-        shifted[1].floor(),
-        shifted[2].ceil(),
-        shifted[3].ceil(),
-    ])
+    crate::render::native_translation::offset_rounded_rect(rect, origin).ok_or(NativeCellClipError)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

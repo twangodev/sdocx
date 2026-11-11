@@ -945,8 +945,13 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
             changed.push(placement.object.source.start);
             prepare(placement);
         });
-        // Preparation may have run past the eventual line, or failed. Keep its
-        // feedback available to the next selection without rebuilding text slots.
+        // Synchronize even when selection failed: preparation can run past the
+        // eventual line and its feedback belongs to subsequent selections too.
+        self.sync_prepared_objects(changed);
+        result
+    }
+
+    fn sync_prepared_objects(&mut self, changed: Vec<usize>) {
         if let Some(slots) = &mut self.native_mixed {
             for source in changed {
                 let item = self
@@ -957,7 +962,6 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
                 }
             }
         }
-        result
     }
 
     fn candidate_with_preparation(
@@ -994,11 +998,7 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
                 &mut prepare_once,
             ) {
                 let end = selection.end;
-                let end_item = self.items.partition_point(|item| item.source().end <= end);
-                if end_item > self.start_item
-                    && self.items[end_item - 1].source().end == end
-                    && self.emergency[end - self.range.start]
-                {
+                if let Some(end_item) = self.native_selection_end(end) {
                     return self
                         .make_line(
                             end_item,
@@ -1014,20 +1014,33 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
         if let Some(slots) = &self.native_slots {
             let start = self.items[self.start_item].source().start;
             let limit = self.next_mandatory(start);
-            if let Ok(Some(end)) = slots.select(self.styled, start..limit, width, self.full_width) {
-                let end_item = self.items.partition_point(|item| item.source().end <= end);
-                if end_item > self.start_item
-                    && self.items[end_item - 1].source().end == end
-                    && self.emergency[end - self.range.start]
-                {
-                    return self
-                        .make_line(end_item, unsupported_native_wrapping, false)
-                        .map(Some);
-                }
+            if let Ok(Some(end)) = slots.select(self.styled, start..limit, width, self.full_width)
+                && let Some(end_item) = self.native_selection_end(end)
+            {
+                return self
+                    .make_line(end_item, unsupported_native_wrapping, false)
+                    .map(Some);
             }
             self.report_native_wrap_policy(start..limit);
             unsupported_native_wrapping = true;
         }
+        self.select_fallback(width, unsupported_native_wrapping, &mut prepare_once)
+    }
+
+    fn native_selection_end(&self, end: usize) -> Option<usize> {
+        let end_item = self.items.partition_point(|item| item.source().end <= end);
+        (end_item > self.start_item
+            && self.items[end_item - 1].source().end == end
+            && self.emergency[end - self.range.start])
+            .then_some(end_item)
+    }
+
+    fn select_fallback(
+        &mut self,
+        width: f64,
+        unsupported_native_wrapping: bool,
+        mut prepare: impl FnMut(&mut PositionedObject),
+    ) -> Result<Option<WrappedLine>, MeasurementError> {
         let mut advance = 0.0;
         let mut last_allowed = None;
         let mut last_emergency = None;
@@ -1048,7 +1061,7 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
                 && (old_sum <= width || first_object)
             {
                 placement.x = finite_advance(advance + placement.object.left_margin)?;
-                prepare_once(placement);
+                prepare(placement);
             }
             advance = finite_advance(advance + self.items[index].advance())?;
             let end = self.items[index].source().end - self.range.start;

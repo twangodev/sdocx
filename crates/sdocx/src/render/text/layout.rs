@@ -696,6 +696,57 @@ impl TextLayout {
         }
     }
 
+    /// Materialize cell alignment before native f32 translation. Writes remain
+    /// sequential: failure preserves the same partially translated layout.
+    pub fn translate_native_cell(&mut self, origin: [f64; 2]) -> Result<(), ObjectDiagnosticKind> {
+        let mut preserves_native_frame = self.native_frame.is_some();
+        for line in &mut self.lines {
+            if !line.line.placements.is_empty() {
+                line.x +=
+                    super::line_alignment_offset(line.line.advance, line.width, line.alignment);
+                line.alignment = None;
+            }
+            let expected = [
+                line.x + origin[0],
+                line.baseline + origin[1],
+                line.top + origin[1],
+                line.background_top + origin[1],
+                line.bottom + origin[1],
+                line.post_cursor + origin[1],
+            ];
+            line.x = native_translation_add(line.x, origin[0])?;
+            line.baseline = native_translation_add(line.baseline, origin[1])?;
+            line.top = native_translation_add(line.top, origin[1])?;
+            line.background_top = native_translation_add(line.background_top, origin[1])?;
+            line.bottom = native_translation_add(line.bottom, origin[1])?;
+            line.post_cursor = native_translation_add(line.post_cursor, origin[1])?;
+            preserves_native_frame &= self.native_frame.as_mut().is_some_and(|frame| {
+                frame.retain_world_projection(
+                    expected,
+                    [
+                        line.x,
+                        line.baseline,
+                        line.top,
+                        line.background_top,
+                        line.bottom,
+                        line.post_cursor,
+                    ],
+                )
+            });
+            if let Some(marker) = &mut line.marker {
+                marker.x = native_translation_add(marker.x, origin[0])?;
+                marker.center_y = native_translation_add(marker.center_y, origin[1])?;
+            }
+        }
+        if preserves_native_frame && let Some(frame) = &mut self.native_frame {
+            frame.translation[0] += origin[0];
+            frame.translation[1] += origin[1];
+        } else {
+            self.native_frame = None;
+        }
+        Ok(())
+    }
+
     fn apply_gravity(&mut self, gravity: Option<u8>, outer_height: f64, content_height: f64) {
         if matches!(gravity, Some(1 | 2)) {
             self.native_frame = None;
@@ -708,6 +759,15 @@ impl TextLayout {
         };
         self.translate(0.0, offset);
     }
+}
+
+fn native_translation_add(left: f64, right: f64) -> Result<f64, ObjectDiagnosticKind> {
+    let left =
+        super::finite_native_geometry(left).ok_or(ObjectDiagnosticKind::InvalidBounds)? as f32;
+    let right =
+        super::finite_native_geometry(right).ok_or(ObjectDiagnosticKind::InvalidBounds)? as f32;
+    super::finite_native_geometry(f64::from(left + right))
+        .ok_or(ObjectDiagnosticKind::InvalidBounds)
 }
 
 struct ParagraphLines<'a, 'text, 'fonts> {
@@ -1050,6 +1110,296 @@ fn layout_text_with_context(
     .expect("constrained text layout does not require native automatic measurement")
 }
 
+struct HorizontalLinePlacement {
+    x: f64,
+    alignment: Option<ParagraphAlignment>,
+}
+
+struct SettledLine {
+    line: WrappedLine,
+    top: LineCandidate,
+}
+
+/// The paragraph inputs used both by speculative object preparation and by
+/// obstacle settlement. Cursor advancement and source commit stay with emission.
+struct ParagraphLinePlacement<'a, 'text, 'fonts, 'frame> {
+    styled: &'a StyledText<'text>,
+    frame: &'a TextFrame<'frame>,
+    layout: &'a ParagraphLayout,
+    paragraph: &'a Paragraph,
+    renderer: &'a TextRenderer<'fonts>,
+    theme: RenderTheme,
+    context: LayoutContext,
+    paragraph_number: usize,
+    content_width: f64,
+}
+
+impl ParagraphLinePlacement<'_, '_, '_, '_> {
+    fn prepare_object_at(
+        &self,
+        placement: &mut super::wrapping::PositionedObject,
+        raw_top: f64,
+        cursor: &TextCursor,
+        line_number: usize,
+    ) {
+        let margin_top = self.frame.adjusted_top_margin(
+            raw_top,
+            cursor.enabled_before,
+            placement.object.top_margin,
+            cursor.pending_bottom,
+        );
+        let candidate = LineCandidate {
+            raw_top,
+            margin_top,
+        };
+        let style = self.styled.style_at(
+            placement.object.source.start,
+            self.theme,
+            self.layout.predefined_style,
+        );
+        let continuation = (matches!(self.context, LayoutContext::Flow)
+            && self.paragraph_number == 0
+            && line_number == 0
+            && !placement.object.inline
+            && placement.object.source.start == self.paragraph.content.start)
+            .then(|| saved_continuation_top(self.styled, &placement.object))
+            .flatten();
+        let object_top = continuation.unwrap_or_else(|| {
+            candidate.object_top(
+                &placement.object,
+                style.font_size,
+                self.layout.line_spacing,
+                self.renderer.settings,
+            )
+        });
+        prepare_object(
+            placement,
+            self.styled,
+            object_top,
+            self.content_width,
+            self.theme,
+            self.renderer,
+        );
+    }
+
+    fn finalize_horizontal(
+        &self,
+        line: &mut WrappedLine,
+        native_cell_policy: &NativeCellLayoutPolicy,
+        width: f64,
+        x: f64,
+        content_left: f64,
+        marker_width: f64,
+    ) -> HorizontalLinePlacement {
+        if !line.objects.is_empty() && line.position_native(self.styled).is_err() {
+            let style =
+                self.styled
+                    .style_at(line.source.start, self.theme, self.layout.predefined_style);
+            self.renderer
+                .invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+        }
+        if self.layout.alignment == Some(ParagraphAlignment::Both)
+            && line.justify(self.styled, width).is_err()
+        {
+            let style =
+                self.styled
+                    .style_at(line.source.start, self.theme, self.layout.predefined_style);
+            self.renderer
+                .invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+        }
+        let leading_empty_indent = self.styled.settings.paper_indent_placement
+            && self.paragraph_number == 0
+            && self.paragraph.content.is_empty()
+            && self.layout.indent_level == 1;
+        let mut line_x = if leading_empty_indent {
+            content_left
+        } else {
+            x
+        };
+        let mut line_alignment = self.layout.alignment;
+        if native_cell_policy.supports_line(
+            self.layout,
+            self.styled.settings.paper_indent_placement,
+            marker_width,
+        ) {
+            match line.place_native_cell(self.styled, x, width, self.layout.alignment) {
+                Ok(Some(origin)) => {
+                    if !leading_empty_indent {
+                        line_x = origin;
+                    }
+                    line_alignment = None;
+                }
+                Ok(None) => {}
+                Err(_) => {
+                    let style = self.styled.style_at(
+                        line.source.start,
+                        self.theme,
+                        self.layout.predefined_style,
+                    );
+                    self.renderer
+                        .invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+                }
+            }
+        }
+        HorizontalLinePlacement {
+            x: line_x,
+            alignment: line_alignment,
+        }
+    }
+
+    fn settle(
+        &self,
+        paragraph_lines: &mut ParagraphLines<'_, '_, '_>,
+        cursor: &TextCursor,
+        width: f64,
+        line_number: usize,
+    ) -> Option<SettledLine> {
+        let mut raw_top = self.frame.bbox.y_min + cursor.position;
+        for attempt in 0..=self.frame.exclusions.len() {
+            let line = paragraph_lines.candidate(width, |placement| {
+                self.prepare_object_at(placement, raw_top, cursor, line_number);
+            })?;
+            let mut candidate = cursor.candidate(&line, self.frame, raw_top);
+            let metrics = LineMetrics::for_line(
+                &line,
+                self.layout.line_spacing,
+                self.renderer.settings,
+                cursor.height_limit,
+            );
+            if self
+                .context
+                .continuation_top(self.paragraph_number, line_number, &line, self.styled)
+                .is_some()
+            {
+                // Saved continuations keep their prepared line; only its
+                // candidate position advances through the obstacle bands.
+                for _ in 0..self.frame.exclusions.len() {
+                    let Some(band) =
+                        self.frame
+                            .overlapping_band(&line, candidate.top(), metrics.advance)
+                    else {
+                        break;
+                    };
+                    candidate = cursor.candidate(&line, self.frame, band.bottom);
+                }
+            } else if let Some(band) =
+                self.frame
+                    .overlapping_band(&line, candidate.top(), metrics.advance)
+                && attempt < self.frame.exclusions.len()
+            {
+                raw_top = band.bottom;
+                paragraph_lines.restore(line);
+                continue;
+            }
+            return Some(SettledLine {
+                line,
+                top: candidate,
+            });
+        }
+        None
+    }
+}
+
+/// Native cell measurement and painting share frame eligibility, but automatic
+/// measurement has stricter paragraph restrictions than constrained placement.
+struct NativeCellLayoutPolicy {
+    enabled: bool,
+    automatic: bool,
+    origin_x: bool,
+    origin_y: bool,
+    obstacles_supported: bool,
+}
+
+impl NativeCellLayoutPolicy {
+    fn new(
+        frame: &TextFrame<'_>,
+        renderer: &TextRenderer<'_>,
+        measurement: Option<NativeCellMeasurement>,
+    ) -> Self {
+        Self {
+            enabled: measurement.is_some(),
+            automatic: matches!(
+                measurement.map(|measurement| measurement.width),
+                Some(NativeCellMeasurementWidth::Automatic)
+            ),
+            origin_x: frame.bbox.x_min == 0.0,
+            origin_y: frame.bbox.y_min == 0.0,
+            obstacles_supported: frame.exclusions.is_empty()
+                || renderer
+                    .native_cell_page_obstacles
+                    .is_some_and(|page| page.supports_frame(frame)),
+        }
+    }
+
+    fn marker_profile(&self, context: LayoutContext) -> PointMarkerSizingProfile {
+        match (context, self.enabled) {
+            (LayoutContext::Flow, false) => PointMarkerSizingProfile::BodyLayout,
+            (_, true) => PointMarkerSizingProfile::CellManager,
+            _ => PointMarkerSizingProfile::Legacy,
+        }
+    }
+
+    fn paragraph_width(
+        &self,
+        styled: &StyledText<'_>,
+        paragraph: &Paragraph,
+        layout: &ParagraphLayout,
+        width: f64,
+        outer_width: f64,
+        margins: [f64; 4],
+    ) -> Result<ParagraphMeasurementWidth, ObjectDiagnosticKind> {
+        if self.automatic
+            && !styled.index.is_empty()
+            && (paragraph.content.is_empty()
+                || layout
+                    .bullet
+                    .is_some_and(|bullet| !matches!(bullet.kind, BulletType::None))
+                || layout.indent_level != 0)
+        {
+            return Err(ObjectDiagnosticKind::UnsupportedContent);
+        }
+        Ok(if self.automatic {
+            ParagraphMeasurementWidth::Automatic {
+                insets: [margins[0] as f32, margins[2] as f32],
+            }
+        } else {
+            ParagraphMeasurementWidth::ConstrainedWithObjects {
+                wrap_width: width,
+                object_width: NativeObjectMeasurementWidth {
+                    layout_width: outer_width as f32,
+                    margins: [margins[0] as f32, margins[2] as f32],
+                },
+            }
+        })
+    }
+
+    fn supports_placement(&self) -> bool {
+        self.enabled && self.origin_x && self.obstacles_supported
+    }
+
+    fn supports_line(
+        &self,
+        layout: &ParagraphLayout,
+        paper_indent: bool,
+        marker_width: f64,
+    ) -> bool {
+        self.supports_placement()
+            && (layout.indent_level == 0 || (paper_indent && layout.indent_level == 1))
+            && marker_width == 0.0
+    }
+
+    fn supports_frame(&self, paragraphs: &[ParagraphLayout], lines: &[TextLine]) -> bool {
+        self.supports_placement()
+            && self.origin_y
+            && paragraphs.iter().all(|paragraph| {
+                paragraph
+                    .bullet
+                    .is_none_or(|bullet| bullet.kind == BulletType::None && !bullet.checked)
+            })
+            && !lines_have_unsupported_native_metadata(lines)
+    }
+}
+
 fn try_layout_text_with_context(
     styled: &StyledText<'_>,
     frame: TextFrame<'_>,
@@ -1061,15 +1411,8 @@ fn try_layout_text_with_context(
 ) -> Result<TextLayout, ObjectDiagnosticKind> {
     let scoped_renderer = renderer.local_measurement_scope();
     let renderer = &scoped_renderer;
-    let marker_sizing_profile = match (context, native_cell_measurement.is_some()) {
-        (LayoutContext::Flow, false) => PointMarkerSizingProfile::BodyLayout,
-        (_, true) => PointMarkerSizingProfile::CellManager,
-        _ => PointMarkerSizingProfile::Legacy,
-    };
-    let native_cell_obstacles_supported = frame.exclusions.is_empty()
-        || renderer
-            .native_cell_page_obstacles
-            .is_some_and(|page| page.supports_frame(&frame));
+    let native_cell_policy = NativeCellLayoutPolicy::new(&frame, renderer, native_cell_measurement);
+    let marker_sizing_profile = native_cell_policy.marker_profile(context);
     let text_box = styled.text_box;
     let settings = renderer.settings;
     renderer.report_object_issues(styled.object_issues());
@@ -1149,33 +1492,14 @@ fn try_layout_text_with_context(
         let marker_width = marker.as_ref().map_or(0.0, PreparedMarker::reserved_width);
         let x = marker_x + marker_width;
         let width = (content_width - left_indent - right_indent - marker_width).max(0.0);
-        let automatic = matches!(
-            native_cell_measurement.map(|measurement| measurement.width),
-            Some(NativeCellMeasurementWidth::Automatic)
-        );
-        if automatic
-            && !styled.index.is_empty()
-            && (paragraph.content.is_empty()
-                || layout
-                    .bullet
-                    .is_some_and(|bullet| !matches!(bullet.kind, crate::BulletType::None))
-                || layout.indent_level != 0)
-        {
-            return Err(ObjectDiagnosticKind::UnsupportedContent);
-        }
-        let measurement_width = if automatic {
-            ParagraphMeasurementWidth::Automatic {
-                insets: [margins[0] as f32, margins[2] as f32],
-            }
-        } else {
-            ParagraphMeasurementWidth::ConstrainedWithObjects {
-                wrap_width: width,
-                object_width: NativeObjectMeasurementWidth {
-                    layout_width: outer_width as f32,
-                    margins: [margins[0] as f32, margins[2] as f32],
-                },
-            }
-        };
+        let measurement_width = native_cell_policy.paragraph_width(
+            styled,
+            paragraph,
+            layout,
+            width,
+            outer_width,
+            margins,
+        )?;
         let mut paragraph_lines = ParagraphLines::new(
             styled,
             paragraph.content.clone(),
@@ -1185,7 +1509,7 @@ fn try_layout_text_with_context(
             renderer,
             context.object_measurement(),
         );
-        let width = if automatic && !paragraph.content.is_empty() {
+        let width = if native_cell_policy.automatic && !paragraph.content.is_empty() {
             paragraph_lines
                 .measurement_width()
                 .ok_or(ObjectDiagnosticKind::UnsupportedContent)?
@@ -1221,132 +1545,40 @@ fn try_layout_text_with_context(
         } else {
             0.0
         });
+        let line_placement = ParagraphLinePlacement {
+            styled,
+            frame: &frame,
+            layout,
+            paragraph,
+            renderer,
+            theme,
+            context,
+            paragraph_number,
+            content_width,
+        };
         let mut line_number = 0;
         loop {
-            let mut raw_top = frame.bbox.y_min + cursor.position;
-            let mut settled = None;
-            for attempt in 0..=frame.exclusions.len() {
-                let line = paragraph_lines.candidate(width, |placement| {
-                    let margin_top = frame.adjusted_top_margin(
-                        raw_top,
-                        cursor.enabled_before,
-                        placement.object.top_margin,
-                        cursor.pending_bottom,
-                    );
-                    let candidate = LineCandidate {
-                        raw_top,
-                        margin_top,
-                    };
-                    let style = styled.style_at(
-                        placement.object.source.start,
-                        theme,
-                        layout.predefined_style,
-                    );
-                    let continuation = (matches!(context, LayoutContext::Flow)
-                        && paragraph_number == 0
-                        && line_number == 0
-                        && !placement.object.inline
-                        && placement.object.source.start == paragraph.content.start)
-                        .then(|| saved_continuation_top(styled, &placement.object))
-                        .flatten();
-                    let object_top = continuation.unwrap_or_else(|| {
-                        candidate.object_top(
-                            &placement.object,
-                            style.font_size,
-                            layout.line_spacing,
-                            settings,
-                        )
-                    });
-                    prepare_object(
-                        placement,
-                        styled,
-                        object_top,
-                        content_width,
-                        theme,
-                        renderer,
-                    );
-                });
-                let Some(line) = line else {
-                    break;
-                };
-                let mut candidate = cursor.candidate(&line, &frame, raw_top);
-                let metrics = LineMetrics::for_line(
-                    &line,
-                    layout.line_spacing,
-                    settings,
-                    cursor.height_limit,
-                );
-                if context
-                    .continuation_top(paragraph_number, line_number, &line, styled)
-                    .is_some()
-                {
-                    for _ in 0..frame.exclusions.len() {
-                        let Some(band) =
-                            frame.overlapping_band(&line, candidate.top(), metrics.advance)
-                        else {
-                            break;
-                        };
-                        candidate = cursor.candidate(&line, &frame, band.bottom);
-                    }
-                } else if let Some(band) =
-                    frame.overlapping_band(&line, candidate.top(), metrics.advance)
-                    && attempt < frame.exclusions.len()
-                {
-                    raw_top = band.bottom;
-                    paragraph_lines.restore(line);
-                    continue;
-                }
-                settled = Some((line, candidate));
-                break;
-            }
-            let Some((mut line, settled_top)) = settled else {
+            let Some(SettledLine {
+                mut line,
+                top: settled_top,
+            }) = line_placement.settle(&mut paragraph_lines, &cursor, width, line_number)
+            else {
                 break;
             };
             paragraph_lines.commit(line.source.end);
             let continuation_top =
                 context.continuation_top(paragraph_number, line_number, &line, styled);
-            if !line.objects.is_empty() && line.position_native(styled).is_err() {
-                let style = styled.style_at(line.source.start, theme, layout.predefined_style);
-                renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
-            }
-            if layout.alignment == Some(ParagraphAlignment::Both)
-                && line.justify(styled, width).is_err()
-            {
-                let style = styled.style_at(line.source.start, theme, layout.predefined_style);
-                renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
-            }
-            let leading_empty_indent = styled.settings.paper_indent_placement
-                && paragraph_number == 0
-                && paragraph.content.is_empty()
-                && layout.indent_level == 1;
-            let mut line_x = if leading_empty_indent {
-                content_left
-            } else {
-                x
-            };
-            let mut line_alignment = layout.alignment;
-            if native_cell_measurement.is_some()
-                && frame.bbox.x_min == 0.0
-                && native_cell_obstacles_supported
-                && (layout.indent_level == 0
-                    || (styled.settings.paper_indent_placement && layout.indent_level == 1))
-                && marker_width == 0.0
-            {
-                match line.place_native_cell(styled, x, width, layout.alignment) {
-                    Ok(Some(origin)) => {
-                        if !leading_empty_indent {
-                            line_x = origin;
-                        }
-                        line_alignment = None;
-                    }
-                    Ok(None) => {}
-                    Err(_) => {
-                        let style =
-                            styled.style_at(line.source.start, theme, layout.predefined_style);
-                        renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
-                    }
-                }
-            }
+            let HorizontalLinePlacement {
+                x: line_x,
+                alignment: line_alignment,
+            } = line_placement.finalize_horizontal(
+                &mut line,
+                &native_cell_policy,
+                width,
+                x,
+                content_left,
+                marker_width,
+            );
             renderer.report_line_geometry(&line, layout.line_spacing);
             let mut placement =
                 cursor.place_at(&line, layout.line_spacing, &frame, settings, settled_top);
@@ -1412,28 +1644,20 @@ fn try_layout_text_with_context(
         native_object_bound::native_object_entry_bounds(styled, &frame, &lines, renderer, context);
     let mut layout = TextLayout {
         native_object_entry,
-        native_frame: (native_cell_measurement.is_some()
-            && frame.bbox.x_min == 0.0
-            && frame.bbox.y_min == 0.0
-            && native_cell_obstacles_supported
-            && paragraph_layouts.iter().all(|paragraph| {
-                paragraph
-                    .bullet
-                    .is_none_or(|bullet| bullet.kind == BulletType::None && !bullet.checked)
-            })
-            && !lines_have_unsupported_native_metadata(&lines))
-        .then_some(NativePaintFrame {
-            translation: [0.0; 2],
-            baseline_projection: if captured_cell_default_metrics(
-                &lines,
-                &paragraph_layouts,
-                margins,
-            ) {
-                NativeGlyphBaselineProjection::ExactBands
-            } else {
-                NativeGlyphBaselineProjection::ExactRequired
-            },
-        }),
+        native_frame: native_cell_policy
+            .supports_frame(&paragraph_layouts, &lines)
+            .then_some(NativePaintFrame {
+                translation: [0.0; 2],
+                baseline_projection: if captured_cell_default_metrics(
+                    &lines,
+                    &paragraph_layouts,
+                    margins,
+                ) {
+                    NativeGlyphBaselineProjection::ExactBands
+                } else {
+                    NativeGlyphBaselineProjection::ExactRequired
+                },
+            }),
         lines,
         content_height,
     };

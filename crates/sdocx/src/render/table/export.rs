@@ -19,7 +19,7 @@ impl TableExportPage {
             i32::try_from(page.width).ok()?,
             i32::try_from(page.height).ok()?,
         ];
-        let margins = if metadata.page_mode == Some(0) {
+        let margins = if metadata.page_mode() == Some(crate::PageMode::PageList) {
             let stored = metadata
                 .note_text
                 .as_ref()
@@ -75,10 +75,7 @@ impl TableExportPage {
     }
 }
 
-pub(in crate::render) fn artwork_bounds(
-    measured: BoundingBox,
-    page: Option<TableExportPage>,
-) -> BoundingBox {
+pub(super) fn artwork_bounds(measured: BoundingBox, page: Option<TableExportPage>) -> BoundingBox {
     page.map_or_else(
         || {
             expanded_bounds(
@@ -247,43 +244,5 @@ mod tests {
         }
         [page.width, page.height] = [i32::MAX as u32; 2];
         assert!(TableExportPage::for_page(&page, &metadata).is_some());
-    }
-
-    #[test]
-    fn artwork_visibility_includes_border_ink_beyond_the_cell_frame() {
-        use super::super::{CellFill, CellPosition, TableBorderGeometry, TableGrid, tests::grid};
-        use crate::render::{RenderTheme, TableCellPaint, viewport::Viewport};
-
-        let table = grid(&[100.0], &[100.0]);
-        let grid = TableGrid::new(&table).unwrap();
-        let borders = TableBorderGeometry::new(&table, &grid).unwrap();
-        let cell = &table.rows[0].cells[0];
-        let mut paint = TableCellPaint {
-            cell,
-            fill: CellFill::resolve(&table.style, 0, cell, RenderTheme::for_canvas(false)),
-            frame: bounds([0.0, -100.0, 100.0, -0.25]),
-            artwork_frame: bounds([0.0, -100.0, 100.0, -0.25]),
-            layout: None,
-            position: CellPosition { row: 0, column: 0 },
-            gap: false,
-            native_text_placement: Ok(
-                super::super::native_placement::NativeCellTextPlacement::Unknown,
-            ),
-        };
-        let viewport = Viewport::new(bounds([0.0, 0.0, 100.0, 100.0]));
-        assert!(!viewport.intersects(paint.frame));
-        assert!(viewport.intersects(paint.artwork_bounds(
-            Some(&borders),
-            0.0,
-            true,
-            super::super::TableArtworkGeometry::Cached
-        )));
-        paint.artwork_frame.y_max = -0.5;
-        assert!(!viewport.intersects(paint.artwork_bounds(
-            Some(&borders),
-            0.0,
-            true,
-            super::super::TableArtworkGeometry::Cached
-        )));
     }
 }

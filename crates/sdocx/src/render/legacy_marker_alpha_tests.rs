@@ -167,6 +167,10 @@ fn legacy_marker_argb_alpha_survives_svg_and_pdf() {
             },
         };
         let mut scene = Scene::new(Svg::new().width(1920).height(1080));
+        let options = RenderOptions::default();
+        let budgets = RenderBudgets::new(&options);
+        budgets.simplebrush_remaining_stamps.set(usize::MAX);
+        budgets.montblanc_remaining_patches.set(usize::MAX);
         render_stroke(
             &mut scene,
             &stroke,
@@ -175,37 +179,8 @@ fn legacy_marker_argb_alpha_survives_svg_and_pdf() {
             &mut crate::ink::calligraphy::CalligraphySession::new(),
             true,
             [1920, 1080],
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            &std::cell::Cell::new(65_536),
-            None,
-            false,
-            false,
-            None,
-            None,
-            None,
-            false,
-            None,
-            false,
-            None,
-            None,
-            &std::cell::Cell::new(32768),
-            &std::cell::Cell::new(512),
-            &std::cell::Cell::new(8192),
-            &std::cell::Cell::new(usize::MAX),
-            &std::cell::Cell::new(usize::MAX),
+            &BrushPolicy::new(&options),
+            &budgets,
             None,
         );
         let svg = scene.finish();

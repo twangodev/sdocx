@@ -447,7 +447,7 @@ fn uncertified_fit_and_target_controls_keep_conservative_selectable_cell_text() 
         )
         .unwrap()
         .unwrap();
-        assert!(!has_native_table_clipping(&drawing.rows), "{control}");
+        assert!(!drawing.has_native_text_clipping(), "{control}");
         assert!(
             drawing.rows.iter().flat_map(|row| &row.cells).all(|cell| {
                 cell.native_text_placement().unwrap().provenance()
@@ -456,7 +456,7 @@ fn uncertified_fit_and_target_controls_keep_conservative_selectable_cell_text() 
             "{control}"
         );
         let mut scene = Scene::new(Svg::new());
-        render_table(
+        table::render_table(
             &mut scene,
             &source,
             0,

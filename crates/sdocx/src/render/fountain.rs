@@ -2856,6 +2856,8 @@ mod tests {
         let render_stroke = |stroke: &Stroke, expect_filter: bool| {
             let mut svg = Scene::new(Svg::new().width(64).height(64));
             let mut calligraphy_session = crate::ink::calligraphy::CalligraphySession::new();
+            let options = crate::render::RenderOptions::default();
+            let budgets = crate::render::RenderBudgets::new(&options);
             crate::render::render_stroke(
                 &mut svg,
                 stroke,
@@ -2864,37 +2866,8 @@ mod tests {
                 &mut calligraphy_session,
                 true,
                 [64, 64],
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                &std::cell::Cell::new(65_536),
-                None,
-                false,
-                false,
-                None,
-                None,
-                None,
-                false,
-                None,
-                false,
-                None,
-                None,
-                &std::cell::Cell::new(32768),
-                &std::cell::Cell::new(512),
-                &std::cell::Cell::new(8192),
-                &std::cell::Cell::new(32_768),
-                &std::cell::Cell::new(32_768),
+                &crate::render::BrushPolicy::new(&options),
+                &budgets,
                 None,
             );
             let svg = svg.finish();

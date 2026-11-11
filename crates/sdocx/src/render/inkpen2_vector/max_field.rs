@@ -164,7 +164,7 @@ impl MaxAtlas {
         let mut filter =
             SvgFilter::new(&filter_id).region(region.x, region.y, region.width, region.height);
         let mut maximum = None;
-        for (cell, record) in self.cells.iter().zip(&ink.records) {
+        for (cell, [_, _, _, _, _, coverage, ..]) in self.cells.iter().zip(&ink.records) {
             let raw = svg.definition::<FilterResult>();
             let field = svg.definition::<FilterResult>();
             let region = cell.crop;
@@ -174,7 +174,7 @@ impl MaxAtlas {
                     .result(&raw)
                     .region(region.x, region.y, region.width, region.height),
             );
-            let (input, matrix) = if exact_coverage_byte(record[5]).is_some() {
+            let (input, matrix) = if exact_coverage_byte(*coverage).is_some() {
                 (FilterInput::Result(raw), IDENTITY)
             } else {
                 // resvg rounds gradient stops to bytes but truncates color-
@@ -182,7 +182,7 @@ impl MaxAtlas {
                 // rounded coverage explicitly, then copy red to gray. Exact
                 // byte peaks (including the common coverage=1) need no map.
                 let table = std::array::from_fn(|value| {
-                    (f64::from(record[5]) * value as f64).round() as u8
+                    (f64::from(*coverage) * value as f64).round() as u8
                 });
                 let mapped = svg.definition::<FilterResult>();
                 filter = filter.add(

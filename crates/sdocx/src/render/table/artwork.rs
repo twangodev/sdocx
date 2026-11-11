@@ -3,7 +3,7 @@ use crate::{BoundingBox, ObjectSpanLayoutConstraint};
 use super::{BorderPath, CellPosition, ObjectDiagnosticKind};
 
 #[derive(Clone, Copy)]
-pub(in crate::render) enum TableArtworkGeometry {
+pub(super) enum TableArtworkGeometry {
     Unprepared,
     Saved {
         source_origin: [f32; 2],
@@ -110,7 +110,7 @@ fn offset_frame(frame: BoundingBox, origin: [f64; 2]) -> Result<BoundingBox, Obj
     Ok(rect(coordinates))
 }
 
-pub(in crate::render) struct CellBackgroundGeometry {
+pub(super) struct CellBackgroundGeometry {
     pub bounds: BoundingBox,
     pub radii: Option<[f32; 2]>,
     pub square_corners: [Option<BoundingBox>; 4],
@@ -163,7 +163,7 @@ fn native_rect(rect: BoundingBox) -> [f32; 4] {
     [rect.x_min, rect.y_min, rect.x_max, rect.y_max].map(|coordinate| coordinate as f32)
 }
 
-pub(in crate::render) fn finite_artwork_rect(rect: BoundingBox) -> bool {
+pub(super) fn finite_artwork_rect(rect: BoundingBox) -> bool {
     native_rect(rect).into_iter().all(f32::is_finite)
 }
 

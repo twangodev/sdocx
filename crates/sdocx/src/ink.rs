@@ -571,6 +571,145 @@ pub struct PreparedStroke<'a> {
     pub support: InkSupport,
 }
 
+/// Owned alternatives used when an admitted page profile replaces compatibility geometry.
+/// Presentation fields remain the caller's responsibility.
+pub(crate) enum PreparedGeometry {
+    SampledDisks {
+        points: Vec<crate::Point>,
+        sample_ends: Vec<usize>,
+        radii: Vec<f64>,
+    },
+    InkPen2V9(PreparedInkPen2V9),
+    SampledPolyline {
+        points: Vec<crate::Point>,
+        sample_ends: Vec<usize>,
+    },
+}
+
+/// A complete ordered disk stream whose batches can be sliced without truncation.
+pub(crate) struct OrderedDiskStamps<'a> {
+    points: &'a [crate::Point],
+    radii: &'a [f64],
+    replay: &'a OrderedDiskReplay,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct InvalidOrderedDiskReplay;
+
+pub(crate) struct OrderedDiskBatch<'a> {
+    pub(crate) source_sample: usize,
+    pub(crate) points: &'a [crate::Point],
+    pub(crate) radii: &'a [f64],
+}
+
+impl OrderedDiskStamps<'_> {
+    /// Source-event number and equal-length point/radius slices, including empty events.
+    pub(crate) fn batches(&self) -> impl Iterator<Item = OrderedDiskBatch<'_>> {
+        let mut start = 0;
+        self.replay
+            .redraw_ends
+            .iter()
+            .enumerate()
+            .map(move |(redraw, &end)| {
+                let batch = OrderedDiskBatch {
+                    source_sample: redraw + 2,
+                    points: &self.points[start..end],
+                    radii: &self.radii[start..end],
+                };
+                start = end;
+                batch
+            })
+            .chain(std::iter::once(OrderedDiskBatch {
+                source_sample: self.replay.terminal_part,
+                points: &self.points[self.replay.terminal_start..],
+                radii: &self.radii[self.replay.terminal_start..],
+            }))
+    }
+}
+
+impl PreparedStroke<'_> {
+    /// Absence of either ordered metadata or radii retains ordinary geometry dispatch.
+    /// Malformed complete metadata must instead suppress the circular-stamp fallback.
+    pub(crate) fn ordered_disk_stamps(
+        &self,
+    ) -> Result<Option<OrderedDiskStamps<'_>>, InvalidOrderedDiskReplay> {
+        let (Some(replay), Some(radii)) = (&self.ordered_disk_replay, &self.dot_radii) else {
+            return Ok(None);
+        };
+        let sample_count = replay.terminal_part;
+        let valid = sample_count >= 2
+            && radii.len() == self.points.len()
+            && replay.redraw_ends.len() == sample_count.saturating_sub(2)
+            && replay.terminal_start <= self.points.len()
+            && replay
+                .redraw_ends
+                .iter()
+                .all(|&end| end <= replay.terminal_start)
+            && replay.redraw_ends.windows(2).all(|pair| pair[0] <= pair[1])
+            && replay.redraw_ends.last().copied().unwrap_or(0) == replay.terminal_start
+            && self
+                .points
+                .iter()
+                .all(|point| point.x.is_finite() && point.y.is_finite())
+            && radii
+                .iter()
+                .all(|radius| radius.is_finite() && *radius >= 0.0);
+        if !valid {
+            return Err(InvalidOrderedDiskReplay);
+        }
+        Ok(Some(OrderedDiskStamps {
+            points: &self.points,
+            radii,
+            replay,
+        }))
+    }
+
+    /// Atomically replace geometry so no channels from the previous native profile survive.
+    pub(crate) fn replace_geometry(&mut self, geometry: PreparedGeometry) {
+        self.sample_ends = None;
+        self.dot_radii = None;
+        self.ordered_disk_replay = None;
+        self.inkpen2_v9 = None;
+        self.fountain_v17_rgb = None;
+        self.fountain_output_scale = None;
+        self.dot_directions = None;
+        self.rect_stamp = None;
+        self.coverage_mesh = None;
+        self.segment_widths = None;
+        match geometry {
+            PreparedGeometry::SampledDisks {
+                points,
+                sample_ends,
+                radii,
+            } => {
+                self.points = Cow::Owned(points);
+                self.sample_ends = Some(sample_ends);
+                self.dot_radii = Some(radii);
+            }
+            PreparedGeometry::InkPen2V9(ink) => {
+                self.points = Cow::Owned(
+                    ink.records
+                        .iter()
+                        .map(|[center_x, center_y, ..]| crate::Point {
+                            x: f64::from(*center_x),
+                            y: f64::from(*center_y),
+                        })
+                        .collect(),
+                );
+                self.sample_ends = Some(ink.sample_ends.clone());
+                self.inkpen2_v9 = Some(ink);
+            }
+            PreparedGeometry::SampledPolyline {
+                points,
+                sample_ends,
+            } => {
+                self.points = Cow::Owned(points);
+                self.sample_ends = Some(sample_ends);
+            }
+        }
+    }
+}
+
 #[cfg(feature = "serde")]
 #[allow(clippy::ptr_arg)] // Serde predicate must distinguish borrowed from generated storage.
 fn original_samples(points: &Cow<'_, [crate::Point]>) -> bool {
@@ -1174,6 +1313,140 @@ mod tests {
             pen_width: 2.5,
         }
     }
+    #[test]
+    fn ordered_disk_batches_preserve_empty_events_and_terminal_suffix() {
+        let source = stroke(&[(0., 1.), (2., 3.), (4., 5.)]);
+        let mut paint = prepare_stroke(&source, false);
+        paint.dot_radii = Some(vec![0., 1., 2.]);
+        paint.ordered_disk_replay = Some(OrderedDiskReplay {
+            redraw_ends: vec![0, 2],
+            terminal_start: 2,
+            terminal_part: 4,
+        });
+        let stamps = paint.ordered_disk_stamps().unwrap().unwrap();
+        let batches = stamps.batches().collect::<Vec<_>>();
+        assert_eq!(
+            batches
+                .iter()
+                .map(|batch| (batch.source_sample, batch.points.len()))
+                .collect::<Vec<_>>(),
+            vec![(2, 0), (3, 2), (4, 1)]
+        );
+        assert!(
+            batches
+                .iter()
+                .all(|batch| batch.points.len() == batch.radii.len())
+        );
+        assert_eq!(batches[2].radii, &[2.]);
+
+        paint.ordered_disk_replay = Some(OrderedDiskReplay {
+            redraw_ends: vec![],
+            terminal_start: 0,
+            terminal_part: 2,
+        });
+        assert_eq!(
+            paint
+                .ordered_disk_stamps()
+                .unwrap()
+                .unwrap()
+                .batches()
+                .next()
+                .unwrap()
+                .points
+                .len(),
+            3
+        );
+    }
+
+    #[test]
+    fn ordered_disk_validation_rejects_incomplete_or_nonfinite_streams_atomically() {
+        let source = stroke(&[(0., 1.), (2., 3.), (4., 5.)]);
+        let mut paint = prepare_stroke(&source, false);
+        paint.dot_radii = Some(vec![0., 1., 2.]);
+        let valid = OrderedDiskReplay {
+            redraw_ends: vec![1, 2],
+            terminal_start: 2,
+            terminal_part: 4,
+        };
+        for invalid in [
+            OrderedDiskReplay {
+                terminal_part: 1,
+                ..valid.clone()
+            },
+            OrderedDiskReplay {
+                redraw_ends: vec![2],
+                ..valid.clone()
+            },
+            OrderedDiskReplay {
+                redraw_ends: vec![2, 1],
+                ..valid.clone()
+            },
+            OrderedDiskReplay {
+                redraw_ends: vec![1, 3],
+                ..valid.clone()
+            },
+            OrderedDiskReplay {
+                terminal_start: 4,
+                ..valid.clone()
+            },
+            OrderedDiskReplay {
+                terminal_start: 3,
+                ..valid.clone()
+            },
+        ] {
+            paint.ordered_disk_replay = Some(invalid);
+            assert!(paint.ordered_disk_stamps().is_err());
+        }
+        paint.ordered_disk_replay = Some(valid);
+        for radii in [
+            vec![1.],
+            vec![0., -1., 2.],
+            vec![0., f64::NAN, 2.],
+            vec![0., f64::INFINITY, 2.],
+        ] {
+            paint.dot_radii = Some(radii);
+            assert!(paint.ordered_disk_stamps().is_err());
+        }
+        paint.dot_radii = None;
+        assert!(paint.ordered_disk_stamps().unwrap().is_none());
+        paint.dot_radii = Some(vec![0., 1., 2.]);
+        paint.points.to_mut()[0].x = f64::INFINITY;
+        assert!(paint.ordered_disk_stamps().is_err());
+    }
+
+    #[test]
+    fn replacing_geometry_clears_old_profile_channels_and_keeps_presentation() {
+        let source = stroke(&[(0., 1.), (2., 3.)]);
+        let mut paint = prepare_stroke(&source, false);
+        paint.dot_radii = Some(vec![1., 2.]);
+        paint.dot_directions = Some(vec![Point { x: 1., y: 0. }; 2]);
+        paint.fountain_v17_rgb = Some(vec![[1., 0., 0.]; 2]);
+        paint.fountain_output_scale = Some(2.);
+        paint.ordered_disk_replay = Some(OrderedDiskReplay {
+            redraw_ends: vec![],
+            terminal_start: 0,
+            terminal_part: 2,
+        });
+        let original_color = paint.color.clone();
+        let original_width = paint.width;
+        let original_bounds = paint.bounds;
+        paint.replace_geometry(PreparedGeometry::SampledPolyline {
+            points: vec![Point { x: 7., y: 8. }],
+            sample_ends: vec![0, 1],
+        });
+        assert_eq!(paint.points.len(), 1);
+        assert_eq!(paint.sample_ends, Some(vec![0, 1]));
+        assert!(paint.dot_radii.is_none());
+        assert!(paint.dot_directions.is_none());
+        assert!(paint.fountain_v17_rgb.is_none());
+        assert!(paint.fountain_output_scale.is_none());
+        assert!(paint.ordered_disk_replay.is_none());
+        assert!(paint.segment_widths.is_none());
+        assert_eq!(paint.color, original_color);
+        assert_eq!(paint.width, original_width);
+        assert_eq!(paint.bounds, original_bounds);
+    }
+
     fn oblique_stroke() -> Stroke {
         let mut input = stroke(&[(10., 12.), (22., 15.), (38., 9.)]);
         input.pen_width = 5.0;

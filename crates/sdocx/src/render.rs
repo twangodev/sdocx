@@ -35,6 +35,7 @@ mod image_crop;
 mod ink_canvas;
 mod inkpen2_half_grid;
 mod inkpen2_vector;
+mod native_translation;
 #[cfg(feature = "pdf")]
 pub(crate) use ink_canvas::raster_scene as raster_canvas_scene;
 #[cfg(all(test, feature = "pdf"))]
@@ -1035,40 +1036,7 @@ impl DocumentTextCache {
             &text_renderer,
             body_text.as_ref(),
             retain_text,
-            options.inkpen_profile,
-            options.inkpen_v4_output_scale,
-            options.inkpen_v1_output_scale,
-            options.inkpen2_profile,
-            options.inkpen2_v1_output_scale,
-            options.inkpen2_half_grid_viewport,
-            #[cfg(test)]
-            options.inkpen2_half_grid_test_budget,
-            options.chinesebrush_profile,
-            options.chinesebrush_fwidth_output_profile,
-            options.fountain_v17_rainbow_profile.as_ref(),
-            options.fountain_v17_output_scale_profile,
-            options.fountain_v16_output_scale_profile,
-            options.fountain_v14_output_scale_profile,
-            options.defaultpen_output_scale,
-            options.marker3_output_scale,
-            options.marker2_output_scale,
-            options.magicpen_output_scale,
-            options.magicpen_host_minimum_dot_grid,
-            options.crayon2_grid_profile.as_ref(),
-            options.old_pencil_svg_profile,
-            #[cfg(feature = "pdf")]
-            options.old_pencil_pdf_profile,
-            options.pencil3_profile,
-            options.airbrush_profile,
-            options.simplebrush_profile,
-            options.simplebrush_two_pixels_per_page_unit,
-            options.rotated_arc_sector_approximation,
-            options.montblanc_profile,
-            options.montblanc_two_pixels_per_page_unit,
-            options.legacy_marker_centerline_profile,
-            options.marker4_v7_finger_output_scale,
-            #[cfg(feature = "pdf")]
-            options.legacy_marker_vector_profile,
+            options,
             slice,
             observer,
         );
@@ -1301,7 +1269,7 @@ impl PreparedBodyPlan {
             key.first_page_index..=key.last_page_index,
             renderer.settings,
         );
-        let planner = TextRenderer::new(renderer.settings, renderer.fonts)
+        let planner = TextRenderer::new(renderer.settings, renderer.font_book())
             .with_point_marker_target(renderer.point_marker_target)
             .with_native_object_page_obstacles(text::NativeObjectPageObstacles::from_document(
                 document,
@@ -1333,14 +1301,17 @@ impl PreparedBodyPlan {
             exclusions: &bands,
         };
         let complete_source = !key.detached
-            && matches!(document.metadata.page_mode, None | Some(0))
+            && matches!(
+                document.metadata.page_mode(),
+                None | Some(crate::PageMode::PageList)
+            )
             && document.metadata.note_text.as_ref().is_some_and(|source| {
                 source.text_sections.is_empty() && crate::layout::same_text_source(source, &text)
             });
         #[cfg(feature = "pdf")]
         let paper_source = key.paper_body_query
             && !key.detached
-            && document.metadata.page_mode == Some(1)
+            && document.metadata.page_mode() == Some(crate::PageMode::ContinuousCanvas)
             && key.first_page_index == 0
             && key.last_page_index == 0
             && document.pages.len() == 1
@@ -1561,37 +1532,7 @@ fn render_page_contents_svg(
     text_renderer: &TextRenderer<'_>,
     body_text: Option<&PreparedBodyText>,
     retain_text: bool,
-    inkpen_profile: Option<InkPenRenderProfile>,
-    inkpen_v4_output_scale: Option<u32>,
-    inkpen_v1_output_scale: Option<u32>,
-    inkpen2_profile: Option<InkPen2RenderProfile>,
-    inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
-    inkpen2_half_grid_viewport: Option<InkPen2HalfGridViewport>,
-    #[cfg(test)] inkpen2_half_grid_test_budget: Option<[usize; 3]>,
-    chinesebrush_profile: Option<ChineseBrushRenderProfile>,
-    chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
-    fountain_v17_rainbow_profile: Option<&FountainV17RainbowRenderProfile>,
-    fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
-    fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
-    fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
-    defaultpen_output_scale: Option<DefaultPenOutputScale>,
-    marker3_output_scale: Option<Marker3OutputScale>,
-    marker2_output_scale: Option<u32>,
-    magicpen_output_scale: Option<u32>,
-    magicpen_host_minimum_dot_grid: bool,
-    crayon2_grid_profile: Option<&Crayon2DocumentGridProfile>,
-    old_pencil_svg_profile: bool,
-    #[cfg(feature = "pdf")] old_pencil_pdf_profile: bool,
-    pencil3_profile: Option<Pencil3RenderProfile>,
-    airbrush_profile: Option<AirBrushRenderProfile>,
-    simplebrush_profile: Option<SimpleBrushRenderProfile>,
-    simplebrush_two_pixels_per_page_unit: bool,
-    rotated_arc_sector_approximation: bool,
-    montblanc_profile: Option<MontblancRenderProfile>,
-    montblanc_two_pixels_per_page_unit: bool,
-    legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
-    marker4_v7_finger_output_scale: Option<u32>,
-    #[cfg(feature = "pdf")] legacy_marker_vector_profile: Option<LegacyMarkerCenterlineProfile>,
+    options: &RenderOptions,
     slice: Option<PageSlice>,
     observer: &mut dyn FnMut(Progress),
 ) -> Scene {
@@ -1642,6 +1583,7 @@ fn render_page_contents_svg(
 
     let mut scene_text_renderer = text_renderer.clone();
     scene_text_renderer.image_page_width = Some(page.width);
+    let brush_policy = BrushPolicy::new(options);
     let composition = CompositionContext {
         page,
         media_assets,
@@ -1650,64 +1592,8 @@ fn render_page_contents_svg(
         theme,
         replay,
         body_text,
-        inkpen_profile,
-        inkpen_v4_output_scale,
-        inkpen_v1_output_scale,
-        inkpen2_profile,
-        inkpen2_v1_output_scale,
-        inkpen2_half_grid_viewport,
-        inkpen2_half_grid_budget: Cell::new({
-            #[cfg(test)]
-            {
-                inkpen2_half_grid_test_budget.unwrap_or([32_768, 1_000_000, 100_000])
-            }
-            #[cfg(not(test))]
-            {
-                [32_768, 1_000_000, 100_000]
-            }
-        }),
-        chinesebrush_profile,
-        chinesebrush_fwidth_output_profile,
-        fountain_v17_rainbow_profile,
-        fountain_v17_output_scale_profile,
-        fountain_v16_output_scale_profile,
-        fountain_v14_output_scale_profile,
-        defaultpen_output_scale,
-        marker3_output_scale,
-        marker2_output_scale,
-        marker2_remaining_vertices: Cell::new(65_536),
-        magicpen_output_scale,
-        magicpen_host_minimum_dot_grid,
-        crayon2_grid_profile,
-        crayon2_grid_remaining: Cell::new(
-            crayon2_grid_profile.map_or(0, |p| p.max_samples.min(100_000)),
-        ),
-        old_pencil_svg_profile,
-        #[cfg(feature = "pdf")]
-        old_pencil_pdf_profile,
-        pencil3_profile,
-        airbrush_profile,
-        simplebrush_profile,
-        simplebrush_two_pixels_per_page_unit,
-        rotated_arc_sector_approximation,
-        montblanc_profile,
-        montblanc_two_pixels_per_page_unit,
-        legacy_marker_centerline_profile,
-        marker4_v7_finger_output_scale,
-        marker4_v7_remaining_stamps: Cell::new(32768),
-        #[cfg(feature = "pdf")]
-        legacy_marker_vector_profile,
-        #[cfg(feature = "pdf")]
-        legacy_marker_budget: std::cell::RefCell::new(
-            legacy_marker_vector::SourcePageBudget::default(),
-        ),
-        #[cfg(feature = "pdf")]
-        old_pencil_pdf_remaining_forms: Cell::new(2),
-        old_pencil_remaining_stamps: Cell::new(512),
-        old_pencil_remaining_points: Cell::new(8192),
-        simplebrush_remaining_stamps: Cell::new(32_768),
-        simplebrush_long_remaining_stamps: Cell::new(4_096),
-        montblanc_remaining_patches: Cell::new(32_768),
+        brush_policy: &brush_policy,
+        budgets: RenderBudgets::new(options),
         slice,
     };
     let total = page.composed_objects().count();
@@ -1740,41 +1626,113 @@ struct CompositionContext<'a> {
     theme: RenderTheme,
     replay: bool,
     body_text: Option<&'a PreparedBodyText>,
-    inkpen_profile: Option<InkPenRenderProfile>,
-    inkpen_v4_output_scale: Option<u32>,
-    inkpen_v1_output_scale: Option<u32>,
-    inkpen2_profile: Option<InkPen2RenderProfile>,
-    inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
-    inkpen2_half_grid_viewport: Option<InkPen2HalfGridViewport>,
+    brush_policy: &'a BrushPolicy<'a>,
+    budgets: RenderBudgets,
+    slice: Option<PageSlice>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum SimpleBrushMode {
+    Disabled,
+    HostV25,
+    TwoPixelsPerPageUnit,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MontblancMode {
+    Disabled,
+    HostUnitScale,
+    TwoPixelsPerPageUnit,
+}
+
+impl SimpleBrushMode {
+    fn supports_stroke(self, stroke: &Stroke, slice: Option<PageSlice>) -> bool {
+        match self {
+            Self::Disabled => false,
+            Self::HostV25 => true,
+            Self::TwoPixelsPerPageUnit => {
+                (2..=256).contains(&stroke.points.len())
+                    && stroke.rendering.as_ref().is_some_and(|rendering| {
+                        matches!(
+                            rendering.advanced_settings.as_deref(),
+                            None | Some("") | Some("1;")
+                        ) && rendering.style.pen_size.is_some_and(|size| {
+                            match rendering.tool_type_raw {
+                                0 | 2 | 3 if stroke.points.len() == 3 => {
+                                    (3.0..=32.0).contains(&size)
+                                }
+                                1 => {
+                                    (3..=32).contains(&stroke.points.len())
+                                        && (8.0..=12.0).contains(&size)
+                                }
+                                2 => (8.0..=20.0).contains(&size),
+                                0 if (4..=128).contains(&stroke.points.len()) && size == 3.0 => {
+                                    true
+                                }
+                                0 => (8.0..=20.0).contains(&size),
+                                3 => (8.0..=20.0).contains(&size),
+                                _ => false,
+                            }
+                        })
+                    })
+                    && slice.is_none()
+            }
+        }
+    }
+}
+
+impl MontblancMode {
+    fn supports_stroke(self, stroke: &Stroke) -> bool {
+        match self {
+            Self::Disabled => false,
+            Self::HostUnitScale => true,
+            Self::TwoPixelsPerPageUnit => {
+                (stroke.points.len() <= 11
+                    || ((12..=24).contains(&stroke.points.len())
+                        && (0.5..=2.5).contains(&stroke.pen_width)))
+                    && (!(10..=11).contains(&stroke.points.len())
+                        || (0.5..=2.5).contains(&stroke.pen_width))
+            }
+        }
+    }
+}
+
+struct BrushPolicy<'a> {
+    options: &'a RenderOptions,
+    simplebrush_mode: SimpleBrushMode,
+    montblanc_mode: MontblancMode,
+}
+
+impl<'a> BrushPolicy<'a> {
+    fn new(options: &'a RenderOptions) -> Self {
+        Self {
+            options,
+            simplebrush_mode: match (
+                options.simplebrush_profile,
+                options.simplebrush_two_pixels_per_page_unit,
+            ) {
+                (Some(SimpleBrushRenderProfile::HostV25), false) => SimpleBrushMode::HostV25,
+                (None, true) => SimpleBrushMode::TwoPixelsPerPageUnit,
+                _ => SimpleBrushMode::Disabled,
+            },
+            montblanc_mode: match (
+                options.montblanc_profile,
+                options.montblanc_two_pixels_per_page_unit,
+            ) {
+                (Some(MontblancRenderProfile::HostUnitScale), false) => {
+                    MontblancMode::HostUnitScale
+                }
+                (None, true) => MontblancMode::TwoPixelsPerPageUnit,
+                _ => MontblancMode::Disabled,
+            },
+        }
+    }
+}
+
+struct RenderBudgets {
     inkpen2_half_grid_budget: Cell<[usize; 3]>,
-    chinesebrush_profile: Option<ChineseBrushRenderProfile>,
-    chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
-    fountain_v17_rainbow_profile: Option<&'a FountainV17RainbowRenderProfile>,
-    fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
-    fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
-    fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
-    defaultpen_output_scale: Option<DefaultPenOutputScale>,
-    marker3_output_scale: Option<Marker3OutputScale>,
-    marker2_output_scale: Option<u32>,
     marker2_remaining_vertices: Cell<usize>,
-    magicpen_output_scale: Option<u32>,
-    magicpen_host_minimum_dot_grid: bool,
-    crayon2_grid_profile: Option<&'a Crayon2DocumentGridProfile>,
     crayon2_grid_remaining: Cell<u64>,
-    old_pencil_svg_profile: bool,
-    #[cfg(feature = "pdf")]
-    old_pencil_pdf_profile: bool,
-    pencil3_profile: Option<Pencil3RenderProfile>,
-    airbrush_profile: Option<AirBrushRenderProfile>,
-    simplebrush_profile: Option<SimpleBrushRenderProfile>,
-    simplebrush_two_pixels_per_page_unit: bool,
-    rotated_arc_sector_approximation: bool,
-    montblanc_profile: Option<MontblancRenderProfile>,
-    montblanc_two_pixels_per_page_unit: bool,
-    legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
-    marker4_v7_finger_output_scale: Option<u32>,
-    #[cfg(feature = "pdf")]
-    legacy_marker_vector_profile: Option<LegacyMarkerCenterlineProfile>,
     #[cfg(feature = "pdf")]
     legacy_marker_budget: std::cell::RefCell<legacy_marker_vector::SourcePageBudget>,
     // Shared across all passes in this composition; each scene gets its own budget.
@@ -1786,7 +1744,44 @@ struct CompositionContext<'a> {
     simplebrush_remaining_stamps: Cell<usize>,
     simplebrush_long_remaining_stamps: Cell<usize>,
     montblanc_remaining_patches: Cell<usize>,
-    slice: Option<PageSlice>,
+}
+
+impl RenderBudgets {
+    fn new(options: &RenderOptions) -> Self {
+        Self {
+            inkpen2_half_grid_budget: Cell::new({
+                #[cfg(test)]
+                {
+                    options
+                        .inkpen2_half_grid_test_budget
+                        .unwrap_or([32_768, 1_000_000, 100_000])
+                }
+                #[cfg(not(test))]
+                {
+                    [32_768, 1_000_000, 100_000]
+                }
+            }),
+            marker2_remaining_vertices: Cell::new(65_536),
+            crayon2_grid_remaining: Cell::new(
+                options
+                    .crayon2_grid_profile
+                    .as_ref()
+                    .map_or(0, |p| p.max_samples.min(100_000)),
+            ),
+            #[cfg(feature = "pdf")]
+            legacy_marker_budget: std::cell::RefCell::new(
+                legacy_marker_vector::SourcePageBudget::default(),
+            ),
+            #[cfg(feature = "pdf")]
+            old_pencil_pdf_remaining_forms: Cell::new(2),
+            marker4_v7_remaining_stamps: Cell::new(32768),
+            old_pencil_remaining_stamps: Cell::new(512),
+            old_pencil_remaining_points: Cell::new(8192),
+            simplebrush_remaining_stamps: Cell::new(32_768),
+            simplebrush_long_remaining_stamps: Cell::new(4_096),
+            montblanc_remaining_patches: Cell::new(32_768),
+        }
+    }
 }
 
 fn render_pass(
@@ -1842,7 +1837,7 @@ fn render_object(
             if native_allowed
                 && !context.replay
                 && context.slice.is_none()
-                && let Some(profile) = context.crayon2_grid_profile
+                && let Some(profile) = context.brush_policy.options.crayon2_grid_profile.as_ref()
                 && [context.page.width, context.page.height] == [profile.width, profile.height]
                 && stroke.color.is_some_and(|color| {
                     let effective = context.theme.foreground_color(color);
@@ -1867,7 +1862,7 @@ fn render_object(
                     background_scale: profile.background_scale,
                     rgba: profile.rgba,
                     background: None,
-                    max_samples: context.crayon2_grid_remaining.get(),
+                    max_samples: context.budgets.crayon2_grid_remaining.get(),
                 };
                 if let Ok((fragments, used)) = crate::ink::crayon2::sample_host_grid(stroke, &grid)
                 {
@@ -1889,8 +1884,9 @@ fn render_object(
                         );
                     }
                     context
+                        .budgets
                         .crayon2_grid_remaining
-                        .set(context.crayon2_grid_remaining.get() - used);
+                        .set(context.budgets.crayon2_grid_remaining.get() - used);
                     *stroke_index += 1;
                     progress.advance(1);
                     return;
@@ -1900,20 +1896,21 @@ fn render_object(
             if native_allowed
                 && !context.replay
                 && context.slice.is_none()
-                && context.old_pencil_pdf_profile
-                && context.old_pencil_pdf_remaining_forms.get() > 0
+                && context.brush_policy.options.old_pencil_pdf_profile
+                && context.budgets.old_pencil_pdf_remaining_forms.get() > 0
                 && [context.page.width, context.page.height] == [1920, 1080]
                 && old_pencil::render_pdf(
                     svg,
                     stroke,
                     context.theme,
-                    &context.old_pencil_remaining_stamps,
-                    &context.old_pencil_remaining_points,
+                    &context.budgets.old_pencil_remaining_stamps,
+                    &context.budgets.old_pencil_remaining_points,
                 )
             {
                 context
+                    .budgets
                     .old_pencil_pdf_remaining_forms
-                    .set(context.old_pencil_pdf_remaining_forms.get() - 1);
+                    .set(context.budgets.old_pencil_pdf_remaining_forms.get() - 1);
                 *stroke_index += 1;
                 progress.advance(1);
                 return;
@@ -1922,14 +1919,14 @@ fn render_object(
             if native_allowed
                 && !context.replay
                 && context.slice.is_none()
-                && let Some(profile) = context.legacy_marker_vector_profile
+                && let Some(profile) = context.brush_policy.options.legacy_marker_vector_profile
                 && legacy_marker_vector::render(
                     svg,
                     stroke,
                     context.theme,
                     [context.page.width, context.page.height],
                     profile,
-                    &mut context.legacy_marker_budget.borrow_mut(),
+                    &mut context.budgets.legacy_marker_budget.borrow_mut(),
                 )
             {
                 *stroke_index += 1;
@@ -1939,13 +1936,17 @@ fn render_object(
             if native_allowed
                 && !context.replay
                 && context.slice.is_none()
-                && let Some(view) = context.inkpen2_half_grid_viewport
-                && context.inkpen2_profile.is_some_and(|p| {
-                    matches!(
-                        (p.screen_width, p.screen_height),
-                        (1440, 2560) | (2560, 1440)
-                    )
-                })
+                && let Some(view) = context.brush_policy.options.inkpen2_half_grid_viewport
+                && context
+                    .brush_policy
+                    .options
+                    .inkpen2_profile
+                    .is_some_and(|p| {
+                        matches!(
+                            (p.screen_width, p.screen_height),
+                            (1440, 2560) | (2560, 1440)
+                        )
+                    })
                 && view.width.checked_mul(2) == Some(context.page.width)
                 && view.height.checked_mul(2) == Some(context.page.height)
                 && let Some(rendering) = stroke.rendering.as_ref()
@@ -1955,12 +1956,17 @@ fn render_object(
                     .is_some_and(|argb| argb >> 24 == 255)
                 && let Some(ink) = prepare_inkpen2_internal(
                     stroke,
-                    context.inkpen2_profile,
+                    context.brush_policy.options.inkpen2_profile,
                     context.theme,
                     Some(InkPen2V1OutputScale::Half),
                     true,
                 )
-                && inkpen2_half_grid::render(svg, &ink, view, &context.inkpen2_half_grid_budget)
+                && inkpen2_half_grid::render(
+                    svg,
+                    &ink,
+                    view,
+                    &context.budgets.inkpen2_half_grid_budget,
+                )
             {
                 *stroke_index += 1;
                 progress.advance(1);
@@ -1974,44 +1980,8 @@ fn render_object(
                 calligraphy_session,
                 native_allowed,
                 [context.page.width, context.page.height],
-                context.inkpen_profile,
-                context.inkpen_v4_output_scale,
-                context.inkpen_v1_output_scale,
-                context.inkpen2_profile,
-                context.inkpen2_v1_output_scale,
-                context.chinesebrush_profile,
-                context.chinesebrush_fwidth_output_profile,
-                context.fountain_v17_rainbow_profile,
-                context.fountain_v17_output_scale_profile,
-                context.fountain_v16_output_scale_profile,
-                context.fountain_v14_output_scale_profile,
-                context.defaultpen_output_scale,
-                context.marker3_output_scale,
-                context.marker2_output_scale,
-                &context.marker2_remaining_vertices,
-                context.magicpen_output_scale,
-                context.magicpen_host_minimum_dot_grid,
-                context.old_pencil_svg_profile,
-                context.pencil3_profile,
-                context.airbrush_profile,
-                context.simplebrush_profile,
-                context.simplebrush_two_pixels_per_page_unit,
-                context.montblanc_profile,
-                context.montblanc_two_pixels_per_page_unit,
-                context.legacy_marker_centerline_profile,
-                context.marker4_v7_finger_output_scale,
-                &context.marker4_v7_remaining_stamps,
-                &context.old_pencil_remaining_stamps,
-                &context.old_pencil_remaining_points,
-                if context.simplebrush_two_pixels_per_page_unit
-                    && context.simplebrush_profile.is_none()
-                    && stroke.points.len() > 128
-                {
-                    &context.simplebrush_long_remaining_stamps
-                } else {
-                    &context.simplebrush_remaining_stamps
-                },
-                &context.montblanc_remaining_patches,
+                context.brush_policy,
+                &context.budgets,
                 context.slice,
             );
             *stroke_index += 1;
@@ -2149,7 +2119,10 @@ fn render_element(
                 shape,
                 theme,
                 source_offset,
-                context.rotated_arc_sector_approximation,
+                context
+                    .brush_policy
+                    .options
+                    .rotated_arc_sector_approximation,
             ) {
                 svg.report_geometry_issue(GeometryDiagnostic {
                     source_offset,
@@ -3433,6 +3406,106 @@ fn paint_text_foreground(
     });
 }
 
+enum ObjectDrawingPreparation<'a> {
+    Code {
+        code: &'a crate::RichTextCodeBlock,
+        result: Result<code::PreparedCode, ObjectDiagnosticKind>,
+    },
+    Table {
+        table: &'a crate::RichTextTable,
+        result: Option<Result<table::PreparedTableDrawing, ObjectDiagnosticKind>>,
+    },
+    Unprepared,
+}
+
+#[derive(Clone, Copy)]
+enum ObjectDrawingDecision<'a> {
+    BodyCode(&'a crate::RichTextCodeBlock, &'a code::PreparedCode),
+    DrawingTable(&'a crate::RichTextTable, &'a table::PreparedTableDrawing),
+    TranslatedCode(&'a crate::RichTextCodeBlock, &'a code::PreparedCode),
+    RetainedTable(&'a crate::RichTextTable, &'a table::PreparedTable),
+    BodyTextFallback,
+    EmbeddedFallback,
+}
+
+impl ObjectDrawingPreparation<'_> {
+    fn diagnostic(&self) -> Option<ObjectDiagnosticKind> {
+        match self {
+            Self::Code {
+                result: Err(kind), ..
+            }
+            | Self::Table {
+                result: Some(Err(kind)),
+                ..
+            } => Some(*kind),
+            _ => None,
+        }
+    }
+
+    fn paint_bounds(&self, mut bounds: BoundingBox, body_clone: bool) -> BoundingBox {
+        match self {
+            Self::Code {
+                result: Ok(prepared),
+                ..
+            } if body_clone => prepared.panel_bbox,
+            Self::Code {
+                result: Ok(prepared),
+                ..
+            } => {
+                bounds.y_max = bounds.y_min + prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
+                bounds
+            }
+            Self::Table {
+                result: Some(Ok(prepared)),
+                ..
+            } => prepared.measured_bbox,
+            _ => bounds,
+        }
+    }
+
+    fn has_native_table_clipping(&self) -> bool {
+        matches!(self, Self::Table { result: Some(Ok(prepared)), .. }
+            if prepared.has_native_text_clipping())
+    }
+
+    fn resolve<'a>(
+        &'a self,
+        retained: &'a Option<Result<embedded::PreparedObject, ObjectDiagnosticKind>>,
+        body_clone: bool,
+    ) -> ObjectDrawingDecision<'a> {
+        match self {
+            Self::Code {
+                code,
+                result: Ok(prepared),
+            } if body_clone => ObjectDrawingDecision::BodyCode(code, prepared),
+            Self::Code {
+                code,
+                result: Ok(prepared),
+            } => ObjectDrawingDecision::TranslatedCode(code, prepared),
+            Self::Table {
+                table,
+                result: Some(Ok(prepared)),
+            } => ObjectDrawingDecision::DrawingTable(table, prepared),
+            _ if body_clone && self.diagnostic().is_some() => {
+                ObjectDrawingDecision::BodyTextFallback
+            }
+            Self::Code { code, .. } => match retained {
+                Some(Ok(embedded::PreparedObject::Code(prepared))) => {
+                    ObjectDrawingDecision::TranslatedCode(code, prepared)
+                }
+                _ => ObjectDrawingDecision::EmbeddedFallback,
+            },
+            Self::Table { table, .. } => match retained {
+                Some(Ok(embedded::PreparedObject::Table(prepared))) => {
+                    ObjectDrawingDecision::RetainedTable(table, prepared)
+                }
+                _ => ObjectDrawingDecision::EmbeddedFallback,
+            },
+            Self::Unprepared => ObjectDrawingDecision::EmbeddedFallback,
+        }
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn paint_line_objects(
     svg: &mut Scene,
@@ -3485,32 +3558,33 @@ fn paint_line_objects(
                 y_min: baseline - height,
                 y_max: baseline,
             };
-            let drawing_code = match (&placement.prepared, &span.content) {
+            let preparation = match (&placement.prepared, &span.content) {
                 (
                     Some(Ok(embedded::PreparedObject::Code(_))),
                     Some(RichTextObjectContent::CodeBlock(code)),
-                ) => Some(if body_clone {
-                    code::prepare_code_drawing(
-                        code,
-                        span.layout_constraint,
-                        target,
-                        theme,
-                        &drawing_renderer,
-                    )
-                } else {
-                    code::prepare_code(
-                        code,
-                        span.layout_constraint,
-                        baseline - height,
-                        theme,
-                        &drawing_renderer,
-                    )
-                }),
-                _ => None,
-            };
-            let drawing_table = match &span.content {
-                Some(RichTextObjectContent::Table(table)) => {
-                    if body_clone {
+                ) => ObjectDrawingPreparation::Code {
+                    code,
+                    result: if body_clone {
+                        code::prepare_code_drawing(
+                            code,
+                            span.layout_constraint,
+                            target,
+                            theme,
+                            &drawing_renderer,
+                        )
+                    } else {
+                        code::prepare_code(
+                            code,
+                            span.layout_constraint,
+                            baseline - height,
+                            theme,
+                            &drawing_renderer,
+                        )
+                    },
+                },
+                (_, Some(RichTextObjectContent::Table(table))) => ObjectDrawingPreparation::Table {
+                    table,
+                    result: if body_clone {
                         let native_source = native_entry
                             .filter(|_| {
                                 renderer
@@ -3543,77 +3617,59 @@ fn paint_line_objects(
                             theme,
                             &drawing_renderer,
                         )
-                    }
-                }
-                _ => None,
+                    },
+                },
+                _ => ObjectDrawingPreparation::Unprepared,
             };
-            let mut paint_bounds =
-                object_paint_bounds(placement, left + placement_x - placement.x, baseline);
-            if let Some(Ok(prepared)) = &drawing_code {
-                if body_clone {
-                    paint_bounds = prepared.panel_bbox;
-                } else {
-                    paint_bounds.y_max =
-                        paint_bounds.y_min + prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
+            let paint_bounds = preparation.paint_bounds(
+                object_paint_bounds(placement, left + placement_x - placement.x, baseline),
+                body_clone,
+            );
+            if !preparation.has_native_table_clipping()
+                && viewport.is_some_and(|viewport| !viewport.intersects(paint_bounds))
+            {
+                return;
+            }
+            let decision = preparation.resolve(&placement.prepared, body_clone);
+            match decision {
+                ObjectDrawingDecision::BodyCode(code, prepared) => {
+                    render_prepared_code(
+                        svg,
+                        code,
+                        prepared,
+                        media_assets,
+                        theme,
+                        renderer,
+                        viewport,
+                    );
+                    report_drawing_layout_issues(renderer, &drawing_renderer);
+                    return;
                 }
-            }
-            if let Some(Ok(prepared)) = &drawing_table {
-                paint_bounds = prepared.measured_bbox;
-            }
-            let native_table = drawing_table.as_ref().is_some_and(|prepared| {
-                prepared
-                    .as_ref()
-                    .is_ok_and(|table| has_native_table_clipping(&table.rows))
-            });
-            if !native_table && viewport.is_some_and(|viewport| !viewport.intersects(paint_bounds))
-            {
-                return;
-            }
-            if body_clone
-                && let (Some(Ok(prepared)), Some(RichTextObjectContent::CodeBlock(code))) =
-                    (&drawing_code, &span.content)
-            {
-                render_prepared_code(svg, code, prepared, media_assets, theme, renderer, viewport);
-                report_drawing_layout_issues(renderer, &drawing_renderer);
-                return;
-            }
-            if let (Some(Ok(prepared)), Some(RichTextObjectContent::Table(table))) =
-                (&drawing_table, &span.content)
-            {
-                render_table(
-                    svg,
-                    table,
-                    span.text_index_utf16,
-                    Some(prepared.into()),
-                    0.0,
-                    media_assets,
-                    theme,
-                    renderer,
-                    viewport,
-                );
-                report_drawing_layout_issues(renderer, &drawing_renderer);
-                return;
+                ObjectDrawingDecision::DrawingTable(table, prepared) => {
+                    table::render_table(
+                        svg,
+                        table,
+                        span.text_index_utf16,
+                        Some(prepared.into()),
+                        0.0,
+                        media_assets,
+                        theme,
+                        renderer,
+                        viewport,
+                    );
+                    report_drawing_layout_issues(renderer, &drawing_renderer);
+                    return;
+                }
+                _ => {}
             }
             report_drawing_layout_issues(renderer, &drawing_renderer);
-            for kind in [
-                drawing_code
-                    .as_ref()
-                    .and_then(|result| result.as_ref().err()),
-                drawing_table
-                    .as_ref()
-                    .and_then(|result| result.as_ref().err()),
-            ]
-            .into_iter()
-            .flatten()
-            {
+            if let Some(kind) = preparation.diagnostic() {
                 renderer.report_object_issues(&[ObjectDiagnostic {
                     anchor_utf16: span.text_index_utf16,
-                    kind: *kind,
+                    kind,
                 }]);
             }
-            if body_clone
-                && (matches!(drawing_code, Some(Err(_))) || matches!(drawing_table, Some(Err(_))))
-            {
+            if matches!(decision, ObjectDrawingDecision::BodyTextFallback) {
                 render_flow_line(
                     svg,
                     styled,
@@ -3635,15 +3691,7 @@ fn paint_line_objects(
             svg.scope(
                 Group::new().transformed(Transform::translate(offset.0, 0.0, 5)),
                 |svg| {
-                    if let (
-                        Some(Ok(embedded::PreparedObject::Code(prepared))),
-                        Some(RichTextObjectContent::CodeBlock(code)),
-                    ) = (&placement.prepared, &span.content)
-                    {
-                        let prepared = drawing_code
-                            .as_ref()
-                            .and_then(|result| result.as_ref().ok())
-                            .unwrap_or(prepared);
+                    if let ObjectDrawingDecision::TranslatedCode(code, prepared) = decision {
                         let shift = baseline - height - prepared.panel_bbox.y_min;
                         svg.scope(
                             Group::new().transformed(Transform::translate(0.0, shift, 5)),
@@ -3659,20 +3707,16 @@ fn paint_line_objects(
                                 );
                             },
                         );
-                    } else if let (
-                        Some(Ok(embedded::PreparedObject::Table(prepared))),
-                        Some(RichTextObjectContent::Table(table)),
-                    ) = (&placement.prepared, &span.content)
-                    {
+                    } else if let ObjectDrawingDecision::RetainedTable(table, prepared) = decision {
                         let shift = (object.bounds.x_min, baseline - height);
                         svg.scope(
                             Group::new().transformed(Transform::translate(shift.0, shift.1, 5)),
                             |svg| {
-                                render_table(
+                                table::render_table(
                                     svg,
                                     table,
                                     span.text_index_utf16,
-                                    Some(prepared.as_ref().into()),
+                                    Some(prepared.into()),
                                     0.0,
                                     media_assets,
                                     theme,
@@ -4003,7 +4047,7 @@ fn render_embedded_object(
             Some(drawn.y_max + offset_y)
         }
         Some(RichTextObjectContent::Table(table)) => {
-            render_table(
+            table::render_table(
                 svg,
                 table,
                 object.text_index_utf16,
@@ -4057,420 +4101,6 @@ fn report_drawing_layout_issues(renderer: &TextRenderer<'_>, drawing: &TextRende
             .collect::<Vec<_>>(),
     );
     renderer.report_owned_object_issues(&drawing.scoped_object_diagnostics());
-}
-
-struct TablePaint<'a> {
-    measured_bbox: BoundingBox,
-    content_bbox: BoundingBox,
-    rows: &'a [table::PreparedTableRow],
-    pending_gaps: &'a [f64],
-    artwork: table::TableArtworkGeometry,
-}
-
-fn has_native_table_clipping(rows: &[table::PreparedTableRow]) -> bool {
-    rows.iter().flat_map(|row| &row.cells).any(|cell| {
-        cell.native_text_placement()
-            .is_ok_and(|placement| placement.transport().is_some())
-    })
-}
-
-impl<'a> From<&'a table::PreparedTable> for TablePaint<'a> {
-    fn from(table: &'a table::PreparedTable) -> Self {
-        Self {
-            measured_bbox: table.measured_bbox,
-            content_bbox: table.content_bbox,
-            rows: &table.rows,
-            pending_gaps: &table.pending_gaps,
-            artwork: table::TableArtworkGeometry::Cached,
-        }
-    }
-}
-
-impl<'a> From<&'a table::PreparedTableDrawing> for TablePaint<'a> {
-    fn from(table: &'a table::PreparedTableDrawing) -> Self {
-        Self {
-            measured_bbox: table.measured_bbox,
-            content_bbox: table.content_bbox,
-            rows: &table.rows,
-            pending_gaps: &table.pending_gaps,
-            artwork: table.artwork,
-        }
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-fn render_table(
-    svg: &mut Scene,
-    table: &crate::RichTextTable,
-    anchor_utf16: i32,
-    prepared: Option<TablePaint<'_>>,
-    offset_y: f64,
-    media_assets: &[MediaAsset],
-    theme: RenderTheme,
-    renderer: &TextRenderer<'_>,
-    viewport: Option<Viewport>,
-) {
-    let table_bbox = prepared
-        .as_ref()
-        .map_or(table.bbox, |table| table.measured_bbox);
-    let artwork = prepared
-        .as_ref()
-        .map_or(table::TableArtworkGeometry::Unprepared, |prepared| {
-            prepared.artwork
-        });
-    let grid = table::TableGrid::new(table);
-    if prepared.is_none()
-        && (grid
-            .as_ref()
-            .map_or(true, |grid| grid.requires_merged_layout())
-            || !table::supports_prepared_content(table))
-    {
-        renderer.report_object_issues(&[ObjectDiagnostic {
-            anchor_utf16,
-            kind: ObjectDiagnosticKind::UnsupportedContent,
-        }]);
-    }
-    let borders =
-        grid.as_ref()
-            .ok()
-            .and_then(|grid| match table::TableBorderGeometry::new(table, grid) {
-                Ok(borders) => Some(borders),
-                Err(kind) => {
-                    renderer.report_object_issues(&[ObjectDiagnostic { anchor_utf16, kind }]);
-                    None
-                }
-            });
-    let outline = borders
-        .as_ref()
-        .map(|borders| borders.outline())
-        .unwrap_or_default();
-    let content_bbox = prepared
-        .as_ref()
-        .map_or(table.style.content_bbox.unwrap_or(table.bbox), |prepared| {
-            prepared.content_bbox
-        });
-    let mut cells = Vec::new();
-    let mut add_cell = |row: usize, column: usize| {
-        let cell = &table.rows[row].cells[column];
-        let measured = if let Some(prepared) = &prepared {
-            let Some(measured) = prepared
-                .rows
-                .get(row)
-                .filter(|prepared| prepared.row_index == row)
-                .and_then(|row| {
-                    row.cells
-                        .get(column)
-                        .filter(|cell| cell.column_index == column)
-                })
-            else {
-                return;
-            };
-            Some(measured)
-        } else {
-            None
-        };
-        let frame = measured.map_or(cell.bbox, |cell| cell.frame);
-        let artwork_frame = artwork.background(cell.bbox, frame);
-        if !artwork.cached()
-            && (!table::finite_artwork_rect(cell.bbox)
-                || !table::finite_artwork_rect(artwork_frame))
-        {
-            renderer.report_object_issues(&[ObjectDiagnostic {
-                anchor_utf16,
-                kind: ObjectDiagnosticKind::InvalidBounds,
-            }]);
-            return;
-        }
-        cells.push(TableCellPaint {
-            cell,
-            fill: table::CellFill::resolve(&table.style, table.rows[row].index, cell, theme),
-            frame,
-            artwork_frame,
-            layout: measured.map(|cell| &cell.layout),
-            native_text_placement: measured.map_or(
-                Ok(table::native_placement::NativeCellTextPlacement::Unknown),
-                |cell| cell.native_text_placement(),
-            ),
-            position: table::CellPosition { row, column },
-            gap: prepared.as_ref().is_some_and(|prepared| {
-                prepared
-                    .pending_gaps
-                    .get(row + 1)
-                    .is_some_and(|gap| (*gap as f32).abs() > 0.001_f32)
-            }),
-        });
-    };
-    match &grid {
-        Ok(grid) => {
-            for position in grid.visible_cells() {
-                add_cell(position.row, position.column);
-            }
-        }
-        Err(_) => {
-            for (row_index, row) in table.rows.iter().enumerate() {
-                for column in 0..row.cells.len() {
-                    add_cell(row_index, column);
-                }
-            }
-        }
-    }
-    svg.scope(Group::new().object(ObjectKind::Table), |svg| {
-        let clip = svg.definition::<Clip>();
-        let artwork_clip = svg.definition::<Clip>();
-        let measured_bounds = BoundingBox {
-            y_min: table_bbox.y_min + offset_y,
-            y_max: table_bbox.y_max + offset_y,
-            ..table_bbox
-        };
-        let artwork_bounds = if prepared.is_some() {
-            table::artwork_bounds(measured_bounds, renderer.table_export_page)
-        } else {
-            measured_bounds
-        };
-        svg.push(
-            Definitions::new()
-                .add(ClipPath::new(&clip).add(rectangle(measured_bounds, 0.0, 2)))
-                .add(ClipPath::new(&artwork_clip).add(rectangle(artwork_bounds, 0.0, 5))),
-        );
-        svg.scope(Group::new().clipped(&artwork_clip), |svg| {
-            let shape = [table.rows.len(), table.column_widths.len()];
-            for paint in &cells {
-                if viewport.is_some_and(|viewport| {
-                    !viewport.intersects(paint.artwork_bounds(
-                        borders.as_ref(),
-                        offset_y,
-                        prepared.is_some(),
-                        artwork,
-                    ))
-                }) {
-                    continue;
-                }
-                paint_table_cell_background(svg, paint, shape, [outline.rx, outline.ry], offset_y);
-                if let Some(borders) = &borders {
-                    for path in borders.cell_paths(paint.position) {
-                        if path.selected(paint.position, shape, outline.active(), paint.gap) {
-                            let path = artwork.border(path, paint.artwork_frame);
-                            if !path.has_finite_endpoints() {
-                                renderer.report_object_issues(&[ObjectDiagnostic {
-                                    anchor_utf16,
-                                    kind: ObjectDiagnosticKind::InvalidBounds,
-                                }]);
-                                continue;
-                            }
-                            paint_table_border(svg, path, offset_y, theme);
-                        }
-                    }
-                }
-            }
-            if prepared.is_some() {
-                paint_table_outline(svg, borders.as_ref(), content_bbox, offset_y, theme);
-            }
-        });
-        if prepared.is_none() {
-            paint_table_outline(svg, borders.as_ref(), content_bbox, offset_y, theme);
-        }
-        for paint in &cells {
-            let native_clip = paint
-                .native_text_placement
-                .is_ok_and(|placement| placement.transport().is_some());
-            if !native_clip
-                && viewport.is_some_and(|viewport| {
-                    !viewport.intersects(BoundingBox {
-                        y_min: paint.frame.y_min + offset_y,
-                        y_max: paint.frame.y_max + offset_y,
-                        ..paint.frame
-                    })
-                })
-            {
-                continue;
-            }
-            let cell_theme = paint.fill.theme(theme);
-            if let Some(layout) = paint.layout {
-                let styled =
-                    StyledText::new(&paint.cell.content, TextContext::Flow, renderer.settings);
-                let mut target = text::NativePaintTarget::new(svg.retains_text(), viewport)
-                    .with_cell(anchor_utf16, paint.native_text_placement);
-                target.conservative_clip = Some(clip);
-                paint_text_layout_with_target(
-                    svg,
-                    &styled,
-                    layout,
-                    media_assets,
-                    cell_theme,
-                    renderer,
-                    target,
-                );
-            } else {
-                let frame = text::TextFrame {
-                    bbox: BoundingBox {
-                        y_min: paint.frame.y_min + offset_y,
-                        y_max: paint.frame.y_max + offset_y,
-                        ..paint.frame
-                    },
-                    gravity: Some(0),
-                    exclusions: &[],
-                };
-                svg.scope(Group::new().clipped(&clip), |svg| {
-                    render_text_frame(
-                        svg,
-                        &paint.cell.content,
-                        frame,
-                        media_assets,
-                        cell_theme,
-                        renderer,
-                        viewport,
-                    );
-                });
-            }
-        }
-    });
-}
-
-struct TableCellPaint<'a> {
-    cell: &'a crate::RichTextTableCell,
-    fill: table::CellFill,
-    frame: BoundingBox,
-    artwork_frame: BoundingBox,
-    layout: Option<&'a text::TextLayout>,
-    native_text_placement: Result<
-        table::native_placement::NativeCellTextPlacement,
-        text::native_cell_clip::NativeCellClipError,
-    >,
-    position: table::CellPosition,
-    gap: bool,
-}
-
-impl TableCellPaint<'_> {
-    fn artwork_bounds(
-        &self,
-        borders: Option<&table::TableBorderGeometry>,
-        offset_y: f64,
-        prepared: bool,
-        artwork: table::TableArtworkGeometry,
-    ) -> BoundingBox {
-        let guard = if prepared {
-            borders.map_or(0.0, |borders| {
-                borders
-                    .cell_paths(self.position)
-                    .into_iter()
-                    .filter_map(|path| path.paint_width())
-                    .fold(0.0_f32, f32::max)
-                    / 2.0
-            })
-        } else {
-            0.0
-        };
-        let guard = f64::from(guard);
-        let mut bounds = BoundingBox {
-            x_min: self.artwork_frame.x_min - guard,
-            y_min: self.artwork_frame.y_min + offset_y - guard,
-            x_max: self.artwork_frame.x_max + guard,
-            y_max: self.artwork_frame.y_max + offset_y + guard,
-        };
-        if matches!(artwork, table::TableArtworkGeometry::Saved { .. })
-            && let Some(borders) = borders
-        {
-            for path in borders.cell_paths(self.position) {
-                let Some(width) = path.paint_width() else {
-                    continue;
-                };
-                let path = artwork.border(path, self.artwork_frame);
-                if !path.has_finite_endpoints() {
-                    continue;
-                }
-                let [x1, y1, x2, y2] = path.endpoints.map(f64::from);
-                let guard = f64::from(width) / 2.0;
-                bounds.x_min = bounds.x_min.min(x1.min(x2) - guard);
-                bounds.y_min = bounds.y_min.min(y1.min(y2) + offset_y - guard);
-                bounds.x_max = bounds.x_max.max(x1.max(x2) + guard);
-                bounds.y_max = bounds.y_max.max(y1.max(y2) + offset_y + guard);
-            }
-        }
-        bounds
-    }
-}
-
-fn paint_table_outline(
-    svg: &mut Scene,
-    borders: Option<&table::TableBorderGeometry>,
-    bounds: BoundingBox,
-    offset_y: f64,
-    theme: RenderTheme,
-) {
-    let Some(borders) = borders else { return };
-    let outline = borders.outline();
-    if !outline.active() {
-        return;
-    }
-    if outline.rounded() {
-        svg.push(
-            rectangle(bounds, offset_y, 5)
-                .rx(decimal(f64::from(outline.rx), 5))
-                .ry(decimal(f64::from(outline.ry), 5))
-                .fill(Paint::None)
-                .stroke(Paint::from_hex(&color_hex(
-                    &theme.foreground_color(argb_color(outline.color)),
-                )))
-                .stroke_opacity(decimal(f64::from(outline.color >> 24) / 255.0, 6))
-                .stroke_width(decimal(f64::from(outline.width), 5)),
-        );
-    } else {
-        for path in borders.outer_paths(Some(bounds)) {
-            paint_table_border(svg, path, offset_y, theme);
-        }
-    }
-}
-
-fn paint_table_cell_background(
-    svg: &mut Scene,
-    paint: &TableCellPaint<'_>,
-    shape: [usize; 2],
-    radii: [f32; 2],
-    offset_y: f64,
-) {
-    let fill = Paint::from_hex(&color_hex(&paint.fill.color));
-    let rectangle = |bounds, offset_y, places| {
-        rectangle(bounds, offset_y, places).fill_opacity(decimal(paint.fill.opacity, 6))
-    };
-    let geometry = table::CellBackgroundGeometry::new(
-        paint.artwork_frame,
-        paint.position,
-        [paint.cell.row_span, paint.cell.column_span],
-        shape,
-        radii,
-    );
-    let background = rectangle(geometry.bounds, offset_y, 5).fill(fill);
-    if let Some([rx, ry]) = geometry.radii {
-        svg.push(
-            background
-                .rx(decimal(f64::from(rx), 5))
-                .ry(decimal(f64::from(ry), 5)),
-        );
-    } else {
-        svg.push(background);
-    }
-    for bounds in geometry.square_corners.into_iter().flatten() {
-        svg.push(rectangle(bounds, offset_y, 5).fill(fill));
-    }
-}
-
-fn paint_table_border(svg: &mut Scene, path: table::BorderPath, offset_y: f64, theme: RenderTheme) {
-    let Some(width) = path.paint_width() else {
-        return;
-    };
-    let [x1, y1, x2, y2] = path.endpoints.map(f64::from);
-    svg.push(
-        Line::new()
-            .x1(x1)
-            .y1(y1 + offset_y)
-            .x2(x2)
-            .y2(y2 + offset_y)
-            .stroke(Paint::from_hex(&color_hex(
-                &theme.foreground_color(argb_color(path.style.color)),
-            )))
-            .stroke_opacity(decimal(f64::from(path.style.color >> 24) / 255.0, 6))
-            .stroke_width(width),
-    );
 }
 
 fn render_prepared_code(
@@ -4690,61 +4320,27 @@ fn magicpen_source_color(stroke: &Stroke, argb: u32) -> Option<Color> {
     stroke.color.or(Some(argb_color(argb)))
 }
 
-#[allow(clippy::too_many_arguments)] // Carries the independent per-render pen profiles.
-fn render_stroke(
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum StrokeDispatch {
+    Handled,
+    Fallback,
+}
+
+fn try_render_fountain_profile(
     svg: &mut Scene,
     stroke: &Stroke,
     theme: RenderTheme,
     replay_index: Option<usize>,
-    calligraphy_session: &mut crate::ink::calligraphy::CalligraphySession,
-    native_allowed: bool,
-    viewport: [u32; 2],
-    inkpen_profile: Option<InkPenRenderProfile>,
-    inkpen_v4_output_scale: Option<u32>,
-    inkpen_v1_output_scale: Option<u32>,
-    inkpen2_profile: Option<InkPen2RenderProfile>,
-    inkpen2_v1_output_scale: Option<InkPen2V1OutputScale>,
-    chinesebrush_profile: Option<ChineseBrushRenderProfile>,
-    chinesebrush_fwidth_output_profile: Option<ChineseBrushFwidthOutputProfile>,
-    fountain_v17_rainbow_profile: Option<&FountainV17RainbowRenderProfile>,
-    fountain_v17_output_scale_profile: Option<FountainV17OutputScaleProfile>,
-    fountain_v16_output_scale_profile: Option<FountainV16OutputScaleProfile>,
-    fountain_v14_output_scale_profile: Option<FountainV14OutputScaleProfile>,
-    defaultpen_output_scale: Option<DefaultPenOutputScale>,
-    marker3_output_scale: Option<Marker3OutputScale>,
-    marker2_output_scale: Option<u32>,
-    marker2_remaining_vertices: &Cell<usize>,
-    magicpen_output_scale: Option<u32>,
-    magicpen_host_minimum_dot_grid: bool,
-    old_pencil_svg_profile: bool,
-    pencil3_profile: Option<Pencil3RenderProfile>,
-    airbrush_profile: Option<AirBrushRenderProfile>,
-    simplebrush_profile: Option<SimpleBrushRenderProfile>,
-    simplebrush_two_pixels_per_page_unit: bool,
-    montblanc_profile: Option<MontblancRenderProfile>,
-    montblanc_two_pixels_per_page_unit: bool,
-    legacy_marker_centerline_profile: Option<LegacyMarkerCenterlineProfile>,
-    marker4_v7_finger_output_scale: Option<u32>,
-    marker4_v7_remaining_stamps: &Cell<usize>,
-    old_pencil_remaining_stamps: &Cell<usize>,
-    old_pencil_remaining_points: &Cell<usize>,
-    simplebrush_remaining_stamps: &Cell<usize>,
-    montblanc_remaining_patches: &Cell<usize>,
     slice: Option<PageSlice>,
-) {
-    // Saved ObjectDrawing admission requires at least two source points before
-    // pen-name dispatch. Keep the context-free prepare_stroke compatibility
-    // path unchanged; this renderer only paints persisted page objects.
-    if stroke.points.len() <= 1 {
-        return;
-    }
-    if native_allowed
-        && stroke.rendering.as_ref().is_some_and(|rendering| {
-            rendering.pen_name.as_deref()
-                == Some("com.samsung.android.sdk.pen.pen.preload.FountainPen")
-                && rendering.properties.rainbow_effect
-        })
-        && let Some(profile) = fountain_v17_rainbow_profile
+    options: &RenderOptions,
+) -> StrokeDispatch {
+    let fountain_v17_rainbow_profile = options.fountain_v17_rainbow_profile.as_ref();
+    let fountain_v17_output_scale_profile = options.fountain_v17_output_scale_profile;
+    let fountain_v16_output_scale_profile = options.fountain_v16_output_scale_profile;
+    if stroke.rendering.as_ref().is_some_and(|rendering| {
+        rendering.pen_name.as_deref() == Some("com.samsung.android.sdk.pen.pen.preload.FountainPen")
+            && rendering.properties.rainbow_effect
+    }) && let Some(profile) = fountain_v17_rainbow_profile
         && fountain_v17_output_scale_profile
             .is_none_or(|profile| valid_fountain_v17_output_scale(profile.pixels_per_page_unit))
     {
@@ -4757,22 +4353,11 @@ fn render_stroke(
             fountain_v17_output_scale_profile.map(|profile| profile.pixels_per_page_unit),
         );
         if paint.fountain_v17_rgb.is_some() {
-            if let Some(index) = replay_index {
-                svg.scope(Group::new().replay_stroke(StrokeIndex(index)), |svg| {
-                    render_prepared_stroke_with_fallback(svg, &paint, true, slice, || {
-                        Some(prepare_context_stroke_with_theme(stroke, theme))
-                    });
-                });
-            } else {
-                render_prepared_stroke_with_fallback(svg, &paint, false, slice, || {
-                    Some(prepare_context_stroke_with_theme(stroke, theme))
-                });
-            }
-            return;
+            render_fountain_profile_stroke(svg, stroke, &paint, theme, replay_index, slice);
+            return StrokeDispatch::Handled;
         }
     }
-    if native_allowed
-        && fountain_v17_rainbow_profile.is_none()
+    if fountain_v17_rainbow_profile.is_none()
         && stroke.rendering.as_ref().is_some_and(|rendering| {
             rendering.pen_name.as_deref()
                 == Some("com.samsung.android.sdk.pen.pen.preload.FountainPen")
@@ -4791,19 +4376,152 @@ fn render_stroke(
             && paint.dot_radii.is_some()
             && paint.fountain_v17_rgb.is_none()
         {
-            if let Some(index) = replay_index {
-                svg.scope(Group::new().replay_stroke(StrokeIndex(index)), |svg| {
-                    render_prepared_stroke_with_fallback(svg, &paint, true, slice, || {
-                        Some(prepare_context_stroke_with_theme(stroke, theme))
-                    });
-                });
-            } else {
-                render_prepared_stroke_with_fallback(svg, &paint, false, slice, || {
-                    Some(prepare_context_stroke_with_theme(stroke, theme))
-                });
-            }
-            return;
+            render_fountain_profile_stroke(svg, stroke, &paint, theme, replay_index, slice);
+            return StrokeDispatch::Handled;
         }
+    }
+    StrokeDispatch::Fallback
+}
+
+fn render_fountain_profile_stroke(
+    svg: &mut Scene,
+    stroke: &Stroke,
+    paint: &crate::PreparedStroke<'_>,
+    theme: RenderTheme,
+    replay_index: Option<usize>,
+    slice: Option<PageSlice>,
+) {
+    let draw = |svg: &mut Scene| {
+        render_prepared_stroke_with_fallback(svg, paint, replay_index.is_some(), slice, || {
+            Some(prepare_context_stroke_with_theme(stroke, theme))
+        });
+    };
+    if let Some(index) = replay_index {
+        svg.scope(Group::new().replay_stroke(StrokeIndex(index)), draw);
+    } else {
+        draw(svg);
+    }
+}
+
+fn try_render_montblanc_profile(
+    svg: &mut Scene,
+    stroke: &Stroke,
+    theme: RenderTheme,
+    viewport: [u32; 2],
+    montblanc_mode: MontblancMode,
+    montblanc_remaining_patches: &Cell<usize>,
+) -> StrokeDispatch {
+    if montblanc_mode.supports_stroke(stroke)
+        && viewport.iter().all(|d| *d > 0)
+        && let Some((buffers, color)) = crate::ink::montblanc::prepare(stroke)
+        && montblanc_candidate::render(
+            svg,
+            &buffers,
+            &theme.foreground(Some(color)),
+            montblanc_remaining_patches,
+            if montblanc_mode == MontblancMode::TwoPixelsPerPageUnit {
+                2.0
+            } else {
+                1.0
+            },
+        )
+    {
+        return StrokeDispatch::Handled;
+    }
+    StrokeDispatch::Fallback
+}
+
+fn try_render_simplebrush_profile(
+    svg: &mut Scene,
+    stroke: &Stroke,
+    theme: RenderTheme,
+    viewport: [u32; 2],
+    slice: Option<PageSlice>,
+    simplebrush_mode: SimpleBrushMode,
+    budgets: &RenderBudgets,
+) -> StrokeDispatch {
+    let simplebrush_remaining_stamps =
+        if simplebrush_mode == SimpleBrushMode::TwoPixelsPerPageUnit && stroke.points.len() > 128 {
+            &budgets.simplebrush_long_remaining_stamps
+        } else {
+            &budgets.simplebrush_remaining_stamps
+        };
+    // The experimental renderer is deliberately disabled for replay until it
+    // carries correct per-source-sample and terminal part boundaries.
+    if simplebrush_mode.supports_stroke(stroke, slice)
+        && viewport.iter().all(|dimension| *dimension > 0)
+        && let Ok(paint) = crate::ink::simplebrush::prepare_stroke_for_scale(
+            stroke,
+            true,
+            simplebrush_remaining_stamps.get(),
+            simplebrush_mode == SimpleBrushMode::TwoPixelsPerPageUnit,
+        )
+        && simplebrush::render_at_scale(
+            svg,
+            &paint.samples,
+            &theme.foreground(Some(paint.color)),
+            if simplebrush_mode == SimpleBrushMode::TwoPixelsPerPageUnit {
+                2.0
+            } else {
+                1.0
+            },
+            slice.map(|slice| {
+                let top = f64::from(slice.y());
+                (top, top + f64::from(slice.height()))
+            }),
+        )
+    {
+        simplebrush_remaining_stamps.set(simplebrush_remaining_stamps.get() - paint.samples.len());
+        return StrokeDispatch::Handled;
+    }
+    StrokeDispatch::Fallback
+}
+
+#[allow(clippy::too_many_arguments)]
+fn render_stroke(
+    svg: &mut Scene,
+    stroke: &Stroke,
+    theme: RenderTheme,
+    replay_index: Option<usize>,
+    calligraphy_session: &mut crate::ink::calligraphy::CalligraphySession,
+    native_allowed: bool,
+    viewport: [u32; 2],
+    policy: &BrushPolicy<'_>,
+    budgets: &RenderBudgets,
+    slice: Option<PageSlice>,
+) {
+    let inkpen2_profile = policy.options.inkpen2_profile;
+    let inkpen2_v1_output_scale = policy.options.inkpen2_v1_output_scale;
+    let chinesebrush_profile = policy.options.chinesebrush_profile;
+    let chinesebrush_fwidth_output_profile = policy.options.chinesebrush_fwidth_output_profile;
+    let fountain_v16_output_scale_profile = policy.options.fountain_v16_output_scale_profile;
+    let fountain_v14_output_scale_profile = policy.options.fountain_v14_output_scale_profile;
+    let defaultpen_output_scale = policy.options.defaultpen_output_scale;
+    let marker3_output_scale = policy.options.marker3_output_scale;
+    let marker2_output_scale = policy.options.marker2_output_scale;
+    let marker2_remaining_vertices = &budgets.marker2_remaining_vertices;
+    let magicpen_output_scale = policy.options.magicpen_output_scale;
+    let magicpen_host_minimum_dot_grid = policy.options.magicpen_host_minimum_dot_grid;
+    let old_pencil_svg_profile = policy.options.old_pencil_svg_profile;
+    let pencil3_profile = policy.options.pencil3_profile;
+    let airbrush_profile = policy.options.airbrush_profile;
+    let legacy_marker_centerline_profile = policy.options.legacy_marker_centerline_profile;
+    let marker4_v7_finger_output_scale = policy.options.marker4_v7_finger_output_scale;
+    let marker4_v7_remaining_stamps = &budgets.marker4_v7_remaining_stamps;
+    let old_pencil_remaining_stamps = &budgets.old_pencil_remaining_stamps;
+    let old_pencil_remaining_points = &budgets.old_pencil_remaining_points;
+
+    // Saved ObjectDrawing admission requires at least two source points before
+    // pen-name dispatch. Keep the context-free prepare_stroke compatibility
+    // path unchanged; this renderer only paints persisted page objects.
+    if stroke.points.len() <= 1 {
+        return;
+    }
+    if native_allowed
+        && try_render_fountain_profile(svg, stroke, theme, replay_index, slice, policy.options)
+            == StrokeDispatch::Handled
+    {
+        return;
     }
     if native_allowed
         && let Some(profile) = chinesebrush_profile
@@ -4865,84 +4583,30 @@ fn render_stroke(
     if native_allowed
         && replay_index.is_none()
         && slice.is_none()
-        && ((montblanc_profile == Some(MontblancRenderProfile::HostUnitScale)
-            && !montblanc_two_pixels_per_page_unit)
-            || (montblanc_profile.is_none() && montblanc_two_pixels_per_page_unit))
-        && viewport.iter().all(|d| *d > 0)
-        && (!montblanc_two_pixels_per_page_unit
-            || stroke.points.len() <= 11
-            || ((12..=24).contains(&stroke.points.len())
-                && (0.5..=2.5).contains(&stroke.pen_width)))
-        && (!montblanc_two_pixels_per_page_unit
-            || !(10..=11).contains(&stroke.points.len())
-            || (0.5..=2.5).contains(&stroke.pen_width))
-        && let Some((buffers, color)) = crate::ink::montblanc::prepare(stroke)
-        && montblanc_candidate::render(
+        && try_render_montblanc_profile(
             svg,
-            &buffers,
-            &theme.foreground(Some(color)),
-            montblanc_remaining_patches,
-            if montblanc_two_pixels_per_page_unit {
-                2.0
-            } else {
-                1.0
-            },
-        )
+            stroke,
+            theme,
+            viewport,
+            policy.montblanc_mode,
+            &budgets.montblanc_remaining_patches,
+        ) == StrokeDispatch::Handled
     {
         return;
     }
-    // The experimental renderer is deliberately disabled for replay until it
-    // carries correct per-source-sample and terminal part boundaries.
+    // Replay is excluded until the renderer carries per-source-sample and terminal boundaries.
     if native_allowed
         && replay_index.is_none()
-        && ((simplebrush_profile == Some(SimpleBrushRenderProfile::HostV25)
-            && !simplebrush_two_pixels_per_page_unit)
-            || (simplebrush_profile.is_none()
-                && simplebrush_two_pixels_per_page_unit
-                && (2..=256).contains(&stroke.points.len())
-                && stroke.rendering.as_ref().is_some_and(|rendering| {
-                    matches!(
-                        rendering.advanced_settings.as_deref(),
-                        None | Some("") | Some("1;")
-                    ) && rendering.style.pen_size.is_some_and(|size| {
-                        match rendering.tool_type_raw {
-                            0 | 2 | 3 if stroke.points.len() == 3 => (3.0..=32.0).contains(&size),
-                            1 => {
-                                (3..=32).contains(&stroke.points.len())
-                                    && (8.0..=12.0).contains(&size)
-                            }
-                            2 => (8.0..=20.0).contains(&size),
-                            0 if (4..=128).contains(&stroke.points.len()) && size == 3.0 => true,
-                            0 => (8.0..=20.0).contains(&size),
-                            3 => (8.0..=20.0).contains(&size),
-                            _ => false,
-                        }
-                    })
-                })
-                && slice.is_none()))
-        && viewport.iter().all(|dimension| *dimension > 0)
-        && let Ok(paint) = crate::ink::simplebrush::prepare_stroke_for_scale(
-            stroke,
-            true,
-            simplebrush_remaining_stamps.get(),
-            simplebrush_two_pixels_per_page_unit,
-        )
-        && simplebrush::render_at_scale(
+        && try_render_simplebrush_profile(
             svg,
-            &paint.samples,
-            &theme.foreground(Some(paint.color)),
-            if simplebrush_two_pixels_per_page_unit {
-                2.0
-            } else {
-                1.0
-            },
-            slice.map(|slice| {
-                let top = f64::from(slice.y());
-                (top, top + f64::from(slice.height()))
-            }),
-        )
+            stroke,
+            theme,
+            viewport,
+            slice,
+            policy.simplebrush_mode,
+            budgets,
+        ) == StrokeDispatch::Handled
     {
-        simplebrush_remaining_stamps.set(simplebrush_remaining_stamps.get() - paint.samples.len());
         return;
     }
     if native_allowed
@@ -5009,27 +4673,18 @@ fn render_stroke(
     }
     if native_allowed
         && viewport.iter().all(|dimension| *dimension > 0)
-        && let Some((ink, is_v4)) =
-            prepare_page_inkpen_with_version(stroke, inkpen_profile, inkpen_v1_output_scale)
-        && let Some(vector) = inkpen_v1_vector_path(
-            &ink.points,
-            &ink.radii,
-            &ink.sample_ends,
-            ink.terminal.clone(),
+        && let Some(page) = prepare_page_inkpen_geometry(
+            stroke,
+            policy.options,
+            InkPenV1Admission::Canonical,
             replay_index.is_some(),
-            (if is_v4 {
-                inkpen_v4_output_scale.filter(|scale| matches!(scale, 1..=8))
-            } else {
-                inkpen_v1_output_scale.filter(|scale| matches!(scale, 1..=8))
-            })
-            .unwrap_or(1),
         )
     {
-        let color = theme.foreground(stroke.color.or(Some(argb_rgb(ink.argb))));
-        let opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
+        let color = theme.foreground(stroke.color.or(Some(argb_rgb(page.ink.argb))));
+        let opacity = f64::from((page.ink.argb >> 24) as u8) / 255.0;
         let draw = |svg: &mut Scene| {
             svg.scope(Group::new().opacity(opacity), |svg| {
-                svg.push(vector.path.fill(Paint::from_hex(&color)));
+                svg.push(page.vector.path.fill(Paint::from_hex(&color)));
             });
         };
         if let Some(index) = replay_index {
@@ -5198,21 +4853,8 @@ fn render_stroke(
             profile.pixels_per_page_unit,
         );
     }
-    if !native_allowed && paint.coverage_mesh.is_none() {
-        let native_fountain_default_color = paint.profile == Some("FountainPen")
-            && paint.support == crate::ink::InkSupport::Reconstructed
-            && stroke.color.is_none()
-            && stroke
-                .rendering
-                .as_ref()
-                .and_then(|rendering| rendering.style.color_argb)
-                .is_none();
-        let color = if native_fountain_default_color {
-            Some(Color { r: 0, g: 0, b: 0 })
-        } else {
-            stroke_source_color(stroke)
-        };
-        paint.color = theme.foreground(color);
+    if !native_allowed {
+        apply_context_stroke_theme(stroke, theme, &mut paint);
     }
     let slice = if native_allowed { slice } else { None };
     if let Some(index) = replay_index {
@@ -5320,13 +4962,22 @@ fn prepare_page_inkpen(
     stroke: &Stroke,
     profile: Option<InkPenRenderProfile>,
 ) -> Option<crate::ink::PreparedInkPenV1> {
-    prepare_page_inkpen_with_version(stroke, profile, None).map(|(ink, _)| ink)
+    select_page_inkpen(stroke, profile, None, InkPenV1Admission::Canonical).map(|(ink, _)| ink)
 }
 
-fn prepare_page_inkpen_with_version(
+#[derive(Clone, Copy)]
+enum InkPenV1Admission {
+    // Canonical exports also admit unscaled V1 without fixed-width support.
+    Canonical,
+    // The themed replay override only tries V1 early for a configured scale.
+    ConfiguredScaleOnly,
+}
+
+fn select_page_inkpen(
     stroke: &Stroke,
     profile: Option<InkPenRenderProfile>,
     v1_scale: Option<u32>,
+    admission: InkPenV1Admission,
 ) -> Option<(crate::ink::PreparedInkPenV1, bool)> {
     profile
         .and_then(|profile| {
@@ -5338,12 +4989,68 @@ fn prepare_page_inkpen_with_version(
         })
         .map(|ink| (ink, true))
         .or_else(|| {
-            crate::ink::prepare_inkpen_v1_for_page_with_fixed_width(
-                stroke,
-                v1_scale.is_some_and(|scale| matches!(scale, 1..=8)),
-            )
-            .map(|ink| (ink, false))
+            let configured_scale = v1_scale.is_some_and(|scale| matches!(scale, 1..=8));
+            if matches!(admission, InkPenV1Admission::ConfiguredScaleOnly) && !configured_scale {
+                return None;
+            }
+            crate::ink::prepare_inkpen_v1_for_page_with_fixed_width(stroke, configured_scale)
+                .map(|ink| (ink, false))
         })
+}
+
+struct PageInkPenGeometry {
+    ink: crate::ink::PreparedInkPenV1,
+    vector: InkPenV1VectorPath,
+}
+
+impl PageInkPenGeometry {
+    fn new(ink: crate::ink::PreparedInkPenV1, replay: bool, output_scale: u32) -> Option<Self> {
+        let vector = inkpen_v1_vector_path(
+            &ink.points,
+            &ink.radii,
+            &ink.sample_ends,
+            ink.terminal.clone(),
+            replay,
+            output_scale,
+        )?;
+        Some(Self { ink, vector })
+    }
+
+    fn apply_to_prepared(self, prepared: &mut crate::PreparedStroke<'_>, color: String) {
+        prepared.replace_geometry(crate::ink::PreparedGeometry::SampledDisks {
+            points: self.ink.points,
+            sample_ends: self.vector.sample_ends,
+            radii: self.ink.radii.into_iter().map(f64::from).collect(),
+        });
+        prepared.bounds = Some(self.ink.bounds);
+        prepared.color = color;
+        prepared.opacity = f64::from((self.ink.argb >> 24) as u8) / 255.0;
+        prepared.top_layer = false;
+        prepared.profile = Some("InkPen");
+        prepared.support = crate::InkSupport::Reconstructed;
+    }
+}
+
+fn prepare_page_inkpen_geometry(
+    stroke: &Stroke,
+    options: &RenderOptions,
+    admission: InkPenV1Admission,
+    replay: bool,
+) -> Option<PageInkPenGeometry> {
+    let (ink, is_v4) = select_page_inkpen(
+        stroke,
+        options.inkpen_profile,
+        options.inkpen_v1_output_scale,
+        admission,
+    )?;
+    let output_scale = if is_v4 {
+        options.inkpen_v4_output_scale
+    } else {
+        options.inkpen_v1_output_scale
+    }
+    .filter(|scale| matches!(scale, 1..=8))
+    .unwrap_or(1);
+    PageInkPenGeometry::new(ink, replay, output_scale)
 }
 
 /// Prepare replay geometry in the same one-source-unit-per-SVG-pixel context
@@ -5367,14 +5074,11 @@ pub fn prepare_stroke_for_page(stroke: &Stroke, dark_mode: bool) -> crate::Prepa
         if let Some(last) = sample_ends.last_mut() {
             *last = ink.points.len();
         }
-        prepared.points = Cow::Owned(ink.points);
-        prepared.sample_ends = Some(sample_ends);
-        prepared.dot_radii = Some(ink.radii.into_iter().map(f64::from).collect());
-        prepared.ordered_disk_replay = None;
-        prepared.dot_directions = None;
-        prepared.rect_stamp = None;
-        prepared.coverage_mesh = None;
-        prepared.segment_widths = None;
+        prepared.replace_geometry(crate::ink::PreparedGeometry::SampledDisks {
+            points: ink.points,
+            sample_ends,
+            radii: ink.radii.into_iter().map(f64::from).collect(),
+        });
         prepared.bounds = Some(ink.bounds);
         prepared.color = color;
         prepared.opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
@@ -5383,29 +5087,10 @@ pub fn prepare_stroke_for_page(stroke: &Stroke, dark_mode: bool) -> crate::Prepa
         prepared.support = crate::InkSupport::Reconstructed;
     }
     if let Some(ink) = crate::ink::prepare_inkpen_v1_for_page(stroke)
-        && let Some(vector) = inkpen_v1_vector_path(
-            &ink.points,
-            &ink.radii,
-            &ink.sample_ends,
-            ink.terminal,
-            true,
-            1,
-        )
+        && let Some(page) = PageInkPenGeometry::new(ink, true, 1)
     {
-        prepared.points = Cow::Owned(ink.points);
-        prepared.sample_ends = Some(vector.sample_ends);
-        prepared.dot_radii = Some(ink.radii.into_iter().map(f64::from).collect());
-        prepared.ordered_disk_replay = None;
-        prepared.dot_directions = None;
-        prepared.rect_stamp = None;
-        prepared.coverage_mesh = None;
-        prepared.segment_widths = None;
-        prepared.bounds = Some(ink.bounds);
-        prepared.color = RenderTheme::for_canvas(dark_mode).foreground(stroke_source_color(stroke));
-        prepared.opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
-        prepared.top_layer = false;
-        prepared.profile = Some("InkPen");
-        prepared.support = crate::InkSupport::Reconstructed;
+        let color = RenderTheme::for_canvas(dark_mode).foreground(stroke_source_color(stroke));
+        page.apply_to_prepared(&mut prepared, color);
     }
     prepared
 }
@@ -5817,14 +5502,14 @@ fn prepare_inkpen2_internal(
     let output = if let Some(scale) = v1_scale {
         let mut output = crate::ink::inkpen2::redraw_v1_bounded(input, output_budget)?;
         output.sample_ends.push(output.terminal.start);
-        for record in &mut output.vertices {
-            let r = record[2];
-            if !r.is_finite() || r <= 0.0 {
+        for [_, _, radius_x, radius_y, edge, coverage, ..] in &mut output.vertices {
+            let radius = *radius_x;
+            if !radius.is_finite() || radius <= 0.0 {
                 return None;
             }
-            record[3] = r;
-            record[4] = ((r - 1.0 / scale.value()).max(0.0) / r) / 2.0;
-            record[5] = 1.0;
+            *radius_y = radius;
+            *edge = ((radius - 1.0 / scale.value()).max(0.0) / radius) / 2.0;
+            *coverage = 1.0;
         }
         output
     } else {
@@ -5849,15 +5534,19 @@ fn prepare_inkpen2_internal(
         return None;
     }
     if output.vertices.iter().any(|record| {
+        let [_, _, radius_x, radius_y, _, coverage, ..] = record;
         record.iter().any(|value| !value.is_finite())
-            || record[2] <= 0.0
-            || record[3] <= 0.0
-            || !(0.0..=1.0).contains(&record[5])
+            || *radius_x <= 0.0
+            || *radius_y <= 0.0
+            || !(0.0..=1.0).contains(coverage)
     }) {
         return None;
     }
     if active_rainbow
-        && (output.vertices.iter().any(|record| record[5] != 1.0)
+        && (output
+            .vertices
+            .iter()
+            .any(|[_, _, _, _, _, coverage, ..]| *coverage != 1.0)
             || !inkpen2_vector::valid_record_rgb(&output.vertices))
     {
         return None;
@@ -5959,84 +5648,26 @@ pub fn prepare_stroke_for_page_with_theme<'a>(
     if stroke.points.len() <= 1 {
         return empty_saved_stroke_paint(stroke, theme);
     }
-    let inkpen = options
-        .inkpen_profile
-        .and_then(|profile| {
-            crate::ink::prepare_inkpen_v4_for_page(
-                stroke,
-                profile.screen_width,
-                profile.screen_height,
-            )
-            .map(|ink| (ink, true))
-        })
-        .or_else(|| {
-            options
-                .inkpen_v1_output_scale
-                .filter(|scale| matches!(scale, 1..=8))
-                .and_then(|_| crate::ink::prepare_inkpen_v1_for_page_with_fixed_width(stroke, true))
-                .map(|ink| (ink, false))
-        });
-    if let Some((ink, is_v4)) = inkpen
-        && let Some(vector) = inkpen_v1_vector_path(
-            &ink.points,
-            &ink.radii,
-            &ink.sample_ends,
-            ink.terminal.clone(),
-            true,
-            (if is_v4 {
-                options
-                    .inkpen_v4_output_scale
-                    .filter(|scale| matches!(scale, 1..=8))
-            } else {
-                options
-                    .inkpen_v1_output_scale
-                    .filter(|scale| matches!(scale, 1..=8))
-            })
-            .unwrap_or(1),
-        )
-    {
+    if let Some(page) = prepare_page_inkpen_geometry(
+        stroke,
+        options,
+        InkPenV1Admission::ConfiguredScaleOnly,
+        true,
+    ) {
         let mut prepared = crate::ink::prepare_stroke_for_context(
             stroke,
             theme.is_dark(),
             crate::ink::InkRenderContext::CanonicalPage,
         );
-        prepared.points = Cow::Owned(ink.points);
-        prepared.sample_ends = Some(vector.sample_ends);
-        prepared.dot_radii = Some(ink.radii.into_iter().map(f64::from).collect());
-        prepared.ordered_disk_replay = None;
-        prepared.dot_directions = None;
-        prepared.rect_stamp = None;
-        prepared.coverage_mesh = None;
-        prepared.segment_widths = None;
-        prepared.bounds = Some(ink.bounds);
-        prepared.color = theme.foreground(stroke.color.or(Some(argb_rgb(ink.argb))));
-        prepared.opacity = f64::from((ink.argb >> 24) as u8) / 255.0;
-        prepared.top_layer = false;
-        prepared.profile = Some("InkPen");
-        prepared.support = crate::InkSupport::Reconstructed;
+        let color = theme.foreground(stroke.color.or(Some(argb_rgb(page.ink.argb))));
+        page.apply_to_prepared(&mut prepared, color);
         return prepared;
     }
     let Some(ink) = prepare_inkpen2_v9(stroke, options.inkpen2_profile, theme) else {
         return prepare_stroke_for_page(stroke, theme.is_dark());
     };
     let mut prepared = prepare_stroke_for_page(stroke, theme.is_dark());
-    prepared.points = Cow::Owned(
-        ink.records
-            .iter()
-            .map(|r| crate::Point {
-                x: f64::from(r[0]),
-                y: f64::from(r[1]),
-            })
-            .collect(),
-    );
-    prepared.sample_ends = Some(ink.sample_ends.clone());
-    prepared.dot_radii = None;
-    prepared.ordered_disk_replay = None;
-    prepared.inkpen2_v9 = Some(ink.clone());
-    prepared.dot_directions = None;
-    prepared.rect_stamp = None;
-    prepared.coverage_mesh = None;
-    prepared.segment_widths = None;
+    prepared.replace_geometry(crate::ink::PreparedGeometry::InkPen2V9(ink.clone()));
     prepared.bounds = Some(ink.bounds);
     prepared.color = vector::color_hex(&ink.color);
     prepared.opacity = ink.opacity;
@@ -6093,23 +5724,17 @@ pub fn prepare_stroke_for_viewport_with_theme<'a>(
         return prepare_stroke_for_page_with_theme(stroke, theme, options);
     };
     let mut prepared = prepare_stroke_for_page(stroke, theme.is_dark());
-    prepared.points = Cow::Owned(
-        ink.records
+    prepared.replace_geometry(crate::ink::PreparedGeometry::SampledPolyline {
+        points: ink
+            .records
             .iter()
             .map(|r| crate::Point {
                 x: f64::from(r[0]),
                 y: f64::from(r[1]),
             })
             .collect(),
-    );
-    prepared.sample_ends = Some(ink.sample_ends);
-    prepared.dot_radii = None;
-    prepared.ordered_disk_replay = None;
-    prepared.inkpen2_v9 = None;
-    prepared.dot_directions = None;
-    prepared.rect_stamp = None;
-    prepared.coverage_mesh = None;
-    prepared.segment_widths = None;
+        sample_ends: ink.sample_ends,
+    });
     prepared.bounds = Some(ink.bounds);
     prepared.color = vector::color_hex(&ink.color);
     prepared.opacity = f64::from(ink.opacity);
@@ -6145,69 +5770,27 @@ fn render_prepared_stroke_with_fallback<'a>(
         render_prepared_stroke(svg, &fallback, replay, slice);
         return;
     }
-    let mut invalid_ordered_replay = false;
-    if let (Some(replay_data), Some(radii)) = (&paint.ordered_disk_replay, &paint.dot_radii) {
-        let sample_count = replay_data.terminal_part;
-        let expected_redraws = sample_count.saturating_sub(2);
-        let structurally_valid = sample_count >= 2
-            && radii.len() == paint.points.len()
-            && replay_data.redraw_ends.len() == expected_redraws
-            && replay_data.terminal_part > 0
-            && replay_data.terminal_start <= paint.points.len()
-            && replay_data
-                .redraw_ends
-                .iter()
-                .all(|&end| end <= replay_data.terminal_start)
-            && replay_data
-                .redraw_ends
-                .windows(2)
-                .all(|pair| pair[0] <= pair[1])
-            && replay_data.redraw_ends.last().copied().unwrap_or(0) == replay_data.terminal_start
-            && paint
-                .points
-                .iter()
-                .all(|point| point.x.is_finite() && point.y.is_finite())
-            && radii
-                .iter()
-                .all(|radius| radius.is_finite() && *radius >= 0.0);
-        if structurally_valid {
-            let mut start = 0usize;
-            for (redraw, &end) in replay_data.redraw_ends.iter().enumerate() {
-                for (index, &radius) in radii.iter().enumerate().take(end).skip(start) {
-                    let point = &paint.points[index];
+    let invalid_ordered_replay = match paint.ordered_disk_stamps() {
+        Ok(Some(stamps)) => {
+            for batch in stamps.batches() {
+                for (point, &radius) in batch.points.iter().zip(batch.radii) {
                     svg.push(
                         Circle::new()
-                            .replay_part(replay.then_some(ReplayPart(redraw + 2)))
+                            .replay_part(replay.then_some(ReplayPart(batch.source_sample)))
                             .cx(point.x)
                             .cy(point.y)
                             .r(radius)
                             .fill(Paint::from_hex(color)),
                     );
                 }
-                start = end;
-            }
-            for (index, &radius) in radii
-                .iter()
-                .enumerate()
-                .take(paint.points.len())
-                .skip(replay_data.terminal_start)
-            {
-                let point = &paint.points[index];
-                svg.push(
-                    Circle::new()
-                        .replay_part(replay.then_some(ReplayPart(replay_data.terminal_part)))
-                        .cx(point.x)
-                        .cy(point.y)
-                        .r(radius)
-                        .fill(Paint::from_hex(color)),
-                );
             }
             return;
         }
+        Ok(None) => false,
         // Invalid metadata falls back to the original polyline below. It
         // never emits a partial prefix or a truncated radii zip.
-        invalid_ordered_replay = true;
-    }
+        Err(_) => true,
+    };
     if let Some(stamp) = paint.rect_stamp {
         let (sin, cos) = stamp.angle.sin_cos();
         let (w, h) = (stamp.width, stamp.height);

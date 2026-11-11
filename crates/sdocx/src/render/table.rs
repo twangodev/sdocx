@@ -15,6 +15,7 @@ mod fills;
 mod grid;
 pub(in crate::render) mod native_placement;
 mod pagination;
+mod paint;
 
 #[cfg(test)]
 mod native_geometry_tests;
@@ -25,11 +26,17 @@ mod native_drawn_bounds_tests;
 #[cfg(test)]
 mod native_live_layout_tests;
 
-pub(super) use artwork::{CellBackgroundGeometry, TableArtworkGeometry, finite_artwork_rect};
-pub(super) use borders::{BorderPath, TableBorderGeometry};
-pub(super) use export::{TableExportPage, artwork_bounds};
+use artwork::{CellBackgroundGeometry, TableArtworkGeometry, finite_artwork_rect};
+use borders::{BorderPath, TableBorderGeometry};
+pub(super) use export::TableExportPage;
+use export::artwork_bounds;
+#[cfg(test)]
 pub(super) use fills::CellFill;
-pub(super) use grid::{CellPosition, TableGrid};
+#[cfg(not(test))]
+use fills::CellFill;
+use grid::{CellPosition, TableGrid};
+
+pub(super) use paint::render_table;
 
 use borders::Edge;
 
@@ -53,7 +60,16 @@ pub(super) struct PreparedTableDrawing {
     pub content_bbox: BoundingBox,
     pub rows: Vec<PreparedTableRow>,
     pub pending_gaps: Vec<f64>,
-    pub artwork: TableArtworkGeometry,
+    artwork: TableArtworkGeometry,
+}
+
+impl PreparedTableDrawing {
+    pub fn has_native_text_clipping(&self) -> bool {
+        self.rows.iter().flat_map(|row| &row.cells).any(|cell| {
+            cell.native_text_placement()
+                .is_ok_and(|placement| placement.transport().is_some())
+        })
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -490,63 +506,31 @@ fn translate_cell_drawing(
     layout: &mut TextLayout,
     origin: [f64; 2],
 ) -> Result<(), ObjectDiagnosticKind> {
-    let mut preserves_native_frame = layout.native_frame.is_some();
-    for line in &mut layout.lines {
-        if !line.line.placements.is_empty() {
-            line.x +=
-                super::text::line_alignment_offset(line.line.advance, line.width, line.alignment);
-            line.alignment = None;
-        }
-        let expected = [
-            line.x + origin[0],
-            line.baseline + origin[1],
-            line.top + origin[1],
-            line.background_top + origin[1],
-            line.bottom + origin[1],
-            line.post_cursor + origin[1],
-        ];
-        line.x = native_add(line.x, origin[0])?;
-        line.baseline = native_add(line.baseline, origin[1])?;
-        line.top = native_add(line.top, origin[1])?;
-        line.background_top = native_add(line.background_top, origin[1])?;
-        line.bottom = native_add(line.bottom, origin[1])?;
-        line.post_cursor = native_add(line.post_cursor, origin[1])?;
-        preserves_native_frame &= layout.native_frame.as_mut().is_some_and(|frame| {
-            frame.retain_world_projection(
-                expected,
-                [
-                    line.x,
-                    line.baseline,
-                    line.top,
-                    line.background_top,
-                    line.bottom,
-                    line.post_cursor,
-                ],
-            )
-        });
-        if let Some(marker) = &mut line.marker {
-            marker.x = native_add(marker.x, origin[0])?;
-            marker.center_y = native_add(marker.center_y, origin[1])?;
-        }
-    }
-    if preserves_native_frame && let Some(frame) = &mut layout.native_frame {
-        frame.translation[0] += origin[0];
-        frame.translation[1] += origin[1];
-    } else {
-        layout.native_frame = None;
-    }
-    Ok(())
+    layout.translate_native_cell(origin)
 }
 
 fn offset_rounded_rect(
     rect: BoundingBox,
     origin: [f64; 2],
 ) -> Result<BoundingBox, ObjectDiagnosticKind> {
+    let rect = [
+        native_measured_height(rect.x_min)? as f32,
+        native_measured_height(rect.y_min)? as f32,
+        native_measured_height(rect.x_max)? as f32,
+        native_measured_height(rect.y_max)? as f32,
+    ];
+    let origin = [
+        native_measured_height(origin[0])? as f32,
+        native_measured_height(origin[1])? as f32,
+    ];
+    let [x_min, y_min, x_max, y_max] = super::native_translation::offset_rounded_rect(rect, origin)
+        .ok_or(ObjectDiagnosticKind::InvalidBounds)?
+        .map(f64::from);
     let result = BoundingBox {
-        x_min: native_add(rect.x_min, origin[0])?.floor(),
-        y_min: native_add(rect.y_min, origin[1])?.floor(),
-        x_max: native_add(rect.x_max, origin[0])?.ceil(),
-        y_max: native_add(rect.y_max, origin[1])?.ceil(),
+        x_min,
+        y_min,
+        x_max,
+        y_max,
     };
     if result.x_max <= result.x_min || result.y_max <= result.y_min {
         return Err(ObjectDiagnosticKind::InvalidBounds);
@@ -1264,7 +1248,7 @@ pub(super) mod tests {
         .unwrap()
         .unwrap();
         let mut scene = super::super::Scene::new(super::super::Svg::new());
-        super::super::render_table(
+        super::render_table(
             &mut scene,
             &table,
             11,
@@ -1307,7 +1291,7 @@ pub(super) mod tests {
                 .unwrap()
                 .unwrap();
             let mut scene = super::super::Scene::new(super::super::Svg::new());
-            super::super::render_table(
+            super::render_table(
                 &mut scene,
                 &table,
                 11,
@@ -2672,11 +2656,11 @@ pub(super) mod tests {
         for (source, measured) in source.rows[0].cells.iter_mut().zip(&drawing.rows[0].cells) {
             source.bbox = measured.frame;
         }
-        for prepared in [None, Some(super::super::TablePaint::from(&drawing))] {
+        for prepared in [None, Some(super::paint::TablePaint::from(&drawing))] {
             let mut scene = super::super::Scene::new(super::super::Svg::new());
             #[cfg(feature = "pdf")]
             scene.retain_text();
-            super::super::render_table(
+            super::render_table(
                 &mut scene,
                 &source,
                 0,
@@ -2793,7 +2777,7 @@ pub(super) mod tests {
         assert_eq!(drawing.content_bbox.x_max, 91.0);
         assert_eq!(drawing.rows[0].cells[3].frame.x_max, 361.0);
         let mut scene = super::super::Scene::new(super::super::Svg::new());
-        super::super::render_table(
+        super::render_table(
             &mut scene,
             &source,
             0,

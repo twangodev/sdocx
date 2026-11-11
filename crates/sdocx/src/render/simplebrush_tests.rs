@@ -381,6 +381,16 @@ fn stamp_budget_is_cumulative_and_rejection_is_atomic() {
         );
         let mut scene = Scene::new(Svg::new());
         let mut session = crate::ink::calligraphy::CalligraphySession::new();
+        let options = RenderOptions {
+            simplebrush_profile: profile.then_some(SimpleBrushRenderProfile::HostV25),
+            simplebrush_two_pixels_per_page_unit: scaled,
+            ..RenderOptions::default()
+        };
+        let budgets = super::RenderBudgets::new(&options);
+        budgets.simplebrush_remaining_stamps.set(remaining.get());
+        budgets
+            .simplebrush_long_remaining_stamps
+            .set(remaining.get());
         super::render_stroke(
             &mut scene,
             source,
@@ -389,39 +399,15 @@ fn stamp_budget_is_cumulative_and_rejection_is_atomic() {
             &mut session,
             true,
             [100, 100],
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            &std::cell::Cell::new(65_536),
-            None,
-            false,
-            false,
-            None,
-            None,
-            profile.then_some(SimpleBrushRenderProfile::HostV25),
-            scaled,
-            None,
-            false,
-            None,
-            None,
-            &std::cell::Cell::new(32768),
-            &std::cell::Cell::new(512),
-            &std::cell::Cell::new(8192),
-            remaining,
-            &std::cell::Cell::new(usize::MAX),
+            &super::BrushPolicy::new(&options),
+            &budgets,
             None,
         );
+        remaining.set(if scaled && !profile && source.points.len() > 128 {
+            budgets.simplebrush_long_remaining_stamps.get()
+        } else {
+            budgets.simplebrush_remaining_stamps.get()
+        });
         scene.finish()
     }
 

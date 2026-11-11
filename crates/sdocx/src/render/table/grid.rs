@@ -8,13 +8,13 @@ const MAX_GRID_CELLS: usize = 65_536;
 const MAX_SPAN_COVERAGE: usize = 1_048_576;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(in crate::render) struct CellPosition {
+pub(super) struct CellPosition {
     pub row: usize,
     pub column: usize,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(in crate::render) enum TableGridError {
+pub(super) enum TableGridError {
     Empty,
     CellLimit,
     SparseRow,
@@ -24,7 +24,7 @@ pub(in crate::render) enum TableGridError {
 }
 
 #[derive(Debug)]
-pub(in crate::render) struct TableGrid {
+pub(super) struct TableGrid {
     columns: usize,
     frame_owners: Vec<CellPosition>,
     visible_cells: Vec<CellPosition>,

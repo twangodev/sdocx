@@ -37,7 +37,10 @@ pub(super) fn render(svg: &mut Scene, ink: &PreparedInkPen2V9, replay_index: Opt
 fn render_per_stamp_rgb(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) {
     if ink.opacity == 0.0
         || ink.records.is_empty()
-        || ink.records.iter().all(|record| record[5] == 0.0)
+        || ink
+            .records
+            .iter()
+            .all(|[_, _, _, _, _, coverage, ..]| *coverage == 0.0)
     {
         return;
     }
@@ -119,9 +122,9 @@ fn render_per_stamp_rgb(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) 
 }
 
 pub(super) fn valid_record_rgb(records: &[[f32; 9]]) -> bool {
-    records.iter().all(|record| {
-        record[6..9]
-            .iter()
+    records.iter().all(|[_, _, _, _, _, _, red, green, blue]| {
+        [red, green, blue]
+            .into_iter()
             .all(|channel| channel.is_finite() && (0.0..=1.0).contains(channel))
     })
 }

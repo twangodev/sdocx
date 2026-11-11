@@ -35,9 +35,23 @@ struct PositionedSpan {
     native_flow_synthetic_italic: bool,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum SpanTextRole {
+    Visible,
+    NativeShear,
+    OutlineCarrier,
+}
+
 struct OutlinedSpan {
     source: Range<usize>,
-    paths: Vec<Path>,
+    // Emission consumes paths; source membership still owns manual decoration.
+    paths: Option<Vec<Path>>,
+}
+
+impl PositionedSpan {
+    fn admits_native_shear(&self) -> bool {
+        self.native_synthetic_italic && self.synthesis.italic && self.offset_y == 0.0
+    }
 }
 
 struct SvgOutlineSink(Data);
@@ -79,10 +93,7 @@ fn text_carrier(x: f64, baseline: f64) -> Text {
 }
 
 fn homogeneous_native_synthetic_italic(spans: &[PositionedSpan]) -> bool {
-    !spans.is_empty()
-        && spans.iter().all(|span| {
-            span.native_synthetic_italic && span.synthesis.italic && span.offset_y == 0.0
-        })
+    !spans.is_empty() && spans.iter().all(PositionedSpan::admits_native_shear)
 }
 
 fn cluster_native_synthetic_italic(cluster: &super::measurement::MeasuredCluster) -> bool {
@@ -292,7 +303,6 @@ pub(in crate::render) fn render_measured_line(
     };
     let visual_shear = native_synthetic_italic_skew(&spans)
         .and_then(|skew_x| native_visual_transform(skew_x, baseline));
-    let has_visual_shear = visual_shear.is_some();
     let mixed_native_synthetic_italic = has_positioned_mixed_native_synthetic_italic(&spans);
     let outline_order_is_explicit = spans.len() == 1
         || spans
@@ -306,7 +316,7 @@ pub(in crate::render) fn render_measured_line(
                 outlined_synthetic_italic_span(span, line, x, baseline, &mut outline_cache).map(
                     |paths| OutlinedSpan {
                         source: span.source.clone(),
-                        paths,
+                        paths: Some(paths),
                     },
                 )
             })
@@ -314,98 +324,80 @@ pub(in crate::render) fn render_measured_line(
     } else {
         Vec::new()
     };
-    let outlined_sources = outlined_spans
-        .iter()
-        .map(|outlined| outlined.source.clone())
-        .collect::<Vec<_>>();
     let text = text_carrier(x, baseline);
-    let emit_span =
-        |svg: &mut Scene, span: &PositionedSpan, synthetic_shear: bool, outlined: bool| {
-            let mut style = span.style.clone();
-            if span.positioned || outlined {
-                style.underline = false;
-                style.strikethrough = false;
-            }
-            let mut node = styled_tspan(
-                styled.index.slice(span.source.clone()).unwrap(),
-                &style,
-                styled.context(),
-            )
-            .y(decimal(baseline + span.offset_y, 5));
-            if !span.positions.is_empty() {
-                node = node.x_positions(&span.positions, 5);
-            }
-            if let Some((weight, face_style)) = span.font_face {
-                node = node.font_face(weight, face_style);
-            }
-            let synthetic_italic = span.native_synthetic_italic
-                && span.synthesis.italic
-                && synthetic_shear
-                && span.offset_y == 0.0;
-            if synthetic_italic {
-                node = node
-                    .font_synthesis(FontSynthesis {
-                        italic: false,
-                        ..span.synthesis
-                    })
-                    .font_style(fontdb::Style::Normal);
-            } else {
-                node = node.font_synthesis(span.synthesis);
-            }
-            if outlined {
-                node = node.fill_opacity(0.0);
-            }
-            push_text_span(svg, node, &style);
-        };
+    let emit_span = |svg: &mut Scene, span: &PositionedSpan, role: SpanTextRole| {
+        let mut style = span.style.clone();
+        if span.positioned || role == SpanTextRole::OutlineCarrier {
+            style.underline = false;
+            style.strikethrough = false;
+        }
+        let mut node = styled_tspan(
+            styled.index.slice(span.source.clone()).unwrap(),
+            &style,
+            styled.context(),
+        )
+        .y(decimal(baseline + span.offset_y, 5));
+        if !span.positions.is_empty() {
+            node = node.x_positions(&span.positions, 5);
+        }
+        if let Some((weight, face_style)) = span.font_face {
+            node = node.font_face(weight, face_style);
+        }
+        if role == SpanTextRole::NativeShear && span.admits_native_shear() {
+            node = node
+                .font_synthesis(FontSynthesis {
+                    italic: false,
+                    ..span.synthesis
+                })
+                .font_style(fontdb::Style::Normal);
+        } else {
+            node = node.font_synthesis(span.synthesis);
+        }
+        if role == SpanTextRole::OutlineCarrier {
+            node = node.fill_opacity(0.0);
+        }
+        push_text_span(svg, node, &style);
+    };
     if !outlined_spans.is_empty() {
         for span in &spans {
-            let outlined_index = outlined_spans
-                .iter()
-                .position(|outlined| outlined.source == span.source);
-            if let Some(outlined_index) = outlined_index {
-                let outlined = outlined_spans.remove(outlined_index);
+            let paths = outlined_spans
+                .iter_mut()
+                .find(|outlined| outlined.source == span.source && outlined.paths.is_some())
+                .and_then(|outlined| outlined.paths.take());
+            if let Some(paths) = paths {
                 svg.scope(Group::new(), |svg| {
                     svg.scope(text_carrier(x, baseline), |svg| {
-                        emit_span(svg, span, false, true);
+                        emit_span(svg, span, SpanTextRole::OutlineCarrier);
                     });
-                    for path in outlined.paths {
+                    for path in paths {
                         svg.push(path);
                     }
                 });
-            } else if span.native_synthetic_italic
-                && span.synthesis.italic
-                && span.offset_y == 0.0
+            } else if span.admits_native_shear()
                 && let Some(transform) = native_visual_transform(span.synthesis.skew_x(), baseline)
             {
                 svg.scope(Group::new().transformed(transform), |svg| {
                     svg.scope(text_carrier(x, baseline), |svg| {
-                        emit_span(svg, span, true, false);
+                        emit_span(svg, span, SpanTextRole::NativeShear);
                     });
                 });
             } else {
                 svg.scope(text_carrier(x, baseline), |svg| {
-                    emit_span(svg, span, false, false);
+                    emit_span(svg, span, SpanTextRole::Visible);
                 });
             }
         }
     } else if mixed_native_synthetic_italic {
         let mut start = 0;
         while start < spans.len() {
-            let shear = spans[start].native_synthetic_italic
-                && spans[start].synthesis.italic
-                && spans[start].offset_y == 0.0;
+            let shear = spans[start].admits_native_shear();
             let mut end = start + 1;
-            while end < spans.len()
-                && (spans[end].native_synthetic_italic
-                    && spans[end].synthesis.italic
-                    && spans[end].offset_y == 0.0)
-                    == shear
-            {
+            while end < spans.len() && spans[end].admits_native_shear() == shear {
                 end += 1;
             }
             let emit_group_spans = |svg: &mut Scene| {
                 for span in &spans[start..end] {
-                    emit_span(svg, span, false, false);
+                    emit_span(svg, span, SpanTextRole::Visible);
                 }
             };
             let text = text_carrier(x, baseline);
@@ -414,7 +406,7 @@ pub(in crate::render) fn render_measured_line(
                 if let Some(transform) = native_visual_transform(skew_x, baseline) {
                     let emit_sheared_spans = |svg: &mut Scene| {
                         for span in &spans[start..end] {
-                            emit_span(svg, span, true, false);
+                            emit_span(svg, span, SpanTextRole::NativeShear);
                         }
                     };
                     svg.scope(Group::new().transformed(transform), |svg| {
@@ -431,7 +423,7 @@ pub(in crate::render) fn render_measured_line(
     } else if let Some(transform) = visual_shear {
         let emit_spans = |svg: &mut Scene| {
             for span in &spans {
-                emit_span(svg, span, has_visual_shear, false);
+                emit_span(svg, span, SpanTextRole::NativeShear);
             }
         };
         svg.scope(Group::new().transformed(transform), |svg| {
@@ -440,14 +432,19 @@ pub(in crate::render) fn render_measured_line(
     } else {
         let emit_spans = |svg: &mut Scene| {
             for span in &spans {
-                emit_span(svg, span, false, false);
+                emit_span(svg, span, SpanTextRole::Visible);
             }
         };
         svg.scope(text, emit_spans);
     }
     for segment in spans
         .iter()
-        .filter(|span| span.positioned || outlined_sources.contains(&span.source))
+        .filter(|span| {
+            span.positioned
+                || outlined_spans
+                    .iter()
+                    .any(|outlined| outlined.source == span.source)
+        })
         .flat_map(|span| styled.foreground_segments(span.source.clone()))
     {
         let style = styled.style_at(segment.start, theme, predefined);

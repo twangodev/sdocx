@@ -12,7 +12,7 @@ const DEFAULT_EDGE: TableEdgeStyle = TableEdgeStyle {
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(in crate::render) enum Edge {
+pub(super) enum Edge {
     Left = 1,
     Top = 2,
     Right = 4,
@@ -53,7 +53,7 @@ impl Edge {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(in crate::render) struct BorderPath {
+pub(super) struct BorderPath {
     pub edge: Edge,
     pub style: TableEdgeStyle,
     pub endpoints: [f32; 4],
@@ -92,7 +92,7 @@ impl BorderPath {
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
-pub(in crate::render) struct OutlineStyle {
+pub(super) struct OutlineStyle {
     pub color: u32,
     pub width: f32,
     pub rx: f32,
@@ -109,7 +109,7 @@ impl OutlineStyle {
     }
 }
 
-pub(in crate::render) struct TableBorderGeometry<'a> {
+pub(super) struct TableBorderGeometry<'a> {
     table: &'a RichTextTable,
     grid: &'a TableGrid,
     rect: [f32; 4],
@@ -444,7 +444,7 @@ mod tests {
         }
         let mut scene = crate::render::vector::Scene::new(crate::render::vector::Svg::new());
         for &path in actual {
-            crate::render::paint_table_border(
+            crate::render::table::paint::paint_table_border(
                 &mut scene,
                 path,
                 0.0,

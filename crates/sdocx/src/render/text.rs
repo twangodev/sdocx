@@ -186,10 +186,10 @@ impl TextSettings {
     pub fn from_document(metadata: &crate::DocumentMetadata) -> Self {
         Self {
             scale: metadata.document_density(),
-            font_size_delta: metadata
-                .body_font_size_delta
-                .filter(|delta| *delta != i32::MIN)
-                .unwrap_or(0) as f32,
+            font_size_delta: match metadata.body_font_size_adjustment() {
+                Some(crate::BodyFontSizeAdjustment::Delta(delta)) => delta as f32,
+                None | Some(crate::BodyFontSizeAdjustment::DeviceDefault) => 0.0,
+            },
             ..Self::default()
         }
     }

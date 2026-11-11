@@ -34,6 +34,13 @@ struct MeasuredSegment {
     clusters: Vec<MeasuredCluster>,
 }
 
+/// A native face whose measurement geometry and selection coverage were checked
+/// before grapheme partitioning. Shaping reuses that exact face and decision.
+struct NativeMeasurementFont {
+    face: ResolvedFace,
+    covers_selection: bool,
+}
+
 struct RunFace {
     face: ResolvedFace,
     coverage_fallback: bool,
@@ -550,15 +557,11 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             .index
             .slice(source.clone())
             .ok_or(MeasurementError::InvalidRange)?;
-        if !tab
-            && let Ok(native) = &span.native
-            && let Some(face) = self
-                .renderer
-                .for_source(source.clone())
-                .resolve_native(native.family.as_deref(), direction)
-            && native_geometry::supported_face(&face)
-            && !face.covers(text)?
+        let native_font = self.native_measurement_font(span, direction, tab, &source, text)?;
+        if let Some(font) = &native_font
+            && !font.covers_selection
         {
+            let face = &font.face;
             let mut coverage = Vec::<(Range<usize>, bool)>::new();
             let mut cursor = range.start;
             for grapheme in text.graphemes(true) {
@@ -586,17 +589,18 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 return Ok(measured);
             }
         }
-        let measurement_issue = match self.shape_native(range.clone(), span, direction, tab) {
-            Ok(measured) => return Ok(measured),
-            Err(kind) => {
-                self.renderer.for_source(source).measurement_unsupported(
-                    kind.clone(),
-                    span.style.family.as_deref().unwrap_or("Roboto"),
-                    text,
-                );
-                kind
-            }
-        };
+        let measurement_issue =
+            match self.shape_native(range.clone(), span, direction, tab, native_font.as_ref()) {
+                Ok(measured) => return Ok(measured),
+                Err(kind) => {
+                    self.renderer.for_source(source).measurement_unsupported(
+                        kind.clone(),
+                        span.style.family.as_deref().unwrap_or("Roboto"),
+                        text,
+                    );
+                    kind
+                }
+            };
         let mut measured = MeasuredSegment {
             advance: 0.0,
             clusters: Vec::new(),
@@ -623,12 +627,42 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         Ok(measured)
     }
 
+    fn native_measurement_font(
+        &self,
+        span: &MeasureSpan,
+        direction: Direction,
+        tab: bool,
+        source: &Range<usize>,
+        text: &str,
+    ) -> Result<Option<NativeMeasurementFont>, MeasurementError> {
+        if tab {
+            return Ok(None);
+        }
+        let Ok(native) = &span.native else {
+            return Ok(None);
+        };
+        let Some(face) = self
+            .renderer
+            .for_source(source.clone())
+            .resolve_native(native.family.as_deref(), direction)
+            .filter(native_geometry::supported_face)
+        else {
+            return Ok(None);
+        };
+        let covers_selection = face.covers(text)?;
+        Ok(Some(NativeMeasurementFont {
+            face,
+            covers_selection,
+        }))
+    }
+
     fn shape_native(
         &self,
         range: Range<usize>,
         span: &MeasureSpan,
         direction: Direction,
         tab: bool,
+        font: Option<&NativeMeasurementFont>,
     ) -> Result<MeasuredSegment, TextDiagnosticKind> {
         use TextDiagnosticKind as Kind;
         if tab {
@@ -642,25 +676,10 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             .and_then(|profile| profile.metric_input())
             .map_err(|_| Kind::UnsupportedMeasurementStyle)?;
         let source = self.range.start + range.start..self.range.start + range.end;
-        let face = self
-            .renderer
-            .for_source(source.clone())
-            .resolve_native(native.family.as_deref(), direction)
+        let font = font
+            .filter(|font| font.covers_selection)
             .ok_or(Kind::UnsupportedMeasurementFont)?;
-        if !native_geometry::supported_face(&face) {
-            return Err(Kind::UnsupportedMeasurementFont);
-        }
-        let selected_text = self
-            .styled
-            .index
-            .slice(source.clone())
-            .ok_or(Kind::UnsupportedMeasurementShaping)?;
-        if !face
-            .covers(selected_text)
-            .map_err(|_| Kind::UnsupportedMeasurementFont)?
-        {
-            return Err(Kind::UnsupportedMeasurementFont);
-        }
+        let face = &font.face;
         let context = self.range.clone();
         let text = self
             .styled
@@ -739,7 +758,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 native
                     .family
                     .is_none()
-                    .then(|| self.renderer.fonts.registered_source(&face))
+                    .then(|| self.renderer.font_book().registered_source(face))
                     .flatten(),
             )
             .map_err(|_| Kind::InvalidGeometry)?;
@@ -821,10 +840,10 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         }
         let bold = style.bold && matches!(self.styled.context(), super::TextContext::Placed);
         if tab || direction != Direction::LeftToRight || !supports_grapheme_fallback(script) {
-            let selected = self
-                .renderer
-                .fonts
-                .resolve_for_text(&face, text, bold, face_italic)?;
+            let selected =
+                self.renderer
+                    .font_book()
+                    .resolve_for_text(&face, text, bold, face_italic)?;
             let coverage_fallback = selected.id != face.id;
             return self.shape_face(
                 range,
@@ -848,7 +867,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             .ok_or(MeasurementError::InvalidRange)?;
         let segments = grapheme_face_segments(text, |grapheme| {
             self.renderer
-                .fonts
+                .font_book()
                 .resolve_for_text(&face, grapheme, bold, face_italic)
         })?;
         let mut measured = MeasuredSegment {
