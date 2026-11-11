@@ -815,7 +815,7 @@ pub(super) fn plan_singlex_pdf_paper(
 struct AdmittedSingleX<'a> {
     records: &'a [PdfPaperRecord],
     source_page_index: usize,
-    source_objects: Vec<(usize, &'a crate::PageObject)>,
+    source_strokes: Vec<(usize, &'a crate::Stroke)>,
     prepared: PreparedPdfPaperRecords,
     imported_sources: Vec<ImportedSourcePage>,
     note_width: u32,
@@ -1063,26 +1063,25 @@ fn admit_singlex_pdf_paper<'a>(
         });
     }
 
-    let source_objects = selected
+    let source_strokes = selected
         .page
         .objects
         .iter()
         .enumerate()
         .filter(|(index, _)| Some(*index) != inspection_object_index)
-        .collect::<Vec<_>>();
-    if source_objects.iter().any(|(_, object)| {
-        object.render_layer != crate::ObjectRenderLayer::Base
-            || !matches!(object.content, crate::PageObjectContent::Stroke(_))
-    }) {
-        return Err(reject(
-            0,
-            "only root-level base-layer saved strokes are supported",
-        ));
-    }
-    for (_, object) in &source_objects {
-        let crate::PageObjectContent::Stroke(stroke) = &object.content else {
-            unreachable!("non-stroke objects rejected above")
-        };
+        .map(
+            |(index, object)| match (&object.render_layer, &object.content) {
+                (crate::ObjectRenderLayer::Base, crate::PageObjectContent::Stroke(stroke)) => {
+                    Ok((index, stroke))
+                }
+                _ => Err(reject(
+                    0,
+                    "only root-level base-layer saved strokes are supported",
+                )),
+            },
+        )
+        .collect::<Result<Vec<_>, PdfPaperAdmissionError>>()?;
+    for (_, stroke) in &source_strokes {
         let Some(rendering) = stroke.rendering.as_ref() else {
             return Err(reject(0, "saved stroke rendering metadata is required"));
         };
@@ -1101,7 +1100,7 @@ fn admit_singlex_pdf_paper<'a>(
     Ok(Some(AdmittedSingleX {
         records,
         source_page_index: selected.source_page_index,
-        source_objects,
+        source_strokes,
         prepared,
         imported_sources,
         note_width,
@@ -1118,7 +1117,7 @@ fn plan_admitted_singlex_pdf_paper(
     let AdmittedSingleX {
         records,
         source_page_index,
-        source_objects,
+        source_strokes,
         prepared,
         imported_sources,
         note_width,
@@ -1264,10 +1263,7 @@ fn plan_admitted_singlex_pdf_paper(
                 })? as f32,
             ];
             let mut selected_objects = Vec::new();
-            for (object_index, object) in &source_objects {
-                let crate::PageObjectContent::Stroke(stroke) = &object.content else {
-                    unreachable!("non-stroke objects rejected above")
-                };
+            for (object_index, stroke) in &source_strokes {
                 match paper_selection::admit_stroke(stroke, query) {
                     paper_selection::StrokeAdmission::Admit => selected_objects.push(*object_index),
                     paper_selection::StrokeAdmission::Reject => {}
