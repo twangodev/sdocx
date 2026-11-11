@@ -314,25 +314,33 @@ impl Source {
                             "integrity":o.integrity_trailer,"base":base,"flexible":flexible,"metadata":metadata,"stroke":stroke,"objects":nodes(&o.children)})
                     }
                     "background" | "replay-svg" => {
-                        let mut preview = layout
+                        let replay = r["kind"] == "replay-svg";
+                        let visible_index = layout
                             .pages
                             .iter()
-                            .find(|p| p.source_page_index == page_index)
-                            .cloned()
-                            .unwrap_or_else(|| sdocx::LayoutPage {
-                                source_page_index: page_index,
-                                body_text: None,
-                                page: parsed.document.pages[page_index].clone(),
-                            });
-                        let replay = r["kind"] == "replay-svg";
-                        if !replay {
-                            preview.page.clear_strokes();
-                        }
-                        let preview_layout = LayoutDocument {
-                            pages: vec![preview],
-                            stored_page_count: layout.stored_page_count,
-                            omitted_trailing_blank_page: false,
-                        };
+                            .position(|p| p.source_page_index == page_index);
+                        let owned_preview;
+                        let (preview_layout, preview_index) =
+                            if replay && let Some(index) = visible_index {
+                                (layout, index)
+                            } else {
+                                let mut preview = visible_index
+                                    .map(|index| layout.pages[index].clone())
+                                    .unwrap_or_else(|| sdocx::LayoutPage {
+                                        source_page_index: page_index,
+                                        body_text: None,
+                                        page: parsed.document.pages[page_index].clone(),
+                                    });
+                                if !replay {
+                                    preview.page.clear_strokes();
+                                }
+                                owned_preview = LayoutDocument {
+                                    pages: vec![preview],
+                                    stored_page_count: layout.stored_page_count,
+                                    omitted_trailing_blank_page: false,
+                                };
+                                (&owned_preview, 0)
+                            };
                         let mut options = sdocx::RenderOptions::default();
                         options.color_mode = match r["colorMode"].as_str() {
                             Some("dark") => sdocx::RenderColorMode::Dark,
@@ -340,23 +348,23 @@ impl Source {
                             _ => sdocx::RenderColorMode::Auto,
                         };
                         let theme = sdocx::RenderTheme::resolve(
-                            &preview_layout.pages[0].page,
+                            &preview_layout.pages[preview_index].page,
                             &parsed.document.metadata,
                             options.color_mode,
                         );
                         let background = if replay {
                             text_cache.render_layout_page_replay_svg(
                                 &parsed.document,
-                                &preview_layout,
-                                0,
+                                preview_layout,
+                                preview_index,
                                 &options,
                                 fonts,
                             )
                         } else {
                             text_cache.render_layout_page_svg(
                                 &parsed.document,
-                                &preview_layout,
-                                0,
+                                preview_layout,
+                                preview_index,
                                 &options,
                                 fonts,
                             )
@@ -751,6 +759,164 @@ mod source_tests {
         assert_eq!(page["background"]["width"], 1080);
         assert_eq!(background["svg"], expected.svg);
         assert_eq!(background["defaultInk"], "#ffffff");
+    }
+
+    #[test]
+    fn replay_and_background_keep_source_selection_and_omitted_page_fallback() {
+        let page = support::page(&[vec![support::object(99, &[1, 2, 3], &[])]], 0, &[]);
+        let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        for name in ["first.page", "second.page"] {
+            writer
+                .start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            writer.write_all(&page).unwrap();
+        }
+        let bytes = writer.finish().unwrap().into_inner();
+        let mut parsed = sdocx::parse_bytes_detailed_with_options(
+            &bytes,
+            &super::super::browser_parse_options(),
+        )
+        .unwrap();
+        assert_eq!(parsed.document.pages.len(), 2);
+        for (index, page) in parsed.document.pages.iter_mut().enumerate() {
+            page.width = 64;
+            page.height = 64;
+            page.background_color = Some(sdocx::Color {
+                r: 20 + index as u8 * 40,
+                g: 30,
+                b: 40,
+            });
+        }
+        parsed.document.pages[1].objects.push(
+            sdocx::Stroke {
+                rendering: None,
+                bbox: sdocx::BoundingBox {
+                    x_min: 10.,
+                    y_min: 10.,
+                    x_max: 30.,
+                    y_max: 30.,
+                },
+                points: vec![
+                    sdocx::Point { x: 10., y: 10. },
+                    sdocx::Point { x: 30., y: 30. },
+                ],
+                pressures: Vec::new(),
+                timestamps: vec![10, 20],
+                tilts: Vec::new(),
+                orientations: Vec::new(),
+                color: Some(sdocx::Color { r: 255, g: 0, b: 0 }),
+                pen_width: 2.,
+            }
+            .into(),
+        );
+        let first = sdocx::LayoutPage {
+            source_page_index: 0,
+            page: parsed.document.pages[0].clone(),
+            body_text: None,
+        };
+        let selected = sdocx::LayoutPage {
+            source_page_index: 1,
+            page: parsed.document.pages[1].clone(),
+            body_text: None,
+        };
+        let mut later_duplicate = selected.clone();
+        later_duplicate.page.background_color = Some(sdocx::Color { r: 0, g: 255, b: 0 });
+        let layout = LayoutDocument {
+            pages: vec![first.clone(), first.clone(), selected, later_duplicate],
+            stored_page_count: 2,
+            omitted_trailing_blank_page: false,
+        };
+        let omitted = LayoutDocument {
+            pages: vec![first],
+            stored_page_count: 2,
+            omitted_trailing_blank_page: true,
+        };
+        let fonts = sdocx::fonts::FontBook::default();
+        let mut text_cache = sdocx::DocumentTextCache::default();
+        let mut source = Source::new(&bytes).unwrap();
+        for layout in [&layout, &omitted, &layout] {
+            for (request_color_mode, color_mode) in [
+                ("dark", sdocx::RenderColorMode::Dark),
+                ("light", sdocx::RenderColorMode::Light),
+                ("auto", sdocx::RenderColorMode::Auto),
+            ] {
+                for replay in [true, false] {
+                    // Match the original single-page preview contract, including
+                    // first source-page match and fallback without body slices.
+                    let mut preview = layout
+                        .pages
+                        .iter()
+                        .find(|p| p.source_page_index == 1)
+                        .cloned()
+                        .unwrap_or_else(|| sdocx::LayoutPage {
+                            source_page_index: 1,
+                            body_text: None,
+                            page: parsed.document.pages[1].clone(),
+                        });
+                    if !replay {
+                        preview.page.clear_strokes();
+                    }
+                    let preview_layout = LayoutDocument {
+                        pages: vec![preview],
+                        stored_page_count: 2,
+                        omitted_trailing_blank_page: false,
+                    };
+                    let mut options = sdocx::RenderOptions::default();
+                    options.color_mode = color_mode;
+                    let theme = sdocx::RenderTheme::resolve(
+                        &preview_layout.pages[0].page,
+                        &parsed.document.metadata,
+                        color_mode,
+                    );
+                    let expected = if replay {
+                        sdocx::render_layout_page_replay_svg_with_fonts(
+                            &parsed.document,
+                            &preview_layout,
+                            0,
+                            &options,
+                            &fonts,
+                        )
+                    } else {
+                        sdocx::render_layout_page_svg_with_fonts(
+                            &parsed.document,
+                            &preview_layout,
+                            0,
+                            &options,
+                            &fonts,
+                        )
+                    }
+                    .unwrap();
+                    let kind = if replay { "replay-svg" } else { "background" };
+                    let request = json!({
+                        "kind": kind,
+                        "page": 1,
+                        "colorMode": request_color_mode,
+                    })
+                    .to_string();
+                    let actual: Value = serde_json::from_str(
+                        &source
+                            .request_with_text_cache(
+                                &parsed,
+                                layout,
+                                &request,
+                                &fonts,
+                                &mut text_cache,
+                            )
+                            .unwrap(),
+                    )
+                    .unwrap();
+                    assert_eq!(actual["svg"], expected.svg, "{request}");
+                    assert_eq!(actual["defaultInk"], theme.default_ink(), "{request}");
+                    assert_eq!(
+                        actual["svg"]
+                            .as_str()
+                            .unwrap()
+                            .contains("data-replay-stroke"),
+                        replay
+                    );
+                }
+            }
+        }
     }
 
     #[test]
