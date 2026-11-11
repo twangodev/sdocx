@@ -584,6 +584,14 @@ pub(crate) enum PreparedGeometry {
         points: Vec<crate::Point>,
         sample_ends: Vec<usize>,
     },
+    RectangularStamps {
+        points: Vec<crate::Point>,
+        sample_ends: Vec<usize>,
+        stamp: RectStamp,
+    },
+    UnindexedPolyline {
+        points: Vec<crate::Point>,
+    },
 }
 
 /// A complete ordered disk stream whose batches can be sliced without truncation.
@@ -705,6 +713,18 @@ impl PreparedStroke<'_> {
             } => {
                 self.points = Cow::Owned(points);
                 self.sample_ends = Some(sample_ends);
+            }
+            PreparedGeometry::RectangularStamps {
+                points,
+                sample_ends,
+                stamp,
+            } => {
+                self.points = Cow::Owned(points);
+                self.sample_ends = Some(sample_ends);
+                self.rect_stamp = Some(stamp);
+            }
+            PreparedGeometry::UnindexedPolyline { points } => {
+                self.points = Cow::Owned(points);
             }
         }
     }

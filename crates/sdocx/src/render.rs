@@ -4045,11 +4045,11 @@ fn render_stroke(
         && let Some(ink) =
             crate::ink::marker4::prepare_v7_finger_bounded(stroke, marker4_v7_remaining_stamps)
     {
-        paint.points = Cow::Owned(ink.points);
-        paint.sample_ends = Some(ink.sample_ends);
-        paint.rect_stamp = Some(ink.stamp);
-        paint.dot_radii = None;
-        paint.segment_widths = None;
+        paint.replace_geometry(crate::ink::PreparedGeometry::RectangularStamps {
+            points: ink.points,
+            sample_ends: ink.sample_ends,
+            stamp: ink.stamp,
+        });
         paint.opacity = ink.opacity;
     }
     if native_allowed
@@ -4060,8 +4060,7 @@ fn render_stroke(
             [profile.screen_width, profile.screen_height],
         )
     {
-        paint.points = Cow::Owned(points);
-        paint.sample_ends = None;
+        paint.replace_geometry(crate::ink::PreparedGeometry::UnindexedPolyline { points });
         if let Some((argb, size)) = stroke.rendering.as_ref().and_then(|r| {
             if matches!(r.advanced_settings.as_deref(), Some("" | "1;")) {
                 Some((r.style.color_argb.unwrap_or(0xff00_0000), r.style.pen_size?))
@@ -4070,7 +4069,6 @@ fn render_stroke(
             }
         }) {
             paint.width = f64::from(size.clamp(0.4, 800.0).trunc());
-            paint.segment_widths = None;
             paint.opacity = f64::from(argb >> 24) / 255.0;
             paint.color = theme.foreground(stroke.color.or(Some(argb_rgb(argb))));
         }
