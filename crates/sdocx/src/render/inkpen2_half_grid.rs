@@ -3,19 +3,29 @@ use std::{cell::Cell, collections::BTreeMap};
 
 type GridPixels = BTreeMap<(i32, i32), u8>;
 
-// Budget charges generated stamps, tested fragments and retained grid cells for
-// the entire page. A failed stroke does not consume budget or emit paint.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct Budget {
+    pub(super) generated_stamps: usize,
+    pub(super) tested_fragments: usize,
+    pub(super) retained_cells: usize,
+}
+
+// Shared across the page. A failed stroke consumes no budget and emits no paint.
 pub(super) fn render(
     scene: &mut Scene,
     ink: &crate::PreparedInkPen2V9,
     view: InkPen2HalfGridViewport,
-    budget: &Cell<[usize; 3]>,
+    budget: &Cell<Budget>,
 ) -> bool {
     let Some((pixels, used)) = sample(ink, view, budget.get()) else {
         return false;
     };
     let old = budget.get();
-    let remaining = [old[0] - used[0], old[1] - used[1], old[2] - used[2]];
+    let remaining = Budget {
+        generated_stamps: old.generated_stamps - used.generated_stamps,
+        tested_fragments: old.tested_fragments - used.tested_fragments,
+        retained_cells: old.retained_cells - used.retained_cells,
+    };
     let color = format!("#{:02x}{:02x}{:02x}", ink.color.r, ink.color.g, ink.color.b);
     for ((x, y), alpha) in pixels {
         let bounds = BoundingBox {
@@ -37,11 +47,11 @@ pub(super) fn render(
 fn sample(
     ink: &crate::PreparedInkPen2V9,
     view: InkPen2HalfGridViewport,
-    limits: [usize; 3],
-) -> Option<(GridPixels, [usize; 3])> {
+    limits: Budget,
+) -> Option<(GridPixels, Budget)> {
     if !(1..=8192).contains(&view.width)
         || !(1..=8192).contains(&view.height)
-        || ink.records.len() > limits[0]
+        || ink.records.len() > limits.generated_stamps
         || ink.per_stamp_rgb
         || ink.enhanced_antialias
     {
@@ -79,7 +89,7 @@ fn sample(
             bound(cy + r - 0.5, view.height),
         );
         work = work.checked_add(((x1 - x0) as usize).checked_mul((y1 - y0) as usize)?)?;
-        if work > limits[1] {
+        if work > limits.tested_fragments {
             return None;
         }
         let distance =
@@ -104,7 +114,7 @@ fn sample(
                 let previous = f64::from(*pixels.get(&(x, y)).unwrap_or(&0));
                 let value = (255. * a + previous * (1. - a)).round_ties_even() as u8;
                 if value != 0 {
-                    if !pixels.contains_key(&(x, y)) && pixels.len() >= limits[2] {
+                    if !pixels.contains_key(&(x, y)) && pixels.len() >= limits.retained_cells {
                         return None;
                     }
                     pixels.insert((x, y), value);
@@ -112,7 +122,11 @@ fn sample(
             }
         }
     }
-    let used = [ink.records.len(), work, pixels.len()];
+    let used = Budget {
+        generated_stamps: ink.records.len(),
+        tested_fragments: work,
+        retained_cells: pixels.len(),
+    };
     Some((pixels, used))
 }
 
@@ -142,7 +156,11 @@ mod tests {
             width: 16,
             height: 16,
         };
-        let budget = Cell::new([2, 1000, 1000]);
+        let budget = Cell::new(Budget {
+            generated_stamps: 2,
+            tested_fragments: 1000,
+            retained_cells: 1000,
+        });
         let mut scene = Scene::new(super::super::Svg::new());
         assert!(render(&mut scene, &ink, view, &budget));
         let after_first = budget.get();
@@ -153,7 +171,11 @@ mod tests {
         assert!(render(&mut scene, &ink, view, &budget));
         let rendered = scene.finish();
         let mut expected = Scene::new(super::super::Svg::new());
-        let fresh = Cell::new([2, 1000, 1000]);
+        let fresh = Cell::new(Budget {
+            generated_stamps: 2,
+            tested_fragments: 1000,
+            retained_cells: 1000,
+        });
         assert!(render(&mut expected, &ink, view, &fresh));
         assert!(render(&mut expected, &ink, view, &fresh));
         assert_eq!(rendered, expected.finish());
@@ -202,11 +224,31 @@ mod tests {
                 width: 64,
                 height: 48,
             };
-            let (pixels, used) = sample(&ink, view, [32768, 1000000, 100000]).unwrap();
+            let (pixels, used) = sample(
+                &ink,
+                view,
+                Budget {
+                    generated_stamps: 32768,
+                    tested_fragments: 1000000,
+                    retained_cells: 100000,
+                },
+            )
+            .unwrap();
+            let used = [
+                used.generated_stamps,
+                used.tested_fragments,
+                used.retained_cells,
+            ];
             for i in 0..3 {
                 if used[i] > 0 {
                     let mut short = used;
                     short[i] -= 1;
+                    let [generated_stamps, tested_fragments, retained_cells] = short;
+                    let short = Budget {
+                        generated_stamps,
+                        tested_fragments,
+                        retained_cells,
+                    };
                     assert!(sample(&ink, view, short).is_none(), "{name} budget {i}");
                 }
             }

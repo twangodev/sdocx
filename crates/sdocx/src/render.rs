@@ -1737,7 +1737,7 @@ impl<'a> BrushPolicy<'a> {
 }
 
 struct RenderBudgets {
-    inkpen2_half_grid_budget: Cell<[usize; 3]>,
+    inkpen2_half_grid_budget: Cell<inkpen2_half_grid::Budget>,
     marker2_remaining_vertices: Cell<usize>,
     crayon2_grid_remaining: Cell<u64>,
     #[cfg(feature = "pdf")]
@@ -1759,13 +1759,22 @@ impl RenderBudgets {
             inkpen2_half_grid_budget: Cell::new({
                 #[cfg(test)]
                 {
-                    options
+                    let [generated_stamps, tested_fragments, retained_cells] = options
                         .inkpen2_half_grid_test_budget
-                        .unwrap_or([32_768, 1_000_000, 100_000])
+                        .unwrap_or([32_768, 1_000_000, 100_000]);
+                    inkpen2_half_grid::Budget {
+                        generated_stamps,
+                        tested_fragments,
+                        retained_cells,
+                    }
                 }
                 #[cfg(not(test))]
                 {
-                    [32_768, 1_000_000, 100_000]
+                    inkpen2_half_grid::Budget {
+                        generated_stamps: 32_768,
+                        tested_fragments: 1_000_000,
+                        retained_cells: 100_000,
+                    }
                 }
             }),
             marker2_remaining_vertices: Cell::new(65_536),
