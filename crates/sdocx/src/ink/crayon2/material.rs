@@ -188,7 +188,6 @@ pub(super) fn emit_svg(
     svg.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     svg.push_str(&format!("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{WIDTH}\" height=\"{HEIGHT}\" viewBox=\"0 0 {WIDTH} {HEIGHT}\" color-interpolation=\"sRGB\" shape-rendering=\"crispEdges\">\n<defs>\n"));
     svg.push_str(&format!("<image id=\"native-bg-mask\" x=\"0\" y=\"0\" width=\"{}\" height=\"{}\" preserveAspectRatio=\"none\" image-rendering=\"optimizeSpeed\" style=\"image-rendering:pixelated\" transform=\"matrix(1 0 0 -1 0 {})\" href=\"{bg_uri}\"/>\n", num(periods[0]), num(periods[1]), num(periods[1])));
-    let mut stamps = Vec::with_capacity(records.len());
     let mut total_repetitions = 0_i64;
     for (i, record) in records.iter().enumerate() {
         let [x, y, radius, selector, bgx, bgy] = record.lanes;
@@ -285,14 +284,13 @@ pub(super) fn emit_svg(
             num(rgba[2])
         );
         svg.push_str(&format!("<filter id=\"{alpha_filter_id}\" x=\"0\" y=\"0\" width=\"{WIDTH}\" height=\"{HEIGHT}\" filterUnits=\"userSpaceOnUse\" primitiveUnits=\"userSpaceOnUse\" color-interpolation-filters=\"sRGB\"><feImage href=\"#{point_input_id}\" x=\"0\" y=\"0\" width=\"{WIDTH}\" height=\"{HEIGHT}\" preserveAspectRatio=\"none\" result=\"point\"/><feImage href=\"#{bg_input_id}\" x=\"0\" y=\"0\" width=\"{WIDTH}\" height=\"{HEIGHT}\" preserveAspectRatio=\"none\" result=\"background\"/><feComposite in=\"point\" in2=\"background\" operator=\"arithmetic\" k1=\"{}\" k2=\"0\" k3=\"0\" k4=\"{}\" result=\"native-alpha\"/><feColorMatrix in=\"native-alpha\" type=\"matrix\" values=\"{}\" result=\"native-premult-rgba\"/></filter>\n", num(k1), num(k4), color_matrix));
-        stamps.push((i, tile, x0, y0, width, height));
     }
     svg.push_str("</defs>\n");
     if let Some(color) = background {
         svg.push_str(&format!("<rect x=\"0\" y=\"0\" width=\"{WIDTH}\" height=\"{HEIGHT}\" fill=\"#{:02x}{:02x}{:02x}\"/>\n", color[0], color[1], color[2]));
     }
     svg.push_str("<g color-interpolation=\"sRGB\" shape-rendering=\"crispEdges\">\n");
-    for (i, _tile, _x0, _y0, _width, _height) in stamps {
+    for i in 0..records.len() {
         // Filter output is already premultiplied RGBA. Drawing it directly
         // avoids a second SVG mask pass (MaskU8) over the source RGB.
         svg.push_str(&format!("<rect x=\"0\" y=\"0\" width=\"{WIDTH}\" height=\"{HEIGHT}\" fill=\"#ffffff\" filter=\"url(#native-alpha-product-{i})\"/>\n"));
