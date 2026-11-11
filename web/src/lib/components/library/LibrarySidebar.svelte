@@ -3,7 +3,7 @@
 	import IconButton from '../ui/IconButton.svelte';
 	import type { LibraryWorkspace } from '$lib/library/workspace.svelte';
 	import type { LibrarySource } from '$lib/library/model';
-	import { visibleDocuments } from '$lib/library/view';
+	import { libraryCounts } from '$lib/library/view';
 	let {
 		library,
 		onNavigate,
@@ -15,6 +15,7 @@
 		onCreate: () => void;
 		onStorage: () => void;
 	} = $props();
+	const counts = $derived(libraryCounts(library.snapshot));
 	const sources = [
 		{ id: 'all', label: 'All notes', icon: Files },
 		{ id: 'recent', label: 'Recent', icon: Clock3 },
@@ -34,9 +35,7 @@
 			>
 				<source.icon size={13} strokeWidth={1.5} />
 				<span class="min-w-0 flex-1 truncate">{source.label}</span>
-				<span class="count"
-					>{visibleDocuments(library.snapshot, source.id, '', 'newest').length}</span
-				>
+				<span class="count">{counts[source.id]}</span>
 			</button>
 		{/each}
 	</nav>
@@ -61,11 +60,7 @@
 			>
 				<Folder size={13} strokeWidth={1.5} />
 				<span class="min-w-0 flex-1 truncate">{collection.name}</span>
-				<span class="count"
-					>{library.snapshot.memberships.filter(
-						(membership) => membership.collectionId === collection.id
-					).length}</span
-				>
+				<span class="count">{counts.collectionMemberships.get(collection.id) ?? 0}</span>
 			</button>
 		{/each}
 		{#if !library.snapshot.collections.length}<p class="px-2 py-2 text-[11px] text-muted">
