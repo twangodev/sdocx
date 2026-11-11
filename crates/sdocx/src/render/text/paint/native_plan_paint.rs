@@ -46,8 +46,7 @@ struct ProjectedPaintRun {
 
 pub(in crate::render) struct NativePaintDispatcher {
     plan: NativePaintPlan,
-    groups: Vec<NativePaintGroup>,
-    groups_by_line: BTreeMap<usize, Vec<usize>>,
+    groups_by_line: BTreeMap<usize, Vec<NativePaintGroup>>,
     target: NativePaintTarget,
 }
 
@@ -216,8 +215,7 @@ impl NativePaintDispatcher {
             &clips,
         )
         .and_then(|runs| {
-            let mut groups = Vec::with_capacity(runs.len());
-            let mut groups_by_line: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
+            let mut groups_by_line: BTreeMap<usize, Vec<NativePaintGroup>> = BTreeMap::new();
             for ProjectedPaintRun {
                 run,
                 first_line,
@@ -242,10 +240,6 @@ impl NativePaintDispatcher {
                             .glyph_ink_bounds(glyph.glyph_id)
                             .is_ok_and(|bounds| bounds.is_none())
                     });
-                groups_by_line
-                    .entry(first_line)
-                    .or_default()
-                    .push(groups.len());
                 #[cfg(feature = "pdf")]
                 let paper_line = target.paper_body.then(|| {
                     let line = &layout.lines[first_line];
@@ -257,24 +251,26 @@ impl NativePaintDispatcher {
                         line.bottom,
                     )
                 });
-                groups.push(NativePaintGroup {
-                    run,
-                    clip,
-                    spans,
-                    #[cfg(feature = "pdf")]
-                    retained,
-                    #[cfg(feature = "pdf")]
-                    inkless_carrier,
-                    #[cfg(feature = "pdf")]
-                    paper_line,
-                });
+                groups_by_line
+                    .entry(first_line)
+                    .or_insert_with(|| Vec::with_capacity(1))
+                    .push(NativePaintGroup {
+                        run,
+                        clip,
+                        spans,
+                        #[cfg(feature = "pdf")]
+                        retained,
+                        #[cfg(feature = "pdf")]
+                        inkless_carrier,
+                        #[cfg(feature = "pdf")]
+                        paper_line,
+                    });
             }
-            Ok((groups, groups_by_line))
+            Ok(groups_by_line)
         });
         match groups {
-            Ok((groups, groups_by_line)) => Some(Self {
+            Ok(groups_by_line) => Some(Self {
                 plan,
-                groups,
                 groups_by_line,
                 target,
             }),
@@ -294,8 +290,12 @@ impl NativePaintDispatcher {
         theme: RenderTheme,
         renderer: &TextRenderer<'_>,
     ) {
-        for &index in self.groups_by_line.get(&line_index).into_iter().flatten() {
-            let group = &mut self.groups[index];
+        for group in self
+            .groups_by_line
+            .get_mut(&line_index)
+            .into_iter()
+            .flatten()
+        {
             let origin = [
                 f64::from(group.run.origin[0]) + self.plan.translation[0],
                 f64::from(group.run.origin[1]) + self.plan.translation[1],

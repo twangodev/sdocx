@@ -130,8 +130,11 @@ fn native_cell_clip_requests_report_only_certified_plan_failures_at_the_table_an
         )
         .unwrap();
         let captured = case["emitted_runs"]["runs"].as_array().unwrap();
-        assert_eq!(dispatcher.groups.len(), captured.len());
-        for (group, captured) in dispatcher.groups.iter().zip(captured) {
+        assert_eq!(
+            dispatcher.groups_by_line.values().flatten().count(),
+            captured.len()
+        );
+        for (group, captured) in dispatcher.groups_by_line.values().flatten().zip(captured) {
             assert!(group.clip.is_none());
             assert_eq!(
                 f64::from(group.run.origin[0]),
@@ -174,7 +177,7 @@ fn native_cell_clip_requests_report_only_certified_plan_failures_at_the_table_an
                 pdf_target,
             )
             .unwrap();
-            for group in pdf_dispatcher.groups {
+            for group in pdf_dispatcher.groups_by_line.into_values().flatten() {
                 assert!(group.clip.is_none());
                 let block = group.retained.unwrap();
                 assert_eq!(
@@ -201,7 +204,7 @@ fn native_cell_clip_requests_report_only_certified_plan_failures_at_the_table_an
             NativePaintTarget::new(false, None).with_cell(47, placement),
         )
         .unwrap();
-        assert!(hidden.groups.is_empty());
+        assert!(hidden.groups_by_line.is_empty());
         assert_eq!(renderer.object_diagnostics(), before);
         layout.native_frame = None;
         assert!(
@@ -237,7 +240,7 @@ fn native_cell_clip_requests_report_only_certified_plan_failures_at_the_table_an
         NativePaintTarget::new(false, None).with_cell(47, Ok(NativeCellTextPlacement::Unknown)),
     )
     .unwrap();
-    assert!(dispatcher.groups.is_empty());
+    assert!(dispatcher.groups_by_line.is_empty());
     assert!(renderer.object_diagnostics().is_empty());
 }
 
@@ -322,7 +325,22 @@ fn full_source_svg_groups_follow_captured_cached_origins_and_combining_owners() 
         )
         .unwrap_or_else(|| panic!("capture {name} must reach the certified SVG writer"));
         let expected = case["emitted_runs"]["runs"].as_array().unwrap();
-        assert_eq!(dispatcher.groups.len(), expected.len(), "{name}");
+        assert_eq!(
+            dispatcher.groups_by_line.values().flatten().count(),
+            expected.len(),
+            "{name}"
+        );
+        for (group, captured) in dispatcher.groups_by_line.values().flatten().zip(expected) {
+            let source = group.run.source.utf16();
+            assert_eq!(
+                [u64::from(source.start), u64::from(source.end - 1)],
+                [
+                    captured["range_inclusive"][0].as_u64().unwrap(),
+                    captured["range_inclusive"][1].as_u64().unwrap(),
+                ],
+                "{name} native run order"
+            );
+        }
         let mut scene = Scene::new(Svg::new());
         scene.text_source(|scene| {
             for (index, line) in layout.lines.iter().enumerate() {
@@ -412,7 +430,7 @@ fn visible_source_projection_retains_cached_pdf_geometry_without_hidden_actual_t
         NativePaintTarget::new(true, None),
     )
     .unwrap();
-    assert_eq!(dispatcher.groups.len(), 1);
+    assert_eq!(dispatcher.groups_by_line.values().flatten().count(), 1);
     let mut scene = Scene::new(Svg::new());
     scene.retain_text();
     scene.text_source(|scene| {
