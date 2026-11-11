@@ -665,8 +665,11 @@ fn prepare_with_rainbow_mode(
                 }
             }
         }
-        output = Some(pass.dots);
-        if !history.replay {
+        if pass.history.replay {
+            output = Some(pass.dots);
+        } else {
+            // Replay uses retained sampler state, not the first pass dots.
+            // Release that geometry before allocating its replacement.
             history.smooth(stylus);
         }
     }

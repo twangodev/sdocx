@@ -39,9 +39,8 @@ pub(crate) fn prepare_v7_finger(s: &Stroke) -> Option<Ink> {
     if !size.is_finite() || size < 0. {
         return None;
     }
-    let mut proxy = s.clone();
-    proxy.rendering.as_mut()?.advanced_settings = Some("8;".into());
-    let mut ink = prepare(&proxy)?;
+    // The captured finger adapter uses V8 sampling with a V7-specific tip.
+    let mut ink = prepare_with_route(s, SamplingRoute::V7FingerHost)?;
     let radius = (size.clamp(0.4, 800.) * 0.5).max(1.);
     ink.stamp.width = f64::from(radius + 0.5) * 1.54;
     ink.stamp.height = f64::from(radius + 0.5) * 2.;
@@ -96,7 +95,17 @@ pub(crate) fn prepare_v7_finger_bounded(
     Some(ink)
 }
 
+#[derive(Clone, Copy)]
+enum SamplingRoute {
+    Saved,
+    V7FingerHost,
+}
+
 pub(super) fn prepare(s: &Stroke) -> Option<Ink> {
+    prepare_with_route(s, SamplingRoute::Saved)
+}
+
+fn prepare_with_route(s: &Stroke, route: SamplingRoute) -> Option<Ink> {
     let r = s.rendering.as_ref()?;
     // Drawing reads the saved Model style size, then Pen::SetSize clamps it.
     // The decoder's public width may carry a separate presentation default.
@@ -105,7 +114,7 @@ pub(super) fn prepare(s: &Stroke) -> Option<Ink> {
         return None;
     }
     let size = requested_size.clamp(0.4, 800.0);
-    let v7 = r.advanced_settings.as_deref() == Some("7;");
+    let v7 = matches!(route, SamplingRoute::Saved) && r.advanced_settings.as_deref() == Some("7;");
     if v7
         && (r.tool_type_raw != 2
             || r.properties.straighten
@@ -115,13 +124,17 @@ pub(super) fn prepare(s: &Stroke) -> Option<Ink> {
     {
         return None;
     }
+    let settings_supported = match route {
+        SamplingRoute::Saved => matches!(r.advanced_settings.as_deref(), Some("7;" | "8;")),
+        SamplingRoute::V7FingerHost => r.advanced_settings.as_deref() == Some("7;"),
+    };
     if !matches!(
         r.pen_name.as_deref(),
         Some(
             "com.samsung.android.sdk.pen.pen.preload.Marker4"
                 | "com.samsung.android.sdk.pen.pen.preload.StraightHighlighter"
         )
-    ) || !matches!(r.advanced_settings.as_deref(), Some("7;" | "8;"))
+    ) || !settings_supported
         || r.properties.eraser
         || r.properties.rainbow_effect
         || !matches!(r.tool_type_raw, 0 | 2)

@@ -25,6 +25,18 @@ impl Curve {
     }
 }
 
+struct Segment {
+    curve: Curve,
+    count: usize,
+    initial_width: f32,
+    target_width: f32,
+    alpha_start: i32,
+    alpha_step: f32,
+    // Redraw segments may replay and start alpha at the next sample; the
+    // terminal segment instead supplies endPen's boundary and alpha state.
+    redraw: bool,
+}
+
 pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     let n = input.points.len();
     if !(6..=24).contains(&n) {
@@ -103,15 +115,15 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
         }
         let count = repeat_count(curve.length, repeat_width)?;
         let (_, _, target_alpha) = redraw_alpha_candidate(alpha, input.pressure[next], distance);
-        segments.push((
-            Curve::Q(curve),
+        segments.push(Segment {
+            curve: Curve::Q(curve),
             count,
-            width,
+            initial_width: width,
             target_width,
-            alpha,
-            (target_alpha - alpha) as f32 / count as f32,
-            true,
-        ));
+            alpha_start: alpha,
+            alpha_step: (target_alpha - alpha) as f32 / count as f32,
+            redraw: true,
+        });
         begin = finish;
         control = p(next);
         width = target_width;
@@ -162,26 +174,33 @@ pub(super) fn many_point(input: Input<'_>) -> Result<Vec<RtRecord>, Error> {
     }
     .clamp(60, 255);
     let end = end_alpha(alpha, end_target, Some(distance), count as u32);
-    segments.push((
+    segments.push(Segment {
         curve,
         count,
-        width,
+        initial_width: width,
         target_width,
-        end.start,
-        end.step,
-        false,
-    ));
+        alpha_start: end.start,
+        alpha_step: end.step,
+        redraw: false,
+    });
     let total = record_budget(
         segments
             .iter()
-            .map(|(_, count, _, _, _, _, redraw)| (*count, *redraw)),
+            .map(|segment| (segment.count, segment.redraw)),
     )?;
     let mut records = Vec::with_capacity(total);
     // This seven-point history window matches the captured redraw controls.
     for replay in [false, true] {
-        for (seg_index, (q, count, initial_width, target_width, alpha_start, alpha_step, redraw)) in
-            segments.iter().enumerate()
-        {
+        for (seg_index, segment) in segments.iter().enumerate() {
+            let Segment {
+                curve: q,
+                count,
+                initial_width,
+                target_width,
+                alpha_start,
+                alpha_step,
+                redraw,
+            } = segment;
             if replay && use_end_fade {
                 break;
             }

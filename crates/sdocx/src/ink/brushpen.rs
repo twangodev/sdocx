@@ -623,6 +623,7 @@ struct MotionEndState {
 /// terminal scalar without drawLine's five-unit clamp, averages with the
 /// stored drawLine speed, and multiplies by three for pen tools. Fixture times
 /// are milliseconds; native converts their difference to microseconds.
+#[cfg(test)]
 fn motion_end_state(
     profile: Glv10RuntimeProfile,
     points: &[P],
@@ -634,6 +635,14 @@ fn motion_end_state(
         return None;
     }
     let history = admitted_motion_transitions(profile, points, times, tool_type, curve_enabled)?;
+    motion_end_state_from_replay(points, times, &history)
+}
+
+fn motion_end_state_from_replay(
+    points: &[P],
+    times: &[i64],
+    history: &AdmittedMotionReplay,
+) -> Option<MotionEndState> {
     let accepted = history.transitions.last()?;
     let prior = accepted.speed;
     let last = points.len() - 1;
@@ -790,6 +799,7 @@ fn motion_opacity_target(
 /// each historical event then supplies pressure-scaled interpolation and the
 /// smoothed speed state. Width factors reflect this fresh constructor's
 /// initial drawLine state and subsequent transition.
+#[cfg(test)]
 fn motion_history_radius_states(
     profile: Glv10RuntimeProfile,
     points: &[P],
@@ -802,12 +812,21 @@ fn motion_history_radius_states(
         return None;
     }
     let history = admitted_motion_transitions(profile, points, times, tool_type, curve_enabled)?;
+    motion_radius_states_from_replay(profile, pressures, tool_type, &history)
+}
+
+fn motion_radius_states_from_replay(
+    profile: Glv10RuntimeProfile,
+    pressures: &[f32],
+    tool_type: i32,
+    history: &AdmittedMotionReplay,
+) -> Option<Vec<f32>> {
     let first = history.transitions.first()?;
     let initial_pressure = motion_pressure(tool_type, pressures[first.event_index]);
     let mut radius = motion_radius_seed(profile, first.smoothed_speed, initial_pressure)? * 2.0;
     let mut previous_width = profile.initial_motion_width;
     let mut states = Vec::with_capacity(history.transitions.len());
-    for transition in history.transitions {
+    for transition in &history.transitions {
         let pressure = motion_pressure(tool_type, pressures[transition.event_index]);
         let interpolation = (pressure * profile.pressure_scale)
             .max(profile.pressure_min)
@@ -1482,8 +1501,7 @@ fn sample_motion_events(
     }
     let replay = admitted_motion_transitions(profile, points, times, tool_type, curve_enabled)?;
     let history = &replay.transitions;
-    let radius_states =
-        motion_history_radius_states(profile, points, times, pressures, tool_type, curve_enabled)?;
+    let radius_states = motion_radius_states_from_replay(profile, pressures, tool_type, &replay)?;
     if history.len() != radius_states.len() {
         return None;
     }
@@ -1561,7 +1579,7 @@ fn sample_motion_events(
     }
 
     if curve_enabled && matches!(tool_type, 1 | 3) {
-        let end = motion_end_state(profile, points, times, tool_type, curve_enabled)?;
+        let end = motion_end_state_from_replay(points, times, &replay)?;
         let terminal_pressure = motion_pressure(tool_type, pressures[pressures.len() - 1]);
         let target = motion_end_radius_target(profile, end.terminal_scalar, terminal_pressure)?;
         let radius_start = radius_states.last().copied()? * 0.5;

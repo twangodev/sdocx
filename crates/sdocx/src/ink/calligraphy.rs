@@ -130,6 +130,7 @@ impl CalligraphyState {
     }
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct AddPointFrame {
     pub(super) input: AddPointInput,
@@ -137,9 +138,14 @@ pub(super) struct AddPointFrame {
 }
 
 pub(super) struct SavedObjectStrokeMeshOutput {
+    #[cfg(test)]
     pub(super) stroke: SavedObjectStrokeOutput,
+    #[cfg(test)]
     pub(super) add_points: Vec<AddPointFrame>,
     pub(super) buffers: MeshBuffers,
+    pub(super) sample_ends: Vec<[usize; 3]>,
+    pub(super) terminal_start: [usize; 3],
+    pub(super) terminal_end: [usize; 3],
     pub(super) state: CalligraphyState,
 }
 
@@ -352,43 +358,11 @@ pub(crate) fn prepare_model_stroke(
     };
     state = output.state;
     session.state = Some(state);
-    let terminal_start_vector = output
-        .stroke
-        .history
-        .as_ref()
-        .map_or(0, |history| history.vectors.len());
-    let history_sample_ends = output
-        .stroke
-        .history
-        .as_ref()
-        .map_or_else(Vec::new, |history| history.sample_ends.clone());
-    let mut lane_triangle_counts = [0usize; 3];
-    let mut lane_prefixes = Vec::with_capacity(output.add_points.len() + 1);
-    lane_prefixes.push(lane_triangle_counts);
-    for frame in &output.add_points {
-        if let Some(geometry) = frame.geometry {
-            for buffer in geometry.buffers {
-                let lane = match buffer {
-                    MeshBuffer::Core => 0,
-                    MeshBuffer::FringeA => 1,
-                    MeshBuffer::FringeB => 2,
-                };
-                lane_triangle_counts[lane] += 2;
-            }
-        }
-        lane_prefixes.push(lane_triangle_counts);
-    }
-    let sample_ends = history_sample_ends
-        .into_iter()
-        .map(|vector_end| lane_prefixes[vector_end])
-        .collect();
-    let terminal_start = lane_prefixes[terminal_start_vector];
-    let terminal_end = lane_prefixes[output.stroke.vectors.len()];
     CalligraphyAdmission::Mesh(CalligraphyModelMesh {
         buffers: output.buffers,
-        sample_ends,
-        terminal_start,
-        terminal_end,
+        sample_ends: output.sample_ends,
+        terminal_start: output.terminal_start,
+        terminal_end: output.terminal_end,
         rgb: [(argb >> 16) as u8, (argb >> 8) as u8, argb as u8],
     })
 }
@@ -1080,9 +1054,13 @@ fn saved_object_stroke_mesh_bounded(
         state.add_point.initial_edge = true;
     }
     let stroke = saved_object_stroke_redraw_bounded(input, state.saved, &mut remaining_add_points)?;
+    #[cfg(test)]
     let mut add_points = Vec::with_capacity(stroke.vectors.len());
     let mut buffers = MeshBuffers::default();
     let mut triangle_count = 0usize;
+    let mut lane_triangle_counts = [0usize; 3];
+    let mut lane_prefixes = Vec::with_capacity(stroke.vectors.len() + 1);
+    lane_prefixes.push(lane_triangle_counts);
     for (vector, extent) in stroke
         .vectors
         .iter()
@@ -1109,21 +1087,47 @@ fn saved_object_stroke_mesh_bounded(
                     return None;
                 }
                 buffers.append(buffer, rect);
+                let lane = match buffer {
+                    MeshBuffer::Core => 0,
+                    MeshBuffer::FringeA => 1,
+                    MeshBuffer::FringeB => 2,
+                };
+                lane_triangle_counts[lane] += 2;
             }
             state.add_point.previous_edges = geometry.next_edges;
         }
         state.add_point.center = [vector[0], vector[1]];
         state.add_point.initial_edge = false;
+        lane_prefixes.push(lane_triangle_counts);
+        #[cfg(test)]
         add_points.push(AddPointFrame {
             input: frame_input,
             geometry,
         });
     }
     state.saved = stroke.final_state;
+    let terminal_start_vector = stroke
+        .history
+        .as_ref()
+        .map_or(0, |history| history.vectors.len());
+    let sample_ends = stroke.history.as_ref().map_or_else(Vec::new, |history| {
+        history
+            .sample_ends
+            .iter()
+            .map(|&vector_end| lane_prefixes[vector_end])
+            .collect()
+    });
+    let terminal_start = lane_prefixes[terminal_start_vector];
+    let terminal_end = lane_prefixes[stroke.vectors.len()];
     Some(SavedObjectStrokeMeshOutput {
+        #[cfg(test)]
         stroke,
+        #[cfg(test)]
         add_points,
         buffers,
+        sample_ends,
+        terminal_start,
+        terminal_end,
         state,
     })
 }
