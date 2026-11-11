@@ -2139,16 +2139,15 @@ fn finish_assembled_pdf(
     tagged: TaggedOutput,
 ) -> Result<Vec<u8>, String> {
     if tagged.has_tags {
-        let root = tagged.finish(&mut output)?;
-        output
-            .objects
-            .insert(tagged.root_id, Object::Dictionary(root));
+        let root_id = tagged.root_id;
+        let root = tagged.finish(&mut output);
+        output.objects.insert(root_id, Object::Dictionary(root));
         let catalog = output
             .get_object_mut(catalog_id)
             .map_err(|e| e.to_string())?
             .as_dict_mut()
             .map_err(|e| e.to_string())?;
-        catalog.set("StructTreeRoot", tagged.root_id);
+        catalog.set("StructTreeRoot", root_id);
         catalog.set("MarkInfo", lopdf::dictionary! { "Marked" => true });
     }
     output.trailer.set("Root", catalog_id);
@@ -2591,23 +2590,23 @@ impl TaggedOutput {
         Ok(())
     }
 
-    fn finish(&self, output: &mut Document) -> Result<Dictionary, String> {
+    fn finish(self, output: &mut Document) -> Dictionary {
         let mut nums = Vec::with_capacity(self.parent_entries.len() * 2);
-        for (key, values) in &self.parent_entries {
-            nums.push(Object::Integer(*key));
-            nums.push(output.add_object(Object::Array(values.clone())).into());
+        for (key, values) in self.parent_entries {
+            nums.push(Object::Integer(key));
+            nums.push(output.add_object(Object::Array(values)).into());
         }
         let mut parent_tree = Dictionary::new();
         parent_tree.set("Nums", nums);
         let mut root = Dictionary::new();
         root.set("Type", "StructTreeRoot");
-        root.set("K", Object::Array(self.root_kids.clone()));
+        root.set("K", Object::Array(self.root_kids));
         root.set("ParentTree", output.add_object(parent_tree));
         root.set("ParentTreeNextKey", self.next_key);
         if !self.role_map.is_empty() {
-            root.set("RoleMap", self.role_map.clone());
+            root.set("RoleMap", self.role_map);
         }
-        Ok(root)
+        root
     }
 }
 
