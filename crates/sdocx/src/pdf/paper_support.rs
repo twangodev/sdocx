@@ -2140,7 +2140,7 @@ fn finish_assembled_pdf(
     catalog_id: ObjectId,
     tagged: TaggedOutput,
 ) -> Result<Vec<u8>, String> {
-    if tagged.has_tags {
+    if !tagged.parent_entries.is_empty() {
         let root_id = tagged.root_id;
         let root = tagged.finish(&mut output);
         output.objects.insert(root_id, Object::Dictionary(root));
@@ -2416,7 +2416,6 @@ struct TaggedOutput {
     root_kids: Vec<Object>,
     parent_entries: std::collections::BTreeMap<i64, Vec<Object>>,
     role_map: Dictionary,
-    has_tags: bool,
 }
 
 impl TaggedOutput {
@@ -2428,7 +2427,6 @@ impl TaggedOutput {
             root_kids: Vec::new(),
             parent_entries: Default::default(),
             role_map: Dictionary::new(),
-            has_tags: false,
         }
     }
 
@@ -2511,7 +2509,7 @@ impl TaggedOutput {
             .as_i64()
             .map_err(|e| e.to_string())?;
         let parent_tree = struct_parent_tree(source)?.ok_or("tagged page has no ParentTree")?;
-        let parent_array = deref(
+        let source_parent_array = deref(
             source,
             parent_tree
                 .get(&source_key)
@@ -2519,7 +2517,7 @@ impl TaggedOutput {
         )?
         .as_array()
         .map_err(|e| format!("ParentTree page key {source_key} is not an array: {e}"))?
-        .clone();
+        .as_slice();
         let root_id = struct_tree_root_id(source)?.ok_or("tagged page has no StructTreeRoot")?;
         let root = source.get_dictionary(root_id).map_err(|e| e.to_string())?;
         self.merge_role_map(source, root)?;
@@ -2529,7 +2527,7 @@ impl TaggedOutput {
             source_page_id,
             output_page_id,
             form_id,
-            parent_array,
+            source_parent_array,
             source_key,
             output_parent_array: Vec::new(),
             seen_mcids: HashSet::new(),
@@ -2553,7 +2551,7 @@ impl TaggedOutput {
         if state.seen_mcids.is_empty() {
             return Err("page StructParents has no matching structure-tree MCIDs".into());
         }
-        for (mcid, value) in state.parent_array.iter().enumerate() {
+        for (mcid, value) in state.source_parent_array.iter().enumerate() {
             if !matches!(deref(source, value)?, Object::Null)
                 && !state.seen_mcids.contains(&(mcid as i64))
             {
@@ -2564,7 +2562,6 @@ impl TaggedOutput {
         }
         self.parent_entries
             .insert(output_key, state.output_parent_array);
-        self.has_tags = true;
         Ok(())
     }
 
@@ -2612,11 +2609,11 @@ impl TaggedOutput {
     }
 }
 
-struct TagCloneState {
+struct TagCloneState<'a> {
     source_page_id: ObjectId,
     output_page_id: ObjectId,
     form_id: Option<ObjectId>,
-    parent_array: Vec<Object>,
+    source_parent_array: &'a [Object],
     source_key: i64,
     output_parent_array: Vec<Object>,
     seen_mcids: HashSet<i64>,
@@ -2737,12 +2734,12 @@ fn structure_kids(doc: &Document, object: &Object) -> Result<Vec<Object>, String
 
 fn check_page_parent_slot(
     doc: &Document,
-    state: &TagCloneState,
+    state: &TagCloneState<'_>,
     mcid: i64,
     source_element: Option<ObjectId>,
 ) -> Result<(), String> {
     let index = usize::try_from(mcid).map_err(|_| "negative MCID")?;
-    let parent = state.parent_array.get(index).ok_or_else(|| {
+    let parent = state.source_parent_array.get(index).ok_or_else(|| {
         format!(
             "ParentTree key {} has no slot for MCID {mcid}",
             state.source_key
@@ -2768,7 +2765,7 @@ fn page_matches(
     doc: &Document,
     explicit: Option<&Object>,
     inherited_page: Option<ObjectId>,
-    state: &TagCloneState,
+    state: &TagCloneState<'_>,
     mcid: i64,
     element_id: Option<ObjectId>,
 ) -> Result<bool, String> {
@@ -2801,7 +2798,7 @@ fn clone_structure_item(
     parent_target_id: ObjectId,
     source_parent_element: Option<ObjectId>,
     inherited_page: Option<ObjectId>,
-    state: &mut TagCloneState,
+    state: &mut TagCloneState<'_>,
     depth: usize,
 ) -> Result<Option<Object>, String> {
     if depth > 128 {
@@ -2895,7 +2892,7 @@ fn clone_structure_dictionary(
     parent_target_id: ObjectId,
     source_parent_element: Option<ObjectId>,
     inherited_page: Option<ObjectId>,
-    state: &mut TagCloneState,
+    state: &mut TagCloneState<'_>,
     depth: usize,
 ) -> Result<Option<Object>, String> {
     let dict = match object {
@@ -3007,7 +3004,7 @@ fn clone_mcr(
     parent_target_id: ObjectId,
     source_parent_element: Option<ObjectId>,
     inherited_page: Option<ObjectId>,
-    state: &mut TagCloneState,
+    state: &mut TagCloneState<'_>,
 ) -> Result<Option<Object>, String> {
     if dict.has(b"Stm") {
         return Err("nested tagged Form content (/MCR /Stm) is not yet supported".into());
