@@ -60,8 +60,9 @@ pub(crate) struct Paragraph {
 
 impl<'a> TextIndex<'a> {
     pub fn new(text: &'a str) -> Self {
-        let mut byte_offsets = Vec::new();
-        let mut utf16_offsets = Vec::new();
+        let boundary_count = text.chars().count() + 1;
+        let mut byte_offsets = Vec::with_capacity(boundary_count);
+        let mut utf16_offsets = Vec::with_capacity(boundary_count);
         let mut native_paragraph_starts = vec![0];
         let mut utf16_offset = 0;
         for (character_index, (byte_offset, character)) in text.char_indices().enumerate() {
