@@ -15,6 +15,7 @@ use crate::text_index::TextSource;
 use crate::{BoundingBox, PredefinedTextStyle};
 
 use super::bidi::{BidiError, ParagraphBidi};
+use super::resources::ResolvedTextFace;
 use super::{
     NativeDrawSpan, NativeIdentityUnavailable, StyledText, TextDiagnosticKind, TextMeasureStyle,
     TextRenderer, TextStyle,
@@ -808,8 +809,12 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
     ) -> Result<MeasuredSegment, MeasurementError> {
         let source = self.range.start + range.start..self.range.start + range.end;
         let renderer = self.renderer.for_source(source.clone());
-        let (face, face_italic, native_flow_synthetic_italic) = renderer
-            .resolve_face_with_native_synthesis(style, self.styled.context(), direction)
+        let ResolvedTextFace {
+            face,
+            fallback_italic,
+            native_flow_synthetic_italic,
+        } = renderer
+            .resolve_face(style, self.styled.context(), direction)
             .ok_or_else(|| {
                 MeasurementError::UnavailableFace(
                     style.family.as_deref().unwrap_or("Roboto").to_owned(),
@@ -843,7 +848,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             let selected =
                 self.renderer
                     .font_book()
-                    .resolve_for_text(&face, text, bold, face_italic)?;
+                    .resolve_for_text(&face, text, bold, fallback_italic)?;
             let coverage_fallback = selected.id != face.id;
             return self.shape_face(
                 range,
@@ -868,7 +873,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         let segments = grapheme_face_segments(text, |grapheme| {
             self.renderer
                 .font_book()
-                .resolve_for_text(&face, grapheme, bold, face_italic)
+                .resolve_for_text(&face, grapheme, bold, fallback_italic)
         })?;
         let mut measured = MeasuredSegment {
             advance: 0.0,
