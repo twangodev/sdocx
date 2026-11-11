@@ -45,14 +45,18 @@ struct DabInput {
 }
 
 #[derive(Debug)]
+struct AcceptedDab {
+    row: f32,
+    center: P,
+}
+
+#[derive(Debug)]
 struct Dab {
     #[cfg(test)]
     seed: u32,
     #[cfg(test)]
     input: DabInput,
-    accepted: bool,
-    row: Option<f32>,
-    center: Option<P>,
+    accepted: Option<AcceptedDab>,
 }
 
 #[derive(Debug)]
@@ -179,9 +183,7 @@ fn draw_point(input: DabInput, _seed: u32, rng: &mut GlibcRand) -> Dab {
             seed: _seed,
             #[cfg(test)]
             input,
-            accepted: false,
-            row: None,
-            center: None,
+            accepted: None,
         };
     }
     let row = (rng.next() % 3) as f32;
@@ -191,9 +193,7 @@ fn draw_point(input: DabInput, _seed: u32, rng: &mut GlibcRand) -> Dab {
         seed: _seed,
         #[cfg(test)]
         input,
-        accepted: true,
-        row: Some(row),
-        center: Some(center),
+        accepted: Some(AcceptedDab { row, center }),
     }
 }
 
@@ -262,11 +262,9 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
             current_seed,
             &mut rng,
         );
-        if dab.accepted {
-            let center = dab.center.unwrap();
-            let row = dab.row.unwrap();
+        if let Some(AcceptedDab { center, row }) = &dab.accepted {
             let half_size = pen.size.max(1.5) * 2.35 * 0.7 * 0.5;
-            records.push([center.x, center.y, half_size, row, 0.3]);
+            records.push([center.x, center.y, half_size, *row, 0.3]);
         }
         dab_count += 1;
         #[cfg(test)]
