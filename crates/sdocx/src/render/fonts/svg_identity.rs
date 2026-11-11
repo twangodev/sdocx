@@ -18,18 +18,21 @@ pub(super) fn family(data: &[u8], index: u32) -> Arc<str> {
 /// Physical SVG family identities in one font database.
 #[derive(Debug, Clone)]
 pub struct SvgFontFamilies {
-    faces: std::collections::HashMap<Arc<str>, fontdb::ID>,
+    faces: Arc<std::collections::HashMap<Arc<str>, fontdb::ID>>,
 }
 
 impl SvgFontFamilies {
     pub fn new(database: &fontdb::Database) -> Self {
         Self {
-            faces: database
-                .faces()
-                .filter_map(|face| {
-                    database.with_face_data(face.id, |data, index| (family(data, index), face.id))
-                })
-                .collect(),
+            faces: Arc::new(
+                database
+                    .faces()
+                    .filter_map(|face| {
+                        database
+                            .with_face_data(face.id, |data, index| (family(data, index), face.id))
+                    })
+                    .collect(),
+            ),
         }
     }
 
