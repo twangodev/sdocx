@@ -447,11 +447,11 @@ pub fn run_visual(
         };
         let mut pages = Vec::new();
         for (i, candidate_path) in candidates.iter().enumerate() {
-            let candidate = if config.format == "png" {
-                RgbImage::from_png(candidate_path)?
+            let (candidate, sdk_pdf_info) = if config.format == "png" {
+                (RgbImage::from_png(candidate_path)?, None)
             } else {
                 let info = pdf_page_info(&config.python, &sdk_output, i)?;
-                pymupdf_version = info.version;
+                pymupdf_version = info.version.clone();
                 let size = pdf_pixel_size(info.points);
                 let raster_path = dir.join(format!("sdk_render_raw_{i}.png"));
                 let RasterizedPdfPage {
@@ -465,7 +465,7 @@ pub fn run_visual(
                 let dest = candidate_path;
                 image.to_png(dest)?;
                 let _ = fs::remove_file(raster_path);
-                image
+                (image, Some(info))
             };
             let reference_raw = dir.join(format!("reference_raw_{i}.png"));
             let RasterizedPdfPage {
@@ -488,25 +488,25 @@ pub fn run_visual(
             let diff_path = dir.join(format!("difference_page{i}.png"));
             reference.to_png(&ref_path)?;
             diff.to_png(&diff_path)?;
-            let (sdk_pdf_size_points, sdk_text_characters, sdk_text) = if config.format == "pdf" {
-                let info = pdf_page_info(&config.python, &sdk_output, i)?;
-                pymupdf_version = info.version;
-                let text = info.text;
-                let text_path = dir.join(format!("sdk_page{i}.txt"));
-                fs::write(&text_path, &text)?;
-                (
-                    Some(info.points),
-                    Some(text.chars().count()),
-                    Some(
-                        text_path
-                            .strip_prefix(&config.output)?
-                            .to_string_lossy()
-                            .replace('\\', "/"),
-                    ),
-                )
-            } else {
-                (None, None, None)
-            };
+            let (sdk_pdf_size_points, sdk_text_characters, sdk_text) =
+                if let Some(info) = sdk_pdf_info {
+                    pymupdf_version = info.version;
+                    let text = info.text;
+                    let text_path = dir.join(format!("sdk_page{i}.txt"));
+                    fs::write(&text_path, &text)?;
+                    (
+                        Some(info.points),
+                        Some(text.chars().count()),
+                        Some(
+                            text_path
+                                .strip_prefix(&config.output)?
+                                .to_string_lossy()
+                                .replace('\\', "/"),
+                        ),
+                    )
+                } else {
+                    (None, None, None)
+                };
             pages.push(PageReport {
                 page: i + 1,
                 size: [candidate.width, candidate.height],
@@ -1423,7 +1423,7 @@ mod tests {
         let cli = base.join("fake-cli");
         fs::write(&cli,format!("#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 'fake cli 1'; exit 0; fi\ncp '{}' \"$3\"\necho pdf-conversion\n",pdf.display())).unwrap();
         let python = base.join("fake-python");
-        fs::write(&python,format!("#!/bin/sh\nif [ \"$1\" = \"-c\" ]; then\n case \"$2\" in\n *platform.platform*) printf '{{\"version\":\"3.14\",\"platform\":\"fake-platform\"}}\\n' ;;\n *get_pixmap*) cp '{}' \"$6\"; printf '{{\"width\":8,\"height\":8,\"version\":\"fake-pymupdf\"}}\\n' ;;\n *pymupdf.open*) printf '{{\"width\":8,\"height\":8,\"version\":\"fake-pymupdf\",\"text\":\"selectable-page%s\"}}\\n' \"$4\" ;;\n *) echo 3.14 ;;\n esac\nfi\n",source_png.display())).unwrap();
+        fs::write(&python,format!("#!/bin/sh\nif [ \"$1\" = \"-c\" ]; then\n case \"$2\" in\n *platform.platform*) printf '{{\"version\":\"3.14\",\"platform\":\"fake-platform\"}}\\n' ;;\n *get_pixmap*) cp '{}' \"$6\"; printf '{{\"width\":8,\"height\":8,\"version\":\"fake-pymupdf\"}}\\n' ;;\n *pymupdf.open*) if ! mkdir \"$3.page$4.info\"; then echo duplicate-page-info >&2; exit 9; fi; printf '{{\"width\":8,\"height\":8,\"version\":\"fake-pymupdf\",\"text\":\"selectable-page%s\"}}\\n' \"$4\" ;;\n *) echo 3.14 ;;\n esac\nfi\n",source_png.display())).unwrap();
         for path in [&cli, &python] {
             let mut permissions = fs::metadata(path).unwrap().permissions();
             permissions.set_mode(0o755);
