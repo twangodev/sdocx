@@ -287,6 +287,14 @@ enum SourceCurve {
     Cubic([FPoint; 4]),
 }
 
+struct CurvePath {
+    curve: SourceCurve,
+    from_width: f32,
+    to_width: f32,
+    terminal: bool,
+    source_event_index: Option<usize>,
+}
+
 impl SourceCurve {
     fn length(self) -> f32 {
         match self {
@@ -472,7 +480,7 @@ fn source_glv1_curve_trace(
     let raw_terminal_rejected = source_indices.last().copied() != Some(raw_point_count - 1);
     let size = source_size.clamp(0.4, 800.0);
     let p: Vec<_> = points.iter().copied().map(source_point).collect();
-    let mut paths: Vec<(SourceCurve, f32, f32, bool, bool, Option<usize>)> = Vec::new();
+    let mut paths: Vec<CurvePath> = Vec::new();
     let mut width = size * pressure[1];
     let mut last_factor = 1.0_f32;
     if points.len() == 2 {
@@ -483,26 +491,24 @@ fn source_glv1_curve_trace(
             let end = source_point(raw_terminal);
             let candidate = size.mul_add(raw_terminal_pressure.mul_add(0.25, 0.25), width * 0.5);
             let terminal = end_pen_width_target(width, candidate, size);
-            paths.push((
-                SourceCurve::Quad([p[0], p[1], end]),
-                width,
-                terminal,
-                true,
-                true,
-                None,
-            ));
+            paths.push(CurvePath {
+                curve: SourceCurve::Quad([p[0], p[1], end]),
+                from_width: width,
+                to_width: terminal,
+                terminal: true,
+                source_event_index: None,
+            });
         } else {
             // endPen adjusts the final width from its raw terminal pressure
             // even when the accepted source contains only two points.
             let terminal = terminal_width_target(width, size, raw_terminal_pressure, last_factor);
-            paths.push((
-                SourceCurve::Quad([p[0], p[1], p[1]]),
-                width,
-                terminal,
-                true,
-                true,
-                None,
-            ));
+            paths.push(CurvePath {
+                curve: SourceCurve::Quad([p[0], p[1], p[1]]),
+                from_width: width,
+                to_width: terminal,
+                terminal: true,
+                source_event_index: None,
+            });
         }
     } else if points.len() == 3 {
         if raw_terminal_rejected {
@@ -510,43 +516,40 @@ fn source_glv1_curve_trace(
             // raw final point fails admission; endPen closes that cubic at the
             // raw endpoint rather than the last admitted point.
             let terminal = terminal_width_target(width, size, raw_terminal_pressure, last_factor);
-            paths.push((
-                SourceCurve::Cubic([
+            paths.push(CurvePath {
+                curve: SourceCurve::Cubic([
                     p[0],
                     p[1],
                     p[1].mid(source_point(raw_terminal)),
                     source_point(raw_terminal),
                 ]),
-                width,
-                terminal,
-                true,
-                true,
-                None,
-            ));
+                from_width: width,
+                to_width: terminal,
+                terminal: true,
+                source_event_index: None,
+            });
         } else {
             let distance = p[1].sub(p[2]).len();
             if distance < 1.5 {
                 width = size * pressure[2];
-                paths.push((
-                    SourceCurve::Quad([p[0], p[2], p[2]]),
-                    width,
-                    width,
-                    true,
-                    true,
-                    None,
-                ));
+                paths.push(CurvePath {
+                    curve: SourceCurve::Quad([p[0], p[2], p[2]]),
+                    from_width: width,
+                    to_width: width,
+                    terminal: true,
+                    source_event_index: None,
+                });
             } else {
                 let c2 = p[1].mid(p[2]);
                 let candidate = size.mul_add(pressure[2].mul_add(0.25, 0.25), width * 0.5);
                 let terminal = end_pen_width_target(width, candidate, size);
-                paths.push((
-                    SourceCurve::Cubic([p[0], p[1], c2, p[2]]),
-                    width,
-                    terminal,
-                    true,
-                    true,
-                    None,
-                ));
+                paths.push(CurvePath {
+                    curve: SourceCurve::Cubic([p[0], p[1], c2, p[2]]),
+                    from_width: width,
+                    to_width: terminal,
+                    terminal: true,
+                    source_event_index: None,
+                });
             }
         }
     } else {
@@ -557,14 +560,13 @@ fn source_glv1_curve_trace(
             let factor = speed_factor(p[i - 1].sub(p[i]).len());
             let target = width_target(width, size, pressure[i], factor);
             let end = control.mid(p[i]);
-            paths.push((
-                SourceCurve::Quad([previous_end, control, end]),
-                width,
-                target,
-                paths.is_empty(),
-                false,
-                Some(source_indices[i]),
-            ));
+            paths.push(CurvePath {
+                curve: SourceCurve::Quad([previous_end, control, end]),
+                from_width: width,
+                to_width: target,
+                terminal: false,
+                source_event_index: Some(source_indices[i]),
+            });
             width = target;
             previous_end = end;
             control = p[i];
@@ -575,35 +577,40 @@ fn source_glv1_curve_trace(
         let terminal = terminal_width_target(width, size, raw_terminal_pressure, last_factor);
         let terminal_point = source_point(raw_terminal);
         if final_index % 2 == 0 {
-            paths.push((
-                SourceCurve::Cubic([
+            paths.push(CurvePath {
+                curve: SourceCurve::Cubic([
                     previous_end,
                     control,
                     control.mid(terminal_point),
                     terminal_point,
                 ]),
-                width,
-                terminal,
-                false,
-                true,
-                None,
-            ));
+                from_width: width,
+                to_width: terminal,
+                terminal: true,
+                source_event_index: None,
+            });
         } else {
-            paths.push((
-                SourceCurve::Quad([previous_end, control, terminal_point]),
-                width,
-                terminal,
-                false,
-                true,
-                None,
-            ));
+            paths.push(CurvePath {
+                curve: SourceCurve::Quad([previous_end, control, terminal_point]),
+                from_width: width,
+                to_width: terminal,
+                terminal: true,
+                source_event_index: None,
+            });
         }
     }
 
     let mut output = Vec::new();
     let mut source_event_ranges = vec![None; raw_point_count];
     let mut terminal_range = 0..0;
-    for (path, from_width, to_width, _first, terminal, source_event_index) in paths {
+    for CurvePath {
+        curve: path,
+        from_width,
+        to_width,
+        terminal,
+        source_event_index,
+    } in paths
+    {
         let path_start = output.len();
         let length = path.length();
         let repeat = repeat_index(length, from_width.min(to_width));
