@@ -493,7 +493,7 @@ pub(crate) fn prepare_stroke_for_scale(
     Ok(PreparedStroke { samples, color })
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "serde"))]
 fn reconstruct(
     points: &[[f32; 2]],
     pressures: &[f32],

@@ -990,6 +990,7 @@ fn sha256_hex(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
+#[cfg(feature = "serde")]
 fn page_references_image_size(
     pdf: &PdfDocument,
     page_number: u32,

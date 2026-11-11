@@ -110,7 +110,7 @@ enum MathProfile {
     GlibcSincosfFma,
     /// V22 capture callback: Python `math.sin` and `math.cos` on the exact f32
     /// input promoted to f64, each result independently rounded back to f32.
-    #[cfg(test)]
+    #[cfg(all(test, feature = "serde"))]
     CapturePythonDoubleSinCos,
 }
 
@@ -275,13 +275,13 @@ fn sample_saved_stroke_with_math(
             let p = curve.at(distance);
             let (sin, cos) = match math_profile {
                 MathProfile::GlibcSincosfFma => host_math::sincosf_bounded(phase),
-                #[cfg(test)]
+                #[cfg(all(test, feature = "serde"))]
                 MathProfile::CapturePythonDoubleSinCos
                     if phase.is_finite() && (0.0..=TAU).contains(&phase) =>
                 {
                     Some(((phase as f64).sin() as f32, (phase as f64).cos() as f32))
                 }
-                #[cfg(test)]
+                #[cfg(all(test, feature = "serde"))]
                 MathProfile::CapturePythonDoubleSinCos => None,
             }
             .ok_or("phase outside the selected captured host math profile")?;

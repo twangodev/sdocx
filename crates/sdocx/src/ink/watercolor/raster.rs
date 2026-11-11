@@ -210,7 +210,7 @@ impl Plan {
         Ok(pixels)
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "serde"))]
     pub(crate) fn mask_with_trace(&self, index: usize) -> (Vec<[u8; 4]>, Vec<[u8; 4]>) {
         let mut mask = self.empty_mask().unwrap();
         let mut trace = Vec::new();

@@ -63,7 +63,7 @@ impl PageSlice {
         self.include_canvas
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "pdf", feature = "serde"))]
     fn with_fountain_paint_culling(mut self, enabled: bool) -> Self {
         self.cull_fountain_paint = enabled;
         self
@@ -116,7 +116,7 @@ impl<'a> PageSceneRequest<'a> {
         })
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "pdf", feature = "serde"))]
     pub(crate) fn with_fountain_paint_culling(mut self, enabled: bool) -> Self {
         self.slice = self
             .slice

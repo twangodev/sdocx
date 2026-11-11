@@ -5273,12 +5273,15 @@ fn normalized_stroke_width(pen_width: f32) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        ChineseBrushFwidthOutputProfile, ChineseBrushRenderProfile, FountainV14OutputScaleProfile,
-        FountainV16OutputScaleProfile, FountainV17OutputScaleProfile,
-        FountainV17RainbowRenderProfile, InkPen2RenderProfile, RenderColorMode, RenderOptions,
-        RenderTheme, is_dark_background, normalized_stroke_width, prepare_inkpen2_v9,
-        prepare_stroke_for_page_with_theme, render_document_svg, render_layout_page_replay_svg,
-        render_layout_page_svg, sanitize_hyperlink_target,
+        ChineseBrushFwidthOutputProfile, ChineseBrushRenderProfile, InkPen2RenderProfile,
+        RenderColorMode, RenderOptions, RenderTheme, is_dark_background, normalized_stroke_width,
+        prepare_inkpen2_v9, prepare_stroke_for_page_with_theme, render_document_svg,
+        render_layout_page_replay_svg, render_layout_page_svg, sanitize_hyperlink_target,
+    };
+    #[cfg(feature = "serde")]
+    use super::{
+        FountainV14OutputScaleProfile, FountainV16OutputScaleProfile,
+        FountainV17OutputScaleProfile, FountainV17RainbowRenderProfile,
     };
     use crate::{
         BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,

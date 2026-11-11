@@ -590,6 +590,7 @@ fn addpoint_reconstructs_alternate_native_draw_matrices() {
     assert_eq!(receipt["queue_end_error"], 0);
 }
 
+#[cfg(feature = "pdf")]
 fn unpack_p4_triangle_for_page(
     stamp: usize,
     tri_indexes: [usize; 3],

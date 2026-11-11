@@ -1012,7 +1012,7 @@ pub fn sample_brushpen_glv10_host(
 /// joined to the retained 26x44 native buffer. This is test-only evidence,
 /// not a general saved-stroke admission rule.
 #[derive(Clone, Copy)]
-#[cfg(test)]
+#[cfg(all(test, feature = "serde"))]
 struct SavedBrushPenNativeContext {
     gl_version: u32,
     screen_resolution: [i32; 2],
@@ -1022,7 +1022,7 @@ struct SavedBrushPenNativeContext {
     fixed_opacity_enabled: bool,
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "serde"))]
 struct SavedBrushPenSamples {
     output: Output,
     argb: u32,
@@ -1032,7 +1032,7 @@ struct SavedBrushPenSamples {
 /// sampler profile. The fixture behind this bridge was assembled by manual
 /// native ObjectStroke setters; it is not a parsed Drawing/document stroke.
 /// Unknown pen identity, settings, flags, colors, sizes, or context fail closed.
-#[cfg(test)]
+#[cfg(all(test, feature = "serde"))]
 fn sample_saved_native_stroke(
     stroke: &crate::Stroke,
     context: SavedBrushPenNativeContext,
@@ -1040,7 +1040,7 @@ fn sample_saved_native_stroke(
     sample_native_stroke_with_size(stroke, context, 0x4049_374c, 0xff6c_dd8f)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "serde"))]
 fn sample_native_stroke_with_size(
     stroke: &crate::Stroke,
     context: SavedBrushPenNativeContext,

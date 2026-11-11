@@ -1805,6 +1805,7 @@ fn shape_with_path_rotation(kind: u32, path: &[u8], rotation: f32) -> Vec<u8> {
     [base(0.0), outline(), frame(7, 32, &fixed, &shape_fields())].concat()
 }
 
+#[cfg(feature = "render")]
 fn captured_model_display_path(case_name: &str) -> String {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../../../conformance/shape-normalization.json"

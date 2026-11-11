@@ -932,6 +932,7 @@ pub(crate) mod tests {
             Error::PointCount
         );
     }
+    #[cfg(feature = "pdf")]
     pub(crate) fn captured_control_buffers(
         stroke: &crate::Stroke,
         case: usize,

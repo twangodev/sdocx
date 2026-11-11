@@ -1047,7 +1047,7 @@ fn add_composition_image_asset(document: &mut Document) {
     });
 }
 
-#[cfg(any(feature = "serde", feature = "pdf"))]
+#[cfg(feature = "serde")]
 fn svg_style_point(node: roxmltree::Node<'_, '_>) -> [f64; 2] {
     let coordinate = |name| {
         node.ancestors()
