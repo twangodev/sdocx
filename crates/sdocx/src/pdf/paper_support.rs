@@ -1467,7 +1467,7 @@ pub(super) fn render_singlex_pdf_paper_plan(
     // Each scene puts the validated inspection node first, regardless of its
     // position in the source layout. PreparedBodyText intercepts it and paints
     // the full source body into this slice.
-    let mut body_text = scene_page.body_text.clone();
+    let mut body_text = scene_page.body_text.take();
     if let (Some(_), Some(body)) = (inspection_object_index, body_text.as_mut()) {
         body.object_index = 0;
     } else {
@@ -1475,6 +1475,7 @@ pub(super) fn render_singlex_pdf_paper_plan(
     }
     scene_page.body_text = body_text;
     let original_objects = &source_layout.page.objects;
+    scene_page.page.objects.clear();
     // PageSceneRequest borrows each page. Keep the page clones alive for the render call.
     let mut scene_pages = Vec::with_capacity(plan.output_pages.len());
     for output in &plan.output_pages {
