@@ -125,7 +125,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
     let tail = Frame::read(&mut reader)?;
     tail.expect_kind(3)?;
     let mut unsupported = Vec::new();
-    read_image_outline(&shape_base, &mut unsupported)?;
+    let outline_supported = read_image_outline(&shape_base, &mut unsupported)?;
     let mut fixed = Reader::new(shape.fixed, "image shape fixed data");
     let shape_type = fixed.read_u32("shape type")?;
     let geometry_bbox = read_bbox(&mut fixed)?;
@@ -137,14 +137,14 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
             && matches_placement(geometry_bbox, base.bbox));
     let point_count = usize::from(fixed.read_u8("control point count")?);
     fixed.skip(point_count * 16, "control points")?;
-    if shape_type != 4
+    let geometry_supported = !(shape_type != 4
         || (shape_rotation != 0.0
             && f64::from(shape_rotation) != base.rotation_degrees.unwrap_or(0.0))
         || !rectangular_path
         || point_count != 0
         || fixed.remaining() != 0
-        || shape.properties.has_other_bits(0)
-    {
+        || shape.properties.has_other_bits(0));
+    if !geometry_supported {
         unsupported.push("image shape geometry or properties");
     }
     let mut fields = Reader::new(shape.flexible, "image shape fields");
@@ -158,7 +158,8 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
     if shape.fields.contains(2) {
         fields.read_i32("shape pen name ID")?;
     }
-    let geometry_supported = unsupported.is_empty();
+    let placement_supports_nine_patch =
+        outline_supported && geometry_supported && !shape.fields.contains(0);
     let (media_id, nine_patch) = if shape.fields.contains(3) {
         unsupported.push("unknown field before the image fill");
         (None, None)
@@ -194,12 +195,32 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         original_bbox: None,
         border_media_id: None,
         original_media_id: None,
-        nine_patch: if geometry_supported && !extra_shape_fields {
+        nine_patch: if placement_supports_nine_patch && !extra_shape_fields {
             nine_patch
         } else {
             None
         },
     };
+    read_image_settings(&tail, &mut image, &mut unsupported)?;
+    if reader.remaining() != 0 {
+        while reader.remaining() != 0 {
+            Frame::read(&mut reader)?;
+        }
+        image.nine_patch = None;
+        unsupported.push("additional image frames");
+    }
+    Ok(DecodedImage {
+        image,
+        unsupported,
+        visible: base.visible,
+    })
+}
+
+fn read_image_settings(
+    tail: &Frame<'_>,
+    image: &mut PlacedImage,
+    unsupported: &mut Vec<&'static str>,
+) -> Result<()> {
     let mut fields = Reader::new(tail.flexible, "image settings");
     for bit in 0..=19 {
         if !tail.fields.contains(bit) {
@@ -240,36 +261,24 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
             _ => break,
         }
     }
-    if tail.fields.has_other_bits((1 << 1) | (1 << 7))
-        || tail.properties.has_other_bits(0)
-        || !tail.fixed.is_empty()
-        || fields.remaining() != 0
-    {
+    let settings_have_extensions =
+        tail.properties.has_other_bits(0) || !tail.fixed.is_empty() || fields.remaining() != 0;
+    let settings_support_nine_patch =
+        !tail.fields.has_other_bits((1 << 1) | (1 << 7)) && !settings_have_extensions;
+    if !settings_support_nine_patch {
         image.nine_patch = None;
     }
-    if tail.fields.has_other_bits((1 << 1) | (1 << 7) | (1 << 17))
-        || (image.crop_rect.is_some() && image.original_bbox.is_none())
-        || tail.properties.has_other_bits(0)
-        || !tail.fixed.is_empty()
-        || fields.remaining() != 0
-    {
+    let settings_supported = !tail.fields.has_other_bits((1 << 1) | (1 << 7) | (1 << 17))
+        && !(image.crop_rect.is_some() && image.original_bbox.is_none())
+        && !settings_have_extensions;
+    if !settings_supported {
         unsupported.push("crop, border, original-image or extension settings");
     }
-    if reader.remaining() != 0 {
-        while reader.remaining() != 0 {
-            Frame::read(&mut reader)?;
-        }
-        image.nine_patch = None;
-        unsupported.push("additional image frames");
-    }
-    Ok(DecodedImage {
-        image,
-        unsupported,
-        visible: base.visible,
-    })
+    Ok(())
 }
 
-fn read_image_outline(frame: &Frame<'_>, unsupported: &mut Vec<&'static str>) -> Result<()> {
+fn read_image_outline(frame: &Frame<'_>, unsupported: &mut Vec<&'static str>) -> Result<bool> {
+    let warning_count = unsupported.len();
     if frame.fixed.is_empty() {
         if frame.fields.has_other_bits(0)
             || frame.properties.has_other_bits(0)
@@ -277,7 +286,7 @@ fn read_image_outline(frame: &Frame<'_>, unsupported: &mut Vec<&'static str>) ->
         {
             unsupported.push("inherited shape settings");
         }
-        return Ok(());
+        return Ok(unsupported.len() == warning_count);
     }
     let style = read_shape_base(frame, unsupported)?.style;
     let invisible = match style.paint {
@@ -288,7 +297,7 @@ fn read_image_outline(frame: &Frame<'_>, unsupported: &mut Vec<&'static str>) ->
     if style.width != 0.0 && !invisible {
         unsupported.push("image outlines");
     }
-    Ok(())
+    Ok(unsupported.len() == warning_count)
 }
 
 fn matches_placement(a: BoundingBox, b: BoundingBox) -> bool {

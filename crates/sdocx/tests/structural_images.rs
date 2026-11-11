@@ -481,6 +481,111 @@ fn standard_rectangular_images_accept_inactive_outline_and_nine_patch_settings()
     }
 }
 
+#[test]
+fn nine_patch_admission_is_independent_of_image_warning_presence() {
+    let mut fill_data = fill(7);
+    for (index, value) in [1_i32, 2, 9, 10, 1080].into_iter().enumerate() {
+        fill_data[42 + index * 4..46 + index * 4].copy_from_slice(&value.to_le_bytes());
+    }
+    let crop: Vec<_> = [0_i32, 0, 8, 8]
+        .into_iter()
+        .flat_map(i32::to_le_bytes)
+        .collect();
+    let original: Vec<_> = [-10.0_f64, 20.0, 90.0, 100.0]
+        .into_iter()
+        .flat_map(f64::to_le_bytes)
+        .collect();
+    let settings = [
+        ("none", frame(3, 0, &[], &[]), true, false),
+        ("crop only", frame(3, 1 << 1, &[], &crop), true, true),
+        (
+            "original only",
+            frame(3, 1 << 17, &[], &original),
+            false,
+            false,
+        ),
+        (
+            "crop and original",
+            frame(
+                3,
+                (1 << 1) | (1 << 17),
+                &[],
+                &[crop.clone(), original].concat(),
+            ),
+            false,
+            false,
+        ),
+        (
+            "alpha",
+            frame(3, 1 << 7, &[], &0.25_f32.to_le_bytes()),
+            true,
+            false,
+        ),
+        (
+            "border",
+            frame(3, 1 << 3, &[], &0xff000000_u32.to_le_bytes()),
+            false,
+            true,
+        ),
+        ("fixed extension", frame(3, 0, &[1], &[]), false, true),
+        ("flexible extension", frame(3, 0, &[], &[1]), false, true),
+    ];
+    for (prefix_name, mask, prefix, prefix_warnings, shape_admitted) in [
+        ("none", 0, Vec::new(), Vec::new(), true),
+        (
+            "text",
+            1,
+            0_u32.to_le_bytes().to_vec(),
+            vec!["image text content"],
+            false,
+        ),
+        ("text area", 2, vec![0], Vec::new(), false),
+        ("pen ID", 4, 0_i32.to_le_bytes().to_vec(), Vec::new(), true),
+    ] {
+        for (settings_name, tail, settings_admitted, settings_warn) in &settings {
+            let payload = image_with_fill(2, &fill_data, mask, &prefix, tail);
+            let parsed = parse_native_image(&payload);
+            let image = placed(parsed.document.pages[0].elements().next().unwrap());
+            assert_eq!(
+                image.nine_patch.is_some(),
+                shape_admitted && *settings_admitted,
+                "{prefix_name}, {settings_name}"
+            );
+            assert_eq!(
+                embedded_image(&parsed.note.as_ref().unwrap().body.object_spans[0]).nine_patch,
+                image.nine_patch
+            );
+            let mut expected = prefix_warnings.clone();
+            expected.push("image fill transforms, tiling, transparency or nine-patch");
+            if mask == 2 {
+                expected.push("additional shape fields");
+            }
+            if *settings_warn {
+                expected.push("crop, border, original-image or extension settings");
+            }
+            let expected = expected.join(", ");
+            let warnings: Vec<_> = parsed
+                .report
+                .diagnostics
+                .iter()
+                .filter(|diagnostic| diagnostic.code == DiagnosticCode::UnsupportedImageFeature)
+                .map(|diagnostic| {
+                    diagnostic
+                        .message
+                        .split_once(": incomplete support for ")
+                        .unwrap()
+                        .1
+                })
+                .collect();
+            assert_eq!(
+                warnings,
+                [expected.as_str(), expected.as_str()],
+                "{prefix_name}, {settings_name}"
+            );
+        }
+    }
+}
+
 #[cfg(feature = "pdf")]
 #[test]
 fn parsed_nine_patch_reaches_public_svg_and_pdf() {
