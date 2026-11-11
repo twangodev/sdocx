@@ -10,7 +10,7 @@ use std::io::{Error, ErrorKind};
 use serde_json::{Value, json};
 
 use crate::Result;
-use crate::image::{MetricsOptions, RgbImage, measure};
+use crate::image::{MetricsOptions, RgbImage, measure_metrics};
 
 const PADDING: i64 = 3;
 const INK_THRESHOLD: u8 = 32;
@@ -182,7 +182,7 @@ pub fn compare(
     let (mask, stroke_count) = stroke_regions(rows, (reference.width, reference.height), options)?;
     let reference_ink = masked_ink(reference, &mask, options.chroma_threshold)?;
     let candidate_ink = masked_ink(candidate, &mask, options.chroma_threshold)?;
-    let (metrics, _) = measure(&reference_ink, &candidate_ink, MetricsOptions::default())?;
+    let metrics = measure_metrics(&reference_ink, &candidate_ink, MetricsOptions::default())?;
 
     let mut common = 0usize;
     let mut union = 0usize;
@@ -201,16 +201,11 @@ pub fn compare(
                 .sum::<u64>();
         }
     }
-    let ink_metrics = serde_json::to_value(metrics)?;
-    let ink_metrics = ink_metrics
-        .as_object()
-        .expect("PixelMetrics serializes as an object")
-        .iter()
-        .filter(|(name, _)| name.contains("ink"))
-        .map(|(name, value)| (name.clone(), value.clone()))
-        .collect::<serde_json::Map<_, _>>();
-
-    let mut output = json!({
+    Ok(json!({
+        "reference_ink_pixels": metrics.reference_ink_pixels,
+        "sdk_ink_pixels": metrics.sdk_ink_pixels,
+        "missing_ink_fraction": metrics.missing_ink_fraction,
+        "extra_ink_fraction": metrics.extra_ink_fraction,
         "stroke_regions": stroke_count,
         "padding": PADDING,
         "tolerance": 1,
@@ -221,12 +216,7 @@ pub fn compare(
         "chroma_threshold": options.chroma_threshold,
         "ink_intersection_over_union": if union == 0 { None } else { Some(common as f64 / union as f64) },
         "shared_ink_mean_rgb_error": if common == 0 { None } else { Some(common_channel_error as f64 / (3.0 * common as f64)) },
-    });
-    let output = output
-        .as_object_mut()
-        .expect("ink output serializes as an object");
-    output.extend(ink_metrics);
-    Ok(Value::Object(output.clone()))
+    }))
 }
 
 #[cfg(test)]
@@ -240,6 +230,33 @@ mod tests {
                 "x_min": x, "y_min": y, "x_max": x + 2.0, "y_max": y + 2.0
             }}
         })
+    }
+
+    #[test]
+    fn comparison_preserves_exact_output_fields_and_empty_ink_values() {
+        let rows = [stroke("Marker4", "7;", 1.0, 1.0)];
+        let reference = RgbImage::blank(8, 8, [255; 3]);
+        let mut candidate = reference.clone();
+        candidate.set_pixel(1, 1, [0; 3]);
+        let expected = json!({
+            "stroke_regions": 1, "padding": 3, "tolerance": 1, "ink_threshold": 32,
+            "profile": null, "settings": null, "region": null, "chroma_threshold": null,
+            "reference_ink_pixels": 0, "sdk_ink_pixels": 1,
+            "missing_ink_fraction": 0.0, "extra_ink_fraction": 1.0,
+            "ink_intersection_over_union": 0.0, "shared_ink_mean_rgb_error": null,
+        });
+        assert_eq!(
+            compare(&rows, &reference, &candidate, &InkOptions::default()).unwrap(),
+            expected
+        );
+        let mut empty_expected = expected;
+        empty_expected["sdk_ink_pixels"] = 0.into();
+        empty_expected["extra_ink_fraction"] = json!(0.0);
+        empty_expected["ink_intersection_over_union"] = Value::Null;
+        assert_eq!(
+            compare(&rows, &reference, &reference, &InkOptions::default()).unwrap(),
+            empty_expected
+        );
     }
 
     #[test]

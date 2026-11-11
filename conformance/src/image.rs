@@ -114,21 +114,47 @@ pub fn measure(
     candidate: &RgbImage,
     options: MetricsOptions,
 ) -> Result<(PixelMetrics, RgbImage)> {
+    validate_matching_dimensions(reference, candidate)?;
+    let mut difference = RgbImage::blank(reference.width, reference.height, [0; 3]);
+    let metrics = measure_pixels(reference, candidate, options, Some(&mut difference));
+    Ok((metrics, difference))
+}
+
+pub(crate) fn measure_metrics(
+    reference: &RgbImage,
+    candidate: &RgbImage,
+    options: MetricsOptions,
+) -> Result<PixelMetrics> {
+    validate_matching_dimensions(reference, candidate)?;
+    Ok(measure_pixels(reference, candidate, options, None))
+}
+
+fn validate_matching_dimensions(reference: &RgbImage, candidate: &RgbImage) -> Result<()> {
     if (reference.width, reference.height) != (candidate.width, candidate.height) {
         return Err("pixel comparison requires matching dimensions".into());
     }
+    Ok(())
+}
+
+fn measure_pixels(
+    reference: &RgbImage,
+    candidate: &RgbImage,
+    options: MetricsOptions,
+    mut difference: Option<&mut RgbImage>,
+) -> PixelMetrics {
     let mut sum = 0u64;
     let mut changed = 0usize;
     let mut ref_ink = vec![false; reference.pixels.len()];
     let mut sdk_ink = vec![false; candidate.pixels.len()];
-    let mut diff = RgbImage::blank(reference.width, reference.height, [0; 3]);
     for i in 0..reference.pixels.len() {
         let mut pixel_changed = false;
         for channel in 0..3 {
             let d = reference.pixels[i][channel].abs_diff(candidate.pixels[i][channel]);
             sum += u64::from(d);
             pixel_changed |= d > options.channel_threshold;
-            diff.pixels[i][channel] = d.saturating_mul(4);
+            if let Some(image) = difference.as_deref_mut() {
+                image.pixels[i][channel] = d.saturating_mul(4);
+            }
         }
         changed += usize::from(pixel_changed);
         ref_ink[i] = reference.pixels[i].into_iter().min().unwrap() < 255 - options.ink_threshold;
@@ -168,25 +194,22 @@ pub fn measure(
         }
     }
     let n = reference.pixels.len().max(1) as f64;
-    Ok((
-        PixelMetrics {
-            mean_absolute_rgb_error: sum as f64 / (3.0 * n) / 255.0,
-            changed_pixel_fraction: changed as f64 / n,
-            reference_ink_pixels: ref_count,
-            sdk_ink_pixels: sdk_count,
-            missing_ink_fraction: if ref_count == 0 {
-                0.0
-            } else {
-                missing as f64 / ref_count as f64
-            },
-            extra_ink_fraction: if sdk_count == 0 {
-                0.0
-            } else {
-                extra as f64 / sdk_count as f64
-            },
+    PixelMetrics {
+        mean_absolute_rgb_error: sum as f64 / (3.0 * n) / 255.0,
+        changed_pixel_fraction: changed as f64 / n,
+        reference_ink_pixels: ref_count,
+        sdk_ink_pixels: sdk_count,
+        missing_ink_fraction: if ref_count == 0 {
+            0.0
+        } else {
+            missing as f64 / ref_count as f64
         },
-        diff,
-    ))
+        extra_ink_fraction: if sdk_count == 0 {
+            0.0
+        } else {
+            extra as f64 / sdk_count as f64
+        },
+    }
 }
 
 fn dilated_contains(mask: &[bool], width: i32, height: i32, x: i32, y: i32, radius: i32) -> bool {

@@ -219,13 +219,34 @@ fn command(command: &mut Command) -> Result<Output> {
     }
     Ok(out)
 }
+struct PdfRasterMetadata {
+    width: f64,
+    height: f64,
+    version: String,
+}
+
+fn pdf_raster_metadata(stdout: &[u8]) -> Result<PdfRasterMetadata> {
+    let info: serde_json::Value = serde_json::from_slice(stdout)?;
+    Ok(PdfRasterMetadata {
+        width: info["width"].as_f64().ok_or("bad PDF width")?,
+        height: info["height"].as_f64().ok_or("bad PDF height")?,
+        version: info["version"].as_str().unwrap_or("unknown").to_owned(),
+    })
+}
+
+struct RasterizedPdfPage {
+    image: RgbImage,
+    points: [f64; 2],
+    pymupdf_version: String,
+}
+
 fn run_pdf_python(
     python: &Path,
     pdf: &Path,
     page: usize,
     width: u32,
     out: &Path,
-) -> Result<(f64, f64, String)> {
+) -> Result<PdfRasterMetadata> {
     // This inline adapter only asks PyMuPDF for PDF metadata and raster pixels. Rust owns all validation and comparisons.
     const SHIM: &str = "import json,sys,pymupdf; d=pymupdf.open(sys.argv[1]); p=d[int(sys.argv[2])]; r=p.rect; s=int(sys.argv[3])/r.width; pix=p.get_pixmap(matrix=pymupdf.Matrix(s,s),colorspace=pymupdf.csRGB,alpha=False); pix.save(sys.argv[4]); print(json.dumps({'width':r.width,'height':r.height,'version':pymupdf.__version__,'python':sys.version.split()[0],'raster_width':pix.width,'raster_height':pix.height}))";
     let stdout = command(
@@ -238,12 +259,7 @@ fn run_pdf_python(
             .arg(out),
     )?
     .stdout;
-    let info: serde_json::Value = serde_json::from_slice(&stdout)?;
-    Ok((
-        info["width"].as_f64().ok_or("bad PDF width")?,
-        info["height"].as_f64().ok_or("bad PDF height")?,
-        info["version"].as_str().unwrap_or("unknown").to_owned(),
-    ))
+    pdf_raster_metadata(&stdout)
 }
 fn raster_pdf_page(
     python: &Path,
@@ -251,11 +267,16 @@ fn raster_pdf_page(
     index: usize,
     size: (u32, u32),
     out: &Path,
-) -> Result<(RgbImage, [f64; 2], String)> {
-    let (pw, ph, version) = run_pdf_python(python, pdf, index, size.0, out)?;
+) -> Result<RasterizedPdfPage> {
+    let metadata = run_pdf_python(python, pdf, index, size.0, out)?;
+    let points = [metadata.width, metadata.height];
     let raster = RgbImage::from_png(out)?;
-    let image = normalize_raster(raster, size, [pw, ph])?;
-    Ok((image, [pw, ph], version))
+    let image = normalize_raster(raster, size, points)?;
+    Ok(RasterizedPdfPage {
+        image,
+        points,
+        pymupdf_version: metadata.version,
+    })
 }
 
 fn normalize_raster(raster: RgbImage, size: (u32, u32), points: [f64; 2]) -> Result<RgbImage> {
@@ -433,8 +454,11 @@ pub fn run_visual(
                 pymupdf_version = info.version;
                 let size = pdf_pixel_size(info.points);
                 let raster_path = dir.join(format!("sdk_render_raw_{i}.png"));
-                let (image, _, version) =
-                    raster_pdf_page(&config.python, &sdk_output, i, size, &raster_path)?;
+                let RasterizedPdfPage {
+                    image,
+                    pymupdf_version: version,
+                    ..
+                } = raster_pdf_page(&config.python, &sdk_output, i, size, &raster_path)?;
                 if !version.is_empty() {
                     pymupdf_version = version;
                 }
@@ -444,7 +468,11 @@ pub fn run_visual(
                 image
             };
             let reference_raw = dir.join(format!("reference_raw_{i}.png"));
-            let (reference, pdf_points, version) = raster_pdf_page(
+            let RasterizedPdfPage {
+                image: reference,
+                points: pdf_points,
+                pymupdf_version: version,
+            } = raster_pdf_page(
                 &config.python,
                 &fixture.reference_pdf,
                 i,
@@ -527,19 +555,16 @@ pub fn run_visual(
         config.output.join("report.json"),
         format!("{}\n", serde_json::to_string_pretty(&value)?),
     )?;
-    fs::write(config.output.join("index.html"), write_html(&value))?;
-    for f in value["fixtures"].as_array().unwrap() {
-        for p in f["pages"].as_array().unwrap() {
+    fs::write(config.output.join("index.html"), write_report_html(&report))?;
+    for fixture in &report.fixtures {
+        for page in &fixture.pages {
             eprintln!(
                 "{} page {}: changed {:.2}%, missing ink {:.2}%, extra ink {:.2}%",
-                f["id"],
-                p["page"],
-                p["metrics"]["changed_pixel_fraction"]
-                    .as_f64()
-                    .unwrap_or(0.0)
-                    * 100.0,
-                p["metrics"]["missing_ink_fraction"].as_f64().unwrap_or(0.0) * 100.0,
-                p["metrics"]["extra_ink_fraction"].as_f64().unwrap_or(0.0) * 100.0
+                serde_json::to_string(&fixture.id)?,
+                page.page,
+                page.metrics.changed_pixel_fraction * 100.0,
+                page.metrics.missing_ink_fraction * 100.0,
+                page.metrics.extra_ink_fraction * 100.0
             );
         }
     }
@@ -601,27 +626,117 @@ fn pdf_page_info(python: &Path, pdf: &Path, page: usize) -> Result<PdfPageInfo> 
             .to_owned(),
     })
 }
+struct HtmlReport<'a> {
+    fixtures: Vec<HtmlFixture<'a>>,
+}
+
+struct HtmlFixture<'a> {
+    id: &'a str,
+    sdk_pdf: Option<&'a str>,
+    pages: Vec<HtmlPage<'a>>,
+}
+
+struct HtmlPage<'a> {
+    page: u64,
+    reference: &'a str,
+    sdk: &'a str,
+    difference: &'a str,
+    metrics: HtmlMetrics,
+}
+
+struct HtmlMetrics {
+    changed_pixel_fraction: f64,
+    missing_ink_fraction: f64,
+    extra_ink_fraction: f64,
+}
+
 pub fn write_html(report: &serde_json::Value) -> String {
+    // Preserve the public JSON helper's permissive field fallbacks. Generated
+    // reports enter through write_report_html and keep their required metrics typed.
+    let view = HtmlReport {
+        fixtures: report["fixtures"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|fixture| HtmlFixture {
+                id: fixture["id"].as_str().unwrap_or(""),
+                sdk_pdf: fixture["sdk_pdf"].as_str(),
+                pages: fixture["pages"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .map(|page| HtmlPage {
+                        page: page["page"].as_u64().unwrap_or(0),
+                        reference: page["reference"].as_str().unwrap_or(""),
+                        sdk: page["sdk"].as_str().unwrap_or(""),
+                        difference: page["difference"].as_str().unwrap_or(""),
+                        metrics: HtmlMetrics {
+                            changed_pixel_fraction: page["metrics"]["changed_pixel_fraction"]
+                                .as_f64()
+                                .unwrap_or(0.0),
+                            missing_ink_fraction: page["metrics"]["missing_ink_fraction"]
+                                .as_f64()
+                                .unwrap_or(0.0),
+                            extra_ink_fraction: page["metrics"]["extra_ink_fraction"]
+                                .as_f64()
+                                .unwrap_or(0.0),
+                        },
+                    })
+                    .collect(),
+            })
+            .collect(),
+    };
+    write_html_view(&view)
+}
+
+fn write_report_html(report: &Report) -> String {
+    let view = HtmlReport {
+        fixtures: report
+            .fixtures
+            .iter()
+            .map(|fixture| HtmlFixture {
+                id: &fixture.id,
+                sdk_pdf: fixture.sdk_pdf.as_deref(),
+                pages: fixture
+                    .pages
+                    .iter()
+                    .map(|page| HtmlPage {
+                        page: page.page as u64,
+                        reference: &page.reference,
+                        sdk: &page.sdk,
+                        difference: &page.difference,
+                        metrics: HtmlMetrics {
+                            changed_pixel_fraction: page.metrics.changed_pixel_fraction,
+                            missing_ink_fraction: page.metrics.missing_ink_fraction,
+                            extra_ink_fraction: page.metrics.extra_ink_fraction,
+                        },
+                    })
+                    .collect(),
+            })
+            .collect(),
+    };
+    write_html_view(&view)
+}
+
+fn write_html_view(report: &HtmlReport<'_>) -> String {
     let mut sections = String::new();
-    for fixture in report["fixtures"].as_array().into_iter().flatten() {
-        let id = fixture["id"].as_str().unwrap_or("");
+    for fixture in &report.fixtures {
+        let id = &fixture.id;
         sections.push_str(&format!("<h2>{}</h2>", escape(id)));
-        if let Some(pdf) = fixture["sdk_pdf"].as_str() {
+        if let Some(pdf) = fixture.sdk_pdf {
             sections.push_str(&format!(
                 "<p><a href=\"{}\">Download SDK PDF</a></p>",
                 escape_attr(pdf)
             ));
         }
-        for page in fixture["pages"].as_array().into_iter().flatten() {
-            let num = page["page"].as_u64().unwrap_or(0);
-            let get = |k: &str| page[k].as_str().unwrap_or("");
-            let m = &page["metrics"];
-            let changed = m["changed_pixel_fraction"].as_f64().unwrap_or(0.0) * 100.0;
-            let missing = m["missing_ink_fraction"].as_f64().unwrap_or(0.0) * 100.0;
-            let extra = m["extra_ink_fraction"].as_f64().unwrap_or(0.0) * 100.0;
-            let r = escape_attr(get("reference"));
-            let s = escape_attr(get("sdk"));
-            let d = escape_attr(get("difference"));
+        for page in &fixture.pages {
+            let num = page.page;
+            let changed = page.metrics.changed_pixel_fraction * 100.0;
+            let missing = page.metrics.missing_ink_fraction * 100.0;
+            let extra = page.metrics.extra_ink_fraction * 100.0;
+            let r = escape_attr(page.reference);
+            let s = escape_attr(page.sdk);
+            let d = escape_attr(page.difference);
             sections.push_str(&format!("<details open><summary>Page {num} · changed {changed:.2}% · missing ink {missing:.2}% · extra ink {extra:.2}%</summary><div class=\"pair\"><figure><figcaption>Samsung PDF</figcaption><a href=\"{r}\"><img src=\"{r}\" alt=\"Samsung reference page\"></a></figure><figure><figcaption>SDK</figcaption><a href=\"{s}\"><img src=\"{s}\" alt=\"SDK page\"></a></figure></div><details><summary>Overlay and difference</summary><label>SDK overlay opacity <input type=\"range\" min=\"0\" max=\"100\" value=\"50\"></label><div class=\"pair\"><div class=\"overlay\"><img src=\"{r}\"><img class=\"candidate\" src=\"{s}\"></div><figure><figcaption>Absolute RGB difference ×4 (black = identical)</figcaption><a href=\"{d}\"><img src=\"{d}\"></a></figure></div></details></details>"));
         }
     }
@@ -834,6 +949,42 @@ mod tests {
         let _ = fs::remove_dir_all(dir);
     }
     #[test]
+    fn pdf_raster_metadata_preserves_errors_and_optional_version_fallbacks() {
+        for input in [
+            serde_json::json!({}),
+            serde_json::json!({"width":null}),
+            serde_json::json!({"width":"8","height":8}),
+        ] {
+            let error = pdf_raster_metadata(&serde_json::to_vec(&input).unwrap())
+                .err()
+                .unwrap();
+            assert_eq!(error.to_string(), "bad PDF width");
+        }
+        for input in [
+            serde_json::json!({"width":8}),
+            serde_json::json!({"width":8,"height":null}),
+            serde_json::json!({"width":8,"height":"8"}),
+        ] {
+            let error = pdf_raster_metadata(&serde_json::to_vec(&input).unwrap())
+                .err()
+                .unwrap();
+            assert_eq!(error.to_string(), "bad PDF height");
+        }
+        for input in [
+            serde_json::json!({"width":8,"height":9}),
+            serde_json::json!({"width":8,"height":9,"version":null}),
+            serde_json::json!({"width":8,"height":9,"version":42}),
+        ] {
+            let metadata = pdf_raster_metadata(&serde_json::to_vec(&input).unwrap()).unwrap();
+            assert_eq!([metadata.width, metadata.height], [8.0, 9.0]);
+            assert_eq!(metadata.version, "unknown");
+        }
+        let metadata =
+            pdf_raster_metadata(br#"{"width":8,"height":9,"version":"test-version"}"#).unwrap();
+        assert_eq!(metadata.version, "test-version");
+    }
+
+    #[test]
     fn pdf_pixel_dimensions_use_python_bankers_rounding() {
         assert_eq!(pdf_pixel_size([7.875, 8.625]), (10, 12));
         assert_eq!(pdf_pixel_size([8.625, 7.875]), (12, 10));
@@ -948,17 +1099,112 @@ mod tests {
         );
     }
     #[test]
-    fn html_escapes_fixture_ids_and_has_overlay_controls() {
-        let report = serde_json::json!({"fixtures":[{"id":"<&","pages":[{"page":1,"reference":"r.png","sdk":"s.png","difference":"d.png","metrics":{"changed_pixel_fraction":0.0,"missing_ink_fraction":0.0,"extra_ink_fraction":0.0}}]}]});
+    fn html_json_helper_preserves_permissive_field_fallbacks() {
+        let empty = write_html(&serde_json::json!({"fixtures":[]}));
+        for report in [
+            serde_json::Value::Null,
+            serde_json::json!({"fixtures":null}),
+            serde_json::json!({"fixtures":42}),
+        ] {
+            assert_eq!(write_html(&report), empty);
+        }
+        let blank_fixture = write_html(&serde_json::json!({"fixtures":[{"id":"","pages":[]}]}));
+        assert_eq!(
+            write_html(&serde_json::json!({"fixtures":[null]})),
+            blank_fixture
+        );
+        assert_eq!(
+            write_html(&serde_json::json!({"fixtures":[{"id":42,"sdk_pdf":7,"pages":"bad"}]})),
+            blank_fixture
+        );
+        let blank_page = serde_json::json!({"fixtures":[{"id":"","pages":[{"page":0,"reference":"","sdk":"","difference":"","metrics":{"changed_pixel_fraction":0.0,"missing_ink_fraction":0.0,"extra_ink_fraction":0.0}}]}]});
+        let expected = write_html(&blank_page);
+        for page in [
+            serde_json::Value::Null,
+            serde_json::json!({}),
+            serde_json::json!({"page":-1,"reference":null,"sdk":42,"difference":false,"metrics":null}),
+            serde_json::json!({"page":"1","metrics":{"changed_pixel_fraction":null,"missing_ink_fraction":"0.5","extra_ink_fraction":true}}),
+            serde_json::json!({"page":1.5,"metrics":42}),
+        ] {
+            assert_eq!(
+                write_html(&serde_json::json!({"fixtures":[{"id":42,"pages":[page]}]})),
+                expected
+            );
+        }
+        let mut largest_page = blank_page;
+        largest_page["fixtures"][0]["pages"][0]["page"] = u64::MAX.into();
+        assert!(write_html(&largest_page).contains("Page 18446744073709551615"));
+    }
+
+    #[test]
+    fn html_accepts_minimal_fixture_metadata() {
+        let report = serde_json::json!({"fixtures":[{"id":"<&","pages":[{"page":1,"reference":"r.png","sdk":"s.png","difference":"d.png","metrics":{"changed_pixel_fraction":0.5,"missing_ink_fraction":0.25,"extra_ink_fraction":0.125}}]}]});
         let html = write_html(&report);
         assert!(html.contains("&lt;&amp;"));
-        assert!(html.contains("SDK overlay opacity"));
-        assert!(html.contains("report.json"));
-        let quoted = write_html(
+        assert!(html.contains("changed 50.00%"));
+        assert!(html.contains("missing ink 25.00%"));
+        assert!(html.contains("extra ink 12.50%"));
+        let download = write_html(
             &serde_json::json!({"fixtures":[{"id":"ok","sdk_pdf":"a\"b.pdf","pages":[]}]}),
         );
-        assert!(quoted.contains("href=\"a&quot;b.pdf\""));
+        assert!(download.contains("href=\"a&quot;b.pdf\""));
     }
+
+    #[test]
+    fn html_escapes_fixture_ids_and_has_overlay_controls() {
+        let (metrics, _) = measure(
+            &RgbImage::blank(1, 1, [255; 3]),
+            &RgbImage::blank(1, 1, [0; 3]),
+            MetricsOptions::default(),
+        )
+        .unwrap();
+        let mut report = Report {
+            schema_version: 1,
+            options: MetricsOptionsJson {
+                channel_threshold: 0,
+                ink_threshold: 0,
+                tolerance: 0,
+            },
+            environment: serde_json::json!({}),
+            fixtures: vec![FixtureReport {
+                id: "<&".into(),
+                sdk_format: "svg".into(),
+                sdocx_sha256: String::new(),
+                reference_pdf_sha256: String::new(),
+                sdk_pdf: None,
+                sdk_pdf_sha256: None,
+                pages: vec![PageReport {
+                    page: 1,
+                    size: [1, 1],
+                    pdf_size_points: [1.0, 1.0],
+                    metrics,
+                    reference: "r.png".into(),
+                    sdk: "s.png".into(),
+                    difference: "d.png".into(),
+                    reference_png_sha256: String::new(),
+                    sdk_png_sha256: String::new(),
+                    sdk_pdf_size_points: None,
+                    sdk_text_characters: None,
+                    sdk_text: None,
+                }],
+            }],
+        };
+        let html = write_report_html(&report);
+        assert!(html.contains("&lt;&amp;"));
+        assert!(html.contains("SDK overlay opacity"));
+        assert!(html.contains("changed 100.00%"));
+        assert!(html.contains("report.json"));
+        report.fixtures[0].sdk_pdf = Some("a\"b.pdf".into());
+        let value = serde_json::to_value(&report).unwrap();
+        assert!(write_html(&value).contains("href=\"a&quot;b.pdf\""));
+        let mut invalid = value;
+        invalid["fixtures"][0]["pages"][0]["metrics"]
+            .as_object_mut()
+            .unwrap()
+            .remove("changed_pixel_fraction");
+        assert!(write_html(&invalid).contains("changed 0.00%"));
+    }
+
     #[test]
     fn existing_output_is_refused_before_resolving_or_running_cli() {
         let dir = temp();
