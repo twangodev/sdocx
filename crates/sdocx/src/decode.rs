@@ -19,12 +19,12 @@ pub(crate) fn decode_stroke_after_base(
     frame.expect_kind(1)?;
     let channels = StrokeChannels::read(&frame, limits)?;
     let count = usize::from(channels.point_count);
-    let compressed = channels.compressed;
+    let encoding = channels.encoding;
     let stylus = channels.stylus;
     let mut fixed = Reader::new(channels.data, "stroke channels");
 
     let mut points = Vec::with_capacity(count);
-    if count != 0 && compressed {
+    if count != 0 && encoding == StrokeEncoding::DeltaCompressed {
         // NewApplyBinary stores the initial doubles in native float points,
         // then rounds each compressed delta addition at float precision.
         let mut x = fixed.read_f64("first x")? as f32;
@@ -59,24 +59,25 @@ pub(crate) fn decode_stroke_after_base(
     }
     // Both native representations store complete arrays by channel, including
     // the uncompressed form (they are not interleaved point structs).
-    let pressures = float_channel(&mut fixed, count, compressed)?;
+    let pressures = float_channel(&mut fixed, count, encoding)?;
     let mut timestamps = Vec::with_capacity(count);
     if count != 0 {
         let mut timestamp = i64::from(fixed.read_i32("first timestamp")?);
         timestamps.push(timestamp);
         for _ in 1..count {
-            timestamp = if compressed {
-                timestamp + i64::from(fixed.read_u16("timestamp delta")?)
-            } else {
-                i64::from(fixed.read_i32("timestamp")?)
+            timestamp = match encoding {
+                StrokeEncoding::DeltaCompressed => {
+                    timestamp + i64::from(fixed.read_u16("timestamp delta")?)
+                }
+                StrokeEncoding::AbsoluteSamples => i64::from(fixed.read_i32("timestamp")?),
             };
             timestamps.push(timestamp);
         }
     }
     let (tilts, orientations) = if stylus {
         (
-            float_channel(&mut fixed, count, compressed)?,
-            float_channel(&mut fixed, count, compressed)?,
+            float_channel(&mut fixed, count, encoding)?,
+            float_channel(&mut fixed, count, encoding)?,
         )
     } else {
         (Vec::new(), Vec::new())
@@ -120,17 +121,22 @@ fn signed_delta(raw: u16, divisor: f64) -> f64 {
     }
 }
 
-fn float_channel(reader: &mut Reader<'_>, count: usize, compressed: bool) -> Result<Vec<f64>> {
+fn float_channel(
+    reader: &mut Reader<'_>,
+    count: usize,
+    encoding: StrokeEncoding,
+) -> Result<Vec<f64>> {
     let mut values = Vec::with_capacity(count);
     if count != 0 {
         let mut value = reader.read_f32("first channel value")?;
         values.push(f64::from(value));
         for _ in 1..count {
-            value = if compressed {
-                // Native NewApplyBinary rounds each channel addition to f32.
-                value + signed_delta(reader.read_u16("channel delta")?, 4096.0) as f32
-            } else {
-                reader.read_f32("channel value")?
+            value = match encoding {
+                StrokeEncoding::DeltaCompressed => {
+                    // Native NewApplyBinary rounds each channel addition to f32.
+                    value + signed_delta(reader.read_u16("channel delta")?, 4096.0) as f32
+                }
+                StrokeEncoding::AbsoluteSamples => reader.read_f32("channel value")?,
             };
             values.push(f64::from(value));
         }
@@ -143,9 +149,38 @@ fn float_channel(reader: &mut Reader<'_>, count: usize, compressed: bool) -> Res
     Ok(values)
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum StrokeEncoding {
+    DeltaCompressed,
+    AbsoluteSamples,
+}
+
+impl StrokeEncoding {
+    fn channel_data_size(self, point_count: usize, stylus: bool) -> usize {
+        if point_count == 0 {
+            return 0;
+        }
+        // Pressure and timestamp channels are always present; tilt and orientation
+        // add two scalar channels when the stylus property is set.
+        let scalar_channel_count = 2 + usize::from(stylus) * 2;
+        match self {
+            Self::DeltaCompressed => {
+                let coordinate_bytes = 16 + (point_count - 1) * 4;
+                let scalar_channel_bytes = 4 + (point_count - 1) * 2;
+                coordinate_bytes + scalar_channel_count * scalar_channel_bytes
+            }
+            Self::AbsoluteSamples => {
+                let coordinate_bytes = point_count * 16;
+                let scalar_channel_bytes = point_count * 4;
+                coordinate_bytes + scalar_channel_count * scalar_channel_bytes
+            }
+        }
+    }
+}
+
 pub(crate) struct StrokeChannels<'a> {
     pub(crate) point_count: u16,
-    pub(crate) compressed: bool,
+    encoding: StrokeEncoding,
     pub(crate) stylus: bool,
     pub(crate) tool_type_raw: u16,
     pub(crate) data: &'a [u8],
@@ -163,15 +198,13 @@ impl<'a> StrokeChannels<'a> {
                 actual: count as u64,
             });
         }
-        let compressed = frame.properties.contains(0);
-        let stylus = frame.properties.contains(2);
-        let channel_bytes = if count == 0 {
-            0
-        } else if compressed {
-            16 + (count - 1) * 4 + (2 + usize::from(stylus) * 2) * (4 + (count - 1) * 2)
+        let encoding = if frame.properties.contains(0) {
+            StrokeEncoding::DeltaCompressed
         } else {
-            count * (24 + usize::from(stylus) * 8)
+            StrokeEncoding::AbsoluteSamples
         };
+        let stylus = frame.properties.contains(2);
+        let channel_bytes = encoding.channel_data_size(count, stylus);
         if fixed.remaining() != channel_bytes + 2 {
             return Err(Error::Format(format!(
                 "stroke channels: {count} points require {} fixed bytes, found {}",
@@ -183,7 +216,7 @@ impl<'a> StrokeChannels<'a> {
         let tool_type_raw = fixed.read_u16("tool/input type")?;
         Ok(Self {
             point_count,
-            compressed,
+            encoding,
             stylus,
             tool_type_raw,
             data,
@@ -268,7 +301,12 @@ mod tests {
             }
             let mut reader = Reader::new(&encoded, "native float channel control");
             assert_eq!(
-                float_channel(&mut reader, deltas.len() + 1, true).unwrap(),
+                float_channel(
+                    &mut reader,
+                    deltas.len() + 1,
+                    StrokeEncoding::DeltaCompressed
+                )
+                .unwrap(),
                 native_floats(control["pressure_data_hex"].as_str().unwrap()),
                 "native control {}",
                 control["id"]
@@ -301,7 +339,7 @@ mod tests {
         );
         assert_eq!(expected.len(), count * 4);
         let mut reader = Reader::new(&pressure_wire, "native re-encoded Q12 pressure");
-        let decoded = float_channel(&mut reader, count, true).unwrap();
+        let decoded = float_channel(&mut reader, count, StrokeEncoding::DeltaCompressed).unwrap();
         let decoded_bytes: Vec<u8> = decoded
             .iter()
             .flat_map(|value| (*value as f32).to_le_bytes())
@@ -345,7 +383,7 @@ mod tests {
         let frame = Frame::read(&mut frames).unwrap();
         let channels = StrokeChannels::read(&frame, &ParseLimits::default()).unwrap();
         assert_eq!(usize::from(channels.point_count), count);
-        assert!(channels.compressed && channels.stylus);
+        assert!(channels.encoding == StrokeEncoding::DeltaCompressed && channels.stylus);
         let index = fixture["emitted_pressure"]["delta_word_index"]
             .as_u64()
             .unwrap() as usize;
