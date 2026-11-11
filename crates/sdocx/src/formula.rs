@@ -196,7 +196,7 @@ impl FormulaMetadata {
         let Some(media_id) = self.latex_image_media_id.filter(|id| *id >= 0) else {
             return fallback();
         };
-        let resource_name = if let Some(manifest) = &metadata.media_manifest {
+        let resource = if let Some(manifest) = &metadata.media_manifest {
             let mut entries = manifest
                 .entries
                 .iter()
@@ -213,10 +213,28 @@ impl FormulaMetadata {
             if entry.file_name.is_empty() {
                 return fallback();
             }
-            name
+            let mut resources = metadata
+                .archive_resources
+                .iter()
+                .filter(|resource| resource.name == name);
+            let Some(resource) = resources.next() else {
+                return if runtime_cache_available {
+                    FormulaRenderSelection::CachedImageSelected {
+                        result_rect: self.latex_result_rect,
+                    }
+                } else {
+                    fallback()
+                };
+            };
+            if resources.next().is_some() {
+                return FormulaRenderSelection::Unsupported(
+                    FormulaRenderUnsupported::AmbiguousImageBinding,
+                );
+            }
+            resource
         } else {
             match metadata.resolve_archive_resource(media_id as u32) {
-                Ok(resource) => resource.resource.name.clone(),
+                Ok(resolved) => resolved.resource,
                 Err(ArchiveResourceError::UnboundId { .. }) => return fallback(),
                 Err(ArchiveResourceError::MissingEntry { .. }) if !runtime_cache_available => {
                     return fallback();
@@ -239,28 +257,10 @@ impl FormulaMetadata {
                 }
             }
         };
-        let mut resources = metadata
-            .archive_resources
-            .iter()
-            .filter(|resource| resource.name == resource_name);
-        let Some(resource) = resources.next() else {
-            return if runtime_cache_available {
-                FormulaRenderSelection::CachedImageSelected {
-                    result_rect: self.latex_result_rect,
-                }
-            } else {
-                fallback()
-            };
-        };
-        if resources.next().is_some() {
-            return FormulaRenderSelection::Unsupported(
-                FormulaRenderUnsupported::AmbiguousImageBinding,
-            );
-        }
         let (mime_type, data) = match &resource.content {
             ArchiveResourceContent::MediaAsset { media_index } => {
                 match metadata.media_assets.get(*media_index) {
-                    Some(asset) if asset.name == resource_name => {
+                    Some(asset) if asset.name == resource.name => {
                         (asset.mime_type.as_str(), asset.data.as_slice())
                     }
                     _ if runtime_cache_available => {
@@ -724,6 +724,70 @@ mod tests {
                 .map(|stroke| stroke.base.uuid.clone())
                 .collect(),
             other => panic!("expected stroke fallback, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inferred_formula_image_selection_preserves_identity_and_error_precedence() {
+        let formula = formula(Some(12));
+        let mut metadata = media_document();
+        metadata.media_manifest = None;
+        metadata.media_assets[0].name = "media/12@latex.png".into();
+        metadata.archive_resources[0].name = "media/12@latex.png".into();
+        let mut cases = vec![("unique", metadata.clone(), "image", "cached")];
+        let mut changed = metadata.clone();
+        changed
+            .archive_resources
+            .push(changed.archive_resources[0].clone());
+        cases.push(("duplicate name", changed, "ambiguous", "ambiguous"));
+        let mut changed = metadata.clone();
+        let mut other = changed.archive_resources[0].clone();
+        other.name = "media/12@other.png".into();
+        changed.archive_resources.push(other);
+        cases.push(("duplicate inferred ID", changed, "ambiguous", "ambiguous"));
+        let mut changed = metadata.clone();
+        changed.archive_resources[0].content = ArchiveResourceContent::MediaAsset {
+            media_index: usize::MAX,
+        };
+        cases.push(("stale index", changed, "unsupported", "unsupported"));
+        let mut changed = metadata.clone();
+        changed.media_assets[0].name = "media/different.png".into();
+        cases.push(("stale asset name", changed, "unsupported", "unsupported"));
+        let mut changed = metadata.clone();
+        changed.archive_resources[0].content =
+            ArchiveResourceContent::Opaque { data: PNG.to_vec() };
+        cases.push(("opaque", changed, "unsupported", "cached"));
+        let mut changed = metadata.clone();
+        changed.archive_resources.clear();
+        cases.push(("unbound", changed, "fallback", "fallback"));
+        for (name, metadata, uncached, cached) in cases {
+            for (has_cache, expected) in [(false, uncached), (true, cached)] {
+                let selected = formula.select_render_source(&metadata, has_cache, Some(true));
+                let actual = match &selected {
+                    FormulaRenderSelection::ImageSelected {
+                        resource_name,
+                        data,
+                        ..
+                    } => {
+                        assert_eq!(*data, PNG);
+                        assert_eq!(*resource_name, "media/12@latex.png");
+                        "image"
+                    }
+                    FormulaRenderSelection::CachedImageSelected { .. } => "cached",
+                    FormulaRenderSelection::StrokeFallback { .. } => "fallback",
+                    FormulaRenderSelection::Unsupported(
+                        FormulaRenderUnsupported::AmbiguousImageBinding,
+                    ) => "ambiguous",
+                    FormulaRenderSelection::Unsupported(
+                        FormulaRenderUnsupported::UnsupportedImageResource,
+                    ) => "unsupported",
+                    FormulaRenderSelection::Unsupported(
+                        FormulaRenderUnsupported::StaleImageResource,
+                    ) => "stale",
+                    FormulaRenderSelection::Hidden => "hidden",
+                };
+                assert_eq!(actual, expected, "{name}, cache={has_cache}: {selected:?}");
+            }
         }
     }
 
