@@ -44,10 +44,7 @@ test('SVG fountain masks preserve maximum coverage at overlaps', async ({ page, 
 	test.fail(browserName === 'firefox', 'Lighten in SVG masks overwrites an opaque stamp with the next shaded stamp');
 	expect(alpha, 'The first stamp is fully opaque at this interior overlap pixel').toBe(255);
 });
-test('V14 fountain SVG retains visible ink when loaded as an image', async ({
-	page,
-	browserName
-}, testInfo) => {
+test('V14 fountain SVG retains visible ink when loaded as an image', async ({ page }, testInfo) => {
 	test.skip(!existsSync(handwriting), 'Local handwriting fixture is absent');
 	await page.goto('/');
 	await page.locator('input[type=file]').setInputFiles(handwriting);
@@ -58,17 +55,31 @@ test('V14 fountain SVG retains visible ink when loaded as an image', async ({
 	await expect(vector).toHaveAttribute('data-render-version', /.+/);
 	const result = await vector.evaluate(async (element) => {
 		const parsed = new DOMParser().parseFromString(element.outerHTML, 'image/svg+xml');
-		const mask = parsed.querySelector('mask');
-		if (!mask) throw new Error('Fixture must contain shaded V14 fountain ink');
-		const fill = parsed.querySelector(`[mask="url(#${mask.id})"]`);
-		if (!fill) throw new Error('Fountain mask has no painted stroke');
+		const filter = [...parsed.querySelectorAll('filter')].find(node => node.querySelector('feColorMatrix'));
+		if (!filter) throw new Error('Fixture must contain shaded V14 fountain ink');
+		const source = parsed.querySelector(`[filter="url(#${filter.id})"]`);
+		const stroke = source?.closest('[data-replay-stroke]');
+		if (!stroke) throw new Error('Fountain colorizer has no replay stroke');
 		const svg = parsed.documentElement.cloneNode(false) as SVGSVGElement;
 		svg.setAttribute('width', '128');
 		svg.setAttribute('height', '128');
-		const right = Number(mask.getAttribute('x')) + Number(mask.getAttribute('width'));
-		const bottom = Number(mask.getAttribute('y')) + Number(mask.getAttribute('height'));
-		svg.setAttribute('viewBox', `0 0 ${right + 1} ${bottom + 1}`);
-		svg.append(mask.closest('defs')!.cloneNode(true), fill.cloneNode(true));
+		const region = ['x', 'y', 'width', 'height'].map(name => Number(filter.getAttribute(name)));
+		if (!region.every(Number.isFinite) || region[2] <= 0 || region[3] <= 0) {
+			throw new Error('Fountain filter has no finite paint region');
+		}
+		svg.setAttribute('viewBox', region.join(' '));
+		svg.append(stroke.cloneNode(true));
+		// Isolate the production stroke without synthesizing or dropping its resources.
+		const ids = new Set([...svg.querySelectorAll('[id]')].map(node => node.id));
+		for (const node of svg.querySelectorAll('*')) {
+			for (const attribute of node.attributes) {
+				const references = [...attribute.value.matchAll(/url\(['"]?#([^)'"\s]+)['"]?\)/g)].map(match => match[1]);
+				if (attribute.localName === 'href' && attribute.value.startsWith('#')) references.push(attribute.value.slice(1));
+				for (const id of references) {
+					if (!ids.has(id)) throw new Error(`Isolated fountain resource ${id} is missing`);
+				}
+			}
+		}
 		svg.removeAttribute('style');
 		for (const node of svg.querySelectorAll<SVGElement>('[style]')) {
 			node.style.removeProperty('display');
@@ -95,7 +106,6 @@ test('V14 fountain SVG retains visible ink when loaded as an image', async ({
 		body: result.isolated,
 		contentType: 'image/svg+xml'
 	});
-	test.fail(browserName === 'firefox', 'Lighten groups in the luminance mask produce blank SVG images');
 	expect(result.coverage, 'An isolated fountain stroke must paint nontransparent pixels').toBeGreaterThan(0);
 });
 test('debugger exposes physical pages, metadata and original source bytes', async ({
@@ -394,6 +404,16 @@ test('dense vector scrubbing preserves state across reverse seeks', async ({ pag
 	test.setTimeout(90000);
 	test.skip(!existsSync(handwriting), 'Local dense fixture required');
 	await page.goto('/');
+	await page.evaluate(() => {
+		const blobs = new Map<string, Blob>();
+		const create = URL.createObjectURL.bind(URL);
+		URL.createObjectURL = value => {
+			const url = create(value);
+			if (value instanceof Blob) blobs.set(url, value);
+			return url;
+		};
+		Object.assign(window, { debuggerTestBlobs: blobs });
+	});
 	await page.locator('input[type=file]').setInputFiles(handwriting);
 	await page.getByRole('button', { name: 'Debugger', exact: true }).click();
 	await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled({ timeout: 60000 });
@@ -433,10 +453,19 @@ test('dense vector scrubbing preserves state across reverse seeks', async ({ pag
 		const copy = root.cloneNode(true) as SVGSVGElement;
 		copy.removeAttribute('style');
 		const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml' }));
+		const viewer = document.querySelector<HTMLImageElement>('img[data-page-zoom-target]')!;
+		const baselineBlob = (window as unknown as { debuggerTestBlobs: Map<string, Blob> }).debuggerTestBlobs.get(viewer.currentSrc);
+		if (!baselineBlob) throw new Error('Viewer source SVG was not captured');
+		const baselineSvg = new DOMParser().parseFromString(await baselineBlob.text(), 'image/svg+xml');
+		const filters = (svg: ParentNode) => [...svg.querySelectorAll('filter')].map(filter =>
+			[filter, ...filter.querySelectorAll('*')].map(node => ({
+				tag: node.localName,
+				attributes: [...node.attributes].map(attribute => [attribute.name, attribute.value]).sort(([a], [b]) => a.localeCompare(b))
+			}))
+		);
 		let sameCompletedPixels: boolean;
 		try {
 			const image = new Image(); image.src = url; await image.decode();
-			const viewer = document.querySelector<HTMLImageElement>('img[data-page-zoom-target]')!;
 			const baseline = new Image(); baseline.src = viewer.currentSrc; await baseline.decode();
 			const canvas = document.createElement('canvas');
 			canvas.width = 462; canvas.height = Math.round(462 * image.naturalHeight / image.naturalWidth);
@@ -457,7 +486,10 @@ test('dense vector scrubbing preserves state across reverse seeks', async ({ pag
 			maxSeekMs: Math.max(...times),
 			gradients: root.querySelectorAll('linearGradient').length,
 			images: root.querySelectorAll('image').length,
-			filters: root.querySelectorAll('filter').length
+			filters: root.querySelectorAll('filter').length,
+			expectedFilters: baselineSvg.querySelectorAll('filter').length,
+			sameFilterDefinitions: JSON.stringify(filters(root)) === JSON.stringify(filters(baselineSvg)),
+			unsupportedFilterPrimitives: [...root.querySelectorAll('filter > *')].filter(node => node.localName !== 'feColorMatrix').length
 		};
 	});
 	console.log('Vector scrubbing', JSON.stringify(metrics));
@@ -467,7 +499,9 @@ test('dense vector scrubbing preserves state across reverse seeks', async ({ pag
 	expect(metrics.sameRoot).toBe(true);
 	expect(metrics.gradients).toBeGreaterThan(0);
 	expect(metrics.images).toBe(0);
-	expect(metrics.filters).toBe(0);
+	expect(metrics.expectedFilters).toBeGreaterThan(0);
+	expect(metrics.sameFilterDefinitions).toBe(true);
+	expect(metrics.unsupportedFilterPrimitives).toBe(0);
 	await expect(page.locator('[data-replay-overlay] canvas')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Close debugger', exact: true }).click();
 	await expect(vector).toHaveCount(0);
@@ -549,8 +583,7 @@ test('dotted fixture shares native geometry between the viewer and replay', asyn
 		const template = document.querySelector('[data-page-template="dots"]')!;
 		return {
 			template: Object.fromEntries([...template.attributes].map(attribute => [attribute.name, attribute.value])),
-			starts: paths.map(path => { const point = path.getPointAtLength(0); return [point.x, point.y]; }),
-			stamps: paths.filter(path => path.getAttribute('d')?.includes('a')).length
+			starts: paths.map(path => { const point = path.getPointAtLength(0); return [point.x, point.y]; })
 		};
 	}, svg);
 	const savedShapeStarts = [
@@ -560,7 +593,6 @@ test('dotted fixture shares native geometry between the viewer and replay', asyn
 	for (const [x, y] of savedShapeStarts) {
 		expect(exported.starts.some(([actualX, actualY]) => Math.abs(actualX - x) < 0.001 && Math.abs(actualY - y) < 0.001)).toBe(true);
 	}
-	expect(exported.stamps).toBe(77);
 	await page.getByRole('button', { name: 'Debugger', exact: true }).click();
 	await expect(page.getByLabel('Debugger page').locator('option')).toHaveCount(
 		2
@@ -575,11 +607,16 @@ test('dotted fixture shares native geometry between the viewer and replay', asyn
 		const template = element.querySelector('[data-page-template="dots"]')!;
 		return {
 			template: Object.fromEntries([...template.attributes].map(attribute => [attribute.name, attribute.value])),
-			paths: [...element.querySelectorAll('path:not([data-page-template])')].filter(path => !path.closest('[data-replay-stroke]')).length
+			paths: [...element.querySelectorAll('path:not([data-page-template])')].filter(path => !path.closest('[data-replay-stroke]')).length,
+			strokes: element.querySelectorAll('[data-replay-stroke]').length,
+			stamps: element.querySelectorAll('[data-replay-part]').length
 		};
 	});
 	expect(replayBackground.template).toEqual(exported.template);
 	expect(replayBackground.paths).toBe(6);
+	// This pinned corpus page has 77 V16 strokes and 3,777 native geometry instances.
+	expect(replayBackground.strokes).toBe(77);
+	expect(replayBackground.stamps).toBe(3777);
 	const pixels = await background.evaluate(async element => {
 		const copy = element.cloneNode(true) as SVGSVGElement;
 		copy.removeAttribute('style');

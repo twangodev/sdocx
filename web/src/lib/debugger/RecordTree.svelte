@@ -10,18 +10,16 @@
 		ListPlus
 	} from '@lucide/svelte';
 	import RecordTree from './RecordTree.svelte';
-	import type { DebugQuery, DebugRequest } from './model';
+	import type { DebugRequest } from './model';
 	let {
 		label,
 		request,
-		query,
-		onselect,
+		inspect,
 		selected
 	}: {
 		label: string;
 		request: DebugRequest;
-		query: DebugQuery;
-		onselect: (r: DebugRequest, v: Record<string, unknown>) => void;
+		inspect: (request: DebugRequest) => Promise<Record<string, unknown> | null>;
 		selected: string;
 	} = $props();
 	let open = $state(false),
@@ -55,8 +53,8 @@
 		busy = true;
 		error = '';
 		try {
-			const result = await query<Record<string, unknown>>(request);
-			onselect(request, result);
+			const result = await inspect(request);
+			if (!result) return;
 			// Retain child summaries, not every previously inspected sample array.
 			data = { layers: result.layers, objects: result.objects };
 			open = !open;
@@ -97,8 +95,7 @@
 		<div class="children">
 			{#each children.slice(0, count) as child (JSON.stringify(child.request))}<RecordTree
 					{...child}
-					{query}
-					{onselect}
+					{inspect}
 					{selected}
 				/>{/each}
 			{#if children.length > count}<button onclick={() => (count += 100)}
