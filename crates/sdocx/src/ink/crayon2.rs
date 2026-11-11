@@ -219,9 +219,12 @@ pub(crate) struct Record {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Output {
     /// drawPoint arguments before Crayon2 jitter, retaining pressure and size.
+    #[cfg(test)]
     pub drawpoint_inputs: Vec<[f32; 4]>,
     pub records: Vec<Record>,
+    #[cfg(test)]
     pub rand_values: Vec<u32>,
+    #[cfg(test)]
     pub phase_updates: u32,
 }
 
@@ -369,11 +372,16 @@ pub(crate) fn sample<'a, 'source>(
         input,
         profile,
         output: Output {
+            #[cfg(test)]
             drawpoint_inputs: Vec::new(),
             records: Vec::new(),
+            #[cfg(test)]
             rand_values: Vec::new(),
+            #[cfg(test)]
             phase_updates: 0,
         },
+        drawpoint_count: 0,
+        rng_call_count: 0,
         seed: Point::from(input.points[0]).x as i32 as u32,
         rng: Type3::seeded(Point::from(input.points[0]).x as i32 as u32),
         phase: Point::from(input.points[0]),
@@ -446,6 +454,8 @@ struct Core<'a, 'source> {
     input: &'a SourceInput<'source>,
     profile: &'a NativeProfile,
     output: Output,
+    drawpoint_count: usize,
+    rng_call_count: usize,
     seed: u32,
     rng: Type3,
     phase: Point,
@@ -454,15 +464,17 @@ struct Core<'a, 'source> {
 }
 impl Core<'_, '_> {
     fn rand(&mut self) -> Result<u32, Error> {
-        if self.output.rand_values.len() >= MAX_RNG_CALLS {
+        if self.rng_call_count >= MAX_RNG_CALLS {
             return Err(Error::Limit("RNG call count"));
         }
         let value = self.rng.next();
+        self.rng_call_count += 1;
+        #[cfg(test)]
         self.output.rand_values.push(value);
         Ok(value)
     }
     fn stamp(&mut self, p: Point) -> Result<(), Error> {
-        if self.output.drawpoint_inputs.len() >= MAX_DRAWPOINT_INPUTS {
+        if self.drawpoint_count >= MAX_DRAWPOINT_INPUTS {
             return Err(Error::Limit("drawPoint input count"));
         }
         self.rng = Type3::seeded(self.seed);
@@ -476,6 +488,9 @@ impl Core<'_, '_> {
             x: p.x + jx,
             y: p.y + jy,
         };
+        // A drawPoint is charged after both coordinate jitter samples succeed.
+        self.drawpoint_count += 1;
+        #[cfg(test)]
         self.output
             .drawpoint_inputs
             .push([p.x, p.y, self.input.size, self.input.size]);
@@ -544,8 +559,7 @@ impl Core<'_, '_> {
         if count <= 0 {
             return Ok(());
         }
-        if count as usize > MAX_DRAWPOINT_INPUTS.saturating_sub(self.output.drawpoint_inputs.len())
-        {
+        if count as usize > MAX_DRAWPOINT_INPUTS.saturating_sub(self.drawpoint_count) {
             return Err(Error::Limit("path drawPoint count"));
         }
         let step = length / count as f32;
@@ -571,7 +585,10 @@ impl Core<'_, '_> {
         self.phase.y = (self.phase.y + self.profile.phase_y[i] as f32) % PHASE_MODULUS;
         self.phase_counter = self.phase_counter.wrapping_add(1);
         self.draw_line_counter = 0;
-        self.output.phase_updates = self.phase_counter;
+        #[cfg(test)]
+        {
+            self.output.phase_updates = self.phase_counter;
+        }
     }
     fn draw_line(
         &mut self,
@@ -711,6 +728,61 @@ mod tests {
             .iter()
             .flat_map(|v| v.to_le_bytes())
             .collect()
+    }
+
+    #[test]
+    fn partial_jitter_failure_charges_only_completed_rng_calls() {
+        let points = [P { x: 0.0, y: 0.0 }; 2];
+        let input = SourceInput {
+            advanced_version: 2,
+            tool_type: 2,
+            stroke_type: 0,
+            curve_enabled: true,
+            points: &points,
+            pressure: &[0.5, 0.5],
+            size: 8.0,
+        };
+        let profile = NativeProfile {
+            phase_x: [0; 50],
+            phase_y: [0; 50],
+            rng: RngProfile::CapturedHostType3,
+        };
+        let mut core = Core {
+            input: &input,
+            profile: &profile,
+            output: Output {
+                drawpoint_inputs: Vec::new(),
+                records: Vec::new(),
+                rand_values: Vec::new(),
+                phase_updates: 0,
+            },
+            drawpoint_count: 0,
+            rng_call_count: MAX_RNG_CALLS - 1,
+            seed: 0,
+            rng: Type3::seeded(0),
+            phase: Point::from(points[0]),
+            phase_counter: 0,
+            draw_line_counter: 0,
+        };
+        assert!(matches!(
+            core.stamp(Point::from(points[0])),
+            Err(Error::Limit("RNG call count"))
+        ));
+        assert_eq!(core.rng_call_count, MAX_RNG_CALLS);
+        assert_eq!(core.output.rand_values.len(), 1);
+        assert_eq!(core.drawpoint_count, 0);
+        assert!(core.output.drawpoint_inputs.is_empty());
+        assert!(core.output.records.is_empty());
+
+        core.drawpoint_count = MAX_DRAWPOINT_INPUTS;
+        let seed = core.seed;
+        assert!(matches!(
+            core.stamp(Point::from(points[0])),
+            Err(Error::Limit("drawPoint input count"))
+        ));
+        assert_eq!(core.seed, seed);
+        assert_eq!(core.rng_call_count, MAX_RNG_CALLS);
+        assert_eq!(core.output.rand_values.len(), 1);
     }
 
     #[test]
