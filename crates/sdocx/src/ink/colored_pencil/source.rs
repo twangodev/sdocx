@@ -1,5 +1,5 @@
 use super::super::path::P;
-use super::{PenData, StrokeInput, sample};
+use super::{PenData, SampleError, StrokeInput, sample};
 use crate::{InkRasterError, Stroke, StrokeStyle};
 
 pub(crate) fn prepare_stroke(
@@ -164,12 +164,17 @@ pub(crate) fn prepare_stroke(
             spacing_extra: 0,
         },
     )
-    .map_err(|message| {
-        if message.contains("sample limit exceeded") {
-            InkRasterError::WorkLimit
-        } else {
-            InkRasterError::InvalidStroke(message)
-        }
+    .map_err(|error| match error {
+        SampleError::DabLimit | SampleError::PathLimit => InkRasterError::WorkLimit,
+        SampleError::ChannelAlignment
+        | SampleError::InputProfile
+        | SampleError::InvalidSize
+        | SampleError::NonfiniteChannel
+        | SampleError::PenDataProfile
+        | SampleError::NonfiniteDabSize
+        | SampleError::InvalidSpacing
+        | SampleError::NonfiniteCurve
+        | SampleError::SpacingNoProgress => InkRasterError::InvalidStroke(error.message()),
     })?;
     Ok((sampled.records, color))
 }

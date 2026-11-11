@@ -205,21 +205,56 @@ fn next_seed(seed: u32) -> u32 {
     }
 }
 
-fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
+#[derive(Clone, Copy, Debug)]
+enum SampleError {
+    ChannelAlignment,
+    InputProfile,
+    InvalidSize,
+    NonfiniteChannel,
+    PenDataProfile,
+    DabLimit,
+    NonfiniteDabSize,
+    InvalidSpacing,
+    NonfiniteCurve,
+    PathLimit,
+    SpacingNoProgress,
+}
+
+impl SampleError {
+    fn message(self) -> &'static str {
+        match self {
+            Self::ChannelAlignment => {
+                "point, tilt, and orientation channels must align within the input limit"
+            }
+            Self::InputProfile => "sampler is scoped to curve-enabled tool-type-2 strokes",
+            Self::InvalidSize => {
+                "style and selected PenData sizes must be finite; selected size must be positive"
+            }
+            Self::NonfiniteChannel => "point, tilt, and orientation channels must be finite",
+            Self::PenDataProfile => "PenData profile is outside the bounded captured range",
+            Self::DabLimit => "Colored Pencil output sample limit exceeded",
+            Self::NonfiniteDabSize => "nonfinite ColoredPencil derived dab size",
+            Self::InvalidSpacing => "Colored Pencil spacing step must be finite and positive",
+            Self::NonfiniteCurve => "Colored Pencil curve length must be finite",
+            Self::PathLimit => "Colored Pencil path sample limit exceeded",
+            Self::SpacingNoProgress => "Colored Pencil spacing step does not make finite progress",
+        }
+    }
+}
+
+fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, SampleError> {
     let n = input.points.len();
     if !(2..=MAX_INPUT_POINTS).contains(&n)
         || input.tilts.len() != n
         || input.orientations.len() != n
     {
-        return Err("point, tilt, and orientation channels must align within the input limit");
+        return Err(SampleError::ChannelAlignment);
     }
     if !input.curve_enabled || input.tool_type != 2 {
-        return Err("sampler is scoped to curve-enabled tool-type-2 strokes");
+        return Err(SampleError::InputProfile);
     }
     if !input.size.is_finite() || !pen.size.is_finite() || pen.size <= 0.0 {
-        return Err(
-            "style and selected PenData sizes must be finite; selected size must be positive",
-        );
+        return Err(SampleError::InvalidSize);
     }
     if input
         .points
@@ -228,13 +263,13 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
         || input.tilts.iter().any(|value| !value.is_finite())
         || input.orientations.iter().any(|value| !value.is_finite())
     {
-        return Err("point, tilt, and orientation channels must be finite");
+        return Err(SampleError::NonfiniteChannel);
     }
     if !(1..=65_535).contains(&pen.width)
         || !(1..=65_535).contains(&pen.height)
         || !(-44..=1_000_000).contains(&pen.spacing_extra)
     {
-        return Err("PenData profile is outside the bounded captured range");
+        return Err(SampleError::PenDataProfile);
     }
     let mut seed = input.points[0].x.trunc() as i32 as u32;
     let mut path_count = 0;
@@ -244,12 +279,12 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
     #[cfg(test)]
     let mut dabs = Vec::new();
     let mut records = Vec::<[f32; 5]>::new();
-    let mut emit = |point: P, dab_size: f32, angle: f32| -> Result<(), &'static str> {
+    let mut emit = |point: P, dab_size: f32, angle: f32| -> Result<(), SampleError> {
         if dab_count >= MAX_OUTPUT_SAMPLES {
-            return Err("Colored Pencil output sample limit exceeded");
+            return Err(SampleError::DabLimit);
         }
         if !dab_size.is_finite() {
-            return Err("nonfinite ColoredPencil derived dab size");
+            return Err(SampleError::NonfiniteDabSize);
         }
         let current_seed = seed;
         let mut rng = GlibcRand::seeded(current_seed);
@@ -285,7 +320,7 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
     let step = spacing(pen.size, pen);
     let mut terminal_size = pen.size;
     if !step.is_finite() || step <= 0.0 {
-        return Err("Colored Pencil spacing step must be finite and positive");
+        return Err(SampleError::InvalidSpacing);
     }
     for i in 1..(n - 1) {
         let current = input.points[i];
@@ -300,7 +335,7 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
         let midpoint = last_actual.mid(current);
         let curve = Quad::new(path_start, last_actual, midpoint);
         if !curve.length.is_finite() {
-            return Err("Colored Pencil curve length must be finite");
+            return Err(SampleError::NonfiniteCurve);
         }
         let dab_size = line_size(pen.size, input.tilts[i]);
         // endPen reads the drawable's latched drawPoint size; the V4 caller
@@ -309,7 +344,7 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
         let mut distance = carry;
         while distance <= curve.length {
             if path_count >= MAX_OUTPUT_SAMPLES {
-                return Err("Colored Pencil path sample limit exceeded");
+                return Err(SampleError::PathLimit);
             }
             let point = curve.at(distance);
             path_count += 1;
@@ -322,7 +357,7 @@ fn sample(input: &StrokeInput, pen: PenData) -> Result<Sampled, &'static str> {
             emit(point, dab_size, input.orientations[i])?;
             let next_distance = distance + step;
             if !next_distance.is_finite() || next_distance <= distance {
-                return Err("Colored Pencil spacing step does not make finite progress");
+                return Err(SampleError::SpacingNoProgress);
             }
             distance = next_distance;
         }
