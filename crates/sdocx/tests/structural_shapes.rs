@@ -2069,6 +2069,65 @@ fn unsupported_shape_paths_do_not_fall_back_to_plausible_geometry() {
 
 #[cfg(feature = "render")]
 #[test]
+fn rejected_gradient_shapes_preserve_following_definition_ids() {
+    let mut effect = vec![1, 1];
+    effect.extend(0xff123456_u32.to_le_bytes());
+    effect.push(0); // linear gradient
+    effect.extend(0_u16.to_le_bytes());
+    effect.extend([0; 8]); // dormant radial position
+    effect.push(2);
+    for (argb, position) in [(0xff123456_u32, 0.0_f32), (0xffabcdef, 1.0)] {
+        effect.extend(argb.to_le_bytes());
+        effect.extend(position.to_le_bytes());
+    }
+    let mut fields = (effect.len() as u32).to_le_bytes().to_vec();
+    fields.push(1);
+    fields.extend(effect);
+    let payload = [
+        base(0.0),
+        outline(),
+        frame(7, 32, &shape_fixed(4, 0.0), &fields),
+    ]
+    .concat();
+    let document = sdocx::parse_bytes(&single(7, &payload)).unwrap();
+    let options = sdocx::RenderOptions::default();
+    let expected = sdocx::render_document_svg(&document, &options).remove(0);
+    assert!(expected.svg.contains("<linearGradient"));
+    assert!(expected.paint_diagnostics.is_empty());
+    assert!(expected.geometry_diagnostics.is_empty());
+
+    for (path, shape_type, kind) in [
+        (vec![1, 0], 4, sdocx::GeometryDiagnosticKind::InvalidPath),
+        (
+            Vec::new(),
+            900,
+            sdocx::GeometryDiagnosticKind::UnsupportedShapeTemplate,
+        ),
+    ] {
+        let mut with_rejected = document.clone();
+        let mut rejected = with_rejected.pages[0].objects[0].clone();
+        let sdocx::PageObjectContent::Element(PageElement::Shape(shape)) = &mut rejected.content
+        else {
+            panic!("expected shape fixture");
+        };
+        shape.path_data = path;
+        shape.shape_type = shape_type;
+        shape.metadata.uuid = "rejected-gradient".into();
+        with_rejected.pages[0].objects.insert(0, rejected);
+        let actual = sdocx::render_document_svg(&with_rejected, &options).remove(0);
+        assert_eq!(actual.svg, expected.svg);
+        assert!(actual.paint_diagnostics.is_empty());
+        assert_eq!(actual.geometry_diagnostics.len(), 1);
+        assert_eq!(actual.geometry_diagnostics[0].kind, kind);
+        assert_eq!(
+            actual.geometry_diagnostics[0].object_uuid,
+            "rejected-gradient"
+        );
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
 fn geometry_reports_follow_admitted_roots_and_reset_for_cached_replay() {
     use sdocx::{GeometryDiagnostic, GeometryDiagnosticKind, PageObject, PageObjectContent};
 

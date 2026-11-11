@@ -2435,18 +2435,41 @@ fn matching_arc_sector(
     native_svg_commands(fill).ok()
 }
 
-fn render_shape(
-    svg: &mut Scene,
+enum PreparedShapeGeometry {
+    SavedPath {
+        outline: Data,
+        sector_fill: Option<Data>,
+    },
+    Ellipse {
+        body: Ellipse,
+        rotation: gradient::ElementRotation,
+    },
+    Rectangle {
+        body: Rectangle,
+        rotation: gradient::ElementRotation,
+    },
+    Polygon {
+        body: Polygon,
+        rotation: gradient::ElementRotation,
+    },
+}
+
+impl PreparedShapeGeometry {
+    fn paint_rotation(&self) -> Option<gradient::ElementRotation> {
+        match self {
+            Self::SavedPath { .. } => None,
+            Self::Ellipse { rotation, .. }
+            | Self::Rectangle { rotation, .. }
+            | Self::Polygon { rotation, .. } => Some(*rotation),
+        }
+    }
+}
+
+fn prepare_shape_geometry(
     shape: &crate::NativeShape,
-    theme: RenderTheme,
-    source_offset: Option<usize>,
     rotated_arc_sector_approximation: bool,
-) -> Result<(), GeometryDiagnosticKind> {
-    // Validate all path/primitive geometry before paint definitions allocate IDs.
-    let mut arc_fill = None;
-    let path = if shape.path_data.is_empty() {
-        None
-    } else {
+) -> Result<PreparedShapeGeometry, GeometryDiagnosticKind> {
+    if !shape.path_data.is_empty() {
         let (consumed, _) = crate::shape::visit_path(&shape.path_data, |_| {})
             .map_err(|_| GeometryDiagnosticKind::InvalidPath)?;
         if consumed != shape.path_data.len() {
@@ -2491,90 +2514,45 @@ fn render_shape(
                 GeometryDiagnosticKind::UnrepresentablePath
             });
         };
-        arc_fill = matching_arc_sector(
+        let sector_fill = matching_arc_sector(
             shape,
             &normalized.commands,
             rotated_arc_sector_approximation,
         );
-        Some(native_svg_commands(normalized.commands)?)
-    };
+        return Ok(PreparedShapeGeometry::SavedPath {
+            outline: native_svg_commands(normalized.commands)?,
+            sector_fill,
+        });
+    }
+
     let bbox = shape.geometry_bbox;
     let width = bbox.x_max - bbox.x_min;
     let height = bbox.y_max - bbox.y_min;
     let cx = bbox.x_min + width / 2.0;
     let cy = bbox.y_min + height / 2.0;
-    let rotation = if path.is_none() {
-        if ![bbox.x_min, bbox.y_min, width, height, cx, cy]
-            .iter()
-            .all(|v| v.is_finite())
-            || width <= 0.0
-            || height <= 0.0
-            || !shape.rotation_degrees.is_finite()
-        {
-            return Err(GeometryDiagnosticKind::InvalidGeometry);
-        }
-        if !matches!(shape.shape_type, 1..=4 | 8) {
-            return Err(GeometryDiagnosticKind::UnsupportedShapeTemplate);
-        }
-        Some(gradient::ElementRotation {
-            angle: f64::from(shape.rotation_degrees),
-            center: [cx, cy],
-        })
-    } else {
-        None
+    if ![bbox.x_min, bbox.y_min, width, height, cx, cy]
+        .iter()
+        .all(|v| v.is_finite())
+        || width <= 0.0
+        || height <= 0.0
+        || !shape.rotation_degrees.is_finite()
+    {
+        return Err(GeometryDiagnosticKind::InvalidGeometry);
+    }
+    let rotation = gradient::ElementRotation {
+        angle: f64::from(shape.rotation_degrees),
+        center: [cx, cy],
     };
-    let (fill, opacity) =
-        render_shape_paint(svg, shape, PaintRole::Fill, rotation, theme, source_offset);
-    let outline = render_shape_paint(
-        svg,
-        shape,
-        PaintRole::Outline,
-        rotation,
-        theme,
-        source_offset,
-    );
-    let separated_fill = arc_fill.is_some();
-    if let Some(fill_path) = arc_fill {
-        svg.push(
-            Path::new()
-                .data(fill_path)
-                .fill(fill)
-                .fill_opacity(decimal(opacity, 4))
-                .stroke(Paint::None),
-        );
-    }
-    let mut style = shape_outline(
-        svg,
-        &shape.style,
-        outline,
-        source_offset,
-        &shape.metadata.uuid,
-    )
-    .fill(if separated_fill { Paint::None } else { fill })
-    .fill_opacity(decimal(opacity, 4));
-    if let Some(path) = path {
-        svg.push(style.add(Path::new().data(path)));
-        return Ok(());
-    }
-    if let Some(rotation) = rotation {
-        style = style.transformed(Transform::rotate_unrounded(
-            rotation.angle,
-            rotation.center[0],
-            rotation.center[1],
-        ));
-    }
     let points = match shape.shape_type {
         1 => {
-            svg.push(
-                style.add(
-                    Ellipse::new()
-                        .cx(cx)
-                        .cy(cy)
-                        .rx(width / 2.0)
-                        .ry(height / 2.0),
-                ),
-            );
-            return Ok(());
+            return Ok(PreparedShapeGeometry::Ellipse {
+                body: Ellipse::new()
+                    .cx(cx)
+                    .cy(cy)
+                    .rx(width / 2.0)
+                    .ry(height / 2.0),
+                rotation,
+            });
         }
         2 => vec![
             (cx, bbox.y_min),
@@ -2587,16 +2565,14 @@ fn render_shape(
             (bbox.x_min, bbox.y_max),
         ],
         4 => {
-            svg.push(
-                style.add(
-                    Rectangle::new()
-                        .x(bbox.x_min)
-                        .y(bbox.y_min)
-                        .width(width)
-                        .height(height),
-                ),
-            );
-            return Ok(());
+            return Ok(PreparedShapeGeometry::Rectangle {
+                body: Rectangle::new()
+                    .x(bbox.x_min)
+                    .y(bbox.y_min)
+                    .width(width)
+                    .height(height),
+                rotation,
+            });
         }
         8 => vec![
             (cx, bbox.y_min),
@@ -2606,7 +2582,70 @@ fn render_shape(
         ],
         _ => return Err(GeometryDiagnosticKind::UnsupportedShapeTemplate),
     };
-    svg.push(style.add(Polygon::new().points_unrounded(&points)));
+    Ok(PreparedShapeGeometry::Polygon {
+        body: Polygon::new().points_unrounded(&points),
+        rotation,
+    })
+}
+
+fn render_shape(
+    svg: &mut Scene,
+    shape: &crate::NativeShape,
+    theme: RenderTheme,
+    source_offset: Option<usize>,
+    rotated_arc_sector_approximation: bool,
+) -> Result<(), GeometryDiagnosticKind> {
+    // Validate all path/primitive geometry before paint definitions allocate IDs.
+    let geometry = prepare_shape_geometry(shape, rotated_arc_sector_approximation)?;
+    let rotation = geometry.paint_rotation();
+    let (fill, opacity) =
+        render_shape_paint(svg, shape, PaintRole::Fill, rotation, theme, source_offset);
+    let outline = render_shape_paint(
+        svg,
+        shape,
+        PaintRole::Outline,
+        rotation,
+        theme,
+        source_offset,
+    );
+    let (body, separated_fill): (vector::Node, bool) = match geometry {
+        PreparedShapeGeometry::SavedPath {
+            outline,
+            sector_fill,
+        } => {
+            let separated_fill = sector_fill.is_some();
+            if let Some(fill_path) = sector_fill {
+                svg.push(
+                    Path::new()
+                        .data(fill_path)
+                        .fill(fill)
+                        .fill_opacity(decimal(opacity, 4))
+                        .stroke(Paint::None),
+                );
+            }
+            (Path::new().data(outline).into(), separated_fill)
+        }
+        PreparedShapeGeometry::Ellipse { body, .. } => (body.into(), false),
+        PreparedShapeGeometry::Rectangle { body, .. } => (body.into(), false),
+        PreparedShapeGeometry::Polygon { body, .. } => (body.into(), false),
+    };
+    let mut style = shape_outline(
+        svg,
+        &shape.style,
+        outline,
+        source_offset,
+        &shape.metadata.uuid,
+    )
+    .fill(if separated_fill { Paint::None } else { fill })
+    .fill_opacity(decimal(opacity, 4));
+    if let Some(rotation) = rotation {
+        style = style.transformed(Transform::rotate_unrounded(
+            rotation.angle,
+            rotation.center[0],
+            rotation.center[1],
+        ));
+    }
+    svg.push(style.add(body));
     Ok(())
 }
 
