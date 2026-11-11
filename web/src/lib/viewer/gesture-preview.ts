@@ -17,6 +17,7 @@ export function gesturePreview(
 	initial: GesturePreviewOptions
 ) {
 	let options = initial;
+	let disposed = false;
 	let nearby = false;
 	let ready = false;
 	let timer: ReturnType<typeof setTimeout> | undefined;
@@ -66,6 +67,7 @@ export function gesturePreview(
 
 	function prepare() {
 		if (
+			disposed ||
 			!nearby ||
 			options.active ||
 			ready ||
@@ -95,6 +97,7 @@ export function gesturePreview(
 	}
 
 	function schedule() {
+		if (disposed) return;
 		cancel();
 		if (!nearby || ready || options.active) return;
 		timer = setTimeout(() => {
@@ -111,6 +114,7 @@ export function gesturePreview(
 
 	const observer = new IntersectionObserver(
 		([entry]) => {
+			if (disposed) return;
 			nearby = entry.isIntersecting;
 			if (options.active) return;
 			if (nearby) schedule();
@@ -123,6 +127,7 @@ export function gesturePreview(
 
 	return {
 		update(next: GesturePreviewOptions) {
+			if (disposed) return;
 			const sourceChanged = next.src !== options.src;
 			const wasActive = options.active;
 			const wasSuppressed = options.suppressed;
@@ -141,6 +146,8 @@ export function gesturePreview(
 			}
 		},
 		destroy() {
+			if (disposed) return;
+			disposed = true;
 			observer.disconnect();
 			image.removeEventListener('load', schedule);
 			release();
