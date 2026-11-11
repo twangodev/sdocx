@@ -852,7 +852,7 @@ fn parse_table_object(
             fixed: Reader::new(frame.fixed, "table fixed fields"),
             flexible,
         }
-        .finish()?,
+        .into_metadata(),
     };
     Ok(RichTextTable {
         style,
@@ -906,7 +906,7 @@ fn parse_table_row(
     Ok(RichTextTableRow {
         max_height,
         min_height,
-        metadata: record.finish()?,
+        metadata: record.into_metadata(),
         index,
         height,
         cells,
@@ -947,7 +947,7 @@ fn parse_table_cell(
     let has_own_background_color = record.properties.contains(0);
     Ok(RichTextTableCell {
         border,
-        metadata: record.finish()?,
+        metadata: record.into_metadata(),
         column_index,
         row_span,
         column_span,

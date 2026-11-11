@@ -113,19 +113,13 @@ impl<'a> TableRecord<'a> {
         })
     }
 
-    pub(crate) fn finish(mut self) -> Result<TableRecordMetadata> {
-        Ok(TableRecordMetadata {
+    pub(crate) fn into_metadata(self) -> TableRecordMetadata {
+        TableRecordMetadata {
             property_mask: self.properties.bytes().to_vec(),
             field_mask: self.fields.bytes().to_vec(),
-            fixed_trailing_data: self
-                .fixed
-                .read_bytes(self.fixed.remaining(), "table fixed trailing data")?
-                .to_vec(),
-            flexible_trailing_data: self
-                .flexible
-                .read_bytes(self.flexible.remaining(), "table flexible trailing data")?
-                .to_vec(),
-        })
+            fixed_trailing_data: self.fixed.remaining_bytes().to_vec(),
+            flexible_trailing_data: self.flexible.remaining_bytes().to_vec(),
+        }
     }
 }
 
@@ -137,7 +131,7 @@ pub(crate) fn read_sized_border(reader: &mut Reader<'_>) -> Result<TableBorder> 
         top: read_edge(&mut record.fixed)?,
         right: read_edge(&mut record.fixed)?,
         bottom: read_edge(&mut record.fixed)?,
-        metadata: record.finish()?,
+        metadata: record.into_metadata(),
     })
 }
 
