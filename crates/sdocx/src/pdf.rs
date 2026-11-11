@@ -913,11 +913,11 @@ fn flatten_nested_actual_text_content(
                     .as_ref()
                     .is_some_and(|properties| properties.has(b"ActualText"));
                 if has_actual_text && active_actual_text > 0 {
+                    let mut dictionary = resolved.unwrap().clone();
                     let operand = operation
                         .operands
                         .get_mut(1)
                         .ok_or_else(|| "BDC has no property operand".to_owned())?;
-                    let mut dictionary = resolved.unwrap();
                     dictionary.remove(b"ActualText");
                     *operand = Object::Dictionary(dictionary);
                     replacements_removed += 1;
@@ -947,11 +947,11 @@ fn flatten_nested_actual_text_content(
     Ok(replacements_removed)
 }
 
-fn content_properties(
-    document: &lopdf::Document,
+fn content_properties<'a>(
+    document: &'a lopdf::Document,
     page_id: lopdf::ObjectId,
-    properties: &lopdf::Object,
-) -> Option<lopdf::Dictionary> {
+    properties: &'a lopdf::Object,
+) -> Option<&'a lopdf::Dictionary> {
     use lopdf::Object;
 
     fn dictionary<'a>(
@@ -966,7 +966,7 @@ fn content_properties(
     }
 
     match properties {
-        Object::Dictionary(dictionary) => Some(dictionary.clone()),
+        Object::Dictionary(dictionary) => Some(dictionary),
         Object::Name(name) => {
             let (direct, inherited) = document.get_page_resources(page_id).ok()?;
             let resources = direct.or_else(|| {
@@ -975,7 +975,7 @@ fn content_properties(
                     .find_map(|id| document.get_dictionary(*id).ok())
             })?;
             let properties = dictionary(document, resources.get(b"Properties").ok()?)?;
-            dictionary(document, properties.get(name).ok()?).cloned()
+            dictionary(document, properties.get(name).ok()?)
         }
         _ => None,
     }
