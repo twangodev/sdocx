@@ -7,6 +7,12 @@ import { visibleDocuments } from './view';
 import { createThumbnail } from './thumbnail';
 import { downloadBlob } from '$converter/files';
 
+interface WorkspaceLifecycle {
+	channel: BroadcastChannel | null;
+	ready: Promise<void>;
+	stop: () => void;
+}
+
 export class LibraryWorkspace {
 	snapshot = $state.raw<LibrarySnapshot>({ documents: [], collections: [], memberships: [] });
 	source = $state<LibrarySource>('all');
@@ -22,17 +28,16 @@ export class LibraryWorkspace {
 	cancelled = $state(false);
 	error = $state('');
 	available = $state(false);
-	private channel: BroadcastChannel | null = null;
+	private lifecycle: WorkspaceLifecycle | undefined;
+	private importRun: object | undefined;
 	private refreshGeneration = 0;
 	private readonly restoringThumbnails = new Set<string>();
-	private stopped = false;
-	private ready: Promise<void> = Promise.resolve();
 	readonly service = new LibraryService(
 		new LibraryCatalog(),
 		new OpfsAssetStore(),
 		undefined,
 		() => {
-			this.channel?.postMessage('changed');
+			this.lifecycle?.channel?.postMessage('changed');
 		}
 	);
 	private readonly importer = new ImportProcessor((document, collectionId) => {
@@ -55,53 +60,80 @@ export class LibraryWorkspace {
 	}
 
 	start(): () => void {
-		this.stopped = false;
+		this.lifecycle?.stop();
+		const lifecycle: WorkspaceLifecycle = {
+			channel: null,
+			ready: Promise.resolve(),
+			stop: () => {}
+		};
+		this.lifecycle = lifecycle;
+		this.loading = true;
+		this.available = false;
+		this.error = '';
+		const refresh = () => {
+			if (this.lifecycle === lifecycle && this.available)
+				void this.refreshAndReport(lifecycle);
+		};
 		if (typeof BroadcastChannel !== 'undefined') {
-			this.channel = new BroadcastChannel('sdocx-library');
-			this.channel.onmessage = () => {
-				void this.refresh().catch((error) => {
-					this.error = errorMessage(error);
-				});
+			lifecycle.channel = new BroadcastChannel('sdocx-library');
+			lifecycle.channel.onmessage = () => {
+				if (this.lifecycle === lifecycle) void this.refreshAndReport(lifecycle);
 			};
 		}
-		const refresh = () => {
-			if (this.available)
-				void this.refresh().catch((error) => {
-					this.error = errorMessage(error);
-				});
-		};
 		window.addEventListener('focus', refresh);
-		this.ready = this.initialize();
-		return () => {
-			this.stopped = true;
-			this.importer.cancel();
-			this.channel?.close();
-			this.channel = null;
+		let stopped = false;
+		lifecycle.stop = () => {
+			if (stopped) return;
+			stopped = true;
+			lifecycle.channel?.close();
 			window.removeEventListener('focus', refresh);
+			if (this.lifecycle !== lifecycle) return;
+			this.lifecycle = undefined;
+			this.available = false;
+			this.loading = false;
+			this.importer.cancel();
 			this.service.catalog.close();
 		};
+		lifecycle.ready = this.initialize(lifecycle);
+		return lifecycle.stop;
 	}
 
-	private async initialize(): Promise<void> {
+	private async initialize(lifecycle: WorkspaceLifecycle): Promise<void> {
 		try {
 			if (!navigator.storage?.getDirectory || !navigator.locks || !globalThis.indexedDB)
 				throw new Error('Local storage is unavailable. Imported notes can be opened temporarily.');
 			await this.service.catalog.open();
+			if (this.lifecycle !== lifecycle) return;
 			await this.service.recover();
-			if (this.stopped) return;
+			if (this.lifecycle !== lifecycle) return;
 			this.available = true;
-			await this.refresh();
+			await this.refreshAndReport(lifecycle);
 		} catch (error) {
-			this.error = errorMessage(error);
+			if (this.lifecycle === lifecycle) this.error = errorMessage(error);
 		} finally {
-			this.loading = false;
+			if (this.lifecycle === lifecycle) this.loading = false;
 		}
 	}
 
 	async refresh(): Promise<void> {
+		const lifecycle = this.lifecycle;
+		if (!lifecycle) return;
+		await this.readSnapshot(lifecycle, ++this.refreshGeneration);
+	}
+
+	private async refreshAndReport(lifecycle: WorkspaceLifecycle): Promise<void> {
 		const generation = ++this.refreshGeneration;
+		try {
+			await this.readSnapshot(lifecycle, generation);
+		} catch (error) {
+			if (this.lifecycle === lifecycle && generation === this.refreshGeneration)
+				this.error = errorMessage(error);
+		}
+	}
+
+	private async readSnapshot(lifecycle: WorkspaceLifecycle, generation: number): Promise<void> {
 		const snapshot = await this.service.catalog.snapshot();
-		if (this.stopped || generation !== this.refreshGeneration) return;
+		if (this.lifecycle !== lifecycle || generation !== this.refreshGeneration) return;
 		this.snapshot = snapshot;
 		this.selected = this.selected.filter((id) =>
 			snapshot.documents.some((document) => document.id === id)
@@ -126,22 +158,26 @@ export class LibraryWorkspace {
 	}
 
 	async perform(action: () => Promise<unknown>): Promise<void> {
-		this.error = '';
+		const lifecycle = this.lifecycle;
+		if (lifecycle) this.error = '';
 		try {
 			await action();
 		} catch (error) {
-			this.error = errorMessage(error);
+			if (lifecycle && this.lifecycle === lifecycle) this.error = errorMessage(error);
 		} finally {
-			if (this.available)
-				await this.refresh().catch((error) => {
-					this.error = errorMessage(error);
-				});
+			if (lifecycle && this.lifecycle === lifecycle && this.available)
+				await this.refreshAndReport(lifecycle);
 		}
 	}
 
 	async importFiles(files: File[]): Promise<ImportOutcome[]> {
-		await this.ready;
-		if (this.importing || !files.length) return [];
+		const lifecycle = this.lifecycle;
+		if (!lifecycle) return [];
+		await lifecycle.ready;
+		if (this.lifecycle !== lifecycle || this.importRun || !files.length) return [];
+		const run = {};
+		this.importRun = run;
+		const results: ImportOutcome[] = [];
 		this.importing = true;
 		this.error = '';
 		this.results = [];
@@ -150,26 +186,28 @@ export class LibraryWorkspace {
 			await this.importer.run(files, {
 				collectionId: this.collectionId,
 				onProgress: (progress) => {
-					this.progress = progress;
+					if (this.lifecycle === lifecycle) this.progress = progress;
 				},
 				onResult: (result) => {
-					this.results = [...this.results, result];
+					results.push(result);
+					if (this.lifecycle === lifecycle) this.results = [...results];
 				},
 				approveLargeFile: (file) =>
-					window.confirm(
+					this.lifecycle === lifecycle && window.confirm(
 						`${file.name} is over 100 MiB. Parsing may use substantial memory. Import locally?`
 					)
 			});
 		} catch (error) {
-			this.error = errorMessage(error);
+			if (this.lifecycle === lifecycle) this.error = errorMessage(error);
 		} finally {
-			this.importing = false;
-			if (this.available)
-				await this.refresh().catch((error) => {
-					this.error = errorMessage(error);
-				});
+			if (this.importRun === run) {
+				this.importRun = undefined;
+				this.importing = false;
+			}
+			if (this.lifecycle === lifecycle && this.available)
+				await this.refreshAndReport(lifecycle);
 		}
-		return this.results;
+		return results;
 	}
 
 	async downloadOriginal(id: string): Promise<void> {
@@ -182,9 +220,10 @@ export class LibraryWorkspace {
 	async restoreThumbnail(id: string, render: () => Promise<string>): Promise<void> {
 		if (this.restoringThumbnails.has(id) || this.snapshot.documents.find((document) => document.id === id)?.thumbnail) return;
 		this.restoringThumbnails.add(id);
+		const lifecycle = this.lifecycle;
 		try {
 			await this.service.cacheThumbnail(id, await createThumbnail(await render()));
-			await this.refresh();
+			if (lifecycle && this.lifecycle === lifecycle) await this.refresh();
 		} catch {
 			return;
 		} finally {
