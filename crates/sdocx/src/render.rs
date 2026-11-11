@@ -3145,10 +3145,16 @@ fn argb_color(argb: u32) -> Color {
     }
 }
 
+#[derive(Debug, PartialEq)]
+enum MagicPenMinimumDot {
+    Invisible,
+    Cell { x: i32, y: i32, alpha: f64 },
+}
+
 fn magicpen_minimum_dot_cell(
     records: &[[u32; 3]],
     viewport: [u32; 2],
-) -> Option<Option<(i32, i32, f64)>> {
+) -> Option<MagicPenMinimumDot> {
     let [record] = records else { return None };
     let [x, y, radius] = record.map(|word| f64::from(f32::from_bits(word)));
     if radius != 0.5
@@ -3173,7 +3179,7 @@ fn magicpen_minimum_dot_cell(
     let distance = |px: i32, py: i32| (f64::from(px) + 0.5 - x).hypot(f64::from(py) + 0.5 - y);
     let remaining = radius - distance(ix, iy);
     if remaining <= 0.0 {
-        return Some(None);
+        return Some(MagicPenMinimumDot::Invisible);
     }
     let qx = ix.div_euclid(2) * 2;
     let qy = iy.div_euclid(2) * 2;
@@ -3184,7 +3190,11 @@ fn magicpen_minimum_dot_cell(
     } else {
         (remaining / width).clamp(0.0, 1.0)
     };
-    Some(Some((ix, iy, (alpha * 255.0).round() / 255.0)))
+    Some(MagicPenMinimumDot::Cell {
+        x: ix,
+        y: iy,
+        alpha: (alpha * 255.0).round() / 255.0,
+    })
 }
 
 #[cfg(test)]
@@ -3193,11 +3203,11 @@ fn magicpen_minimum_dot_cell_is_bounded_to_captured_grid() {
     let record = |x: f32, y: f32, r: f32| [x.to_bits(), y.to_bits(), r.to_bits()];
     assert_eq!(
         magicpen_minimum_dot_cell(&[record(8.0, 8.0, 0.5)], [32, 32]),
-        Some(None)
+        Some(MagicPenMinimumDot::Invisible)
     );
     assert!(matches!(
         magicpen_minimum_dot_cell(&[record(8.5, 8.5, 0.5)], [32, 32]),
-        Some(Some((8, 8, _)))
+        Some(MagicPenMinimumDot::Cell { x: 8, y: 8, .. })
     ));
     assert_eq!(
         magicpen_minimum_dot_cell(&[record(8.1, 8.5, 0.5)], [32, 32]),
@@ -3585,7 +3595,7 @@ fn render_stroke(
             && slice.is_none()
             && let Some(cell) = magicpen_minimum_dot_cell(&ink.records, viewport)
         {
-            if let Some((x, y, alpha)) = cell {
+            if let MagicPenMinimumDot::Cell { x, y, alpha } = cell {
                 svg.push(
                     Rectangle::new()
                         .x(f64::from(x))
@@ -7418,9 +7428,14 @@ mod tests {
             let y = point[1].as_f64().unwrap() as f32;
             let size = input["page"][0].as_u64().unwrap() as u32;
             let record = [x.to_bits(), y.to_bits(), 0.5f32.to_bits()];
-            let (ix, iy, alpha) = super::magicpen_minimum_dot_cell(&[record], [size, size])
-                .unwrap()
-                .unwrap();
+            let super::MagicPenMinimumDot::Cell {
+                x: ix,
+                y: iy,
+                alpha,
+            } = super::magicpen_minimum_dot_cell(&[record], [size, size]).unwrap()
+            else {
+                panic!("captured dot must cover a cell");
+            };
             let compressed = base64::engine::general_purpose::STANDARD
                 .decode(case["readback"]["rgba8_zlib_base64"].as_str().unwrap())
                 .unwrap();
