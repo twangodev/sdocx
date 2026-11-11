@@ -19,6 +19,7 @@
 	let error = $state('');
 	let notice = $state('');
 	let confirming = $state(false);
+	let refreshRequest = 0;
 	const originalBytes = $derived(
 		library.snapshot.documents.reduce((sum, document) => sum + document.size, 0)
 	);
@@ -29,15 +30,20 @@
 	);
 	onMount(() => {
 		void refresh();
+		return () => {
+			refreshRequest += 1;
+		};
 	});
 	async function refresh() {
+		const request = ++refreshRequest;
 		loading = true;
 		try {
-			status = await storageStatus();
+			const next = await storageStatus();
+			if (request === refreshRequest) status = next;
 		} catch (cause) {
-			error = errorMessage(cause);
+			if (request === refreshRequest) error = errorMessage(cause);
 		} finally {
-			loading = false;
+			if (request === refreshRequest) loading = false;
 		}
 	}
 	async function run(action: () => Promise<void>) {

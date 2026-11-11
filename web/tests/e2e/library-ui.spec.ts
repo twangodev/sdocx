@@ -135,6 +135,39 @@ test('storage waits for its estimate instead of reporting unavailable while load
 	await expect(dialog).toHaveCount(0);
 });
 
+for (const outcome of ['success', 'error'] as const) {
+	test(`storage ignores obsolete estimate ${outcome} after clearing thumbnails`, async ({ page }) => {
+		await page.evaluate(() => {
+			let reads = 0;
+			Object.defineProperty(StorageManager.prototype, 'persisted', {
+				value: () => Promise.resolve(false)
+			});
+			Object.defineProperty(StorageManager.prototype, 'estimate', {
+				value: () => ++reads === 1
+					? new Promise<StorageEstimate>((resolve, reject) => {
+						Object.assign(window, { finishOldEstimate: (fail: boolean) => fail
+							? reject(new Error('Obsolete storage estimate'))
+							: resolve({ usage: 9437184, quota: 104857600 }) });
+					})
+					: Promise.resolve({ usage: 1048576, quota: 104857600 })
+			});
+		});
+		await page.getByRole('button', { name: 'Browser storage', exact: true }).click();
+		const dialog = page.getByRole('dialog', { name: 'Browser storage', exact: true });
+		await expect(dialog.locator('dl')).toHaveAttribute('aria-busy', 'true');
+		await dialog.getByRole('button', { name: 'Clear thumbnail cache' }).click();
+		await expect(dialog.locator('dl')).toHaveAttribute('aria-busy', 'false');
+		await expect(dialog.locator('dl')).toContainText('1.0 MiB');
+		await page.evaluate(async (fail) => {
+			(window as unknown as { finishOldEstimate: (fail: boolean) => void }).finishOldEstimate(fail);
+			await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+		}, outcome === 'error');
+		await expect(dialog.locator('dl')).toContainText('1.0 MiB');
+		await expect(dialog).not.toContainText('Obsolete storage estimate');
+		await expect(dialog).toContainText('Thumbnails cleared.');
+	});
+}
+
 test.describe('touch controls', () => {
 	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 	test('note menus are visible without hover and support touch selection', async ({ page }) => {
