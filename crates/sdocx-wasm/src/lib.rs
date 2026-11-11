@@ -86,8 +86,12 @@ impl DocumentSession {
         page_index: usize,
         color_mode: &str,
     ) -> Result<String, JsError> {
-        self.render_svg_output_with_marker2_scale(page_index, color_mode, Some(2))
-            .map(|output| output.svg)
+        self.render_svg_with_options(
+            page_index,
+            &self.render_options(color_mode, Some(2))?,
+            &mut |_| {},
+        )
+        .map(|output| output.svg)
     }
 
     /// Render one visible page with the diagnostics from that rendering.
@@ -150,8 +154,12 @@ impl DocumentSession {
         page_indices: &[u32],
         color_mode: &str,
     ) -> Result<Vec<u8>, JsError> {
-        self.render_pdf_output_with_marker2_scale(page_indices, color_mode, Some(2))
-            .map(|output| output.bytes)
+        self.render_pdf_with_options(
+            page_indices,
+            &self.render_options(color_mode, Some(2))?,
+            &mut |_| {},
+        )
+        .map(|output| output.bytes)
     }
 
     /// Export explicit visible pages with diagnostics in the supplied order.
@@ -172,9 +180,9 @@ impl DocumentSession {
         color_mode: &str,
         callback: &js_sys::Function,
     ) -> Result<JsValue, JsError> {
-        let page = self.render_svg_output_with_progress(
+        let page = self.render_svg_with_options(
             page_index,
-            color_mode,
+            &self.render_options(color_mode, None)?,
             &mut progress::observer(callback),
         )?;
         serde_wasm_bindgen::to_value(&render_output::SvgOutput::new(page_index, page))
@@ -188,9 +196,9 @@ impl DocumentSession {
         color_mode: &str,
         callback: &js_sys::Function,
     ) -> Result<JsValue, JsError> {
-        let output = self.render_pdf_output_with_progress(
+        let output = self.render_pdf_with_options(
             page_indices,
-            color_mode,
+            &self.render_options(color_mode, None)?,
             &mut progress::observer(callback),
         )?;
         serde_wasm_bindgen::to_value(&render_output::PdfOutput::from(output))
@@ -257,50 +265,37 @@ impl DocumentSession {
         })
     }
 
+    fn render_options(
+        &self,
+        color_mode: &str,
+        marker2_output_scale: Option<u32>,
+    ) -> Result<sdocx::RenderOptions, JsError> {
+        self.parsed()?;
+        let mut options = sdocx::RenderOptions::default();
+        options.color_mode = parse_render_color_mode(color_mode)?;
+        options.marker2_output_scale = marker2_output_scale;
+        Ok(options)
+    }
+
     fn render_svg_output(
         &self,
         page_index: usize,
         color_mode: &str,
     ) -> Result<sdocx::RenderedPage, JsError> {
-        self.render_svg_output_with_marker2_scale(page_index, color_mode, None)
-    }
-
-    fn render_svg_output_with_marker2_scale(
-        &self,
-        page_index: usize,
-        color_mode: &str,
-        marker2_output_scale: Option<u32>,
-    ) -> Result<sdocx::RenderedPage, JsError> {
-        self.render_svg_output_with_progress_and_marker2_scale(
+        self.render_svg_with_options(
             page_index,
-            color_mode,
-            marker2_output_scale,
+            &self.render_options(color_mode, None)?,
             &mut |_| {},
         )
     }
 
-    fn render_svg_output_with_progress(
+    fn render_svg_with_options(
         &self,
         page_index: usize,
-        color_mode: &str,
-        observer: &mut dyn FnMut(sdocx::Progress),
-    ) -> Result<sdocx::RenderedPage, JsError> {
-        self.render_svg_output_with_progress_and_marker2_scale(
-            page_index, color_mode, None, observer,
-        )
-    }
-
-    fn render_svg_output_with_progress_and_marker2_scale(
-        &self,
-        page_index: usize,
-        color_mode: &str,
-        marker2_output_scale: Option<u32>,
+        options: &sdocx::RenderOptions,
         observer: &mut dyn FnMut(sdocx::Progress),
     ) -> Result<sdocx::RenderedPage, JsError> {
         let parsed = self.parsed()?;
-        let mut options = sdocx::RenderOptions::default();
-        options.color_mode = parse_render_color_mode(color_mode)?;
-        options.marker2_output_scale = marker2_output_scale;
         self.text_cache
             .try_borrow_mut()
             .map_err(|_| JsError::new("document rendering is already in progress"))?
@@ -308,7 +303,7 @@ impl DocumentSession {
                 &parsed.document,
                 self.layout()?,
                 page_index,
-                &options,
+                options,
                 &self.fonts,
                 observer,
             )
@@ -320,49 +315,21 @@ impl DocumentSession {
         page_indices: &[u32],
         color_mode: &str,
     ) -> Result<sdocx::PdfOutput, JsError> {
-        self.render_pdf_output_with_marker2_scale(page_indices, color_mode, None)
-    }
-
-    fn render_pdf_output_with_marker2_scale(
-        &self,
-        page_indices: &[u32],
-        color_mode: &str,
-        marker2_output_scale: Option<u32>,
-    ) -> Result<sdocx::PdfOutput, JsError> {
-        self.render_pdf_output_with_progress_and_marker2_scale(
+        self.render_pdf_with_options(
             page_indices,
-            color_mode,
-            marker2_output_scale,
+            &self.render_options(color_mode, None)?,
             &mut |_| {},
         )
     }
 
-    fn render_pdf_output_with_progress(
+    fn render_pdf_with_options(
         &self,
         page_indices: &[u32],
-        color_mode: &str,
-        observer: &mut dyn FnMut(sdocx::Progress),
-    ) -> Result<sdocx::PdfOutput, JsError> {
-        self.render_pdf_output_with_progress_and_marker2_scale(
-            page_indices,
-            color_mode,
-            None,
-            observer,
-        )
-    }
-
-    fn render_pdf_output_with_progress_and_marker2_scale(
-        &self,
-        page_indices: &[u32],
-        color_mode: &str,
-        marker2_output_scale: Option<u32>,
+        options: &sdocx::RenderOptions,
         observer: &mut dyn FnMut(sdocx::Progress),
     ) -> Result<sdocx::PdfOutput, JsError> {
         let parsed = self.parsed()?;
         let layout = self.layout()?;
-        let mut options = sdocx::RenderOptions::default();
-        options.color_mode = parse_render_color_mode(color_mode)?;
-        options.marker2_output_scale = marker2_output_scale;
         let page_indices = page_indices
             .iter()
             .map(|&index| index as usize)
@@ -382,7 +349,7 @@ impl DocumentSession {
             &parsed.document,
             layout,
             &page_indices,
-            &options,
+            options,
             &pdf_options,
             &self.fonts,
             &mut cache,

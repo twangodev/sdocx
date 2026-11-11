@@ -355,43 +355,52 @@ fn format_template(template: PageTemplate, source_index: Option<i32>) -> String 
     }
 }
 
-fn write_page(path: &std::path::Path, svg: &str, png_options: Option<&resvg::usvg::Options<'_>>) {
-    match png_options {
-        None => {
-            if let Err(e) = fs::write(path, svg) {
-                eprintln!("Error: failed to write {}: {e}", path.display());
-                std::process::exit(1);
-            }
-            eprintln!("Wrote {} ({} bytes)", path.display(), svg.len());
-        }
-        Some(options) => {
-            let png = svg_to_png(svg, options).unwrap_or_else(|e| {
-                eprintln!("Error: {e}");
-                std::process::exit(1);
-            });
-            if let Err(e) = fs::write(path, &png) {
-                eprintln!("Error: failed to write {}: {e}", path.display());
-                std::process::exit(1);
-            }
-            eprintln!("Wrote {} ({} bytes)", path.display(), png.len());
-        }
+fn write_svg(path: &std::path::Path, svg: &str) -> Result<(), String> {
+    write_page_bytes(path, svg.as_bytes())
+}
+
+fn write_png(
+    path: &std::path::Path,
+    svg: &str,
+    options: &resvg::usvg::Options<'_>,
+) -> Result<(), String> {
+    write_page_bytes(path, &svg_to_png(svg, options)?)
+}
+
+fn write_page_bytes(path: &std::path::Path, bytes: &[u8]) -> Result<(), String> {
+    fs::write(path, bytes)
+        .map_err(|error| format!("failed to write {}: {error}", path.display()))?;
+    eprintln!("Wrote {} ({} bytes)", path.display(), bytes.len());
+    Ok(())
+}
+
+fn write_rendered_page(
+    path: &std::path::Path,
+    svg: &str,
+    format: Format,
+    png_options: &resvg::usvg::Options<'_>,
+) -> Result<(), String> {
+    match format {
+        Format::Svg => write_svg(path, svg),
+        Format::Png => write_png(path, svg, png_options),
+        Format::Pdf => unreachable!("PDF output is written before individual page images"),
     }
 }
 
 fn main() {
-    let cli = Cli::parse();
+    if let Err(error) = convert(Cli::parse()) {
+        eprintln!("Error: {error}");
+        std::process::exit(1);
+    }
+}
 
+fn convert(cli: Cli) -> Result<(), String> {
     let options = sdocx::ParseOptions {
         verify_integrity: cli.verify_integrity,
         ..Default::default()
     };
-    let parsed = match sdocx::parse_detailed_with_options(&cli.path, &options) {
-        Ok(parsed) => parsed,
-        Err(e) => {
-            eprintln!("Error: {e}");
-            std::process::exit(1);
-        }
-    };
+    let parsed = sdocx::parse_detailed_with_options(&cli.path, &options)
+        .map_err(|error| error.to_string())?;
     for diagnostic in &parsed.report.diagnostics {
         if let Some(entry) = &diagnostic.archive_entry {
             eprintln!(
@@ -421,29 +430,12 @@ fn main() {
 
     print_info(&doc, &layout);
 
-    let format = match resolve_format(cli.format, cli.output.as_deref()) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("Error: {e}");
-            std::process::exit(1);
-        }
-    };
-    if let Err(message) =
-        validate_pdf_only_options(format, cli.pdf_dpi.is_some(), cli.pdf_load_width.is_some())
-    {
-        eprintln!("Error: {message}");
-        std::process::exit(1);
-    }
-    if let Err(message) = validate_marker2_option(format, cli.marker2_at_2x) {
-        eprintln!("Error: {message}");
-        std::process::exit(1);
-    }
+    let format = resolve_format(cli.format, cli.output.as_deref())?;
+    validate_pdf_only_options(format, cli.pdf_dpi.is_some(), cli.pdf_load_width.is_some())?;
+    validate_marker2_option(format, cli.marker2_at_2x)?;
     let mut render_options = RenderOptions::default();
     render_options.marker2_output_scale = cli.marker2_at_2x.then_some(2);
-    let fonts = load_fonts(&cli.font_files).unwrap_or_else(|error| {
-        eprintln!("Error: {error}");
-        std::process::exit(1);
-    });
+    let fonts = load_fonts(&cli.font_files)?;
     let svg_options = svg_options(&fonts);
 
     let output_base = cli
@@ -451,10 +443,7 @@ fn main() {
         .unwrap_or_else(|| cli.path.with_extension(format.ext()));
     let page_indices = match cli.pages.as_deref() {
         Some(selection) => sdocx::parse_page_selection(selection, layout.pages.len())
-            .unwrap_or_else(|error| {
-                eprintln!("Error: {error}");
-                std::process::exit(1);
-            }),
+            .map_err(|error| error.to_string())?,
         None => (0..layout.pages.len()).collect(),
     };
     let mut render_warnings = RenderWarnings::default();
@@ -473,10 +462,7 @@ fn main() {
             &options,
             &fonts,
         )
-        .unwrap_or_else(|error| {
-            eprintln!("Error: {error}");
-            std::process::exit(1);
-        });
+        .map_err(|error| error.to_string())?;
         for page in &output.pages {
             render_warnings.report(
                 (page.page_index, page.source_page_index),
@@ -489,17 +475,15 @@ fn main() {
         }
         let page_count = output.pages.len();
         let pdf = output.bytes;
-        if let Err(error) = fs::write(&output_base, &pdf) {
-            eprintln!("Error: failed to write {}: {error}", output_base.display());
-            std::process::exit(1);
-        }
+        fs::write(&output_base, &pdf)
+            .map_err(|error| format!("failed to write {}: {error}", output_base.display()))?;
         eprintln!(
             "Wrote {} ({} bytes, {} pages)",
             output_base.display(),
             pdf.len(),
             page_count
         );
-        return;
+        return Ok(());
     }
 
     let mut text_cache = sdocx::DocumentTextCache::default();
@@ -522,9 +506,8 @@ fn main() {
         );
     }
 
-    let png_options = (format == Format::Png).then_some(&svg_options);
     if rendered_pages.len() == 1 {
-        write_page(&output_base, &rendered_pages[0].svg, png_options);
+        write_rendered_page(&output_base, &rendered_pages[0].svg, format, &svg_options)?;
     } else {
         for (i, rendered_page) in page_indices.iter().zip(&rendered_pages) {
             let stem = output_base
@@ -536,9 +519,10 @@ fn main() {
                 .and_then(|e| e.to_str())
                 .unwrap_or(format.ext());
             let path = output_base.with_file_name(format!("{stem}_page{i}.{ext}"));
-            write_page(&path, &rendered_page.svg, png_options);
+            write_rendered_page(&path, &rendered_page.svg, format, &svg_options)?;
         }
     }
+    Ok(())
 }
 
 #[cfg(test)]
