@@ -95,7 +95,7 @@ impl<'a> TableRecord<'a> {
         let flexible_offset = reader.read_u32("table flexible-data offset")? as usize;
         let properties = Mask::read(&mut reader)?;
         let fields = Mask::read(&mut reader)?;
-        let fixed_end = if flexible_offset == 0 && !fields.has_other_bits(0) {
+        let fixed_end = if flexible_offset == 0 && !fields.has_set_bits() {
             data.len()
         } else {
             flexible_offset

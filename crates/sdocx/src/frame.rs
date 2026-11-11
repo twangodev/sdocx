@@ -37,8 +37,8 @@ impl<'a> Mask<'a> {
         self.low_u32() & !known != 0 || self.0.iter().skip(4).any(|byte| *byte != 0)
     }
 
-    fn is_empty(self) -> bool {
-        self.0.iter().all(|byte| *byte == 0)
+    pub(crate) fn has_set_bits(self) -> bool {
+        self.0.iter().any(|byte| *byte != 0)
     }
 }
 
@@ -65,7 +65,7 @@ impl<'a> Frame<'a> {
         let flexible_offset = header.read_u32("flexible-data offset")? as usize;
         let properties = Mask::read(&mut header)?;
         let fields = Mask::read(&mut header)?;
-        let fixed_end = if flexible_offset == 0 && fields.is_empty() {
+        let fixed_end = if flexible_offset == 0 && !fields.has_set_bits() {
             size
         } else {
             flexible_offset

@@ -37,8 +37,8 @@ enum Scope {
 pub(crate) struct IntegrityVerifier {
     summary: IntegrityReport,
     diagnostics: ParseReport,
-    note_hash: Option<[u8; 32]>,
-    page_hashes: HashMap<String, VecDeque<Option<[u8; 32]>>>,
+    stored_note_hash: Option<[u8; 32]>,
+    stored_page_hashes: HashMap<String, VecDeque<Option<[u8; 32]>>>,
 }
 
 impl IntegrityVerifier {
@@ -59,7 +59,7 @@ impl IntegrityVerifier {
             );
             return;
         }
-        self.note_hash = Some(*stored);
+        self.stored_note_hash = Some(*stored);
         self.compare(
             Scope::Note,
             "note.note",
@@ -134,7 +134,7 @@ impl IntegrityVerifier {
                 self.unavailable(Scope::Page, entry, "page modification time is absent");
             }
         }
-        self.page_hashes
+        self.stored_page_hashes
             .entry(page.header.uuid.clone())
             .or_default()
             .push_back(stored);
@@ -171,7 +171,7 @@ impl IntegrityVerifier {
         report: &mut ParseReport,
     ) -> IntegrityReport {
         if let Some(manifest) = manifest {
-            if let Some(stored) = self.note_hash {
+            if let Some(stored) = self.stored_note_hash {
                 self.compare(
                     Scope::Manifest,
                     "pageIdInfo.dat",
@@ -188,7 +188,7 @@ impl IntegrityVerifier {
             }
             for (index, record) in manifest.entries.iter().enumerate() {
                 let stored = self
-                    .page_hashes
+                    .stored_page_hashes
                     .get_mut(&record.page_id)
                     .and_then(VecDeque::pop_front)
                     .flatten();
