@@ -4487,7 +4487,12 @@ fn render_stroke(
         }
     }
     if native_allowed && airbrush_profile == Some(AirBrushRenderProfile::SavedV1) {
-        match airbrush::prepare_source(stroke, theme, viewport, true) {
+        match airbrush::prepare_source(
+            stroke,
+            theme,
+            viewport,
+            crate::ink::airbrush::SavedVersion::V1,
+        ) {
             Some(airbrush::SourcePreparation::Empty) => return,
             Some(airbrush::SourcePreparation::Paint(paint))
                 if airbrush::render(svg, &paint, replay_index) =>
@@ -13917,7 +13922,13 @@ mod tests {
         let literal = crate::ink::airbrush::saved_v2_from_stroke(&unsupported).unwrap();
         assert_eq!(literal.rows, sampled.rows);
         unsupported.rendering.as_mut().unwrap().advanced_settings = None;
-        assert!(crate::ink::airbrush::saved_from_stroke(&unsupported, true).is_some());
+        assert!(
+            crate::ink::airbrush::saved_from_stroke(
+                &unsupported,
+                crate::ink::airbrush::SavedVersion::V1
+            )
+            .is_some()
+        );
         let mut other = document.clone();
         other.pages[0]
             .strokes_mut()
@@ -14203,7 +14214,13 @@ mod tests {
             }
         }
         unsupported.rendering.as_mut().unwrap().advanced_settings = None;
-        assert!(crate::ink::airbrush::saved_from_stroke(&unsupported, true).is_none());
+        assert!(
+            crate::ink::airbrush::saved_from_stroke(
+                &unsupported,
+                crate::ink::airbrush::SavedVersion::V1
+            )
+            .is_none()
+        );
         unsupported.rendering.as_mut().unwrap().advanced_settings = Some(String::new());
         unsupported
             .rendering
@@ -14481,7 +14498,10 @@ mod tests {
         rendering.style.color_argb = Some(0x8044ee11);
         for tool in [0, 1, 2, 3] {
             stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
-            let output = crate::ink::airbrush::saved_from_stroke(stroke, true);
+            let output = crate::ink::airbrush::saved_from_stroke(
+                stroke,
+                crate::ink::airbrush::SavedVersion::V1,
+            );
             if tool == 1 {
                 assert!(output.is_none());
                 continue;
@@ -14808,7 +14828,11 @@ mod tests {
                 } else {
                     0xffdf2255
                 });
-                let sampled = crate::ink::airbrush::saved_from_stroke(stroke, true).unwrap();
+                let sampled = crate::ink::airbrush::saved_from_stroke(
+                    stroke,
+                    crate::ink::airbrush::SavedVersion::V1,
+                )
+                .unwrap();
                 let actual = sampled
                     .rows
                     .iter()

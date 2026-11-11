@@ -59,7 +59,7 @@ pub(crate) enum SourcePreparation {
 }
 
 pub(crate) fn prepare(stroke: &Stroke, theme: RenderTheme, viewport: [u32; 2]) -> Option<Prepared> {
-    match prepare_source(stroke, theme, viewport, false)? {
+    match prepare_source(stroke, theme, viewport, airbrush::SavedVersion::V2)? {
         SourcePreparation::Paint(paint) => Some(*paint),
         SourcePreparation::Empty => None,
     }
@@ -69,7 +69,7 @@ pub(crate) fn prepare_source(
     stroke: &Stroke,
     theme: RenderTheme,
     viewport: [u32; 2],
-    v1: bool,
+    version: airbrush::SavedVersion,
 ) -> Option<SourcePreparation> {
     if viewport.contains(&0) {
         return None;
@@ -85,11 +85,11 @@ pub(crate) fn prepare_source(
     if source_bytes > MAX_SOURCE_BYTES {
         return None;
     }
-    let source = airbrush::saved_from_stroke(stroke, v1)?;
+    let source = airbrush::saved_from_stroke(stroke, version)?;
     if source.rows.is_empty() {
         // The native host-Mesa stationary controls leave the target unchanged.
         // Applying this to other admitted empty V1 streams is an extrapolation.
-        return v1.then_some(SourcePreparation::Empty);
+        return (version == airbrush::SavedVersion::V1).then_some(SourcePreparation::Empty);
     }
     if source.rows.len() > MAX_STAMPS {
         return None;

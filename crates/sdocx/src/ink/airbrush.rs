@@ -418,9 +418,16 @@ fn saved_redraw_v2(input: V2Input<'_>) -> Option<V2Output> {
     Some(output)
 }
 
-/// Minimal saved GLV2 output consumed by the production texture renderer.
+/// Captured saved redraw version, shared by source and paint admission.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SavedVersion {
+    V1,
+    V2,
+}
+
+/// Minimal saved GLV1/GLV2 output consumed by the production texture renderer.
 #[derive(Clone, Debug)]
-pub(crate) struct SavedV2Output {
+pub(crate) struct SavedOutput {
     pub(crate) rows: Vec<[f32; 4]>,
     pub(crate) sample_ends: Vec<usize>,
     pub(crate) terminal: std::ops::Range<usize>,
@@ -432,21 +439,26 @@ pub(crate) struct SavedV2Output {
 /// Saved playback derives MotionEvent source zero in the native wrapper; each
 /// redraw initializes fresh V2 state and resets its stamp counter.
 #[cfg(test)]
-pub(crate) fn saved_v2_from_stroke(stroke: &crate::Stroke) -> Option<SavedV2Output> {
-    saved_from_stroke(stroke, false)
+pub(crate) fn saved_v2_from_stroke(stroke: &crate::Stroke) -> Option<SavedOutput> {
+    saved_from_stroke(stroke, SavedVersion::V2)
 }
 
-pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<SavedV2Output> {
+pub(crate) fn saved_from_stroke(
+    stroke: &crate::Stroke,
+    version: SavedVersion,
+) -> Option<SavedOutput> {
     let rendering = stroke.rendering.as_ref()?;
-    if !(if v1 {
-        matches!(rendering.advanced_settings.as_deref(), None | Some("1;"))
-    } else {
-        matches!(
+    let settings_supported = match version {
+        SavedVersion::V1 => matches!(rendering.advanced_settings.as_deref(), None | Some("1;")),
+        SavedVersion::V2 => matches!(
             rendering.advanced_settings.as_deref(),
             Some("") | Some("2;")
-        )
-    }) || !rendering.properties.compressed
-        || !(matches!(rendering.tool_type_raw, 0 | 2 | 3) || (!v1 && rendering.tool_type_raw == 1))
+        ),
+    };
+    if !settings_supported
+        || !rendering.properties.compressed
+        || !(matches!(rendering.tool_type_raw, 0 | 2 | 3)
+            || (version == SavedVersion::V2 && rendering.tool_type_raw == 1))
     {
         return None;
     }
@@ -496,31 +508,34 @@ pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<Save
     {
         return None;
     }
-    let output = if v1 {
-        saved_redraw(Input {
-            history: &points[..count - 1],
-            endpoint: *points.last()?,
-            size,
-            // V1 Drawing controls for tools 0, 2 and 3 share this stream.
-            tool_type: 2,
-            source: 0,
-            runtime: Runtime { counter_seed: 0 },
-        })?
-    } else {
-        let output = saved_redraw_v2(V2Input {
-            history: &points[..count - 1],
-            endpoint: *points.last()?,
-            initial_position: points[0],
-            size,
-            tolerance: size / 20.0,
-            tool_type: i32::from(rendering.tool_type_raw),
-            source: 0,
-            counter_seed: 0,
-        })?;
-        Output {
-            stamps: output.stamps,
-            history_ends: output.history_ends,
-            terminal: output.terminal,
+    let output = match version {
+        SavedVersion::V1 => {
+            saved_redraw(Input {
+                history: &points[..count - 1],
+                endpoint: *points.last()?,
+                size,
+                // V1 Drawing controls for tools 0, 2 and 3 share this stream.
+                tool_type: 2,
+                source: 0,
+                runtime: Runtime { counter_seed: 0 },
+            })?
+        }
+        SavedVersion::V2 => {
+            let output = saved_redraw_v2(V2Input {
+                history: &points[..count - 1],
+                endpoint: *points.last()?,
+                initial_position: points[0],
+                size,
+                tolerance: size / 20.0,
+                tool_type: i32::from(rendering.tool_type_raw),
+                source: 0,
+                counter_seed: 0,
+            })?;
+            Output {
+                stamps: output.stamps,
+                history_ends: output.history_ends,
+                terminal: output.terminal,
+            }
         }
     };
     if output.stamps.len() > MAX_STAMPS
@@ -540,7 +555,7 @@ pub(crate) fn saved_from_stroke(stroke: &crate::Stroke, v1: bool) -> Option<Save
         .into_iter()
         .map(|stamp| stamp.values)
         .collect();
-    Some(SavedV2Output {
+    Some(SavedOutput {
         rows,
         sample_ends: output.history_ends,
         terminal: output.terminal,
