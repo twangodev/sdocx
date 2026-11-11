@@ -738,10 +738,9 @@ struct ImportedSourcePage {
     physical_surface: [f64; 2],
 }
 
-/// A page in the measured SingleX output stream. `query_height` controls native
-/// object admission; `scene_height` covers the independently measured physical
-/// surface so selected geometry can cross the query edge and be clipped by the
-/// final page box.
+/// A page in the measured SingleX output stream. The native query has already
+/// selected its objects; `scene_height` covers the physical surface so selected
+/// geometry can cross the query edge and be clipped by the final page box.
 struct SingleXOutputPage {
     query_y: u32,
     scene_height: u32,
