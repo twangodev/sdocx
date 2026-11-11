@@ -646,7 +646,7 @@ fn render_pages_pdf_with_progress<'a>(
     let mut page_count = 0;
     let mut retained_text = false;
     let mut has_airbrush = false;
-    let mut ink_fields = Vec::new();
+    let mut ink_fields: Vec<(u64, &'a NativeInkPayload, crate::BoundingBox)> = Vec::new();
     let pages = pages.into_iter();
     let (lower, upper) = pages.size_hint();
     let total = (upper == Some(lower)).then_some(lower);
@@ -700,7 +700,7 @@ fn render_pages_pdf_with_progress<'a>(
                 let marker_id = id.marker_id(page_index).ok_or_else(|| {
                     PdfError::Conversion("native ink marker ID exceeds supported range".into())
                 })?;
-                ink_fields.push((marker_id, entry.payload.clone(), entry.bounds));
+                ink_fields.push((marker_id, &entry.payload, entry.bounds));
             }
         } else {
             surface
