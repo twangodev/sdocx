@@ -226,8 +226,10 @@ fn retained_text_keeps_its_font_when_svg_parsing_uses_a_different_database() {
     let bytes = render_pages_pdf(
         [PdfPage {
             page: &scene.page,
-            text: Some(&scene.text),
-            ink: Some(&scene.ink),
+            content: PdfPageContent::Retained {
+                text: &scene.text,
+                ink: &scene.ink,
+            },
             text_error: None,
         }],
         &different_fonts(),

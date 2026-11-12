@@ -432,18 +432,24 @@ pub fn render_svg_pages_pdf(
     render_pages_pdf(
         pages.iter().map(|page| PdfPage {
             page,
-            text: None,
-            ink: None,
+            content: PdfPageContent::Svg,
             text_error: None,
         }),
         options,
     )
 }
 
+enum PdfPageContent<'a> {
+    Svg,
+    Retained {
+        text: &'a NativeTextRegistry,
+        ink: &'a NativeInkRegistry,
+    },
+}
+
 struct PdfPage<'a> {
     page: &'a RenderedPage,
-    text: Option<&'a NativeTextRegistry>,
-    ink: Option<&'a NativeInkRegistry>,
+    content: PdfPageContent<'a>,
     text_error: Option<&'a str>,
 }
 
@@ -455,8 +461,10 @@ pub(crate) fn render_native_scene_pdf_for_test(
     render_pages_pdf(
         [PdfPage {
             page: &scene.page,
-            text: Some(&scene.text),
-            ink: Some(&scene.ink),
+            content: PdfPageContent::Retained {
+                text: &scene.text,
+                ink: &scene.ink,
+            },
             text_error: scene.text_error.as_deref(),
         }],
         options,
@@ -478,8 +486,10 @@ pub(crate) fn render_scenes_pdf_with_progress(
     render_pages_pdf_with_progress(
         scenes.iter().map(|scene| PdfPage {
             page: &scene.page,
-            text: Some(&scene.text),
-            ink: Some(&scene.ink),
+            content: PdfPageContent::Retained {
+                text: &scene.text,
+                ink: &scene.ink,
+            },
             text_error: scene.text_error.as_deref(),
         }),
         options,
@@ -490,8 +500,7 @@ pub(crate) fn render_scenes_pdf_with_progress(
 struct PreparedPdfPage<'a> {
     tree: usvg::Tree,
     size: Size,
-    text: Option<&'a NativeTextRegistry>,
-    ink: Option<&'a NativeInkRegistry>,
+    content: PdfPageContent<'a>,
     uses_airbrush: bool,
 }
 
@@ -541,7 +550,7 @@ impl<'a> PdfPageParser<'a> {
             return Err(PdfError::InvalidPageSize { page_index });
         }
         let size = Size::from_wh(width, height).ok_or(PdfError::InvalidPageSize { page_index })?;
-        let strict_images = source.text.is_some();
+        let strict_images = matches!(source.content, PdfPageContent::Retained { .. });
         let svg_options = usvg::Options {
             fontdb: options.font_database.clone(),
             font_resolver: usvg::FontResolver {
@@ -600,7 +609,7 @@ impl<'a> PdfPageParser<'a> {
                 message: error.to_string(),
             }
         })?;
-        if source.text.is_none() && *font_error.lock().unwrap() {
+        if matches!(source.content, PdfPageContent::Svg) && *font_error.lock().unwrap() {
             return Err(PdfError::UnsupportedText {
                 page_index,
                 message: "the SVG's selected physical font is absent from the supplied database"
@@ -621,8 +630,7 @@ impl<'a> PdfPageParser<'a> {
         Ok(PreparedPdfPage {
             tree,
             size,
-            text: source.text,
-            ink: source.ink,
+            content: source.content,
             uses_airbrush: rendered.svg.contains("sdocx-airbrush-v2-r8-"),
         })
     }
@@ -656,18 +664,18 @@ fn render_pages_pdf_with_progress<'a>(
         let PreparedPdfPage {
             tree,
             size,
-            text,
-            ink,
+            content,
             uses_airbrush,
         } = parser.prepare(source, page_index)?;
         has_airbrush |= uses_airbrush;
         let mut page = pdf.start_page_with(PageSettings::new(size));
         let mut surface = page.surface();
-        if let Some(registry) = text {
+        if let PdfPageContent::Retained {
+            text: registry,
+            ink,
+        } = content
+        {
             retained_text = true;
-            let ink = ink.ok_or_else(|| {
-                PdfError::Conversion("retained PDF scene has no native ink registry".into())
-            })?;
             let page_tags = draw_retained_page(
                 &mut surface,
                 &tree,
@@ -1636,8 +1644,10 @@ mod tests {
         let bytes = render_pages_pdf(
             [PdfPage {
                 page: &page,
-                text: Some(&NativeTextRegistry::default()),
-                ink: Some(&ink),
+                content: PdfPageContent::Retained {
+                    text: &NativeTextRegistry::default(),
+                    ink: &ink,
+                },
                 text_error: None,
             }],
             &PdfOptions::default(),
@@ -1713,14 +1723,18 @@ mod tests {
             [
                 PdfPage {
                     page: &red_page,
-                    text: Some(&text),
-                    ink: Some(&red_ink),
+                    content: PdfPageContent::Retained {
+                        text: &text,
+                        ink: &red_ink,
+                    },
                     text_error: None,
                 },
                 PdfPage {
                     page: &blue_page,
-                    text: Some(&text),
-                    ink: Some(&blue_ink),
+                    content: PdfPageContent::Retained {
+                        text: &text,
+                        ink: &blue_ink,
+                    },
                     text_error: None,
                 },
             ],
