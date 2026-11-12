@@ -223,28 +223,13 @@ fn retain_content(
     objects: &mut Vec<PageObject>,
     retain: impl Copy + Fn(&PageObjectContent) -> bool,
 ) {
-    objects.retain_mut(|object| match &mut object.content {
+    objects.retain_mut(|object| match object.content.leaf_mut() {
         PageObjectContent::Container(children) => {
             retain_content(children, retain);
             true
         }
-        PageObjectContent::Descendant(content) => retain_descendant(content, retain),
         content => retain(content),
     });
-}
-
-fn retain_descendant(
-    content: &mut PageObjectContent,
-    retain: impl Copy + Fn(&PageObjectContent) -> bool,
-) -> bool {
-    match content {
-        PageObjectContent::Container(children) => {
-            retain_content(children, retain);
-            true
-        }
-        PageObjectContent::Descendant(inner) => retain_descendant(inner, retain),
-        content => retain(content),
-    }
 }
 
 impl PageObjectContent {
