@@ -1406,7 +1406,12 @@ fn rich_text_is_benign_blank(text: &crate::RichTextBox) -> bool {
             })
 }
 
-type PaperRunOwners = std::collections::HashMap<(usize, usize, usize), (usize, f64)>;
+struct PaperRunOwner {
+    page_index: usize,
+    overlap: f64,
+}
+
+type PaperRunOwners = std::collections::HashMap<(usize, usize, usize), PaperRunOwner>;
 
 fn consider_paper_run_owner(
     owners: &mut PaperRunOwners,
@@ -1419,9 +1424,15 @@ fn consider_paper_run_owner(
     if overlap <= 0.0 {
         return;
     }
-    let owner = owners.entry(key).or_insert((page_index, overlap));
-    if overlap > owner.1 {
-        *owner = (page_index, overlap);
+    let owner = owners.entry(key).or_insert(PaperRunOwner {
+        page_index,
+        overlap,
+    });
+    if overlap > owner.overlap {
+        *owner = PaperRunOwner {
+            page_index,
+            overlap,
+        };
     }
 }
 
@@ -1547,7 +1558,7 @@ pub(super) fn render_singlex_pdf_paper_plan(
                         line.source_char_start,
                         line.source_char_end,
                     ))
-                    .map(|owner| owner.0);
+                    .map(|owner| owner.page_index);
                 (owner != Some(page_index)).then_some((id, owner.is_none()))
             })
             .collect::<Vec<_>>();
@@ -2860,16 +2871,22 @@ mod tests {
         let second = (7, 11, 12);
         let repeated_line = (8, 12, 13);
         let fringe = (9, 13, 14);
+        let tied = (10, 14, 15);
         for (page, clip) in [(0, (0.0, 10.0)), (1, (10.0, 20.0))] {
             super::consider_paper_run_owner(&mut owners, first, page, (8.0, 11.0), clip);
             super::consider_paper_run_owner(&mut owners, second, page, (9.0, 13.0), clip);
             super::consider_paper_run_owner(&mut owners, repeated_line, page, (12.0, 13.0), clip);
             super::consider_paper_run_owner(&mut owners, fringe, page, (20.0, 21.0), clip);
+            super::consider_paper_run_owner(&mut owners, tied, page, (9.0, 11.0), clip);
         }
-        assert_eq!(owners.get(&first).map(|owner| owner.0), Some(0));
-        assert_eq!(owners.get(&second).map(|owner| owner.0), Some(1));
-        assert_eq!(owners.get(&repeated_line).map(|owner| owner.0), Some(1));
+        assert_eq!(owners.get(&first).map(|owner| owner.page_index), Some(0));
+        assert_eq!(owners.get(&second).map(|owner| owner.page_index), Some(1));
+        assert_eq!(
+            owners.get(&repeated_line).map(|owner| owner.page_index),
+            Some(1)
+        );
         assert!(!owners.contains_key(&fringe));
+        assert_eq!(owners.get(&tied).map(|owner| owner.page_index), Some(0));
     }
     use super::*;
     use crate::{
