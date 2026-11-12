@@ -73,6 +73,43 @@ HORIZONTAL_DRAW = '''    for name, stream in EDGE_STREAMS.items():
     p.call(RT_UPDATE,[rt,0],instruction_limit=5_000_000)
 '''
 
+TRANSLATION_CASE_LOOP = '    for case in TRANSLATION_CASES:\n        name, stream = case.receipt_key, case.stream\n'
+HISTORICAL_TRANSLATION_LOOP = '    for name, stream in EDGE_STREAMS.items():\n'
+TRANSLATION_COORDINATES = '        dx, down = case.x_pixels, case.down_pixels\n'
+HISTORICAL_TRANSLATION_COORDINATES = "        dx, down, _ = name.split('_', 2)\n"
+
+TRANSLATION_DRAW = '''    for case in TRANSLATION_CASES:
+        name, stream = case.receipt_key, case.stream
+        p.u.mem_write(vector_begin,stream)
+        p.call(RT_UPDATE,[rt,0],instruction_limit=5_000_000)
+        p.u.mem_write(vector_begin,actual_geometry)
+        dx, down = case.x_pixels, case.down_pixels
+        for dy in (0,1):
+            transform=[2,0,0,0, 0,-2,0,0, 0,0,1,0, int(dx),192-int(down),0,1]
+            p.u.mem_write(matrix,struct.pack('<16f',*transform))
+            p.call(ACTIVATE_SUBBITMAP_RT,[subbitmap,0],instruction_limit=5_000_000)
+            f['glViewport'](0,0,width,height*(1+dy))
+            CLIP_MODE[0]=dy
+            f['glClearColor'](0.,0.,0.,0.); f['glClear'](0x00004000)
+            f['glBindFramebuffer'](0x8d40,0)
+            event_start=len(p.gl_events)
+            p.call(RT_DRAW,[rt,subbitmap,matrix],instruction_limit=8_000_000)
+            viewport=(C.c_int*4)()
+            p._cfunc('glGetIntegerv',None,[C.c_uint,C.POINTER(C.c_int)])(0x0ba2,viewport)
+            events=[e for e in p.gl_events[event_start:] if e['name']=='glViewport']
+            assert list(viewport)==[0,0,width,height*(1+dy)], (name,dy,list(viewport),events)
+            f['glBindFramebuffer'](0x8d40,draw_target_fbo)
+            f['glReadPixels'](0,0,width,height,0x1908,0x1401,pixels)
+            if f['glGetError'](): raise RuntimeError('edge control GL error')
+            frame=pixels.raw
+            sparse=[[i//4%width,i//4//width,*frame[i:i+4]] for i in range(0,len(frame),4) if frame[i+3]]
+            EDGE_RESULTS[name+':'+str(dy)]={'sha256':hashlib.sha256(frame).hexdigest(),'matrix':transform,'viewport_after_draw':list(viewport),'draw_viewport_events':events,'pixels':sparse}
+            print(name,dy,len(sparse),flush=True)
+    CLIP_MODE[0]=0
+    p.u.mem_write(vector_begin,actual_geometry)
+    p.call(RT_UPDATE,[rt,0],instruction_limit=5_000_000)
+'''
+
 MATRIX_ANCHOR = '            vals=self.get(ptr,"f"*(16*count)); arr=(C.c_float*len(vals))(*vals)'
 
 HORIZONTAL_MATRIX = '''            vals=self.get(ptr,"f"*(16*count))
@@ -103,6 +140,18 @@ HORIZONTAL_VIEWPORT = '''            values = [self.x(i) for i in range(argc)]
             if argtypes is None:'''
 
 
+VERTICAL_MATRIX = '''            vals=self.get(ptr,"f"*(16*count))
+            if CLIP_MODE[0] and loc == 0 and count == 1:
+                vals=list(vals); vals[5]*=0.5; vals[13]=vals[13]*0.5-0.5
+            arr=(C.c_float*len(vals))(*vals)'''
+
+VERTICAL_VIEWPORT = '''            values = [self.x(i) for i in range(argc)]
+            if name == "glViewport" and CLIP_MODE[0]:
+                assert values == [0,0,192,192], values
+                values[3] *= 2
+            if argtypes is None:'''
+
+
 def replace_once(source, anchor, replacement):
     if source.count(anchor) != 1:
         raise ValueError(f"Expected one historical source anchor: {anchor}")
@@ -118,7 +167,7 @@ def projection_draw():
 
 
 def prepare_program(root, variant):
-    if variant not in ("edge", "horizontal", "projection"):
+    if variant not in ("edge", "horizontal", "projection", "translation"):
         raise ValueError(f"Unknown Pencil2 control: {variant}")
     path = root / SOURCE_RELATIVE
     raw = gzip.decompress((root / "tools/pencil2_v14/context-base-capture.py.gz").read_bytes())
@@ -126,7 +175,11 @@ def prepare_program(root, variant):
         raise ValueError(f"Historical capture source hash mismatch: {path}")
     source = raw.decode()
     draw = EDGE_DRAW
-    if variant != "edge":
+    if variant == "translation":
+        source = replace_once(source, MATRIX_ANCHOR, VERTICAL_MATRIX)
+        source = replace_once(source, VIEWPORT_ANCHOR, VERTICAL_VIEWPORT)
+        draw = TRANSLATION_DRAW
+    elif variant != "edge":
         matrix = HORIZONTAL_MATRIX if variant == "horizontal" else PROJECTION_MATRIX
         viewport = HORIZONTAL_VIEWPORT
         if variant == "projection":
@@ -135,3 +188,9 @@ def prepare_program(root, variant):
         source = replace_once(source, VIEWPORT_ANCHOR, viewport)
         draw = HORIZONTAL_DRAW if variant == "horizontal" else projection_draw()
     return replace_once(source, DRAW_ANCHOR, draw + DRAW_ANCHOR)
+
+
+def historical_translation_program(program):
+    """Recover the pinned program by undoing only named-case access changes."""
+    program = replace_once(program, TRANSLATION_CASE_LOOP, HISTORICAL_TRANSLATION_LOOP)
+    return replace_once(program, TRANSLATION_COORDINATES, HISTORICAL_TRANSLATION_COORDINATES)

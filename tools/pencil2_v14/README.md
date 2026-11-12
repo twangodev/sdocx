@@ -27,6 +27,21 @@ output path and record the maintained schema, variant and helper hashes; they
 do not replace or claim to have produced historical receipts. Native execution
 of the maintained entrypoint has not been validated during this refactor.
 
+## Translation sweep
+
+`translation_cases.py` names horizontal and downward framebuffer offsets directly;
+receipt keys remain unchanged and are no longer parsed by the draw loop.
+
+```sh
+python3 tools/pencil2_v14/run_control.py translation --check
+```
+
+This static check uses tracked inputs and the compressed base only. It verifies
+all 120 ordered case keys and stream hashes, their coordinate mapping, and that
+undoing only the two named-case access statements recovers the pinned historical
+program. The 240-result sweep is not executed. Historical producer and receipt
+files remain unchanged; new captures use the runner's separate `--output` path.
+
 ## Mixed RGB capture
 
 The capture uses the tracked compressed base source and pinned local native inputs. From the repository root, restore the base source to the path expected by the unchanged capture script, then run it:
