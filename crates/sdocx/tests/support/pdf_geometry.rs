@@ -179,12 +179,18 @@ pub fn read(bytes: &[u8], dpi: f64) -> PdfGeometry {
 
 #[allow(dead_code)]
 pub fn tagged_source(bytes: &[u8]) -> String {
+    struct MarkedContent {
+        mcid: Option<i64>,
+        actual_text: Option<String>,
+        actual_text_emitted: bool,
+    }
+
     let pdf = lopdf::Document::load_mem(bytes).unwrap();
     let mut sources = HashMap::new();
     for page_id in pdf.get_pages().into_values() {
         let fonts = pdf.get_page_fonts(page_id).unwrap();
         let content = Content::decode(&pdf.get_page_content(page_id).unwrap()).unwrap();
-        let mut marked: Vec<(Option<i64>, Option<String>, bool)> = Vec::new();
+        let mut marked: Vec<MarkedContent> = Vec::new();
         let mut font = Vec::new();
         for operation in content.operations {
             match operation.operator.as_str() {
@@ -199,9 +205,17 @@ pub fn tagged_source(bytes: &[u8]) -> String {
                     if let Some(mcid) = mcid {
                         assert!(sources.insert((page_id, mcid), String::new()).is_none());
                     }
-                    marked.push((mcid, replacement, false));
+                    marked.push(MarkedContent {
+                        mcid,
+                        actual_text: replacement,
+                        actual_text_emitted: false,
+                    });
                 }
-                "BMC" => marked.push((None, None, false)),
+                "BMC" => marked.push(MarkedContent {
+                    mcid: None,
+                    actual_text: None,
+                    actual_text_emitted: false,
+                }),
                 "EMC" => {
                     marked.pop().unwrap();
                 }
@@ -216,17 +230,17 @@ pub fn tagged_source(bytes: &[u8]) -> String {
                         };
                         let replacement = marked
                             .iter()
-                            .position(|(_, replacement, _)| replacement.is_some());
+                            .position(|content| content.actual_text.is_some());
                         let mcid = replacement
-                            .and_then(|index| marked[index].0)
-                            .or_else(|| marked.iter().rev().find_map(|(mcid, _, _)| *mcid));
+                            .and_then(|index| marked[index].mcid)
+                            .or_else(|| marked.iter().rev().find_map(|content| content.mcid));
                         let Some(mcid) = mcid else { continue };
                         let source = if let Some(index) = replacement {
-                            if marked[index].2 {
+                            if marked[index].actual_text_emitted {
                                 continue;
                             }
-                            marked[index].2 = true;
-                            marked[index].1.clone().unwrap()
+                            marked[index].actual_text_emitted = true;
+                            marked[index].actual_text.clone().unwrap()
                         } else {
                             let encoding = fonts[&font].get_font_encoding(&pdf).unwrap();
                             lopdf::Document::decode_text(&encoding, bytes).unwrap()
