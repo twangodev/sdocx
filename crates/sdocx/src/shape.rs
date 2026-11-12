@@ -1,7 +1,7 @@
 use crate::binary::Reader;
 use crate::frame::{Frame, Mask};
 use crate::note::parse_shape_text;
-use crate::object::read_bbox;
+use crate::object::{ObjectPlacement, read_bbox};
 use crate::shape_paint_source::{
     ColorPaintSource, ImagePaintSource, PatternPaintSource, ShapePaintSource,
 };
@@ -256,10 +256,11 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
     }
     let mut fields = Reader::new(frame.flexible, "shape fields");
     let mut text = if frame.fields.contains(0) {
-        let mut text_metadata = metadata.clone();
-        text_metadata.bbox = geometry_bbox;
-        text_metadata.rotation_degrees = Some(f64::from(rotation_degrees));
-        let decoded = parse_shape_text(&mut fields, limits, text_metadata)?;
+        let placement = ObjectPlacement {
+            bbox: geometry_bbox,
+            rotation_degrees: Some(f64::from(rotation_degrees)),
+        };
+        let decoded = parse_shape_text(&mut fields, limits, placement)?;
         unsupported.extend(decoded.unsupported);
         Some(Box::new(decoded.text_box))
     } else {

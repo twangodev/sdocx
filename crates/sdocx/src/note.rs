@@ -1,6 +1,7 @@
 use crate::binary::Reader;
 use crate::error::{Error, Result};
 use crate::frame::{Frame, Mask};
+use crate::object::ObjectPlacement;
 use crate::table::{TableRecord, read_column_widths, read_sized_border};
 use crate::types::{
     BoundingBox, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, ObjectType, RichTextBox,
@@ -286,7 +287,7 @@ fn parse_text_frames(
     {
         unsupported.push("shape-text extension fields");
     }
-    let mut decoded = finish_shape_text(common, object_base, unsupported);
+    let mut decoded = finish_shape_text(common, object_base.placement(), unsupported);
     decoded.text_box.text_area_type = text_area_type;
     Ok(decoded)
 }
@@ -294,7 +295,7 @@ fn parse_text_frames(
 pub(crate) fn parse_shape_text(
     reader: &mut Reader<'_>,
     limits: &ParseLimits,
-    metadata: ObjectMetadata,
+    placement: ObjectPlacement,
 ) -> Result<DecodedTextBox> {
     check_limit(
         "rich-text object nesting depth",
@@ -302,12 +303,12 @@ pub(crate) fn parse_shape_text(
         1,
     )?;
     let common = parse_text_common(reader, limits, "shape text", 0)?;
-    Ok(finish_shape_text(common, metadata, Vec::new()))
+    Ok(finish_shape_text(common, placement, Vec::new()))
 }
 
 fn finish_shape_text(
     common: TextCommon,
-    object_base: ObjectMetadata,
+    placement: ObjectPlacement,
     mut unsupported: Vec<&'static str>,
 ) -> DecodedTextBox {
     if common.has_extensions {
@@ -335,7 +336,7 @@ fn finish_shape_text(
         unsupported.push("unsupported embedded text objects");
     }
     DecodedTextBox {
-        text_box: common.into_rich_text_box(object_base),
+        text_box: common.into_rich_text_box(placement),
         unsupported,
     }
 }
@@ -382,7 +383,7 @@ impl TextLoadContext {
 }
 
 impl TextCommon {
-    fn into_rich_text_box(self, object_base: ObjectMetadata) -> RichTextBox {
+    fn into_rich_text_box(self, placement: ObjectPlacement) -> RichTextBox {
         let index = crate::text_index::TextIndex::new(&self.text);
         let mut runs = Vec::new();
         for span in &self.spans {
@@ -432,8 +433,8 @@ impl TextCommon {
 
         RichTextBox {
             text_area_type: None,
-            bbox: object_base.bbox,
-            rotation_degrees: object_base.rotation_degrees,
+            bbox: placement.bbox,
+            rotation_degrees: placement.rotation_degrees,
             text: self.text,
             color,
             highlight_color,
@@ -1564,7 +1565,8 @@ mod tests {
                 &object_base_frame(),
                 "test base",
             ))
-            .unwrap(),
+            .unwrap()
+            .placement(),
         );
 
         assert_eq!(box_.text, text);

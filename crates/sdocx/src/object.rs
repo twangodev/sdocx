@@ -40,7 +40,20 @@ pub enum ObjectResizeMode {
     Other(u8),
 }
 
+#[derive(Clone, Copy)]
+pub(crate) struct ObjectPlacement {
+    pub(crate) bbox: BoundingBox,
+    pub(crate) rotation_degrees: Option<f64>,
+}
+
 impl ObjectMetadata {
+    pub(crate) fn placement(&self) -> ObjectPlacement {
+        ObjectPlacement {
+            bbox: self.bbox,
+            rotation_degrees: self.rotation_degrees,
+        }
+    }
+
     pub const fn resize_mode(&self) -> ObjectResizeMode {
         match self.resize_mode_raw {
             0 => ObjectResizeMode::Free,
