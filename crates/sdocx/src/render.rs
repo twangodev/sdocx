@@ -3423,6 +3423,65 @@ fn try_render_simplebrush_profile(
     StrokeDispatch::Fallback
 }
 
+fn try_render_marker_output_profile(
+    svg: &mut Scene,
+    stroke: &Stroke,
+    paint: &crate::PreparedStroke<'_>,
+    policy: &BrushPolicy<'_>,
+    budgets: &RenderBudgets,
+) -> StrokeDispatch {
+    let marker3_output_scale = policy.options.marker3_output_scale;
+    let marker2_output_scale = policy.options.marker2_output_scale;
+    let marker2_remaining_vertices = &budgets.marker2_remaining_vertices;
+    if marker2_output_scale == Some(2)
+        && paint.profile == Some("Marker2")
+        && stroke.points.len() >= 2
+        && stroke
+            .points
+            .iter()
+            .all(|p| p.x.is_finite() && p.y.is_finite() && p.x.abs() <= 256.0 && p.y.abs() <= 256.0)
+        && stroke.rendering.as_ref().is_some_and(|r| {
+            r.tool_type_raw == 2
+                && r.advanced_settings.as_deref() == Some("")
+                && r.properties.compressed
+                && r.style.stroke_type_raw == Some(0)
+        })
+        && paint.dot_radii.as_ref().is_some_and(|r| {
+            !r.is_empty()
+                && (r.iter().all(|&radius| radius == 1.0) || r.iter().all(|&radius| radius == 1.5))
+        })
+        && marker2_scale::render(
+            svg,
+            paint,
+            Marker3OutputScale::Two,
+            marker2_remaining_vertices,
+        )
+    {
+        return StrokeDispatch::Handled;
+    }
+    if matches!(paint.profile, Some("Marker3" | "StraightMarker"))
+        && stroke.rendering.as_ref().is_some_and(|rendering| {
+            (rendering.tool_type_raw == 2
+                || (rendering.tool_type_raw == 1
+                    && (marker3_output_scale == Some(Marker3OutputScale::One)
+                        || marker3_output_scale == Some(Marker3OutputScale::Two)
+                        || marker3_output_scale == Some(Marker3OutputScale::Four))))
+                && matches!(
+                    rendering.pen_name.as_deref(),
+                    Some(
+                        "com.samsung.android.sdk.pen.pen.preload.Marker3"
+                            | "com.samsung.android.sdk.pen.pen.preload.StraightMarker"
+                    )
+                )
+        })
+        && let Some(profile) = marker3_output_scale
+        && marker3_scale::render(svg, paint, profile)
+    {
+        return StrokeDispatch::Handled;
+    }
+    StrokeDispatch::Fallback
+}
+
 #[allow(clippy::too_many_arguments)]
 fn render_stroke(
     svg: &mut Scene,
@@ -3443,9 +3502,6 @@ fn render_stroke(
     let fountain_v16_output_scale_profile = policy.options.fountain_v16_output_scale_profile;
     let fountain_v14_output_scale_profile = policy.options.fountain_v14_output_scale_profile;
     let defaultpen_output_scale = policy.options.defaultpen_output_scale;
-    let marker3_output_scale = policy.options.marker3_output_scale;
-    let marker2_output_scale = policy.options.marker2_output_scale;
-    let marker2_remaining_vertices = &budgets.marker2_remaining_vertices;
     let magicpen_output_scale = policy.options.magicpen_output_scale;
     let magicpen_host_minimum_dot_grid = policy.options.magicpen_host_minimum_dot_grid;
     let old_pencil_svg_profile = policy.options.old_pencil_svg_profile;
@@ -3706,52 +3762,8 @@ fn render_stroke(
     if native_allowed
         && replay_index.is_none()
         && slice.is_none()
-        && marker2_output_scale == Some(2)
-        && paint.profile == Some("Marker2")
-        && stroke.points.len() >= 2
-        && stroke
-            .points
-            .iter()
-            .all(|p| p.x.is_finite() && p.y.is_finite() && p.x.abs() <= 256.0 && p.y.abs() <= 256.0)
-        && stroke.rendering.as_ref().is_some_and(|r| {
-            r.tool_type_raw == 2
-                && r.advanced_settings.as_deref() == Some("")
-                && r.properties.compressed
-                && r.style.stroke_type_raw == Some(0)
-        })
-        && paint.dot_radii.as_ref().is_some_and(|r| {
-            !r.is_empty()
-                && (r.iter().all(|&radius| radius == 1.0) || r.iter().all(|&radius| radius == 1.5))
-        })
-        && marker2_scale::render(
-            svg,
-            &paint,
-            Marker3OutputScale::Two,
-            marker2_remaining_vertices,
-        )
-    {
-        return;
-    }
-    if native_allowed
-        && replay_index.is_none()
-        && slice.is_none()
-        && matches!(paint.profile, Some("Marker3" | "StraightMarker"))
-        && stroke.rendering.as_ref().is_some_and(|rendering| {
-            (rendering.tool_type_raw == 2
-                || (rendering.tool_type_raw == 1
-                    && (marker3_output_scale == Some(Marker3OutputScale::One)
-                        || marker3_output_scale == Some(Marker3OutputScale::Two)
-                        || marker3_output_scale == Some(Marker3OutputScale::Four))))
-                && matches!(
-                    rendering.pen_name.as_deref(),
-                    Some(
-                        "com.samsung.android.sdk.pen.pen.preload.Marker3"
-                            | "com.samsung.android.sdk.pen.pen.preload.StraightMarker"
-                    )
-                )
-        })
-        && let Some(profile) = marker3_output_scale
-        && marker3_scale::render(svg, &paint, profile)
+        && try_render_marker_output_profile(svg, stroke, &paint, policy, budgets)
+            == StrokeDispatch::Handled
     {
         return;
     }
