@@ -462,11 +462,11 @@ pub(in crate::render) fn render_measured_line(
         }
         let intervals = line.placements[first..last].iter().map(|placement| {
             let start = x + placement.x;
-            (
-                placement.visual_rank,
-                start,
-                start + placement.cluster.advance + placement.extra_advance,
-            )
+            DecorationInterval {
+                last_visual_rank: placement.visual_rank,
+                start_x: start,
+                end_x: start + placement.cluster.advance + placement.extra_advance,
+            }
         });
         render_decoration_intervals(svg, &style, baseline, intervals);
     }
@@ -755,11 +755,11 @@ fn render_retained_decorations(
             }
             let position = line.text_position(index, true).unwrap();
             let start = x + position.x;
-            intervals.push((
-                position.visual_rank,
-                start,
-                start + placement.cluster.advance + position.extra_advance,
-            ));
+            intervals.push(DecorationInterval {
+                last_visual_rank: position.visual_rank,
+                start_x: start,
+                end_x: start + placement.cluster.advance + position.extra_advance,
+            });
             index += 1;
         }
         render_decoration_intervals(svg, &style, baseline, intervals);
@@ -775,27 +775,34 @@ fn same_decoration_style(left: &TextStyle, right: &TextStyle) -> bool {
         && left.strikethrough == right.strikethrough
 }
 
+struct DecorationInterval {
+    last_visual_rank: usize,
+    start_x: f64,
+    end_x: f64,
+}
+
 fn render_decoration_intervals(
     svg: &mut Scene,
     style: &TextStyle,
     baseline: f64,
-    intervals: impl IntoIterator<Item = (usize, f64, f64)>,
+    intervals: impl IntoIterator<Item = DecorationInterval>,
 ) {
     let mut intervals = intervals
         .into_iter()
-        .filter(|&(_, start, end)| end > start)
+        .filter(|interval| interval.end_x > interval.start_x)
         .collect::<Vec<_>>();
-    intervals.sort_unstable_by_key(|&(rank, _, _)| rank);
-    let mut joined: Vec<(usize, f64, f64)> = Vec::new();
-    for (rank, start, end) in intervals {
+    intervals.sort_unstable_by_key(|interval| interval.last_visual_rank);
+    let mut joined: Vec<DecorationInterval> = Vec::new();
+    for interval in intervals {
         if let Some(previous) = joined.last_mut()
-            && (rank == previous.0 + 1 || start <= previous.2)
+            && (interval.last_visual_rank == previous.last_visual_rank + 1
+                || interval.start_x <= previous.end_x)
         {
-            previous.0 = rank;
-            previous.1 = previous.1.min(start);
-            previous.2 = previous.2.max(end);
+            previous.last_visual_rank = interval.last_visual_rank;
+            previous.start_x = previous.start_x.min(interval.start_x);
+            previous.end_x = previous.end_x.max(interval.end_x);
         } else {
-            joined.push((rank, start, end));
+            joined.push(interval);
         }
     }
     let thickness = style.font_size * f64::from(1.0_f32 / 18.0);
@@ -806,12 +813,12 @@ fn render_decoration_intervals(
     .into_iter()
     .flatten()
     {
-        for &(_, start, end) in &joined {
+        for interval in &joined {
             svg.push(
                 Rectangle::new()
-                    .x(decimal(start, 5))
+                    .x(decimal(interval.start_x, 5))
                     .y(decimal(baseline + style.font_size * offset, 5))
-                    .width(decimal((end - start).max(0.0), 5))
+                    .width(decimal((interval.end_x - interval.start_x).max(0.0), 5))
                     .height(decimal(thickness, 5))
                     .fill(Paint::from_hex(&style.color)),
             );
