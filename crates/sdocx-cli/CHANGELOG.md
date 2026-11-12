@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0](https://github.com/twangodev/sdocx/compare/sdocx-cli-v1.0.1...sdocx-cli-v1.1.0) (2026-11-12)
+
+
+### Features
+
+* **cli:** expose explicit Marker2 2x export profile ([5fab5a2](https://github.com/twangodev/sdocx/commit/5fab5a27b9d7e2284dc6f921947e6cec91a360a5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 1.1.0 to 1.2.0
+
 ## [1.0.1](https://github.com/twangodev/sdocx/compare/sdocx-cli-v1.0.0...sdocx-cli-v1.0.1) (2026-10-09)
 
 
