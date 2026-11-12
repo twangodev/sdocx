@@ -62,6 +62,7 @@ jobs:
     needs: [setup, fmt, clippy, msrv]
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include: ${{ fromJson(needs.setup.outputs.targets) }}
     steps:
