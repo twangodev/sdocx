@@ -265,7 +265,7 @@ pub(super) type InkHook<'a> = dyn FnMut(&usvg::Group, &mut Surface<'_>) -> Resul
 
 impl SurfaceExt for Surface<'_> {
     fn draw_svg(&mut self, tree: &Tree, size: Size, svg_settings: SvgSettings) -> Option<()> {
-        draw_svg(self, tree, size, svg_settings, None, None, None).ok()
+        draw_svg(self, tree, size, svg_settings, None, None).ok()
     }
 
     #[cfg(test)]
@@ -276,7 +276,7 @@ impl SurfaceExt for Surface<'_> {
         svg_settings: SvgSettings,
         hook: &mut TextHook<'_>,
     ) -> Result<(), SvgError> {
-        draw_svg(self, tree, size, svg_settings, Some(hook), None, None)
+        draw_svg(self, tree, size, svg_settings, Some(hook), None)
     }
 
     fn draw_svg_with_text_and_ink(
@@ -294,8 +294,10 @@ impl SurfaceExt for Surface<'_> {
             size,
             svg_settings,
             Some(text_hook),
-            Some(ink_ids),
-            Some(ink_hook),
+            Some(NativeInkHook {
+                ids: ink_ids,
+                render: ink_hook,
+            }),
         )
     }
 }
@@ -306,8 +308,7 @@ fn draw_svg<'h, 'o>(
     size: Size,
     svg_settings: SvgSettings,
     hook: Option<&'h mut TextHook<'o>>,
-    ink_ids: Option<&'h std::collections::HashSet<String>>,
-    ink_hook: Option<&'h mut InkHook<'o>>,
+    native_ink: Option<NativeInkHook<'h, 'o>>,
 ) -> Result<(), SvgError> {
     let old_fill = surface.get_fill().cloned();
     let old_stroke = surface.get_stroke().cloned();
@@ -323,7 +324,7 @@ fn draw_svg<'h, 'o>(
             .to_clip_path(),
         &FillRule::NonZero,
     );
-    let result = render_tree_with_text(tree, svg_settings, surface, hook, ink_ids, ink_hook);
+    let result = render_tree_with_text(tree, svg_settings, surface, hook, native_ink);
     surface.pop();
     surface.pop();
 
@@ -333,14 +334,18 @@ fn draw_svg<'h, 'o>(
     result
 }
 
+struct NativeInkHook<'h, 'o> {
+    ids: &'h std::collections::HashSet<String>,
+    render: &'h mut InkHook<'o>,
+}
+
 struct ProcessContext<'a, 'h, 'o> {
     pub(super) fonts: Fonts<'a>,
     svg_settings: SvgSettings,
     cull_viewport: Option<usvg::Rect>,
     cull_candidates: std::collections::HashMap<usize, usvg::Rect>,
     text_hook: Option<&'h mut TextHook<'o>>,
-    ink_ids: Option<&'h std::collections::HashSet<String>>,
-    ink_hook: Option<&'h mut InkHook<'o>>,
+    native_ink: Option<NativeInkHook<'h, 'o>>,
     error: Option<SvgError>,
     reuse_base_transform_safe: bool,
     reuse: group::ReuseCache,
@@ -354,8 +359,7 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
             cull_viewport: None,
             cull_candidates: std::collections::HashMap::new(),
             text_hook: None,
-            ink_ids: None,
-            ink_hook: None,
+            native_ink: None,
             error: None,
             reuse_base_transform_safe: false,
             reuse: Default::default(),
@@ -375,12 +379,14 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
     }
 
     pub(super) fn has_native_ink(&self, group: &usvg::Group) -> bool {
-        self.ink_ids.is_some_and(|ids| ids.contains(group.id()))
+        self.native_ink
+            .as_ref()
+            .is_some_and(|ink| ink.ids.contains(group.id()))
     }
 
     pub(super) fn render_native_ink(&mut self, group: &usvg::Group, surface: &mut Surface<'_>) {
-        if let Some(hook) = self.ink_hook.as_deref_mut() {
-            if let Err(error) = hook(group, surface) {
+        if let Some(ink) = self.native_ink.as_mut() {
+            if let Err(error) = (ink.render)(group, surface) {
                 self.error = Some(SvgError::Ink(error));
             }
         } else {
@@ -424,8 +430,11 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
         {
             return false;
         }
-        let has_custom_painter =
-            self.text_hook.is_some() || self.ink_ids.is_some_and(|ids| !ids.is_empty());
+        let has_custom_painter = self.text_hook.is_some()
+            || self
+                .native_ink
+                .as_ref()
+                .is_some_and(|ink| !ink.ids.is_empty());
         let validates_hidden_content =
             self.svg_settings.reject_images || self.svg_settings.reject_rasterized_filters;
         if (has_custom_painter || validates_hidden_content) && node_contains_mask_or_clip(node) {
@@ -434,9 +443,9 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
         if (self.text_hook.is_some() || validates_hidden_content) && node_contains_text(node) {
             return false;
         }
-        if let Some(ink_ids) = self.ink_ids
-            && !ink_ids.is_empty()
-            && node_contains_native_ink(node, ink_ids)
+        if let Some(ink) = &self.native_ink
+            && !ink.ids.is_empty()
+            && node_contains_native_ink(node, ink.ids)
         {
             return false;
         }
@@ -606,14 +615,12 @@ fn render_tree_with_text<'h, 'o>(
     svg_settings: SvgSettings,
     surface: &mut Surface<'_>,
     hook: Option<&'h mut TextHook<'o>>,
-    ink_ids: Option<&'h std::collections::HashSet<String>>,
-    ink_hook: Option<&'h mut InkHook<'o>>,
+    native_ink: Option<NativeInkHook<'h, 'o>>,
 ) -> Result<(), SvgError> {
     let mut db = tree.fontdb().clone();
     let mut fc = ProcessContext::new(Arc::make_mut(&mut db), svg_settings);
     fc.text_hook = hook;
-    fc.ink_ids = ink_ids;
-    fc.ink_hook = ink_hook;
+    fc.native_ink = native_ink;
     if let Some(viewport) =
         usvg::Rect::from_xywh(0.0, 0.0, tree.size().width(), tree.size().height())
     {
