@@ -139,8 +139,12 @@ impl TextDiagnostics {
         }
         diagnostics
             .ordered
-            .iter()
-            .map(CollectedDiagnostic::diagnostic)
+            .into_iter()
+            .map(|issue| TextDiagnostic {
+                kind: issue.kind,
+                family: issue.family,
+                codepoints: issue.codepoints.into_iter().collect(),
+            })
             .collect()
     }
 
