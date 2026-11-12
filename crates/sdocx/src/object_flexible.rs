@@ -149,10 +149,12 @@ pub enum ObjectBundleValue {
 }
 
 impl ObjectMetadata {
-    pub(crate) fn declares_render_layer(&self) -> bool {
-        self.field_mask
-            .get(RENDER_LAYER_FIELD / 8)
-            .is_some_and(|mask| mask & (1 << (RENDER_LAYER_FIELD % 8)) != 0)
+    pub(crate) fn flexible_source(&self) -> ObjectFlexibleSource<'_> {
+        ObjectFlexibleSource {
+            format_version: self.format_version,
+            field_mask: &self.field_mask,
+            trailing_data: &self.flexible_trailing_data,
+        }
     }
     pub fn flexible_metadata(&self) -> Result<ObjectFlexibleMetadata> {
         self.flexible_metadata_with_limits(&ParseLimits::default())
@@ -162,11 +164,29 @@ impl ObjectMetadata {
         &self,
         limits: &ParseLimits,
     ) -> Result<ObjectFlexibleMetadata> {
-        if self.flexible_trailing_data.len() as u64 > limits.max_entry_size {
+        self.flexible_source().parse(limits)
+    }
+}
+
+pub(crate) struct ObjectFlexibleSource<'a> {
+    pub(crate) format_version: u32,
+    pub(crate) field_mask: &'a [u8],
+    pub(crate) trailing_data: &'a [u8],
+}
+
+impl ObjectFlexibleSource<'_> {
+    pub(crate) fn declares_render_layer(&self) -> bool {
+        self.field_mask
+            .get(RENDER_LAYER_FIELD / 8)
+            .is_some_and(|mask| mask & (1 << (RENDER_LAYER_FIELD % 8)) != 0)
+    }
+
+    pub(crate) fn parse(&self, limits: &ParseLimits) -> Result<ObjectFlexibleMetadata> {
+        if self.trailing_data.len() as u64 > limits.max_entry_size {
             return Err(Error::LimitExceeded {
                 resource: "object metadata size",
                 limit: limits.max_entry_size,
-                actual: self.flexible_trailing_data.len() as u64,
+                actual: self.trailing_data.len() as u64,
             });
         }
         ObjectFlexibleDecoder {
@@ -185,8 +205,8 @@ struct ObjectFlexibleDecoder<'a> {
 }
 
 impl ObjectFlexibleDecoder<'_> {
-    fn parse(&mut self, base: &ObjectMetadata) -> Result<ObjectFlexibleMetadata> {
-        let mut reader = Reader::new(&base.flexible_trailing_data, "object flexible data");
+    fn parse(&mut self, base: &ObjectFlexibleSource<'_>) -> Result<ObjectFlexibleMetadata> {
+        let mut reader = Reader::new(base.trailing_data, "object flexible data");
         let mut metadata = ObjectFlexibleMetadata::default();
         for bit in 1..base.field_mask.len() * 8 {
             if base.field_mask[bit / 8] & (1 << (bit % 8)) == 0 {

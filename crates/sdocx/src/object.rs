@@ -67,7 +67,7 @@ impl ObjectPlacement {
     }
 }
 
-struct ObjectBaseSource<'a> {
+pub(crate) struct ObjectBaseSource<'a> {
     format_version: u32,
     uuid: &'a str,
     modified_time_raw: i64,
@@ -81,7 +81,19 @@ struct ObjectBaseSource<'a> {
 }
 
 impl<'a> ObjectBaseSource<'a> {
-    fn read(reader: &mut Reader<'a>) -> Result<Self> {
+    pub(crate) fn is_visible(&self) -> bool {
+        self.properties.contains(3)
+    }
+
+    pub(crate) fn flexible_source(&self) -> crate::object_flexible::ObjectFlexibleSource<'_> {
+        crate::object_flexible::ObjectFlexibleSource {
+            format_version: self.format_version,
+            field_mask: self.fields.bytes(),
+            trailing_data: self.flexible_trailing_data,
+        }
+    }
+
+    pub(crate) fn read(reader: &mut Reader<'a>) -> Result<Self> {
         let frame = Frame::read(reader)?;
         frame.expect_kind(0)?;
         let mut fixed = Reader::new(frame.fixed, "object base");
@@ -119,7 +131,7 @@ impl<'a> ObjectBaseSource<'a> {
         })
     }
 
-    fn into_owned(self) -> ObjectMetadata {
+    pub(crate) fn into_owned(self) -> ObjectMetadata {
         ObjectMetadata {
             format_version: self.format_version,
             uuid: self.uuid.to_owned(),

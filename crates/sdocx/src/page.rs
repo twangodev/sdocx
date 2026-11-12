@@ -219,9 +219,9 @@ impl PageDecoder<'_, '_> {
                 .payload(data)
                 .ok_or_else(|| Error::Format("object payload is outside its page".into()))?;
             let mut base_reader = Reader::new(payload, "object payload");
-            let mut base = crate::ObjectMetadata::read(&mut base_reader).ok();
+            let mut base = crate::object::ObjectBaseSource::read(&mut base_reader).ok();
             if !matches!(object.object_type, ObjectType::Other(_))
-                && base.as_ref().is_some_and(|base| !base.visible)
+                && base.as_ref().is_some_and(|base| !base.is_visible())
             {
                 self.progress.advance(1 + count_objects(&object.children));
                 continue;
@@ -230,7 +230,7 @@ impl PageDecoder<'_, '_> {
             if object.object_type == ObjectType::Stroke {
                 let decoded = if let Some(base) = base.take() {
                     let frames = Reader::at(payload, base_reader.position(), "stroke object")?;
-                    decode_stroke_after_base(base, frames, self.limits)
+                    decode_stroke_after_base(base.into_owned(), frames, self.limits)
                 } else {
                     decode_stroke(payload, self.limits)
                 };
@@ -357,13 +357,24 @@ impl PageDecoder<'_, '_> {
                 if let PageObjectContent::Container(container) = &mut content {
                     container.append(&mut children);
                 }
-                let metadata_base = base
-                    .as_ref()
-                    .or_else(|| content.as_stroke()?.rendering.as_ref()?.metadata.as_deref());
+                let metadata_base =
+                    base.as_ref()
+                        .map(|base| base.flexible_source())
+                        .or_else(|| {
+                            Some(
+                                content
+                                    .as_stroke()?
+                                    .rendering
+                                    .as_ref()?
+                                    .metadata
+                                    .as_deref()?
+                                    .flexible_source(),
+                            )
+                        });
                 let render_layer = if let Some(base) = metadata_base
                     && base.declares_render_layer()
                 {
-                    let metadata = base.flexible_metadata_with_limits(self.limits)?;
+                    let metadata = base.parse(self.limits)?;
                     metadata.render_layer().unwrap_or_else(|| {
                     self.report.warning(
                         DiagnosticCode::UnresolvedObjectRenderLayer,
