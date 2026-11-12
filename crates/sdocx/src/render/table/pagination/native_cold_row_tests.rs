@@ -96,13 +96,22 @@ impl Case {
             row.min_height = Some(*minimum);
             row.max_height = Some(*maximum);
         }
+        let mut rows = initialize_rows(&source, 0.5).unwrap();
+        assert_eq!(
+            rows.len(),
+            self.pending_gaps.len(),
+            "{}: row gap inputs",
+            self.name
+        );
+        for (row, &gap) in rows.iter_mut().zip(&self.pending_gaps) {
+            row.pending_gap = f64::from(gap);
+        }
         let plan = PreparedTable {
             callback_top: 0.0,
             content_bbox: BoundingBox::default(),
             topology: TableGrid::new(&source).unwrap(),
-            rows: initialize_rows(&source, 0.5).unwrap(),
+            rows,
             measured_bbox: rect([0.0; 4]),
-            pending_gaps: self.pending_gaps.iter().copied().map(f64::from).collect(),
             min_first_page_height: 0.0,
             constraint: ObjectSpanLayoutConstraint::OverPages,
             bands: BandList::default(),
@@ -230,8 +239,9 @@ fn native_cold_rows_measure_raw_cells_and_only_grow_frames() {
                 "{label}"
             );
             assert_eq!(
-                plan.pending_gaps
+                plan.rows
                     .iter()
+                    .map(|row| &row.pending_gap)
                     .map(|v| (*v as f32).to_bits())
                     .collect::<Vec<_>>(),
                 run.pending_gaps

@@ -143,13 +143,21 @@ fn native_row_bottom_compression_uses_owner_bands_and_last_lines() {
             cell.metrics.last_line_bottom = f64::from(bottom.unwrap_or(0.0));
             cell.metrics.measured_height = 300.0;
         }
+        assert_eq!(
+            rows.len(),
+            case.pending_gaps.len(),
+            "{}: row gap inputs",
+            case.name
+        );
+        for (row, &gap) in rows.iter_mut().zip(&case.pending_gaps) {
+            row.pending_gap = f64::from(gap);
+        }
         let mut plan = PreparedTable {
             callback_top: 0.0,
             content_bbox: BoundingBox::default(),
             topology: TableGrid::new(&source).unwrap(),
             measured_bbox: rect([0.0; 4]),
             rows,
-            pending_gaps: case.pending_gaps.into_iter().map(f64::from).collect(),
             min_first_page_height: 0.0,
             constraint: ObjectSpanLayoutConstraint::OverPages,
             bands: BandList::new(case.rectangles.into_iter().map(rect).collect()).unwrap(),
@@ -222,8 +230,9 @@ fn native_row_bottom_compression_uses_owner_bands_and_last_lines() {
                 case.name
             );
             assert_eq!(
-                plan.pending_gaps
+                plan.rows
                     .iter()
+                    .map(|row| &row.pending_gap)
                     .map(|gap| (*gap as f32).to_bits())
                     .collect::<Vec<_>>(),
                 change

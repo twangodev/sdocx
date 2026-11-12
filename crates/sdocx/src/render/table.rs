@@ -50,7 +50,6 @@ pub(super) struct PreparedTable {
     constraint: ObjectSpanLayoutConstraint,
     bands: BandList,
     callback_top: f32,
-    pub pending_gaps: Vec<f64>,
     half_border: f64,
     topology: TableGrid,
 }
@@ -59,7 +58,6 @@ pub(super) struct PreparedTableDrawing {
     pub measured_bbox: BoundingBox,
     pub content_bbox: BoundingBox,
     pub rows: Vec<PreparedTableRow>,
-    pub pending_gaps: Vec<f64>,
     artwork: TableArtworkGeometry,
 }
 
@@ -113,6 +111,7 @@ impl PreparedTable {
 
 pub(super) struct PreparedTableRow {
     pub row_index: usize,
+    pub pending_gap: f64,
     pub cells: Vec<PreparedTableCell>,
 }
 
@@ -314,7 +313,6 @@ fn prepare_table_drawing_with_artwork_source(
             measured_bbox,
             content_bbox,
             rows: prepared.rows,
-            pending_gaps: prepared.pending_gaps,
             artwork,
         })
     })())
@@ -674,7 +672,6 @@ fn prepare_cold_grid(
             x_max: 0.0,
             y_max: 0.0,
         },
-        pending_gaps: vec![0.0; rows.len()],
         rows,
         min_first_page_height: 0.0,
         constraint,
@@ -724,7 +721,11 @@ fn initialize_rows(
             left = right;
         }
         top = bottom;
-        rows.push(PreparedTableRow { row_index, cells });
+        rows.push(PreparedTableRow {
+            row_index,
+            pending_gap: 0.0,
+            cells,
+        });
     }
     Ok(rows)
 }

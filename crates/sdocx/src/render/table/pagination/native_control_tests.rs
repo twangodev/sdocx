@@ -104,8 +104,9 @@ fn assert_state(
         "{label}, frames"
     );
     assert_eq!(
-        plan.pending_gaps
+        plan.rows
             .iter()
+            .map(|row| &row.pending_gap)
             .map(|gap| (*gap as f32).to_bits())
             .collect::<Vec<_>>(),
         gaps.iter().map(|gap| gap.to_bits()).collect::<Vec<_>>(),
@@ -166,13 +167,21 @@ impl Case {
                 0.0
             };
         }
+        assert_eq!(
+            rows.len(),
+            self.pending_gaps.len(),
+            "{}: row gap inputs",
+            self.name
+        );
+        for (row, &gap) in rows.iter_mut().zip(&self.pending_gaps) {
+            row.pending_gap = f64::from(gap);
+        }
         let mut plan = PreparedTable {
             callback_top: 0.0,
             content_bbox: BoundingBox::default(),
             topology: TableGrid::new(&source).unwrap(),
             rows,
             measured_bbox: rect([0.0; 4]),
-            pending_gaps: self.pending_gaps.iter().copied().map(f64::from).collect(),
             min_first_page_height: 0.0,
             constraint: ObjectSpanLayoutConstraint::OverPages,
             bands: BandList::default(),

@@ -10,7 +10,6 @@ pub(in crate::render) struct TablePaint<'a> {
     measured_bbox: BoundingBox,
     content_bbox: BoundingBox,
     rows: &'a [table::PreparedTableRow],
-    pending_gaps: &'a [f64],
     artwork: table::TableArtworkGeometry,
 }
 
@@ -20,7 +19,6 @@ impl<'a> From<&'a table::PreparedTable> for TablePaint<'a> {
             measured_bbox: table.measured_bbox,
             content_bbox: table.content_bbox,
             rows: &table.rows,
-            pending_gaps: &table.pending_gaps,
             artwork: table::TableArtworkGeometry::Cached,
         }
     }
@@ -32,7 +30,6 @@ impl<'a> From<&'a table::PreparedTableDrawing> for TablePaint<'a> {
             measured_bbox: table.measured_bbox,
             content_bbox: table.content_bbox,
             rows: &table.rows,
-            pending_gaps: &table.pending_gaps,
             artwork: table.artwork,
         }
     }
@@ -134,9 +131,9 @@ pub(in crate::render) fn render_table(
             position: table::CellPosition { row, column },
             gap: prepared.as_ref().is_some_and(|prepared| {
                 prepared
-                    .pending_gaps
+                    .rows
                     .get(row + 1)
-                    .is_some_and(|gap| (*gap as f32).abs() > 0.001_f32)
+                    .is_some_and(|row| (row.pending_gap as f32).abs() > 0.001_f32)
             }),
         });
     };

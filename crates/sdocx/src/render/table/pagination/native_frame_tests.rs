@@ -133,7 +133,7 @@ fn native_initialization_and_row_frame_updates_match() {
             [cell.row_span, cell.column_span] = span;
         }
         let half_border = drawable_half_border(&source);
-        let rows = initialize_rows(&source, half_border).unwrap();
+        let mut rows = initialize_rows(&source, half_border).unwrap();
         assert_eq!(
             frame_bits(&rows),
             case.initial_frames
@@ -142,6 +142,15 @@ fn native_initialization_and_row_frame_updates_match() {
                 .collect::<Vec<_>>(),
             "{context}, initialization"
         );
+        assert_eq!(
+            rows.len(),
+            case.pending_gaps.len(),
+            "{}: row gap inputs",
+            case.name
+        );
+        for (row, &gap) in rows.iter_mut().zip(&case.pending_gaps) {
+            row.pending_gap = f64::from(gap);
+        }
         let mut plan = PreparedTable {
             callback_top: 0.0,
             content_bbox: BoundingBox::default(),
@@ -153,7 +162,6 @@ fn native_initialization_and_row_frame_updates_match() {
                 y_max: 0.0,
             },
             rows,
-            pending_gaps: case.pending_gaps.into_iter().map(f64::from).collect(),
             min_first_page_height: 0.0,
             constraint: ObjectSpanLayoutConstraint::OverPages,
             bands: BandList::default(),
@@ -180,8 +188,9 @@ fn native_initialization_and_row_frame_updates_match() {
             );
         }
         assert_eq!(
-            plan.pending_gaps
+            plan.rows
                 .into_iter()
+                .map(|row| row.pending_gap)
                 .map(|gap| (gap as f32).to_bits())
                 .collect::<Vec<_>>(),
             case.final_pending_gaps

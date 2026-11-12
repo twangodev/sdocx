@@ -291,7 +291,7 @@ fn layout_row_using(
             return Ok(false);
         }
         let minimum = plan.first_line_minimum(row_index, table, renderer)?;
-        let pending = plan.pending_gaps[row_index];
+        let pending = plan.rows[row_index].pending_gap;
         if pending > CHANGE_EPSILON {
             let Some(previous) = first_split(plan, row_index - 1)? else {
                 return Ok(false);
@@ -300,7 +300,7 @@ fn layout_row_using(
             if minimum > native_sub(pending, previous_height)? {
                 return Ok(false);
             }
-            plan.pending_gaps[row_index] = 0.0;
+            plan.rows[row_index].pending_gap = 0.0;
             offset_from_row(plan, row_index, -pending)?;
             return Ok(true);
         }
@@ -312,7 +312,7 @@ fn layout_row_using(
         }
         let displacement = first.y_max;
         offset_from_row(plan, row_index, displacement)?;
-        plan.pending_gaps[row_index] = displacement;
+        plan.rows[row_index].pending_gap = displacement;
         update_split(plan, row_index)?;
     }
     for column_index in 0..plan.rows[row_index].cells.len() {
@@ -336,9 +336,9 @@ fn adjust_first_line(
     if row_index == 0 || first_split(plan, row_index)?.is_none() {
         return Ok(());
     }
-    let pending = plan.pending_gaps[row_index];
+    let pending = plan.rows[row_index].pending_gap;
     if pending > CHANGE_EPSILON {
-        plan.pending_gaps[row_index] = 0.0;
+        plan.rows[row_index].pending_gap = 0.0;
         offset_from_row(plan, row_index, -pending)?;
         update_split(plan, row_index)?;
     }
@@ -352,7 +352,7 @@ fn adjust_first_line(
     {
         let displacement = first.y_max;
         offset_from_row(plan, row_index, displacement)?;
-        plan.pending_gaps[row_index] = displacement;
+        plan.rows[row_index].pending_gap = displacement;
         update_split(plan, row_index)?;
     }
     Ok(())
@@ -403,21 +403,21 @@ fn offset_from_row(
     let mut pending_actions = vec![(start, displacement)];
     while let Some((start, mut displacement)) = pending_actions.pop() {
         for row_index in start..plan.rows.len() {
-            let pending = plan.pending_gaps[row_index];
+            let pending = plan.rows[row_index].pending_gap;
             if pending >= FLOAT_EPSILON {
                 if displacement < 0.0 {
-                    plan.pending_gaps[row_index] = 0.0;
+                    plan.rows[row_index].pending_gap = 0.0;
                     pending_actions.push((row_index, displacement));
                     pending_actions.push((row_index, -pending));
                     break;
                 }
                 let remaining = native_sub(pending, displacement)?;
-                plan.pending_gaps[row_index] = remaining;
+                plan.rows[row_index].pending_gap = remaining;
                 if remaining > FLOAT_EPSILON {
                     break;
                 }
                 displacement = -remaining;
-                plan.pending_gaps[row_index] = 0.0;
+                plan.rows[row_index].pending_gap = 0.0;
             }
             for cell in &mut plan.rows[row_index].cells {
                 let old_top = cell.frame.y_min;
@@ -543,18 +543,19 @@ mod tests {
         for (offset, pending, shift) in [(20.0, 40.0, 0.0), (80.0, 0.0, 20.0)] {
             let mut plan = prepared(&grid(&[100.0; 2], &[200.0]));
             let top = plan.rows[0].cells[0].frame.y_min;
-            plan.pending_gaps[0] = 60.0;
+            plan.rows[0].pending_gap = 60.0;
             offset_from_row(&mut plan, 0, offset).unwrap();
-            assert_eq!(plan.pending_gaps[0], pending);
+            assert_eq!(plan.rows[0].pending_gap, pending);
             assert_eq!(plan.rows[0].cells[0].frame.y_min, top + shift);
             assert_eq!(plan.rows[1].cells[0].frame.y_min, top + 100.0 + shift);
         }
         let mut plan = prepared(&grid(&[100.0; 2], &[200.0]));
-        plan.pending_gaps = vec![60.0, 30.0];
+        plan.rows[0].pending_gap = 60.0;
+        plan.rows[1].pending_gap = 30.0;
         offset_from_row(&mut plan, 0, 80.0).unwrap();
         assert_eq!(plan.rows[0].cells[0].frame.y_min, 20.5);
         assert_eq!(plan.rows[1].cells[0].frame.y_min, 100.5);
-        assert_eq!(plan.pending_gaps[1], 10.0);
+        assert_eq!(plan.rows[1].pending_gap, 10.0);
     }
 
     #[test]
@@ -563,9 +564,9 @@ mod tests {
         source.rows[1].cells[0].content.text = "A".into();
         let mut plan = prepared(&source);
         let old_baseline = plan.rows[1].cells[0].layout.lines[0].baseline;
-        plan.pending_gaps[0] = 60.0;
+        plan.rows[0].pending_gap = 60.0;
         offset_from_row(&mut plan, 0, -10.0).unwrap();
-        assert_eq!(plan.pending_gaps[0], 0.0);
+        assert_eq!(plan.rows[0].pending_gap, 0.0);
         assert_eq!(plan.rows[0].cells[0].frame.y_min, -69.5);
         assert_eq!(plan.rows[1].cells[0].frame.y_min, 30.5);
         assert_eq!(
@@ -620,7 +621,7 @@ mod tests {
         assert_eq!(plan.rows[0].cells[0].frame.y_min, 0.5);
         adjust_first_line(&mut plan, 1, &source, &renderer).unwrap();
         assert_eq!(plan.rows[1].cells[0].frame.y_min, 130.5);
-        assert_eq!(plan.pending_gaps[1], 30.0);
+        assert_eq!(plan.rows[1].pending_gap, 30.0);
     }
 
     #[test]
@@ -631,7 +632,7 @@ mod tests {
             plan.rows[0].cells[0].bands = Some(bands(&[(10.0, 30.0)]));
             plan.rows[1].cells[0].bands = Some(bands(&[(10.0, 30.0)]));
             plan.rows[1].cells[0].metrics.measured_height = minimum;
-            plan.pending_gaps[1] = 40.0;
+            plan.rows[1].pending_gap = 40.0;
             plan.bands = bands(&[(110.5, 130.5)]);
             let fonts = crate::fonts::FontBook::default();
             let renderer =
@@ -645,7 +646,7 @@ mod tests {
             )
             .unwrap();
             assert_eq!(plan.rows[1].cells[0].frame.y_min, expected_top);
-            assert_eq!(plan.pending_gaps[1], expected_pending);
+            assert_eq!(plan.rows[1].pending_gap, expected_pending);
             assert_eq!(
                 plan.rows[1].cells[0].bands.as_ref().unwrap().rectangles[0].y_min,
                 10.0

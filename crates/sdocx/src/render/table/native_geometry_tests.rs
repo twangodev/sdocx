@@ -188,7 +188,6 @@ impl Case {
                 y_max: 0.0,
             },
             topology: TableGrid::new(&source).unwrap(),
-            pending_gaps: vec![0.0; rows.len()],
             rows,
             min_first_page_height: 0.0,
             constraint: ObjectSpanLayoutConstraint::OverPages,

@@ -81,8 +81,9 @@ fn assert_state(plan: &PreparedTable, selected: &[usize], state: &State, label: 
         "{label}, frames"
     );
     assert_eq!(
-        plan.pending_gaps
+        plan.rows
             .iter()
+            .map(|row| &row.pending_gap)
             .map(|v| (*v as f32).to_bits())
             .collect::<Vec<_>>(),
         state
@@ -201,7 +202,6 @@ fn native_public_table_lifecycle_matches_composed_rust_phases() {
             topology: TableGrid::new(&source).unwrap(),
             rows: initialize_rows(&source, 0.5).unwrap(),
             measured_bbox: rect([0.0; 4]),
-            pending_gaps: vec![0.0; source.rows.len()],
             min_first_page_height: 0.0,
             constraint: crate::ObjectSpanLayoutConstraint::OverPages,
             bands: BandList::new(case.rectangles.iter().copied().map(rect).collect()).unwrap(),
