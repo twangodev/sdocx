@@ -163,6 +163,25 @@ impl From<u32> for FormulaLabelRelationKind {
     }
 }
 
+pub(crate) struct FormulaResources<'a> {
+    metadata: &'a DocumentMetadata,
+    inferred: std::cell::OnceCell<crate::ArchiveResourceResolver<'a>>,
+}
+
+impl<'a> FormulaResources<'a> {
+    pub(crate) fn new(metadata: &'a DocumentMetadata) -> Self {
+        Self {
+            metadata,
+            inferred: std::cell::OnceCell::new(),
+        }
+    }
+
+    fn inferred(&self) -> &crate::ArchiveResourceResolver<'a> {
+        self.inferred
+            .get_or_init(|| self.metadata.archive_resource_resolver())
+    }
+}
+
 impl FormulaMetadata {
     /// Source stroke entries followed by answer stroke entries in stored order.
     pub(crate) fn into_fallback_strokes(self) -> impl Iterator<Item = FormulaStroke> {
@@ -183,10 +202,11 @@ impl FormulaMetadata {
     /// does not synthesize LaTeX text.
     pub(crate) fn select_render_source<'a>(
         &self,
-        metadata: &'a DocumentMetadata,
+        resources: &FormulaResources<'a>,
         runtime_cache_available: bool,
         bitmap_decodable: Option<bool>,
     ) -> FormulaRenderSelection<'a> {
+        let metadata = resources.metadata;
         if !self.base.visible {
             return FormulaRenderSelection::Hidden;
         }
@@ -231,7 +251,7 @@ impl FormulaMetadata {
             }
             resource
         } else {
-            match metadata.resolve_archive_resource(media_id as u32) {
+            match resources.inferred().resolve(media_id as u32) {
                 Ok(resolved) => resolved.resource,
                 Err(ArchiveResourceError::UnboundId { .. }) => {
                     return FormulaRenderSelection::StrokeFallback;
@@ -736,6 +756,51 @@ mod tests {
     }
 
     #[test]
+    fn formula_resources_prepare_inference_only_after_admission_and_reuse_it() {
+        let mut metadata = media_document();
+        let manifest_resources = FormulaResources::new(&metadata);
+        formula(Some(12)).select_render_source(&manifest_resources, false, Some(true));
+        assert!(manifest_resources.inferred.get().is_none());
+
+        metadata.media_manifest = None;
+        metadata.media_assets[0].name = "media/12@latex.png".into();
+        metadata.archive_resources[0].name = "media/12@latex.png".into();
+        let resources = FormulaResources::new(&metadata);
+        let mut hidden = formula(Some(12));
+        hidden.base.visible = false;
+        assert!(matches!(
+            hidden.select_render_source(&resources, false, Some(true)),
+            FormulaRenderSelection::Hidden
+        ));
+        for id in [None, Some(-1)] {
+            assert!(matches!(
+                formula(id).select_render_source(&resources, false, Some(true)),
+                FormulaRenderSelection::StrokeFallback
+            ));
+        }
+        assert!(resources.inferred.get().is_none());
+        let selected = formula(Some(12)).select_render_source(&resources, false, Some(true));
+        assert!(matches!(
+            selected,
+            FormulaRenderSelection::ImageSelected {
+                resource_name: "media/12@latex.png",
+                data: PNG,
+                ..
+            }
+        ));
+        let prepared = resources.inferred.get().unwrap() as *const _;
+        assert!(matches!(
+            formula(Some(99)).select_render_source(&resources, true, Some(true)),
+            FormulaRenderSelection::StrokeFallback
+        ));
+        assert!(matches!(
+            formula(Some(12)).select_render_source(&resources, true, Some(true)),
+            FormulaRenderSelection::CachedImageSelected { .. }
+        ));
+        assert_eq!(resources.inferred.get().unwrap() as *const _, prepared);
+    }
+
+    #[test]
     fn inferred_formula_image_selection_preserves_identity_and_error_precedence() {
         let formula = formula(Some(12));
         let mut metadata = media_document();
@@ -770,7 +835,11 @@ mod tests {
         cases.push(("unbound", changed, "fallback", "fallback"));
         for (name, metadata, uncached, cached) in cases {
             for (has_cache, expected) in [(false, uncached), (true, cached)] {
-                let selected = formula.select_render_source(&metadata, has_cache, Some(true));
+                let selected = formula.select_render_source(
+                    &FormulaResources::new(&metadata),
+                    has_cache,
+                    Some(true),
+                );
                 let actual = match &selected {
                     FormulaRenderSelection::ImageSelected {
                         resource_name,
@@ -803,7 +872,8 @@ mod tests {
     fn bound_decodable_image_suppresses_both_ink_lists() {
         let formula = formula(Some(12));
         let metadata = media_document();
-        let selected = formula.select_render_source(&metadata, false, Some(true));
+        let selected =
+            formula.select_render_source(&FormulaResources::new(&metadata), false, Some(true));
         match selected {
             FormulaRenderSelection::ImageSelected {
                 resource_name,
@@ -823,14 +893,14 @@ mod tests {
         let formula = formula(Some(12));
         let mut metadata = media_document();
         assert!(matches!(
-            formula.select_render_source(&metadata, false, None),
+            formula.select_render_source(&FormulaResources::new(&metadata), false, None),
             FormulaRenderSelection::ImageSelected { .. }
         ));
 
         metadata.media_assets[0].data = b"png signature is not a bitmap".to_vec();
         assert_eq!(
             fallback_ids(
-                formula.select_render_source(&metadata, false, None),
+                formula.select_render_source(&FormulaResources::new(&metadata), false, None),
                 formula
             ),
             ["source", "hidden", "answer"]
@@ -841,7 +911,7 @@ mod tests {
     fn missing_binding_uses_source_then_answer_lists_in_native_order() {
         let formula = formula(Some(404));
         let metadata = media_document();
-        let selected = formula.select_render_source(&metadata, false, None);
+        let selected = formula.select_render_source(&FormulaResources::new(&metadata), false, None);
         assert_eq!(
             fallback_ids(selected, formula),
             ["source", "hidden", "answer"]
@@ -852,7 +922,8 @@ mod tests {
     fn bitmap_decode_failure_uses_source_then_answer_strokes() {
         let formula = formula(Some(12));
         let metadata = media_document();
-        let selected = formula.select_render_source(&metadata, false, Some(false));
+        let selected =
+            formula.select_render_source(&FormulaResources::new(&metadata), false, Some(false));
         assert_eq!(
             fallback_ids(selected, formula),
             ["source", "hidden", "answer"]
@@ -863,7 +934,7 @@ mod tests {
     fn negative_media_id_uses_source_then_answer_strokes() {
         let formula = formula(Some(-1));
         let metadata = media_document();
-        let selected = formula.select_render_source(&metadata, false, None);
+        let selected = formula.select_render_source(&FormulaResources::new(&metadata), false, None);
         assert_eq!(
             fallback_ids(selected, formula),
             ["source", "hidden", "answer"]
@@ -875,17 +946,17 @@ mod tests {
         let value = formula(Some(12));
         let metadata = manifest_without_file();
         assert!(matches!(
-            value.select_render_source(&metadata, false, None),
+            value.select_render_source(&FormulaResources::new(&metadata), false, None),
             FormulaRenderSelection::StrokeFallback
         ));
         assert!(matches!(
-            value.select_render_source(&metadata, true, None),
+            value.select_render_source(&FormulaResources::new(&metadata), true, None),
             FormulaRenderSelection::CachedImageSelected { .. }
         ));
 
         let unbound = formula(Some(404));
         assert!(matches!(
-            unbound.select_render_source(&metadata, true, None),
+            unbound.select_render_source(&FormulaResources::new(&metadata), true, None),
             FormulaRenderSelection::StrokeFallback
         ));
     }

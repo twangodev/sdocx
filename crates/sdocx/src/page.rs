@@ -60,7 +60,7 @@ pub(crate) fn parse_page(
         limits,
         archive_entry,
         report,
-        document_metadata,
+        formula_resources: crate::formula::FormulaResources::new(document_metadata),
         stroke_resources,
         progress: WorkProgress::new(observer, ProgressStage::Objects, total),
     };
@@ -99,7 +99,7 @@ struct PageDecoder<'a, 'p> {
     limits: &'a ParseLimits,
     archive_entry: &'a str,
     report: &'a mut ParseReport,
-    document_metadata: &'a crate::DocumentMetadata,
+    formula_resources: crate::formula::FormulaResources<'a>,
     stroke_resources: &'a crate::StrokeResources,
     progress: WorkProgress<'p>,
 }
@@ -121,7 +121,7 @@ impl PageDecoder<'_, '_> {
                 )),
                 error => error,
             })?;
-        match formula.select_render_source(self.document_metadata, false, None) {
+        match formula.select_render_source(&self.formula_resources, false, None) {
             crate::formula::FormulaRenderSelection::StrokeFallback => {
                 content = Some(PageObjectContent::Container(
                     formula
@@ -573,7 +573,7 @@ mod provenance_tests {
             limits: &limits,
             archive_entry: "page.page",
             report: &mut report,
-            document_metadata: &document_metadata,
+            formula_resources: crate::formula::FormulaResources::new(&document_metadata),
             stroke_resources: &stroke_resources,
             progress: WorkProgress::new(&mut observer, ProgressStage::Objects, 2),
         };
