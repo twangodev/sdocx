@@ -39,6 +39,20 @@
 		searchInput?.focus();
 	}
 	const hasNotes = $derived(library.snapshot.documents.length > 0);
+	const emptyMessage = $derived.by(() => {
+		if (!hasNotes) return {
+			title: 'Your notes, in one place',
+			detail: 'Import Samsung Notes files to start your library. Files stay in this browser.'
+		};
+		if (library.search) return { title: 'No matching notes', detail: 'Try a different search.' };
+		if (library.source === 'favorites') return {
+			title: 'No favorites yet', detail: 'Favorite a note from its menu to find it here.'
+		};
+		if (library.collectionId) return {
+			title: 'This collection is empty', detail: 'Select notes in your library, then choose Add to.'
+		};
+		return { title: 'No notes yet', detail: 'Imported notes will appear here.' };
+	});
 	const allSelected = $derived(
 		library.visible.length > 0 &&
 			library.visible.every((document) => library.selected.includes(document.id))
@@ -203,28 +217,8 @@
 						>
 							<FilePlus2 size={18} strokeWidth={1.25} />
 						</div>{/if}
-					<h2>
-						{!hasNotes
-							? 'Your notes, in one place'
-							: library.search
-								? 'No matching notes'
-								: library.source === 'favorites'
-									? 'No favorites yet'
-									: library.collectionId
-										? 'This collection is empty'
-										: 'No notes yet'}
-					</h2>
-					<p class="lede">
-						{hasNotes
-							? library.search
-								? 'Try a different search.'
-								: library.source === 'favorites'
-									? 'Favorite a note from its menu to find it here.'
-									: library.collectionId
-										? 'Select notes in your library, then choose Add to.'
-										: 'Imported notes will appear here.'
-							: 'Import Samsung Notes files to start your library. Files stay in this browser.'}
-					</p>
+					<h2>{emptyMessage.title}</h2>
+					<p class="lede">{emptyMessage.detail}</p>
 					{#if library.search}<Button class="mt-4" onclick={clearSearch}>Clear search</Button>{/if}
 					{#if !hasNotes}<Button
 							class="mt-4"
