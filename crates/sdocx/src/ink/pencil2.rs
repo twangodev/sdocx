@@ -857,12 +857,12 @@ mod tests {
         assert_eq!(sha256(expected), desc["sha256"].as_str().unwrap());
         assert_eq!(got.len(), desc["records"].as_u64().unwrap() as usize);
         for (record_index, record) in got.iter().enumerate() {
-            for lane in 0..14 {
+            for (lane, value) in record.lanes.iter().enumerate() {
                 let start = record_index * 56 + lane * 4;
                 let expected_bits =
                     u32::from_le_bytes(expected[start..start + 4].try_into().unwrap());
                 assert_eq!(
-                    record.lanes[lane].to_bits(),
+                    value.to_bits(),
                     expected_bits,
                     "{} record {record_index}, lane {lane}",
                     case["id"]
@@ -890,14 +890,10 @@ mod tests {
         );
         assert_eq!(records.len() * 56, native.len());
         for (index, record) in records.iter().enumerate() {
-            for lane in 0..14 {
+            for (lane, value) in record.lanes.iter().enumerate() {
                 let offset = index * 56 + lane * 4;
                 let expected = u32::from_le_bytes(native[offset..offset + 4].try_into().unwrap());
-                assert_eq!(
-                    record.lanes[lane].to_bits(),
-                    expected,
-                    "record {index}, lane {lane}"
-                );
+                assert_eq!(value.to_bits(), expected, "record {index}, lane {lane}");
             }
         }
         assert!(

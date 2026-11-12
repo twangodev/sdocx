@@ -869,10 +869,16 @@ fn retained_text_ranges(line: &WrappedLine) -> Vec<Range<usize>> {
         };
         let mut start = range.start;
         let mut previous = synthetic_italic(first);
-        for index in first + 1..last {
+        for (index, placement) in line
+            .placements
+            .iter()
+            .enumerate()
+            .take(last)
+            .skip(first + 1)
+        {
             let current = synthetic_italic(index);
             if current != previous {
-                let boundary = line.placements[index].cluster.source.start;
+                let boundary = placement.cluster.source.start;
                 if start < boundary {
                     ranges.push(start..boundary);
                 }

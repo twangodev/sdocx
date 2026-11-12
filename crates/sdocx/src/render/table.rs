@@ -695,7 +695,7 @@ fn initialize_rows(
         let bottom = native_add(top, f64::from(row.height))?;
         let mut left = half_border;
         let mut cells = Vec::with_capacity(row.cells.len());
-        for column_index in 0..row.cells.len() {
+        for (column_index, _) in row.cells.iter().enumerate() {
             let right = native_add(left, f64::from(table.column_widths[column_index]))?;
             let frame = BoundingBox {
                 x_min: left,
