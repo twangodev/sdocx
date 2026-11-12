@@ -35,7 +35,8 @@ pub(super) fn try_render(
 
     let mut stream_builder = surface.stream_builder();
     let mut mask_surface = stream_builder.surface();
-    mask_surface.push_clip_path(&filter_rect.to_clip_path(), &FillRule::NonZero);
+    let filter_path = filter_rect.to_clip_path();
+    mask_surface.push_clip_path(&filter_path, &FillRule::NonZero);
     group::render(source, &mut mask_surface, process_context);
     mask_surface.pop();
     mask_surface.finish();
@@ -52,7 +53,7 @@ pub(super) fn try_render(
     // outside that result, as required by SVG group compositing.
     surface.push_isolated();
     surface.push_transform(&source_group.transform().to_krilla());
-    surface.push_clip_path(&filter_rect.to_clip_path(), &FillRule::NonZero);
+    surface.push_clip_path(&filter_path, &FillRule::NonZero);
     surface.push_opacity(NormalizedF32::new(opacity).unwrap());
     surface.push_mask(Mask::new(mask_stream, MaskType::Luminosity));
     surface.set_fill(Some(Fill {
@@ -60,7 +61,7 @@ pub(super) fn try_render(
         opacity: NormalizedF32::ONE,
         rule: FillRule::NonZero,
     }));
-    surface.draw_path(&filter_rect.to_clip_path());
+    surface.draw_path(&filter_path);
     surface.pop(); // mask
     surface.pop(); // filtered group opacity
     surface.pop(); // filter region clip

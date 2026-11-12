@@ -20,6 +20,8 @@ does not invoke the text callback; the exporter validates retained-text complete
 The unused OpenType SVG-glyph callback and its private convenience entry points
 are omitted.
 
+Clip-rule collection appends into one shared buffer across nested groups and text.
+
 `LICENSE_APACHE`, `LICENSE_MIT`, and `NOTICE.md` are copied from the same commit
 of <https://github.com/LaurenzV/krilla>. Upstream attributes the SVG converter to
 `svg2pdf` under Apache 2.0; its acknowledgement is preserved in `NOTICE.md`.
