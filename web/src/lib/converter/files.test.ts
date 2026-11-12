@@ -1,6 +1,6 @@
 import { strFromU8, unzipSync } from 'fflate';
-import { describe, expect, it } from 'vitest';
-import { createExportManifest, createZip, pageFilename, sanitizeStem, textBytes } from './files';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createExportManifest, createZip, downloadBlob, pageFilename, sanitizeStem, textBytes } from './files';
 
 describe('converter filenames', () => {
 	it('turns untrusted source names into portable download names', () => {
@@ -46,5 +46,55 @@ describe('converter filenames', () => {
 		}
 
 		await expect(createZip(entries())).rejects.toThrow('render failed');
+	});
+});
+
+describe('download URL ownership', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
+	});
+
+	function harness() {
+		vi.useFakeTimers();
+		const anchor = { href: '', download: '', click: vi.fn() };
+		const createAnchor = vi.fn(() => anchor);
+		vi.stubGlobal('document', { createElement: createAnchor });
+		const createUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:download');
+		const revokeUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+		return { anchor, createAnchor, createUrl, revokeUrl };
+	}
+
+	it('starts a download before revoking its URL on the next timer turn', () => {
+		const { anchor, createAnchor, createUrl, revokeUrl } = harness();
+		const blob = new Blob(['download']);
+		downloadBlob(blob, 'note.svg');
+		expect(createUrl).toHaveBeenCalledExactlyOnceWith(blob);
+		expect(createAnchor).toHaveBeenCalledExactlyOnceWith('a');
+		expect(anchor.href).toBe('blob:download');
+		expect(anchor.download).toBe('note.svg');
+		expect(anchor.click).toHaveBeenCalledOnce();
+		expect(revokeUrl).not.toHaveBeenCalled();
+		vi.runOnlyPendingTimers();
+		expect(revokeUrl).toHaveBeenCalledExactlyOnceWith('blob:download');
+	});
+
+	it.each(['setup', 'click'] as const)('releases the URL after %s fails without replacing the original error', (failure) => {
+		const { anchor, createAnchor, revokeUrl } = harness();
+		const expected = new Error(`${failure} failed`);
+		const fail = () => { throw expected; };
+		if (failure === 'setup') createAnchor.mockImplementationOnce(fail);
+		else anchor.click.mockImplementationOnce(fail);
+		let caught: unknown;
+		try {
+			downloadBlob(new Blob(['download']), 'note.svg');
+		} catch (error) {
+			caught = error;
+		}
+		expect(caught).toBe(expected);
+		expect(revokeUrl).not.toHaveBeenCalled();
+		vi.runOnlyPendingTimers();
+		expect(revokeUrl).toHaveBeenCalledExactlyOnceWith('blob:download');
 	});
 });
