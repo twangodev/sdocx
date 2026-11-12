@@ -514,28 +514,39 @@ test.describe('vector replay at high screen density', () => {
 		test.skip(!existsSync(handwriting), 'Local dense fixture required');
 		const errors: string[] = [];
 		page.on('pageerror', error => errors.push(error.message));
-		await page.goto('/');
-		await page.locator('input[type=file]').setInputFiles(handwriting);
-		await page.getByRole('button', { name: 'Debugger', exact: true }).click();
-		await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled({ timeout: 60000 });
-		await page.getByLabel('Replay position').evaluate((input: HTMLInputElement) => {
-			input.value = String(Math.floor(Number(input.max) * 0.9));
-			input.dispatchEvent(new Event('input', { bubbles: true }));
+		const { vector, geometry, initial } = await test.step('Prepare high-density vector replay', async () => {
+			await page.goto('/');
+			await page.locator('input[type=file]').setInputFiles(handwriting);
+			await page.getByRole('button', { name: 'Debugger', exact: true }).click();
+			await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled({ timeout: 60000 });
+			await page.getByLabel('Replay position').evaluate((input: HTMLInputElement) => {
+				input.value = String(Math.floor(Number(input.max) * 0.9));
+				input.dispatchEvent(new Event('input', { bubbles: true }));
+			});
+			const vector = page.locator('[data-replay-overlay] .vector-page > svg');
+			await expect(vector).toHaveAttribute('data-render-version', /.+/);
+			const geometry = await vector.innerHTML();
+			const initial = (await vector.boundingBox())!;
+			return { vector, geometry, initial };
 		});
-		const vector = page.locator('[data-replay-overlay] .vector-page > svg');
-		await expect(vector).toHaveAttribute('data-render-version', /.+/);
-		const geometry = await vector.innerHTML();
-		const initial = (await vector.boundingBox())!;
-		await page.getByRole('button', { name: 'Zoom and page fit', exact: true }).click();
-		await page.getByRole('menuitem', { name: '400%', exact: true }).click();
-		await expect.poll(async () => (await vector.boundingBox())!.width).toBeGreaterThan(initial.width * 4);
-		await page.locator('.canvas-wrap').evaluate(element => { element.scrollTop = 0; element.scrollLeft = 0; });
-		const before = (await vector.boundingBox())!.y;
-		await page.locator('.canvas-wrap').evaluate(element => { element.scrollTop += 450; });
-		await expect.poll(async () => (await vector.boundingBox())!.y).toBeLessThan(before - 400);
-		expect(await vector.innerHTML()).toBe(geometry);
-		await expect(page.locator('[data-replay-overlay] canvas')).toHaveCount(0);
-		await page.screenshot({ path: testInfo.outputPath('zoomed-vector-replay.png') });
+		await test.step('Zoom replay to 400% and verify its size', async () => {
+			await page.getByRole('button', { name: 'Zoom and page fit', exact: true }).click();
+			await page.getByRole('menuitem', { name: '400%', exact: true }).click();
+			await expect.poll(async () => (await vector.boundingBox())!.width).toBeGreaterThan(initial.width * 4);
+		});
+		await test.step('Scroll replay and verify its position', async () => {
+			await page.locator('.canvas-wrap').evaluate(element => { element.scrollTop = 0; element.scrollLeft = 0; });
+			const before = (await vector.boundingBox())!.y;
+			await page.locator('.canvas-wrap').evaluate(element => { element.scrollTop += 450; });
+			await expect.poll(async () => (await vector.boundingBox())!.y).toBeLessThan(before - 400);
+		});
+		await test.step('Verify unchanged vector geometry without a canvas overlay', async () => {
+			expect(await vector.innerHTML()).toBe(geometry);
+			await expect(page.locator('[data-replay-overlay] canvas')).toHaveCount(0);
+		});
+		await test.step('Capture zoomed vector replay', async () => {
+			await page.screenshot({ path: testInfo.outputPath('zoomed-vector-replay.png') });
+		});
 		expect(errors).toEqual([]);
 	});
 });
