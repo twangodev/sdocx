@@ -7,6 +7,7 @@ The Rust test supplies paths.
 """
 
 import base64
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -68,38 +69,35 @@ def rgba_png(pixels: bytes) -> bytes:
     )
 
 
+@contextmanager
+def prepared_pdf_page(pdf_path: Path, prior_png: bytes, scale: int, blank: bool = False):
+    with pymupdf.open(pdf_path) as document:
+        page = document[0]
+        content_id = page.get_contents()[0]
+        content, matches = WHITE_PAGE.subn(b"", document.xref_stream(content_id))
+        assert matches == 1, "the synthetic white page paint must be uniquely identifiable"
+        if blank:
+            content = b""
+        elif scale == 2:
+            # Host projection intervention: scale about GL bottom-left after y flip.
+            content = b"q 2 0 0 2 0 -810 cm\n" + content + b"\nQ\n"
+        document.update_stream(content_id, content)
+        page.insert_image(page.rect, stream=prior_png, overlay=False)
+        yield document, page
+
+
 def render_with_prior(pdf_path: Path, prior_png: bytes, scale: int) -> bytes:
-    document = pymupdf.open(pdf_path)
-    page = document[0]
-    content_id = page.get_contents()[0]
-    content, matches = WHITE_PAGE.subn(b"", document.xref_stream(content_id))
-    assert matches == 1, "the synthetic white page paint must be uniquely identifiable"
-    if scale == 2:
-        # Host projection intervention: scale about GL bottom-left after y flip.
-        content = b"q 2 0 0 2 0 -810 cm\n" + content + b"\nQ\n"
-    document.update_stream(content_id, content)
-    page.insert_image(page.rect, stream=prior_png, overlay=False)
-    pixmap = page.get_pixmap(matrix=pymupdf.Matrix(4 / 3, 4 / 3), alpha=False)
-    assert (pixmap.width, pixmap.height, len(pixmap.samples)) == (WIDTH, HEIGHT, WIDTH * HEIGHT * 3)
-    return pixmap.samples
+    with prepared_pdf_page(pdf_path, prior_png, scale) as (_, page):
+        pixmap = page.get_pixmap(matrix=pymupdf.Matrix(4 / 3, 4 / 3), alpha=False)
+        assert (pixmap.width, pixmap.height, len(pixmap.samples)) == (WIDTH, HEIGHT, WIDTH * HEIGHT * 3)
+        return pixmap.samples
 
 
 def render_with_pdfium(pdf_path: Path, prior_png: bytes, scale: int, blank: bool = False) -> bytes:
     import pypdfium2
 
-    document = pymupdf.open(pdf_path)
-    page = document[0]
-    content_id = page.get_contents()[0]
-    content, matches = WHITE_PAGE.subn(b"", document.xref_stream(content_id))
-    assert matches == 1
-    if blank:
-        content = b""
-    elif scale == 2:
-        content = b"q 2 0 0 2 0 -810 cm\n" + content + b"\nQ\n"
-    document.update_stream(content_id, content)
-    page.insert_image(page.rect, stream=prior_png, overlay=False)
-    pdf_bytes = document.tobytes(garbage=3, deflate=True)
-    document.close()
+    with prepared_pdf_page(pdf_path, prior_png, scale, blank) as (document, _):
+        pdf_bytes = document.tobytes(garbage=3, deflate=True)
     pdf = pypdfium2.PdfDocument(pdf_bytes)
     image = pdf[0].render(scale=4 / 3).to_pil().convert("RGB")
     assert image.size == (WIDTH, HEIGHT)
@@ -147,24 +145,15 @@ def straight_alpha_png(premultiplied: bytes) -> bytes:
 def render_transparent_pdf(pdf_path: Path, prior_png: bytes, scale: int, reader: str, blank: bool = False) -> bytes:
     from PIL import Image
 
-    document = pymupdf.open(pdf_path)
-    page = document[0]
-    content_id = page.get_contents()[0]
-    content, matches = WHITE_PAGE.subn(b"", document.xref_stream(content_id))
-    assert matches == 1
-    if blank:
-        content = b""
-    elif scale == 2:
-        content = b"q 2 0 0 2 0 -810 cm\n" + content + b"\nQ\n"
-    document.update_stream(content_id, content)
-    page.insert_image(page.rect, stream=prior_png, overlay=False)
-    if reader == "mupdf":
-        pixmap = page.get_pixmap(matrix=pymupdf.Matrix(4 / 3, 4 / 3), alpha=True)
-        assert (pixmap.width, pixmap.height, len(pixmap.samples)) == (WIDTH, HEIGHT, RGBA_BYTES)
-        return pixmap.samples
+    with prepared_pdf_page(pdf_path, prior_png, scale, blank) as (document, page):
+        if reader == "mupdf":
+            pixmap = page.get_pixmap(matrix=pymupdf.Matrix(4 / 3, 4 / 3), alpha=True)
+            assert (pixmap.width, pixmap.height, len(pixmap.samples)) == (WIDTH, HEIGHT, RGBA_BYTES)
+            return pixmap.samples
+        pdf_bytes = document.tobytes(garbage=3, deflate=True)
     import pypdfium2
 
-    pdf = pypdfium2.PdfDocument(document.tobytes(garbage=3, deflate=True))
+    pdf = pypdfium2.PdfDocument(pdf_bytes)
     image = pdf[0].render(scale=4 / 3, fill_color=(0, 0, 0, 0), rev_byteorder=True).to_pil()
     assert image.mode == "RGBA" and image.size == (WIDTH, HEIGHT)
     # PDFium supplies straight RGBA; MuPDF and the native frame are premultiplied.
