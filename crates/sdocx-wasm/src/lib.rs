@@ -38,7 +38,6 @@ pub fn parse(bytes: &[u8]) -> Result<JsValue, JsError> {
 pub struct DocumentSession {
     parsed: Option<sdocx::ParsedDocument>,
     layout: Option<sdocx::LayoutDocument>,
-    page_count: usize,
     fonts: sdocx::fonts::FontBook,
     text_cache: RefCell<sdocx::DocumentTextCache>,
     debugger: Option<debugger::Source>,
@@ -63,7 +62,7 @@ impl DocumentSession {
     /// Number of visible pages available for preview or export.
     #[wasm_bindgen(getter)]
     pub fn page_count(&self) -> usize {
-        self.page_count
+        self.layout.as_ref().map_or(0, |layout| layout.pages.len())
     }
 
     /// Return the parsed document, visible layout, media summaries, and diagnostics.
@@ -123,7 +122,7 @@ impl DocumentSession {
             Some(index) => vec![
                 u32::try_from(index).map_err(|_| JsError::new("page index is out of bounds"))?,
             ],
-            None => (0..self.page_count as u32).collect(),
+            None => (0..self.page_count() as u32).collect(),
         };
         self.render_pdf_pages(&indices, color_mode)
     }
@@ -131,7 +130,7 @@ impl DocumentSession {
     /// Resolve a one-based range expression into sorted, unique zero-based indices.
     pub fn resolve_pages(&self, selection: &str) -> Result<Vec<u32>, JsError> {
         self.parsed()?;
-        sdocx::parse_page_selection(selection, self.page_count)
+        sdocx::parse_page_selection(selection, self.page_count())
             .map(|indices| indices.into_iter().map(|index| index as u32).collect())
             .map_err(|error| JsError::new(&error.to_string()))
     }
@@ -236,7 +235,6 @@ impl DocumentSession {
         self.text_cache.get_mut().clear();
         self.parsed = None;
         self.layout = None;
-        self.page_count = 0;
     }
 }
 
@@ -253,13 +251,11 @@ impl DocumentSession {
         let parsed = sdocx::parse_bytes_detailed_with_progress(bytes, &options, observer)
             .map_err(|error| JsError::new(&error.to_string()))?;
         let layout = sdocx::layout_document_with_progress(&parsed.document, observer);
-        let page_count = layout.pages.len();
         observer(sdocx::Progress::pending(sdocx::ProgressStage::Preparing));
         Ok(Self {
             debugger: Some(debugger::Source::new(bytes)?),
             parsed: Some(parsed),
             layout: Some(layout),
-            page_count,
             fonts: sdocx::fonts::FontBook::default(),
             text_cache: RefCell::new(sdocx::DocumentTextCache::default()),
         })
@@ -700,7 +696,6 @@ mod tests {
             gravity: None,
         });
         session.layout = Some(sdocx::layout_document(&parsed.document));
-        session.page_count = session.layout.as_ref().unwrap().pages.len();
         session
     }
 
