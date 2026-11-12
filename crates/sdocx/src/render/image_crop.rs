@@ -95,18 +95,24 @@ pub(crate) fn crop_rgb8_or_rgba8_png(source_bytes: &[u8], crop: [i32; 4]) -> Opt
     if crop_len > MAX_CROP_DECODE_BYTES {
         return None;
     }
-    let mut pixels = Vec::with_capacity(crop_len);
+    let mut destination_byte_offset = 0_usize;
     for y in top..bottom {
         let row_start = y
             .checked_mul(width)?
             .checked_add(left)?
             .checked_mul(bytes_per_pixel)?;
         let row_end = row_start.checked_add(crop_width.checked_mul(bytes_per_pixel)?)?;
-        pixels.extend_from_slice(decoded.get(row_start..row_end)?);
+        let destination_end = destination_byte_offset.checked_add(row_end - row_start)?;
+        decoded.get(row_start..row_end)?;
+        decoded.get(destination_byte_offset..destination_end)?;
+        decoded.copy_within(row_start..row_end, destination_byte_offset);
+        destination_byte_offset = destination_end;
     }
-    if pixels.len() != crop_len {
+    if destination_byte_offset != crop_len {
         return None;
     }
+
+    decoded.truncate(crop_len);
 
     let crop_width = u32::try_from(crop_width).ok()?;
     let crop_height = u32::try_from(crop_height).ok()?;
@@ -124,7 +130,7 @@ pub(crate) fn crop_rgb8_or_rgba8_png(source_bytes: &[u8], crop: [i32; 4]) -> Opt
         if let Some(intent) = metadata.srgb_intent {
             writer.write_chunk(png::chunk::sRGB, &[intent as u8]).ok()?;
         }
-        writer.write_image_data(&pixels).ok()?;
+        writer.write_image_data(&decoded).ok()?;
     }
     Some(encoded)
 }
@@ -311,6 +317,59 @@ mod tests {
         writer.write_image_data(&pixels).unwrap();
         writer.finish().unwrap();
         bytes
+    }
+
+    #[test]
+    fn every_small_rgb_and_rgba_rectangle_preserves_source_pixels() {
+        let (width, height) = (4_usize, 3_usize);
+        for (color, channels) in [(png::ColorType::Rgb, 3), (png::ColorType::Rgba, 4)] {
+            let source: Vec<u8> = (0..width * height * channels)
+                .map(|index| (index * 17 + 13) as u8)
+                .collect();
+            let mut encoded = Vec::new();
+            {
+                let mut encoder = png::Encoder::new(&mut encoded, width as u32, height as u32);
+                encoder.set_color(color);
+                encoder.set_depth(png::BitDepth::Eight);
+                let mut writer = encoder.write_header().unwrap();
+                writer.write_image_data(&source).unwrap();
+                writer.finish().unwrap();
+            }
+            for top in 0..height {
+                for bottom in top + 1..=height {
+                    for left in 0..width {
+                        for right in left + 1..=width {
+                            let crop = [left as i32, top as i32, right as i32, bottom as i32];
+                            let cropped = crop_rgb8_or_rgba8_png(&encoded, crop);
+                            if crop == [0, 0, width as i32, height as i32] {
+                                assert!(cropped.is_none());
+                                continue;
+                            }
+                            let cropped = cropped.unwrap();
+                            let mut reader =
+                                png::Decoder::new(Cursor::new(cropped)).read_info().unwrap();
+                            let mut actual = vec![0; reader.output_buffer_size().unwrap()];
+                            let frame = reader.next_frame(&mut actual).unwrap();
+                            assert_eq!(
+                                (frame.width, frame.height),
+                                ((right - left) as u32, (bottom - top) as u32)
+                            );
+                            assert_eq!(frame.color_type, color);
+                            actual.truncate(frame.buffer_size());
+                            let expected: Vec<u8> = source
+                                .chunks_exact(width * channels)
+                                .skip(top)
+                                .take(bottom - top)
+                                .flat_map(|row| {
+                                    row[left * channels..right * channels].iter().copied()
+                                })
+                                .collect();
+                            assert_eq!(actual, expected, "{color:?} {crop:?}");
+                        }
+                    }
+                }
+            }
+        }
     }
 
     #[test]
