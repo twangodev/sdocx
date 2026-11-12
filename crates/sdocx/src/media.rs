@@ -23,7 +23,7 @@ pub(crate) struct MediaBindings {
 }
 
 impl MediaBindings {
-    pub(crate) fn new(manifest: Option<&MediaManifest>, names: &HashSet<String>) -> Self {
+    pub(crate) fn new(manifest: Option<&MediaManifest>, names: &HashSet<&str>) -> Self {
         let records: Vec<_> = if let Some(manifest) = manifest {
             manifest
                 .entries
@@ -34,12 +34,12 @@ impl MediaBindings {
             names
                 .iter()
                 .filter(|name| name.starts_with("media/"))
-                .filter_map(|name| media_archive_id(name).map(|id| (id, name.clone())))
+                .filter_map(|name| media_archive_id(name).map(|id| (id, (*name).to_owned())))
                 .collect()
         };
         let mut bindings = HashMap::new();
         for (id, name) in records {
-            let resolved = if names.contains(&name) {
+            let resolved = if names.contains(name.as_str()) {
                 Ok(name)
             } else {
                 Err(ArchiveResourceError::MissingEntry { id, name })
@@ -75,7 +75,7 @@ impl MediaResolver {
     pub(crate) fn new(
         manifest: Option<&MediaManifest>,
         assets: &[crate::MediaAsset],
-        names: &HashSet<String>,
+        names: &HashSet<&str>,
     ) -> Self {
         let mut bindings = HashMap::new();
         let indexes: HashMap<_, _> = assets

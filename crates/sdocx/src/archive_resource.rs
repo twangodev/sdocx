@@ -78,7 +78,7 @@ impl<'a> ArchiveResourceResolver<'a> {
                 .and_modify(|entry| *entry = None)
                 .or_insert(Some(resource));
         }
-        let names: HashSet<_> = resources.keys().map(|name| (*name).to_owned()).collect();
+        let names: HashSet<_> = resources.keys().copied().collect();
         Self {
             metadata,
             bindings: MediaBindings::new(metadata.media_manifest.as_ref(), &names),

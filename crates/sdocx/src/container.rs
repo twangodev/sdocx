@@ -174,7 +174,7 @@ fn parse_archive_from_reader<R: Read + Seek>(
         .and_then(|resource| resource.data(&metadata.media_assets))
         .map(|bytes| parse_media_manifest_bytes_with_limits(bytes, &options.limits))
         .transpose()?;
-    let archive_names = archive.file_names().map(str::to_owned).collect();
+    let archive_names = archive.file_names().collect();
     let media = MediaResolver::new(
         metadata.media_manifest.as_ref(),
         &metadata.media_assets,
