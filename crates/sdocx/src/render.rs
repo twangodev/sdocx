@@ -4266,6 +4266,19 @@ fn prepare_inkpen2_v9(
     prepare_inkpen2_internal(stroke, profile, theme, None, false)
 }
 
+fn inkpen2_v1_viewport_supported(
+    viewport: (u32, u32),
+    scale: InkPen2V1OutputScale,
+    half_grid: bool,
+) -> bool {
+    matches!(viewport, (1920, 1080) | (1080, 1920))
+        || (matches!(viewport, (1440, 2560) | (2560, 1440))
+            && (matches!(
+                scale,
+                InkPen2V1OutputScale::One | InkPen2V1OutputScale::Double
+            ) || half_grid && scale == InkPen2V1OutputScale::Half))
+}
+
 fn prepare_inkpen2_internal(
     stroke: &Stroke,
     profile: Option<InkPen2RenderProfile>,
@@ -4301,16 +4314,12 @@ fn prepare_inkpen2_internal(
         Some("") => !active_rainbow && rendering.style.color_type_raw.unwrap_or(0) == 0,
         _ => false,
     };
-    let unsupported_v1 = v1_scale.is_some()
-        && (!matches!(
+    let unsupported_v1 = v1_scale.is_some_and(|scale| {
+        !inkpen2_v1_viewport_supported(
             (profile.screen_width, profile.screen_height),
-            (1920, 1080) | (1080, 1920)
-        ) && !(matches!((profile.screen_width, profile.screen_height), (1440, 2560) | (2560, 1440))
-            && matches!(
-                v1_scale,
-                Some(InkPen2V1OutputScale::One | InkPen2V1OutputScale::Double)
-            ) || half_grid && matches!((profile.screen_width, profile.screen_height), (1440, 2560) | (2560, 1440)) && v1_scale == Some(InkPen2V1OutputScale::Half))
-            || profile.enhanced_antialias
+            scale,
+            half_grid,
+        ) || profile.enhanced_antialias
             || !matches!(
                 rendering.pen_name.as_deref(),
                 Some("com.samsung.android.sdk.pen.pen.preload.InkPen2")
@@ -4322,7 +4331,8 @@ fn prepare_inkpen2_internal(
                 && rendering.style.advanced_pen_setting_id.is_some())
             || active_rainbow
             || rendering.style.color_type_raw.unwrap_or(0) != 0
-            || rendering.style.color_argb.is_none());
+            || rendering.style.color_argb.is_none()
+    });
     if unsupported_v1
         || !supported_name
         || !supported_setting
