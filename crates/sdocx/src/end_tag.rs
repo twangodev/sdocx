@@ -211,25 +211,49 @@ fn read_string_units(
     if units == null_sentinel {
         return Ok(None);
     }
-    if u64::from(units) > limits.max_text_characters as u64 {
-        return Err(Error::LimitExceeded {
-            resource: "text characters",
-            limit: limits.max_text_characters as u64,
-            actual: u64::from(units),
-        });
+    reader
+        .read_utf16_units(units as usize, field, limits.max_text_characters)
+        .map(Some)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strings_preserve_null_sentinels_limits_and_invalid_utf16_cursor() {
+        let limits = ParseLimits {
+            max_text_characters: 0,
+            ..ParseLimits::default()
+        };
+        let mut short = Reader::new(&[0xff, 0xff, 99], "end tag");
+        assert_eq!(read_string(&mut short, "name", &limits).unwrap(), None);
+        assert_eq!(short.read_u8("next field").unwrap(), 99);
+        let mut wide = Reader::new(&[99], "end tag");
+        assert_eq!(
+            read_string_units(&mut wide, u32::MAX, u32::MAX, "custom data", &limits).unwrap(),
+            None
+        );
+        assert_eq!(wide.position(), 0);
+        assert!(matches!(
+            read_string_units(&mut wide, u32::MAX - 1, u32::MAX, "custom data", &limits),
+            Err(Error::LimitExceeded {
+                resource: "text characters",
+                limit: 0,
+                actual: 4_294_967_294
+            })
+        ));
+        assert_eq!(wide.position(), 0);
+        assert_eq!(wide.read_u8("next field").unwrap(), 99);
+
+        let mut invalid = Reader::new(&[1, 0, 0, 0xdc, 99], "end tag");
+        assert_eq!(
+            read_string(&mut invalid, "name", &ParseLimits::default())
+                .unwrap_err()
+                .to_string(),
+            "format error: end tag: invalid UTF-16 in name"
+        );
+        assert_eq!(invalid.position(), 4);
+        assert_eq!(invalid.read_u8("next field").unwrap(), 99);
     }
-    let byte_count = (units as usize)
-        .checked_mul(2)
-        .ok_or_else(|| Error::Format(format!("end tag: {field} length overflows")))?;
-    let bytes = reader.read_bytes(byte_count, field)?;
-    char::decode_utf16(
-        bytes
-            .as_chunks::<2>()
-            .0
-            .iter()
-            .map(|b| u16::from_le_bytes(*b)),
-    )
-    .collect::<std::result::Result<String, _>>()
-    .map(Some)
-    .map_err(|_| Error::Format(format!("end tag: invalid UTF-16 in {field}")))
 }
