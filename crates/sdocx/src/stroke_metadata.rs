@@ -390,6 +390,17 @@ impl StrokeResources {
         }
     }
 
+    pub(crate) fn from_owned_table(table: crate::NoteStringTable) -> Self {
+        Self {
+            names: table
+                .entries
+                .into_iter()
+                .map(|entry| (entry.id, entry.text))
+                .collect(),
+            complete: true,
+        }
+    }
+
     pub(crate) fn unresolved() -> Self {
         Self {
             names: std::collections::BTreeMap::new(),
@@ -423,5 +434,41 @@ impl StrokeResources {
         {
             self.resolve(&mut child.stroke);
         }
+    }
+}
+
+#[cfg(test)]
+mod resource_tests {
+    use super::StrokeResources;
+    use crate::{NoteStringId, NoteStringTable};
+
+    #[test]
+    fn borrowed_and_owned_tables_preserve_last_duplicate_id_and_completeness() {
+        let table = NoteStringTable {
+            entries: vec![
+                NoteStringId {
+                    id: 7,
+                    text: "replaced".into(),
+                },
+                NoteStringId {
+                    id: 2,
+                    text: "other".into(),
+                },
+                NoteStringId {
+                    id: 7,
+                    text: "last".into(),
+                },
+            ],
+            trailing_data: vec![0xab],
+        };
+        let borrowed = StrokeResources::new(&table);
+        let owned = StrokeResources::from_owned_table(table);
+        assert_eq!(borrowed.names, owned.names);
+        assert_eq!(owned.names.len(), 2);
+        assert_eq!(owned.names.get(&7).map(String::as_str), Some("last"));
+        assert_eq!(owned.names.get(&2).map(String::as_str), Some("other"));
+        assert!(borrowed.is_complete());
+        assert!(owned.is_complete());
+        assert!(!StrokeResources::unresolved().is_complete());
     }
 }

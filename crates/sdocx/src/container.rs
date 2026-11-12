@@ -107,7 +107,7 @@ fn parse_archive_from_reader<R: Read + Seek>(
             Ok(extra) => {
                 metadata.body_font_size_delta = extra.body_font_size_delta;
                 if let Some(table) = extra.string_table {
-                    stroke_resources = crate::StrokeResources::new(&table);
+                    stroke_resources = crate::StrokeResources::from_owned_table(table);
                 }
             }
             Err(_) => stroke_resources = crate::StrokeResources::unresolved(),
