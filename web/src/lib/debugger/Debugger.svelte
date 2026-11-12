@@ -28,7 +28,12 @@
 	import RecordTree from './RecordTree.svelte';
 	import ValueTree from './ValueTree.svelte';
 	import { DebuggerSession } from './session.svelte';
-	import type { DebugPreview, DebugQuery } from './model';
+	import {
+		INTER_STROKE_GAP_MS,
+		SYNTHETIC_SAMPLE_INTERVAL_MS,
+		type DebugPreview,
+		type DebugQuery
+	} from './model';
 	let {
 		session,
 		viewerPage,
@@ -198,10 +203,10 @@
 			oninput={(e) => playback.scrub(Number(e.currentTarget.value))}
 		/>
 		<p>
-			{playback.tracks.length} strokes · 150 ms synthetic gaps{playback.tracks.some(
+			{playback.tracks.length} strokes · {INTER_STROKE_GAP_MS} ms synthetic gaps{playback.tracks.some(
 				(t) => t.synthetic
 			)
-				? ' · unverified timing uses 16 ms/sample'
+				? ` · unverified timing uses ${SYNTHETIC_SAMPLE_INTERVAL_MS} ms/sample`
 				: ''}. Stored order, not edit history.
 		</p>
 	</div>

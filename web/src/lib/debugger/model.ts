@@ -69,6 +69,9 @@ export interface Track {
 	times: number[];
 	synthetic: boolean;
 }
+export const SYNTHETIC_SAMPLE_INTERVAL_MS = 16;
+export const INTER_STROKE_GAP_MS = 150;
+
 export function timeline(strokes: ReplayStroke[]): Track[] {
 	let cursor = 0;
 	return strokes.map(({ offset, stroke, milliseconds }) => {
@@ -77,10 +80,10 @@ export function timeline(strokes: ReplayStroke[]): Track[] {
 			milliseconds &&
 			ts.length === stroke.points.length &&
 			ts.every((t, i) => Number.isFinite(t) && (!i || t >= ts[i - 1]));
-		const times = stroke.points.map((_, i) => (valid ? ts[i] - ts[0] : i * 16));
+		const times = stroke.points.map((_, i) => (valid ? ts[i] - ts[0] : i * SYNTHETIC_SAMPLE_INTERVAL_MS));
 		const start = cursor;
 		const end = start + (times.at(-1) ?? 0);
-		cursor = end + 150;
+		cursor = end + INTER_STROKE_GAP_MS;
 		return { offset, start, end, times, synthetic: !valid };
 	});
 }
