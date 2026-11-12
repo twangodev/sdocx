@@ -99,19 +99,17 @@
 				{#if url}
 					{@const overlay =
 						debugPreview?.pageIndex === index ? debugPreview : null}
+					{@const replaying = !!overlay && overlay.position < (overlay.tracks.at(-1)?.end ?? 0)}
 					<div
 						class="viewer-page relative max-w-full"
 						class:w-full={!zoom.pageFit}
-						class:replaying={overlay &&
-							overlay.position < (overlay.tracks.at(-1)?.end ?? 0)}
+						class:replaying={replaying}
 					>
 						<img
 							use:gesturePreview={{
 								src: url,
 								active: zoom.gestureZoom !== null,
-								suppressed:
-									!!overlay &&
-									overlay.position < (overlay.tracks.at(-1)?.end ?? 0)
+								suppressed: replaying
 							}}
 							data-page-zoom-target
 							class="block border border-black/15 bg-white shadow-[0_8px_24px_rgb(0_0_0_/_0.16)] {zoom.pageFit
