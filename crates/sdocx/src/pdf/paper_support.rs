@@ -1842,11 +1842,13 @@ fn validate_assembly_inputs<'a>(
             index
         };
         let overlay = &overlays[overlay_index];
-        if !overlay.get_pages().contains_key(&number) {
-            return Err(format!("overlay page number {number} is missing"));
-        }
+        let overlay_page_id = overlay
+            .get_pages()
+            .get(&number)
+            .copied()
+            .ok_or_else(|| format!("overlay page number {number} is missing"))?;
         let overlay_page = overlay
-            .get_dictionary(overlay.get_pages()[&number])
+            .get_dictionary(overlay_page_id)
             .map_err(|e| e.to_string())?;
         if matches!(page, OutputPage::Imported { .. }) && overlay_page.has(b"Annots") {
             return Err(
@@ -1861,7 +1863,7 @@ fn validate_assembly_inputs<'a>(
         }
         pages.push(ValidatedAssemblyPage {
             overlay_index,
-            overlay_page_id: overlay.get_pages()[&number],
+            overlay_page_id,
             imported,
         });
     }
