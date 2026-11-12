@@ -1703,8 +1703,10 @@ mod tests {
             screen_resolution: [1920, 1080],
             model_matrix: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
         };
-        let records =
-            super::super::sample_public_stroke(&stroke, context, |y, x| Ok(y.atan2(x))).unwrap();
+        let records = super::super::sample_public_stroke(&stroke, context, |y, x| {
+            Ok(super::super::portable_angle(y, x))
+        })
+        .unwrap();
         let bytes: Vec<u8> = records
             .iter()
             .flatten()
@@ -2004,7 +2006,9 @@ fn nonuniform_source_p4_prefixes_and_feedback() {
         screen_resolution: [1920, 1080],
         model_matrix: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
     };
-    let records = super::sample_public_stroke(&stroke, context, |y, x| Ok(y.atan2(x))).unwrap();
+    let records =
+        super::sample_public_stroke(&stroke, context, |y, x| Ok(super::portable_angle(y, x)))
+            .unwrap();
     let bytes: Vec<u8> = records
         .iter()
         .flatten()
@@ -2146,7 +2150,9 @@ fn independent_nonuniform_source_p4_prefixes_and_feedback() {
         screen_resolution: [1920, 1080],
         model_matrix: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
     };
-    let records = super::sample_public_stroke(&stroke, context, |y, x| Ok(y.atan2(x))).unwrap();
+    let records =
+        super::sample_public_stroke(&stroke, context, |y, x| Ok(super::portable_angle(y, x)))
+            .unwrap();
     let bytes: Vec<u8> = records
         .iter()
         .flatten()
@@ -2311,8 +2317,10 @@ fn oilbrush3_source_model_public_canvas_export() {
         screen_resolution: [1920, 1080],
         model_matrix: [1., 0., 0., 0., 1., 0., 0., 0., 1.],
     };
-    let records =
-        super::sample_public_stroke(&stroke, source_context, |y, x| Ok(y.atan2(x))).unwrap();
+    let records = super::sample_public_stroke(&stroke, source_context, |y, x| {
+        Ok(super::portable_angle(y, x))
+    })
+    .unwrap();
     let bytes: Vec<u8> = records
         .iter()
         .flatten()

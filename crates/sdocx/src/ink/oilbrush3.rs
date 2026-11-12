@@ -53,6 +53,15 @@ struct PublicStrokeContext {
     model_matrix: [f32; 9],
 }
 
+/// Compute the bounded host profile's angle without the platform's atan2f.
+/// Host implementations differ by one ULP on retained native inputs. The
+/// pinned libm f64 calculation rounds once to f32 and matches the captured
+/// oracle and retained source controls; this does not establish general
+/// native math-library or Android parity.
+fn portable_angle(y: f32, x: f32) -> f32 {
+    libm::atan2(f64::from(y), f64::from(x)) as f32
+}
+
 /// Adapt only the pinned OilBrush3 Model setter profile into the sampler.
 /// The explicit host canvas uses this bounded adapter; the synthetic controls
 /// do not establish general serialized-stroke admission.
@@ -414,6 +423,22 @@ mod tests {
 
     fn f32_bits(value: &Value) -> u32 {
         u32::from_str_radix(value.as_str().unwrap().trim_start_matches("0x"), 16).unwrap()
+    }
+
+    #[test]
+    fn portable_angles_match_captured_host_math_bits() {
+        let fixture: Value = serde_json::from_str(FIXTURE).unwrap();
+        let calls = fixture["atan2f_oracle"]["calls"].as_array().unwrap();
+        assert_eq!(calls.len(), 11);
+        for (index, call) in calls.iter().enumerate() {
+            let y = f32::from_bits(f32_bits(&call["s0_y_f32_bits"]));
+            let x = f32::from_bits(f32_bits(&call["s1_x_f32_bits"]));
+            assert_eq!(
+                super::portable_angle(y, x).to_bits(),
+                f32_bits(&call["s0_result_f32_bits"]),
+                "captured atan2f call {index}"
+            );
+        }
     }
 
     fn input_from_fixture(fixture: &Value, case: &Value) -> TestInput {

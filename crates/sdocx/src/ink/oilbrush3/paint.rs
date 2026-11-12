@@ -568,7 +568,8 @@ pub(crate) fn paint_source_with_initial(
         screen_resolution: [1920, 1080],
         model_matrix: [1., 0., 0., 0., 1., 0., 0., 0., 1.],
     };
-    let records = super::sample_public_stroke(stroke, context, |y, x| Ok(y.atan2(x)))?;
+    let records =
+        super::sample_public_stroke(stroke, context, |y, x| Ok(super::portable_angle(y, x)))?;
     if records.len() > 128 {
         return Err("OilBrush3 source profile exceeds the dab limit");
     }
