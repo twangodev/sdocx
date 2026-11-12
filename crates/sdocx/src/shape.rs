@@ -3,7 +3,7 @@ use crate::frame::{Frame, Mask};
 use crate::note::parse_shape_text;
 use crate::object::{ObjectPlacement, read_bbox};
 use crate::shape_paint_source::{
-    ColorPaintSource, ImagePaintSource, PatternPaintSource, ShapePaintSource,
+    ColorPaintRole, ColorPaintSource, ImagePaintSource, PatternPaintSource, ShapePaintSource,
 };
 use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Result, RichTextBox, TextAreaType};
 
@@ -302,7 +302,7 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
         let kind = fields.read_u8("fill kind")?;
         let data = fields.read_bytes(size, "fill effect")?;
         fill = if kind == 1 {
-            let (paint, source) = read_paint(data, false, &mut unsupported)?;
+            let (paint, source) = read_paint(data, ColorPaintRole::Fill, &mut unsupported)?;
             fill_source = source;
             paint
         } else {
@@ -502,8 +502,11 @@ fn read_shape_base_fields(
         unsupported.push("unknown field before outline effects");
     } else {
         if frame.fields.contains(2) {
-            (style.paint, style.paint_source) =
-                read_paint(sized(&mut fields, "line color effect")?, true, unsupported)?;
+            (style.paint, style.paint_source) = read_paint(
+                sized(&mut fields, "line color effect")?,
+                ColorPaintRole::Outline,
+                unsupported,
+            )?;
         }
         if frame.fields.contains(3) {
             let mut effect = Reader::new(sized(&mut fields, "line style effect")?, "line style");
@@ -546,25 +549,29 @@ fn read_shape_base_fields(
 
 fn read_paint(
     data: &[u8],
-    outline: bool,
+    role: ColorPaintRole,
     unsupported: &mut Vec<&'static str>,
 ) -> Result<(ShapePaint, Option<ShapePaintSource>)> {
     let mut reader = Reader::new(data, "shape color effect");
     let properties = Mask::read(&mut reader)?;
     let mut source = ColorPaintSource::read_body(
         &mut reader,
-        outline,
+        role,
         properties.bytes().first().copied().unwrap_or(0),
     )?;
     let kind = source
         .outline_color_type
         .unwrap_or_else(|| u8::from(properties.contains(0)));
-    if properties.has_other_bits(if outline { 1 } else { 3 }) || reader.remaining() != 0 {
+    if properties.has_other_bits(match role {
+        ColorPaintRole::Outline => 1,
+        ColorPaintRole::Fill => 3,
+    }) || reader.remaining() != 0
+    {
         unsupported.push("color effect extensions");
     }
     let paint = match kind {
         0 => ShapePaint::Solid(source.solid_argb),
-        2 if outline => ShapePaint::None,
+        2 if matches!(role, ColorPaintRole::Outline) => ShapePaint::None,
         1 if data.first() == Some(&1)
             && matches!(source.gradient_type, 0 | 1)
             && !source.stops.is_empty() =>

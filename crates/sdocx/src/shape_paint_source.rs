@@ -61,6 +61,12 @@ pub struct ColorPaintSource {
     pub trailing_data: Vec<u8>,
 }
 
+#[derive(Clone, Copy)]
+pub(crate) enum ColorPaintRole {
+    Fill,
+    Outline,
+}
+
 impl ColorPaintSource {
     pub fn gradient_rotatable(&self) -> bool {
         if self.outline_color_type.is_some() {
@@ -72,10 +78,12 @@ impl ColorPaintSource {
 
     pub(crate) fn read_body(
         reader: &mut Reader<'_>,
-        outline: bool,
+        role: ColorPaintRole,
         property_flags: u8,
     ) -> Result<Self> {
-        let outline_color_type = outline.then(|| reader.read_u8("color type")).transpose()?;
+        let outline_color_type = matches!(role, ColorPaintRole::Outline)
+            .then(|| reader.read_u8("color type"))
+            .transpose()?;
         let solid_argb = reader.read_u32("ARGB")?;
         let gradient_type = reader.read_u8("gradient type")?;
         let linear_angle = reader.read_u16("gradient angle")?;
@@ -235,9 +243,12 @@ mod tests {
             0x78, 0x56, 0x34, 0x12, 2, 0xff, 0xff, 0, 0, 0, 0x80, 0x45, 0x23, 0xc1, 0x7f, 1, 0x56,
             0x34, 0x12, 0xaa, 0, 0, 0x80, 0x3f, 0xde, 0xad,
         ];
-        let source =
-            ColorPaintSource::read_body(&mut Reader::new(&bytes, "color body"), false, 0x82)
-                .unwrap();
+        let source = ColorPaintSource::read_body(
+            &mut Reader::new(&bytes, "color body"),
+            ColorPaintRole::Fill,
+            0x82,
+        )
+        .unwrap();
         assert_eq!(source.property_flags, 0x82);
         assert!(source.gradient_rotatable());
         assert_eq!(source.outline_color_type, None);
@@ -254,7 +265,7 @@ mod tests {
         assert!(
             ColorPaintSource::read_body(
                 &mut Reader::new(&bytes[..23], "truncated color body"),
-                false,
+                ColorPaintRole::Fill,
                 0x82
             )
             .is_err()
