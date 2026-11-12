@@ -81,6 +81,10 @@ pub(crate) struct ObjectBaseSource<'a> {
 }
 
 impl<'a> ObjectBaseSource<'a> {
+    pub(crate) fn placement(&self) -> ObjectPlacement {
+        self.placement
+    }
+
     pub(crate) fn uuid(&self) -> &str {
         self.uuid
     }

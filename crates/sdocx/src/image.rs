@@ -1,12 +1,11 @@
 use crate::binary::Reader;
 use crate::frame::Frame;
 use crate::media::MediaResolver;
-use crate::object::read_bbox;
+use crate::object::{ObjectBaseSource, read_bbox};
 use crate::shape::{NativePathCommand, read_shape_style, visit_path};
 use crate::{
-    BoundingBox, DiagnosticCode, Error, ObjectMetadata, ObjectSpanLayoutConstraint,
-    ObjectSpanLayoutOption, ObjectType, ParseReport, PlacedImage, Result, RichTextBox,
-    RichTextObjectContent, ShapePaint,
+    BoundingBox, DiagnosticCode, Error, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption,
+    ObjectType, ParseReport, PlacedImage, Result, RichTextBox, RichTextObjectContent, ShapePaint,
 };
 
 pub(crate) struct DecodedImage {
@@ -117,7 +116,8 @@ fn decode_text_images_in_context(
 
 pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
     let mut reader = Reader::new(data, "image object");
-    let base = ObjectMetadata::read(&mut reader)?;
+    let base = ObjectBaseSource::read(&mut reader)?;
+    let placement = base.placement();
     let shape_base = Frame::read(&mut reader)?;
     shape_base.expect_kind(6)?;
     let shape = Frame::read(&mut reader)?;
@@ -133,13 +133,16 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
     let path_size = fixed.read_u32("shape path size")? as usize;
     let path = fixed.read_bytes(path_size, "shape path")?;
     let rectangular_path = path.is_empty()
-        || (is_placement_rectangle(path, base.bbox, base.rotation_degrees.unwrap_or(0.0))?
-            && matches_placement(geometry_bbox, base.bbox));
+        || (is_placement_rectangle(
+            path,
+            placement.bbox,
+            placement.rotation_degrees.unwrap_or(0.0),
+        )? && matches_placement(geometry_bbox, placement.bbox));
     let point_count = usize::from(fixed.read_u8("control point count")?);
     fixed.skip(point_count * 16, "control points")?;
     let geometry_supported = !(shape_type != 4
         || (shape_rotation != 0.0
-            && f64::from(shape_rotation) != base.rotation_degrees.unwrap_or(0.0))
+            && f64::from(shape_rotation) != placement.rotation_degrees.unwrap_or(0.0))
         || !rectangular_path
         || point_count != 0
         || fixed.remaining() != 0
@@ -186,8 +189,8 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         unsupported.push("additional shape fields");
     }
     let mut image = PlacedImage {
-        bbox: base.bbox,
-        rotation_degrees: base.rotation_degrees,
+        bbox: placement.bbox,
+        rotation_degrees: placement.rotation_degrees,
         media_id,
         media_index: None,
         fill_effect_transparency: 0.0,
@@ -212,7 +215,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
     Ok(DecodedImage {
         image,
         unsupported,
-        visible: base.visible,
+        visible: base.is_visible(),
     })
 }
 
