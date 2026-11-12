@@ -320,6 +320,72 @@ fn unreadable_object_or_layer_metadata_is_unavailable_and_keeps_parent_links_che
 }
 
 #[test]
+fn invalid_geometry_keeps_integrity_unavailable_order_and_stored_parent_links() {
+    let note = note();
+    let mut page = page();
+    let stored = sdocx::parse_stored_page_bytes(&page).unwrap();
+    let parent = &stored.layers.layers[0].objects[0];
+    let child = &parent.children[0];
+    let bbox_offset = parent.payload_offset + 12 + 4 + 2 + "parent".len() + 8;
+    page[bbox_offset..bbox_offset + 8].copy_from_slice(&f64::NAN.to_le_bytes());
+
+    let mut child_base = base("child🖊", i64::MIN);
+    let original_size = child_base.len();
+    child_base[..4].copy_from_slice(&((original_size + 5) as u32).to_le_bytes());
+    child_base[6..10].copy_from_slice(&((original_size + 1) as u32).to_le_bytes());
+    child_base[11] = 1;
+    child_base.insert(12, 1);
+    child_base.extend(f32::INFINITY.to_le_bytes());
+    page[child.payload_offset - 4..child.payload_offset]
+        .copy_from_slice(&(child.declared_size + 5).to_le_bytes());
+    page.splice(
+        child.payload_offset..child.payload_offset + child.payload_size,
+        child_base,
+    );
+    let second_layer = &stored.layers.layers[1];
+    let shifted_header = second_layer.header_offset + 5;
+    page[shifted_header + 4..shifted_header + 8]
+        .copy_from_slice(&(second_layer.metadata_offset + 5).to_le_bytes());
+
+    let parsed = verify(&note, &page, &manifest(&note, &[("page", hash(PAGE_HASH))]));
+    let mut expected = golden_report();
+    expected.objects.matched -= 2;
+    expected.objects.unavailable += 2;
+    assert_eq!(parsed.integrity, Some(expected));
+    let unavailable: Vec<_> = parsed
+        .report
+        .diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.code == DiagnosticCode::IntegrityUnavailable)
+        .map(|diagnostic| {
+            (
+                diagnostic.archive_entry.as_deref(),
+                diagnostic.message.clone(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        unavailable,
+        [
+            (
+                Some("page.page"),
+                format!(
+                    "object at 0x{:x}: format error: non-finite bounding rectangle",
+                    parent.payload_offset
+                )
+            ),
+            (
+                Some("page.page"),
+                format!(
+                    "object at 0x{:x}: format error: non-finite object rotation",
+                    child.payload_offset
+                )
+            ),
+        ]
+    );
+}
+
+#[test]
 fn truncated_or_displaced_page_footers_are_not_accepted_as_hashes() {
     let note = note();
     let page = page();

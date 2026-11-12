@@ -243,10 +243,18 @@ impl StoredObject {
     /// Decode the common type-0 metadata from the original uncompressed page.
     /// Unknown objects without a supported base frame return a format error.
     pub fn base_metadata(&self, page_bytes: &[u8]) -> Result<crate::ObjectMetadata> {
+        self.base_source(page_bytes)
+            .map(crate::object::ObjectBaseSource::into_owned)
+    }
+
+    pub(crate) fn base_source<'a>(
+        &self,
+        page_bytes: &'a [u8],
+    ) -> Result<crate::object::ObjectBaseSource<'a>> {
         let payload = self
             .payload(page_bytes)
             .ok_or_else(|| Error::Format("object payload is outside its page".into()))?;
-        crate::ObjectMetadata::read(&mut Reader::new(payload, "object payload"))
+        crate::object::ObjectBaseSource::read(&mut Reader::new(payload, "object payload"))
     }
 
     /// Borrow this object's payload from its original uncompressed `.page` bytes.

@@ -81,6 +81,14 @@ pub(crate) struct ObjectBaseSource<'a> {
 }
 
 impl<'a> ObjectBaseSource<'a> {
+    pub(crate) fn uuid(&self) -> &str {
+        self.uuid
+    }
+
+    pub(crate) fn modified_time_raw(&self) -> i64 {
+        self.modified_time_raw
+    }
+
     pub(crate) fn is_visible(&self) -> bool {
         self.properties.contains(3)
     }

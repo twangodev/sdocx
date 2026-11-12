@@ -150,13 +150,13 @@ impl IntegrityVerifier {
     ) {
         for object in objects {
             let label = format!("object at 0x{:x}", object.payload_offset);
-            match object.base_metadata(data) {
+            match object.base_source(data) {
                 Ok(metadata) => self.compare(
                     Scope::Object,
                     entry,
                     &label,
                     object.integrity_trailer,
-                    identity_hash(&metadata.uuid, metadata.modified_time_raw),
+                    identity_hash(metadata.uuid(), metadata.modified_time_raw()),
                 ),
                 Err(error) => self.unavailable(Scope::Object, entry, format!("{label}: {error}")),
             }
