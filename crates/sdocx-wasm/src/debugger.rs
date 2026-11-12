@@ -68,7 +68,7 @@ fn index_objects<'a>(objects: &'a [StoredObject], index: &mut HashMap<usize, &'a
     }
 }
 fn nodes(objects: &[StoredObject]) -> Value {
-    value(
+    Value::Array(
         objects
             .iter()
             .map(|o| {
