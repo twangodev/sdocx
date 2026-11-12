@@ -3269,19 +3269,18 @@ impl<'a> GraphCloner<'a> {
                 if let Some(mapped) = self.annotation_objects.get(&(Some(current_page), *id)) {
                     return Ok(Object::Reference(*mapped));
                 }
-                let source_object = self
-                    .source
+                let source = self.source;
+                let source_object = source
                     .objects
                     .get(id)
-                    .ok_or_else(|| format!("missing PDF object {id:?}"))?
-                    .clone();
-                if matches!(&source_object, Object::Array(_)) {
+                    .ok_or_else(|| format!("missing PDF object {id:?}"))?;
+                if matches!(source_object, Object::Array(_)) {
                     let target_id = self.target.new_object_id();
                     self.annotation_objects
                         .insert((Some(current_page), *id), target_id);
                     self.target.objects.insert(target_id, Object::Null);
                     let cloned =
-                        self.clone_annotation_list(&source_object, current_page, depth + 1)?;
+                        self.clone_annotation_list(source_object, current_page, depth + 1)?;
                     self.target.objects.insert(target_id, cloned);
                     Ok(Object::Reference(target_id))
                 } else {
@@ -3323,13 +3322,14 @@ impl<'a> GraphCloner<'a> {
                         if plan.initialized.insert(target_id) {
                             let annotation_page = plan.pages[&target_id];
                             self.target.objects.insert(target_id, Object::Null);
-                            let source = self
-                                .source
-                                .get_object(*id)
-                                .map_err(|e| e.to_string())?
-                                .clone();
-                            let copied =
-                                self.clone_object_at(&source, Some(annotation_page), depth + 1)?;
+                            let source = self.source;
+                            let source_object =
+                                source.get_object(*id).map_err(|e| e.to_string())?;
+                            let copied = self.clone_object_at(
+                                source_object,
+                                Some(annotation_page),
+                                depth + 1,
+                            )?;
                             self.target.objects.insert(target_id, copied);
                         }
                         return Ok(Object::Reference(target_id));
@@ -3393,13 +3393,12 @@ impl<'a> GraphCloner<'a> {
                     self.objects.insert(*id, target_id);
                 }
                 self.target.objects.insert(target_id, Object::Null);
-                let source = self
-                    .source
+                let source = self.source;
+                let source_object = source
                     .objects
                     .get(id)
-                    .ok_or_else(|| format!("missing PDF object {id:?}"))?
-                    .clone();
-                let copied = self.clone_object_at(&source, current_page, depth + 1)?;
+                    .ok_or_else(|| format!("missing PDF object {id:?}"))?;
+                let copied = self.clone_object_at(source_object, current_page, depth + 1)?;
                 self.target.objects.insert(target_id, copied);
                 Ok(Object::Reference(target_id))
             }
