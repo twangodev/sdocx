@@ -185,19 +185,19 @@ impl<'a> Reader<'a> {
 }
 
 fn decode_utf16(bytes: &[u8], context: &'static str, field: &'static str) -> Result<String> {
-    let units = bytes
-        .as_chunks::<2>()
-        .0
-        .iter()
-        .map(|pair| u16::from_le_bytes(*pair))
-        .collect::<Vec<_>>();
-    String::from_utf16(&units)
-        .map_err(|_| Error::Format(format!("{context}: invalid UTF-16 in {field}")))
+    let pairs = bytes.as_chunks::<2>().0;
+    let mut text = String::with_capacity(pairs.len());
+    for character in char::decode_utf16(pairs.iter().map(|pair| u16::from_le_bytes(*pair))) {
+        let character = character
+            .map_err(|_| Error::Format(format!("{context}: invalid UTF-16 in {field}")))?;
+        text.push(character);
+    }
+    Ok(text)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Reader;
+    use super::{Reader, decode_utf16};
 
     #[test]
     fn reports_the_field_and_offset_for_truncated_data() {
@@ -221,5 +221,67 @@ mod tests {
             error.to_string(),
             "format error: test record: invalid UTF-16 in name"
         );
+    }
+
+    #[test]
+    fn utf16_preserves_unicode_and_rejects_unpaired_surrogates() {
+        for expected in ["", "ASCII", "A\0答", "😀", "A😀答\0"] {
+            let bytes: Vec<_> = expected.encode_utf16().flat_map(u16::to_le_bytes).collect();
+            assert_eq!(
+                decode_utf16(&bytes, "text record", "name").unwrap(),
+                expected
+            );
+        }
+        for units in [
+            vec![0xdc00],
+            vec![0xd800],
+            vec![0xd800, 0x0041],
+            vec![0xd800, 0xd800],
+        ] {
+            let bytes: Vec<_> = units.into_iter().flat_map(u16::to_le_bytes).collect();
+            assert_eq!(
+                decode_utf16(&bytes, "text record", "name")
+                    .unwrap_err()
+                    .to_string(),
+                "format error: text record: invalid UTF-16 in name"
+            );
+        }
+    }
+
+    #[test]
+    fn utf16_helper_ignores_incomplete_trailing_unit() {
+        assert_eq!(
+            decode_utf16(&[b'A', 0, 0xff], "text record", "name").unwrap(),
+            "A"
+        );
+    }
+
+    #[test]
+    fn utf16_errors_preserve_limits_payload_offsets_and_cursor_progress() {
+        let mut limited = Reader::new(&[2, 0, 0, 0xd8], "text record");
+        assert!(matches!(
+            limited.read_utf16_u16_with_limit("name", 1),
+            Err(crate::Error::LimitExceeded {
+                resource: "text characters",
+                limit: 1,
+                actual: 2
+            })
+        ));
+        assert_eq!(limited.position(), 2);
+
+        let mut truncated = Reader::new(&[2, 0, 0, 0xd8], "text record");
+        assert_eq!(
+            truncated.read_utf16_u16("name").unwrap_err().to_string(),
+            "format error: text record: truncated name at offset 0x2 (need 4 bytes, have 2)"
+        );
+        assert_eq!(truncated.position(), 2);
+
+        let mut invalid = Reader::new(&[2, 0, 0, 0xd8, b'A', 0, 99], "text record");
+        assert_eq!(
+            invalid.read_utf16_u16("name").unwrap_err().to_string(),
+            "format error: text record: invalid UTF-16 in name"
+        );
+        assert_eq!(invalid.position(), 6);
+        assert_eq!(invalid.read_u8("next field").unwrap(), 99);
     }
 }
