@@ -476,9 +476,9 @@ fn saved_inspection_ranges(
     if ranges[exhausted..].iter().any(Option::is_some) {
         return None;
     }
-    let present = ranges.iter().flatten().collect::<Vec<_>>();
-    if (!body.text.is_empty() && present.iter().all(|range| range.is_empty()))
-        || present.windows(2).any(|pair| pair[0].start > pair[1].start)
+    let present = ranges.iter().flatten();
+    if (!body.text.is_empty() && present.clone().all(|range| range.is_empty()))
+        || !present.is_sorted_by(|previous, next| previous.start <= next.start)
     {
         return None;
     }
