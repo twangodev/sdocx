@@ -444,6 +444,26 @@ pub(crate) fn read_shape_base(
     frame: &Frame<'_>,
     unsupported: &mut Vec<&'static str>,
 ) -> Result<DecodedShapeBase> {
+    let mut source = ShapeBaseSource {
+        magnetic_points: Vec::new(),
+        connection_data: Vec::new(),
+    };
+    let style = read_shape_base_fields(frame, unsupported, Some(&mut source))?;
+    Ok(DecodedShapeBase { style, source })
+}
+
+pub(crate) fn read_shape_style(
+    frame: &Frame<'_>,
+    unsupported: &mut Vec<&'static str>,
+) -> Result<ShapeStyle> {
+    read_shape_base_fields(frame, unsupported, None)
+}
+
+fn read_shape_base_fields(
+    frame: &Frame<'_>,
+    unsupported: &mut Vec<&'static str>,
+    mut source: Option<&mut ShapeBaseSource>,
+) -> Result<ShapeStyle> {
     frame.expect_kind(6)?;
     let mut fixed = Reader::new(frame.fixed, "shape base");
     let magnetic_count = fixed.read_u32("magnetic point count")? as usize;
@@ -454,9 +474,14 @@ pub(crate) fn read_shape_base(
         fixed.read_bytes(point_bytes, "magnetic points")?,
         "magnetic points",
     );
-    let mut magnetic_points = Vec::with_capacity(magnetic_count);
+    if let Some(source) = source.as_mut() {
+        source.magnetic_points = Vec::with_capacity(magnetic_count);
+    }
     for _ in 0..magnetic_count {
-        magnetic_points.push(read_point(&mut points)?);
+        let point = read_point(&mut points)?;
+        if let Some(source) = source.as_mut() {
+            source.magnetic_points.push(point);
+        }
     }
     let connection_data = sized(&mut fixed, "connection block")?;
     let mut connections = Reader::new(connection_data, "shape connections");
@@ -512,13 +537,10 @@ pub(crate) fn read_shape_base(
     if fields.remaining() != 0 || frame.fields.has_other_bits(0x0c) {
         unsupported.push("additional outline fields");
     }
-    Ok(DecodedShapeBase {
-        style,
-        source: ShapeBaseSource {
-            magnetic_points,
-            connection_data: connection_data.to_vec(),
-        },
-    })
+    if let Some(source) = source {
+        source.connection_data = connection_data.to_vec();
+    }
+    Ok(style)
 }
 
 fn read_paint(

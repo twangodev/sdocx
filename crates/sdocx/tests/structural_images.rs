@@ -739,6 +739,21 @@ fn native_image_paths_and_inherited_settings_remain_bounded() {
     }
 }
 
+#[test]
+fn image_outlines_validate_magnetic_points_without_retaining_shape_source() {
+    for (coordinate, value) in [(0, f64::NAN), (1, f64::INFINITY)] {
+        let mut outline = image_outline(2, 0.0);
+        let offset = 17 + 4 + coordinate * 8;
+        outline[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
+        let payload = native_image(0.0, &[], &outline, &fill(7));
+        let bytes = archive(&one_page(vec![object(3, &payload, &[])]), None, &[]);
+        assert!(matches!(
+            sdocx::parse_bytes(&bytes),
+            Err(Error::Format(message)) if message.ends_with(": non-finite shape/line point")
+        ));
+    }
+}
+
 fn embedded_text(text: &str, objects: &[(i32, Vec<u8>)]) -> Vec<u8> {
     let mut common = (text.encode_utf16().count() as u32).to_le_bytes().to_vec();
     common.extend(text.encode_utf16().flat_map(u16::to_le_bytes));

@@ -2,7 +2,7 @@ use crate::binary::Reader;
 use crate::frame::Frame;
 use crate::media::MediaResolver;
 use crate::object::read_bbox;
-use crate::shape::{NativePathCommand, read_shape_base, visit_path};
+use crate::shape::{NativePathCommand, read_shape_style, visit_path};
 use crate::{
     BoundingBox, DiagnosticCode, Error, ObjectMetadata, ObjectSpanLayoutConstraint,
     ObjectSpanLayoutOption, ObjectType, ParseReport, PlacedImage, Result, RichTextBox,
@@ -288,7 +288,7 @@ fn read_image_outline(frame: &Frame<'_>, unsupported: &mut Vec<&'static str>) ->
         }
         return Ok(unsupported.len() == warning_count);
     }
-    let style = read_shape_base(frame, unsupported)?.style;
+    let style = read_shape_style(frame, unsupported)?;
     let invisible = match style.paint {
         ShapePaint::None => true,
         ShapePaint::Solid(argb) => argb >> 24 == 0,
