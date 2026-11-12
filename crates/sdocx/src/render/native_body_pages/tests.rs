@@ -259,13 +259,27 @@ fn parsed_no_band_profile_retains_native_line_and_source_sections() {
                     .collect::<Vec<_>>()
             };
         assert_eq!(
-            serde_json::to_value(section_pairs(&pages.sections.lines)).unwrap(),
+            serde_json::to_value(section_pairs(
+                &pages
+                    .sections
+                    .iter()
+                    .map(|page| page.lines)
+                    .collect::<Vec<_>>()
+            ))
+            .unwrap(),
             expected["line_sections"],
             "{}: lines",
             case["name"]
         );
         assert_eq!(
-            serde_json::to_value(section_pairs(&pages.sections.text)).unwrap(),
+            serde_json::to_value(section_pairs(
+                &pages
+                    .sections
+                    .iter()
+                    .map(|page| page.text)
+                    .collect::<Vec<_>>()
+            ))
+            .unwrap(),
             expected["text_sections"],
             "{}: source",
             case["name"]
@@ -476,7 +490,7 @@ fn parsed_no_band_pdf_reuses_page_selection_and_keeps_empty_pages_empty() {
         let pdf = lopdf::Document::load_mem(&pdf.bytes).unwrap();
         assert_eq!(pdf.get_pages().len(), indices.len());
         let pages = cache.plans[0].1.native_pages.as_ref().unwrap();
-        for (index, source_section) in pages.sections.text.iter().enumerate() {
+        for (index, source_section) in pages.sections.iter().map(|page| &page.text).enumerate() {
             let text = pdf.extract_text(&[index as u32 + 1]).unwrap();
             if source_section.count == 0 {
                 assert!(text.trim().is_empty(), "{name}: page {index}: {text:?}");

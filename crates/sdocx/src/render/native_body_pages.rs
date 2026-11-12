@@ -55,11 +55,10 @@ impl NativeBodyPages {
         let mut sections = NativePageSections::default();
         layout.update_sections(Some(&records), 0, &mut sections)?;
         let pages = sections
-            .lines
             .iter()
-            .copied()
-            .zip(&sections.text)
-            .map(|(section, source)| {
+            .map(|page| {
+                let section = page.lines;
+                let source = &page.text;
                 use NativePageIndexUnavailable::InvalidSource;
                 if section.start == -1 {
                     if section.count != 0 || source.start != -1 || source.count != 0 {

@@ -200,9 +200,8 @@ fn pages(records: &[[i32; 5]]) -> Vec<NativePageRecord> {
         .collect()
 }
 
-fn section_values(sections: &[NativePageSection]) -> Vec<[i32; 2]> {
+fn section_values(sections: impl Iterator<Item = NativePageSection>) -> Vec<[i32; 2]> {
     sections
-        .iter()
         .map(|section| [section.start, section.count])
         .collect()
 }
@@ -241,14 +240,14 @@ fn genuine_measured_lines_produce_native_page_sections() {
                 .update_sections(Some(&pages), stage.first_page, &mut sections)
                 .unwrap();
             assert_eq!(
-                section_values(&sections.lines),
+                section_values(sections.iter().map(|page| page.lines)),
                 stage.line_sections,
                 "{}: line sections rescan {}",
                 case.name,
                 stage.first_page
             );
             assert_eq!(
-                section_values(&sections.text),
+                section_values(sections.iter().map(|page| page.text)),
                 stage.text_sections,
                 "{}: text sections rescan {}",
                 case.name,
@@ -292,10 +291,23 @@ struct KernelLine {
     source_inclusive: [i32; 2],
 }
 
-fn section_inputs(sections: &[[i32; 2]]) -> Vec<NativePageSection> {
-    sections
+fn section_inputs(lines: &[[i32; 2]], text: &[[i32; 2]]) -> NativePageSections {
+    assert_eq!(lines.len(), text.len(), "captured page section lengths");
+    lines
         .iter()
-        .map(|&[start, count]| NativePageSection { start, count })
+        .zip(text)
+        .map(
+            |(&[line_start, line_count], &[text_start, text_count])| NativePageContentSection {
+                lines: NativePageSection {
+                    start: line_start,
+                    count: line_count,
+                },
+                text: NativePageSection {
+                    start: text_start,
+                    count: text_count,
+                },
+            },
+        )
         .collect()
 }
 
@@ -351,11 +363,8 @@ fn bounded_page_kernel_matches_actual_native_predicates_and_mutation() {
             );
             boundaries += 1;
         }
+        let mut sections = section_inputs(&case.initial_line_sections, &case.initial_text_sections);
         if case.indexer_executed {
-            let mut sections = NativePageSections {
-                lines: section_inputs(&case.initial_line_sections),
-                text: section_inputs(&case.initial_text_sections),
-            };
             layout
                 .update_sections(
                     (!case.null_document).then_some(pages.as_slice()),
@@ -364,13 +373,13 @@ fn bounded_page_kernel_matches_actual_native_predicates_and_mutation() {
                 )
                 .unwrap();
             assert_eq!(
-                section_values(&sections.lines),
+                section_values(sections.iter().map(|page| page.lines)),
                 case.line_sections,
                 "{}: line sections",
                 case.name
             );
             assert_eq!(
-                section_values(&sections.text),
+                section_values(sections.iter().map(|page| page.text)),
                 case.text_sections,
                 "{}: text sections",
                 case.name
@@ -403,10 +412,7 @@ fn bounded_layout() -> NativePageLayout {
 }
 
 fn retained_sections() -> NativePageSections {
-    NativePageSections {
-        lines: section_inputs(&[[0, 2], [1, 1], [2, 0]]),
-        text: section_inputs(&[[0, 3], [1, 2], [3, 0]]),
-    }
+    section_inputs(&[[0, 2], [1, 1], [2, 0]], &[[0, 3], [1, 2], [3, 0]])
 }
 
 #[test]
@@ -431,11 +437,11 @@ fn unsupported_page_and_owner_inputs_leave_retained_sections_unchanged() {
             4 => layout.lines[0].background[1] = f32::NAN,
             5 => {
                 first_page = 1;
-                sections.lines[0] = NativePageSection { start: 5, count: 5 };
+                sections[0].lines = NativePageSection { start: 5, count: 5 };
             }
             6 => {
                 first_page = 1;
-                sections.lines[0] = NativePageSection {
+                sections[0].lines = NativePageSection {
                     start: i32::MAX,
                     count: i32::MAX,
                 };

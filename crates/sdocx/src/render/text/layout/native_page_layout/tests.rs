@@ -610,11 +610,17 @@ fn parsed_implicit_default_empty_lines_match_native_paper_profile() {
         };
         let stage = &case["stages"][0];
         assert_eq!(
-            serde_json::to_value(pairs(&sections.lines)).unwrap(),
+            serde_json::to_value(pairs(
+                &sections.iter().map(|page| page.lines).collect::<Vec<_>>()
+            ))
+            .unwrap(),
             stage["line_sections"]
         );
         assert_eq!(
-            serde_json::to_value(pairs(&sections.text)).unwrap(),
+            serde_json::to_value(pairs(
+                &sections.iter().map(|page| page.text).collect::<Vec<_>>()
+            ))
+            .unwrap(),
             stage["text_sections"]
         );
         for boundary in case["boundaries"].as_array().unwrap() {

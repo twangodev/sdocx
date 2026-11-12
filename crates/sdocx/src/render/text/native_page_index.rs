@@ -87,11 +87,20 @@ impl NativePageLineRange {
     }
 }
 
-#[derive(Clone, Default, Debug, PartialEq, Eq)]
-pub(in crate::render) struct NativePageSections {
-    pub lines: Vec<NativePageSection>,
-    pub text: Vec<NativePageSection>,
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(in crate::render) struct NativePageContentSection {
+    pub lines: NativePageSection,
+    pub text: NativePageSection,
 }
+
+impl NativePageContentSection {
+    pub const ABSENT: Self = Self {
+        lines: NativePageSection::ABSENT,
+        text: NativePageSection::ABSENT,
+    };
+}
+
+pub(in crate::render) type NativePageSections = Vec<NativePageContentSection>;
 
 impl NativePageLayout {
     fn background(&self, line: i32) -> [f32; 4] {
@@ -198,9 +207,8 @@ impl NativePageLayout {
         };
         let mut cursor = if first_page > 0 {
             let previous = sections
-                .lines
                 .get(first_page - 1)
-                .copied()
+                .map(|section| section.lines)
                 .unwrap_or(NativePageSection::ABSENT);
             if previous.count < 0 || previous.start < -1 {
                 return Err(Error::InvalidSource);
@@ -217,10 +225,7 @@ impl NativePageLayout {
         if cursor > line_count {
             return Err(Error::InvalidSource);
         }
-        sections
-            .lines
-            .resize(pages.len(), NativePageSection::ABSENT);
-        sections.text.resize(pages.len(), NativePageSection::ABSENT);
+        sections.resize(pages.len(), NativePageContentSection::ABSENT);
         let mut page_index = first_page;
         while page_index < pages.len() && line_count != 0 {
             let page = pages[page_index];
@@ -234,7 +239,7 @@ impl NativePageLayout {
                 end += 1;
             }
             let count = (end - start).max(0);
-            sections.lines[page_index] = NativePageSection { start, count };
+            sections[page_index].lines = NativePageSection { start, count };
             let text_start = if found {
                 if self.text_length_utf16 == 0 {
                     0
@@ -251,7 +256,7 @@ impl NativePageLayout {
                     .wrapping_sub(text_start)
                     .wrapping_add(1)
             };
-            sections.text[page_index] = NativePageSection {
+            sections[page_index].text = NativePageSection {
                 start: text_start,
                 count: text_count,
             };
@@ -265,12 +270,11 @@ impl NativePageLayout {
                 break;
             }
         }
-        for page in page_index..pages.len() {
-            if sections.lines[page] == NativePageSection::ABSENT {
+        for section in sections.iter_mut().skip(page_index) {
+            if section.lines == NativePageSection::ABSENT {
                 break;
             }
-            sections.lines[page] = NativePageSection::ABSENT;
-            sections.text[page] = NativePageSection::ABSENT;
+            *section = NativePageContentSection::ABSENT;
         }
         Ok(())
     }

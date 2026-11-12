@@ -215,11 +215,17 @@ fn parsed_native_indent_paper_certificate_matches_density_three_control() {
                         items.iter().map(|s| [s.start, s.count]).collect::<Vec<_>>()
                     };
                 assert_eq!(
-                    serde_json::to_value(pairs(&sections.lines)).unwrap(),
+                    serde_json::to_value(pairs(
+                        &sections.iter().map(|page| page.lines).collect::<Vec<_>>()
+                    ))
+                    .unwrap(),
                     case["stages"][0]["line_sections"]
                 );
                 assert_eq!(
-                    serde_json::to_value(pairs(&sections.text)).unwrap(),
+                    serde_json::to_value(pairs(
+                        &sections.iter().map(|page| page.text).collect::<Vec<_>>()
+                    ))
+                    .unwrap(),
                     case["stages"][0]["text_sections"]
                 );
             }
