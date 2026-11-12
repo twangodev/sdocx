@@ -856,14 +856,12 @@ impl RichTextSpan {
         let bytes = self.payload.get(12..12_usize.checked_add(byte_length)?)?;
         let custom_data = (!bytes.is_empty())
             .then(|| {
-                bytes
-                    .as_chunks::<2>()
-                    .0
-                    .iter()
-                    .map(|unit| u16::from_le_bytes([unit[0], unit[1]]))
-                    .collect::<Vec<_>>()
+                crate::binary::Reader::new(bytes, "hyperlink span").read_utf16_units(
+                    length,
+                    "target",
+                    usize::MAX,
+                )
             })
-            .map(|units| String::from_utf16(&units))
             .transpose()
             .ok()?;
         Some(RichTextHyperlink {
@@ -1953,6 +1951,44 @@ mod tests {
         assert_eq!(hyperlink.kind, HyperlinkType::Url);
         assert_eq!(hyperlink.date_time_type, 0);
         assert_eq!(hyperlink.custom_data.as_deref(), Some(target));
+    }
+
+    #[test]
+    fn hyperlink_targets_preserve_empty_unicode_and_declared_bounds() {
+        let span = |units: &[u16], declared_length: u32, trailing: &[u8]| {
+            let mut payload = 3_u32.to_le_bytes().to_vec();
+            payload.extend(7_u32.to_le_bytes());
+            payload.extend(declared_length.to_le_bytes());
+            payload.extend(units.iter().flat_map(|unit| unit.to_le_bytes()));
+            payload.extend(trailing);
+            RichTextSpan {
+                kind: RichTextSpanType::Hyperlink,
+                start_utf16: 0,
+                end_utf16: 1,
+                interval_type: crate::SpanIntervalType::from(0),
+                payload,
+            }
+        };
+        let empty = span(&[], 0, &[0, 0xd8]).hyperlink_value().unwrap();
+        assert_eq!(empty.custom_data, None);
+        assert_eq!(empty.date_time_type, 7);
+        let target = "A😀答\0";
+        let units: Vec<_> = target.encode_utf16().collect();
+        let decoded = span(&units, units.len() as u32, &[0, 0xd8])
+            .hyperlink_value()
+            .unwrap();
+        assert_eq!(decoded.kind, HyperlinkType::Url);
+        assert_eq!(decoded.custom_data.as_deref(), Some(target));
+        assert_eq!(decoded.date_time_type, 7);
+        for units in [&[0xd800][..], &[0xdc00], &[0xd800, 0x0041]] {
+            assert!(
+                span(units, units.len() as u32, &[])
+                    .hyperlink_value()
+                    .is_none()
+            );
+        }
+        assert!(span(&[0x0041], 2, &[]).hyperlink_value().is_none());
+        assert!(span(&[], u32::MAX, &[]).hyperlink_value().is_none());
     }
 
     #[test]
