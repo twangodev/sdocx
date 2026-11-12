@@ -335,27 +335,31 @@ pub fn layout_document_with_progress(
         .note_text
         .as_ref()
         .map(|text| TextIndex::new(&text.text));
-    let text_ranges = document
+    let (text_ranges, reflow_body) = document
         .metadata
         .note_text
         .as_ref()
         .zip(text_index.as_ref())
-        .map_or_else(Vec::new, |(text, index)| {
-            inspection_text_ranges(text, index, visible_count)
-        });
+        .map_or_else(
+            || (Vec::new(), None),
+            |(body, index)| match saved_inspection_ranges(body, index, visible_count) {
+                Some(ranges) => (ranges, None),
+                None => (
+                    balanced_line_ranges(&body.text, visible_count)
+                        .into_iter()
+                        .map(Some)
+                        .collect(),
+                    Some(body),
+                ),
+            },
+        );
     let page_heights = document
         .pages
         .iter()
         .take(visible_count)
         .map(|page| f64::from(page.height))
         .collect::<Vec<_>>();
-    let reflow_source = document
-        .metadata
-        .note_text
-        .as_ref()
-        .zip(text_index.as_ref())
-        .filter(|(body, index)| saved_inspection_ranges(body, index, visible_count).is_none())
-        .map(|(body, _)| Arc::new(SourceSnapshot::capture(body)));
+    let reflow_source = reflow_body.map(|body| Arc::new(SourceSnapshot::capture(body)));
     let mut progress =
         crate::progress::WorkProgress::new(observer, crate::ProgressStage::Layout, visible_count);
     let pages = document
