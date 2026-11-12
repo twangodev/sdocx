@@ -48,31 +48,33 @@ export async function svgToPng(svg: string, scale: 1 | 2): Promise<Blob> {
 		source = await imageFromBlob(svgBlob);
 	}
 
-	const width = Math.max(1, Math.round(source.width * scale));
-	const height = Math.max(1, Math.round(source.height * scale));
+	try {
+		const width = Math.max(1, Math.round(source.width * scale));
+		const height = Math.max(1, Math.round(source.height * scale));
 
-	if (typeof OffscreenCanvas !== 'undefined') {
-		const canvas = new OffscreenCanvas(width, height);
+		if (typeof OffscreenCanvas !== 'undefined') {
+			const canvas = new OffscreenCanvas(width, height);
+			const context = canvas.getContext('2d');
+			if (!context) throw new Error('Canvas rendering is unavailable in this browser.');
+			context.drawImage(source, 0, 0, width, height);
+			return canvas.convertToBlob({ type: 'image/png' });
+		}
+
+		const canvas = document.createElement('canvas');
+		canvas.width = width;
+		canvas.height = height;
 		const context = canvas.getContext('2d');
 		if (!context) throw new Error('Canvas rendering is unavailable in this browser.');
 		context.drawImage(source, 0, 0, width, height);
+		return new Promise<Blob>((resolve, reject) => {
+			canvas.toBlob(
+				(blob) => (blob ? resolve(blob) : reject(new Error('PNG encoding failed.'))),
+				'image/png'
+			);
+		});
+	} finally {
 		if ('close' in source && typeof source.close === 'function') source.close();
-		return canvas.convertToBlob({ type: 'image/png' });
 	}
-
-	const canvas = document.createElement('canvas');
-	canvas.width = width;
-	canvas.height = height;
-	const context = canvas.getContext('2d');
-	if (!context) throw new Error('Canvas rendering is unavailable in this browser.');
-	context.drawImage(source, 0, 0, width, height);
-	if ('close' in source && typeof source.close === 'function') source.close();
-	return new Promise<Blob>((resolve, reject) => {
-		canvas.toBlob(
-			(blob) => (blob ? resolve(blob) : reject(new Error('PNG encoding failed.'))),
-			'image/png'
-		);
-	});
 }
 
 export interface ExportManifest {
