@@ -648,17 +648,13 @@ impl InkRasterCanvas {
             return Err(InkRasterError::WorkLimit);
         }
         let (rows, argb) = colored_pencil::prepare_stroke(stroke, pen_data)?;
-        let plan = if let Some(depth) = depth {
-            colored_pencil::raster::prepare_depth(
-                &rows,
-                self.context,
-                argb,
-                self.remaining_work,
-                Some(depth),
-            )?
-        } else {
-            colored_pencil::raster::prepare(&rows, self.context, argb, self.remaining_work)?
-        };
+        let plan = colored_pencil::raster::prepare_depth(
+            &rows,
+            self.context,
+            argb,
+            self.remaining_work,
+            depth,
+        )?;
         let pixels = plan.render(&self.pixels)?;
         self.remaining_work -= plan.work();
         self.remaining_submissions -= 1;

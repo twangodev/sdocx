@@ -29,15 +29,6 @@ pub(crate) struct Plan<'a> {
     depth: Option<DepthMap<'a>>,
 }
 
-pub(crate) fn prepare(
-    rows: &[[f32; 5]],
-    context: InkRasterContext,
-    argb: u32,
-    budget: usize,
-) -> Result<Plan<'static>, InkRasterError> {
-    prepare_depth(rows, context, argb, budget, None)
-}
-
 pub(crate) fn prepare_depth<'a>(
     rows: &[[f32; 5]],
     context: InkRasterContext,
@@ -439,7 +430,7 @@ mod tests {
                 },
             };
             let prior = vec![case.background; width * height];
-            let plan = prepare(&rows, context, case.argb, 64 * 1024 * 1024).unwrap();
+            let plan = prepare_depth(&rows, context, case.argb, 64 * 1024 * 1024, None).unwrap();
             assert!(plan.work() >= width * height);
             let image = plan.render(&prior).unwrap();
             let mut expected = prior;
