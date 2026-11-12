@@ -426,7 +426,7 @@ fn convert(cli: Cli) -> Result<(), String> {
             );
         }
     }
-    let doc = parsed.document;
+    let doc = parsed.into_document();
     let layout = sdocx::layout_document(&doc);
 
     print_info(&doc, &layout);
