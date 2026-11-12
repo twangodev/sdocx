@@ -1,7 +1,7 @@
 export async function createThumbnail(svg: string): Promise<Blob> {
 	const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-	const image = new Image();
 	try {
+		const image = new Image();
 		await new Promise<void>((resolve, reject) => {
 			image.onload = () => resolve();
 			image.onerror = () => reject(new Error('Unable to render thumbnail.'));
