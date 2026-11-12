@@ -7,7 +7,7 @@ class StrokeReveal {
 
 	constructor(node: SVGElement) {
 		this.parts = [...node.querySelectorAll<SVGElement>('[data-replay-part]')];
-		this.paths = [...node.querySelectorAll<SVGElement>('[data-replay-lengths]')].map(node => {
+		this.paths = Array.from(node.querySelectorAll<SVGElement>('[data-replay-lengths]'), (node) => {
 			const attribute = node.tagName === 'polyline' ? 'points' : 'd';
 			return {
 				node, attribute, value: node.getAttribute(attribute)!,
