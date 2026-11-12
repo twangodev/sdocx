@@ -1105,14 +1105,14 @@ impl PreparedBodyText {
         slice: Option<PageSlice>,
     ) -> Option<Self> {
         let body = page.body_text_slice()?;
-        let full_body = page.single_page_continuous_body(document).cloned();
+        let full_body = page.single_page_continuous_body(document);
         let (text, source_range, first_page_index, last_page_index, detached) =
             if let Some(text) = full_body {
                 let source_range = 0..text.text.chars().count();
-                (text, source_range, 0, 0, false)
+                (Cow::Borrowed(text), source_range, 0, 0, false)
             } else if let Some(window) = body.capture_window.as_ref() {
                 (
-                    page.body_text_capture(document)?,
+                    Cow::Owned(page.body_text_capture(document)?),
                     window.source_range.clone(),
                     window.first_page_index,
                     window.requested_page_index,
@@ -1123,7 +1123,7 @@ impl PreparedBodyText {
                 )
             } else {
                 (
-                    page.body_text_reflow(document)?,
+                    Cow::Owned(page.body_text_reflow(document)?),
                     body.reflow.as_ref()?.source_range.clone(),
                     body.reflow.as_ref()?.first_page_index,
                     document.pages.len().checked_sub(1)?,
@@ -1142,7 +1142,12 @@ impl PreparedBodyText {
         let plan = if let Some((_, plan)) = cache.plans.iter().find(|(stored, _)| *stored == key) {
             Rc::clone(plan)
         } else {
-            let plan = Rc::new(PreparedBodyPlan::new(document, text, &key, renderer)?);
+            let plan = Rc::new(PreparedBodyPlan::new(
+                document,
+                text.into_owned(),
+                &key,
+                renderer,
+            )?);
             if cache.plans.len() == BODY_PLAN_CACHE_CAPACITY {
                 cache.plans.remove(0);
             }
