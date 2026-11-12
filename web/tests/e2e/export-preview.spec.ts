@@ -27,7 +27,7 @@ async function openDocument(page: Page) {
 	});
 	await page.route('https://rybbit.twango.dev/api/script.js', route => route.fulfill({ body: '' }));
 	await page.goto('/');
-	await page.locator('input[type=file]').setInputFiles({ name: 'preview.sdocx', mimeType: 'application/zip', buffer: pdfNote(false, true) });
+	await page.locator('input[type=file]').setInputFiles({ name: 'preview.sdocx', mimeType: 'application/zip', buffer: pdfNote({ threePages: true }) });
 	await expect(page.getByAltText('Rendered preview of page 3')).toBeAttached();
 	await expect(page.getByRole('button', { name: 'Export document', exact: true })).toBeEnabled();
 }

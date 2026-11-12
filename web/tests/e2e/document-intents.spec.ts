@@ -108,7 +108,7 @@ test('a temporary note supersedes a saved note with a delayed original read', as
 			throw new DOMException('Storage full', 'QuotaExceededError');
 		};
 	});
-	await page.locator('input[type=file]').setInputFiles({ ...note, name: 'temporary.sdocx', buffer: pdfNote(false, true) });
+	await page.locator('input[type=file]').setInputFiles({ ...note, name: 'temporary.sdocx', buffer: pdfNote({ threePages: true }) });
 	await expect(page.getByRole('button', { name: 'Open temporarily' })).toBeVisible();
 	await page.evaluate(() => Reflect.get(window, 'restoreIntentWrites')());
 	await holdOriginalRead(page);

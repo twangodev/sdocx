@@ -15,7 +15,7 @@ declare global {
 async function openDocument(page: Page, oversized = false) {
 	await page.route('https://rybbit.twango.dev/api/script.js', (route) => route.fulfill({ body: '' }));
 	await page.goto('/');
-	await page.locator('input[type=file]').setInputFiles({ name: 'vector-note.sdocx', mimeType: 'application/zip', buffer: pdfNote(oversized) });
+	await page.locator('input[type=file]').setInputFiles({ name: 'vector-note.sdocx', mimeType: 'application/zip', buffer: pdfNote({ oversizedFirstPage: oversized }) });
 	await expect(page.getByAltText('Rendered preview of page 2')).toBeAttached();
 	await expect(page.getByRole('button', { name: 'Export document', exact: true })).toBeEnabled();
 }
@@ -262,7 +262,7 @@ test('standalone SVG images use the pinned Rust font without network requests', 
 
 test('custom ranges validate, retain scope and package original page numbers', async ({ page }) => {
 	await page.goto('/');
-	await page.locator('input[type=file]').setInputFiles({ name: 'ranges.sdocx', mimeType: 'application/zip', buffer: pdfNote(false, true) });
+	await page.locator('input[type=file]').setInputFiles({ name: 'ranges.sdocx', mimeType: 'application/zip', buffer: pdfNote({ threePages: true }) });
 	await expect(page.getByAltText('Rendered preview of page 3')).toBeAttached();
 	await page.getByRole('button', { name: 'Export document', exact: true }).click();
 	const dialog = page.getByRole('dialog');

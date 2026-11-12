@@ -4,7 +4,7 @@ import { pdfNote } from '../fixtures/pdf-note';
 const note = (name = 'library-note.sdocx', threePages = false) => ({
 	name,
 	mimeType: 'application/zip',
-	buffer: pdfNote(false, threePages)
+	buffer: pdfNote({ threePages })
 });
 test.beforeEach(async ({ page }) => {
 	await page.route('https://rybbit.twango.dev/**', (route) => route.fulfill({ body: '' }));

@@ -97,9 +97,12 @@ export function shapeGradientNote(): Buffer {
 	]) }));
 }
 
-export function pdfNote(oversized = false, threePages = false): Buffer {
+export function pdfNote({ oversizedFirstPage = false, threePages = false }: {
+	oversizedFirstPage?: boolean;
+	threePages?: boolean;
+} = {}): Buffer {
 	return Buffer.from(zipSync({
-		'one1.page': page(0, oversized ? 20000 : 400, 800),
+		'one1.page': page(0, oversizedFirstPage ? 20000 : 400, 800),
 		'two2.page': page(1, 800, 400),
 		...(threePages ? { 'zzz3.page': page(2, 600, 600) } : {})
 	}));

@@ -3,7 +3,7 @@ import { pdfNote } from '../fixtures/pdf-note';
 
 const notes = [
 	{ name: 'Algebra.sdocx', mimeType: 'application/zip', buffer: pdfNote() },
-	{ name: 'Biology.sdocx', mimeType: 'application/zip', buffer: pdfNote(false, true) }
+	{ name: 'Biology.sdocx', mimeType: 'application/zip', buffer: pdfNote({ threePages: true }) }
 ];
 
 test.beforeEach(async ({ page }) => {
