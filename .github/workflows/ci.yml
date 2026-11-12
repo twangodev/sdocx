@@ -71,7 +71,7 @@ jobs:
           persist-credentials: false
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - uses: taiki-e/install-action@nextest
-      - run: cargo nextest run --profile ci --all-features
+      - run: cargo nextest run --profile ci --all-features --no-fail-fast
       - name: Upload test results to Codecov
         if: ${{ !cancelled() && matrix.os == 'ubuntu-latest' }}
         uses: codecov/codecov-action@v5
