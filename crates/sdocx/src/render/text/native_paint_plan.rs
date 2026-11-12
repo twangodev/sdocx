@@ -164,15 +164,12 @@ pub(in crate::render) fn native_paint_plan(
     if !frame.translation.into_iter().all(f64::is_finite) {
         return Err(Error::InvalidGeometry);
     }
-    if styled
+    let utf16_length = styled
         .index
         .char_to_utf16(styled.index.len())
-        .is_none_or(|length| length > 250_000)
-    {
-        return Err(Error::OutsideCertificate("entry budget"));
-    }
-    let units: Vec<_> = source.encode_utf16().collect();
-    let mut prepared: Vec<Option<PreparedEntry<'_>>> = (0..units.len()).map(|_| None).collect();
+        .filter(|&length| length <= 250_000)
+        .ok_or(Error::OutsideCertificate("entry budget"))?;
+    let mut prepared: Vec<Option<PreparedEntry<'_>>> = (0..utf16_length).map(|_| None).collect();
     let mut payloads = Vec::new();
     let mut paragraphs = styled
         .index
@@ -347,7 +344,11 @@ pub(in crate::render) fn native_paint_plan(
             .index
             .char_to_utf16(paragraph.physical.start)
             .ok_or(Error::InvalidSource)? as usize;
-        if units.get(slot) != Some(&10) {
+        if styled
+            .index
+            .slice(paragraph.physical.start..paragraph.content.start)
+            != Some("\n")
+        {
             return Err(Error::OutsideCertificate("paragraph separator"));
         }
         let line = first_lines
