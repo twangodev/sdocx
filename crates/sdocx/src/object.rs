@@ -1,5 +1,5 @@
 use crate::binary::Reader;
-use crate::frame::Frame;
+use crate::frame::{Frame, Mask};
 use crate::{BoundingBox, Error, Result};
 
 #[derive(Debug, Clone)]
@@ -47,13 +47,6 @@ pub(crate) struct ObjectPlacement {
 }
 
 impl ObjectMetadata {
-    pub(crate) fn placement(&self) -> ObjectPlacement {
-        ObjectPlacement {
-            bbox: self.bbox,
-            rotation_degrees: self.rotation_degrees,
-        }
-    }
-
     pub const fn resize_mode(&self) -> ObjectResizeMode {
         match self.resize_mode_raw {
             0 => ObjectResizeMode::Free,
@@ -64,11 +57,36 @@ impl ObjectMetadata {
     }
 
     pub(crate) fn read(reader: &mut Reader<'_>) -> Result<Self> {
+        ObjectBaseSource::read(reader).map(ObjectBaseSource::into_owned)
+    }
+}
+
+impl ObjectPlacement {
+    pub(crate) fn read(reader: &mut Reader<'_>) -> Result<Self> {
+        ObjectBaseSource::read(reader).map(|source| source.placement)
+    }
+}
+
+struct ObjectBaseSource<'a> {
+    format_version: u32,
+    uuid: &'a str,
+    modified_time_raw: i64,
+    placement: ObjectPlacement,
+    replay_timestamp_raw: i32,
+    resize_mode_raw: u8,
+    properties: Mask<'a>,
+    fields: Mask<'a>,
+    fixed_trailing_data: &'a [u8],
+    flexible_trailing_data: &'a [u8],
+}
+
+impl<'a> ObjectBaseSource<'a> {
+    fn read(reader: &mut Reader<'a>) -> Result<Self> {
         let frame = Frame::read(reader)?;
         frame.expect_kind(0)?;
         let mut fixed = Reader::new(frame.fixed, "object base");
         let format_version = fixed.read_u32("format version")?;
-        let uuid = fixed.read_utf8_u16("UUID")?;
+        let uuid = fixed.read_utf8_u16_borrowed("UUID")?;
         let modified_time_raw = fixed.read_i64("modification timestamp")?;
         let bbox = read_bbox(&mut fixed)?;
         let replay_timestamp_raw = fixed.read_i32("replay timestamp")?;
@@ -87,30 +105,45 @@ impl ObjectMetadata {
             format_version,
             uuid,
             modified_time_raw,
-            bbox,
+            placement: ObjectPlacement {
+                bbox,
+                rotation_degrees,
+            },
             replay_timestamp_raw,
             resize_mode_raw,
-            rotatable: frame.properties.contains(0),
-            selectable: frame.properties.contains(1),
-            movable: frame.properties.contains(2),
-            visible: frame.properties.contains(3),
-            replayable: frame.properties.contains(4),
-            out_of_canvas_enabled: frame.properties.contains(5),
-            template: frame.properties.contains(6),
-            flip_enabled: frame.properties.contains(7),
-            float_drawn_rect: frame.properties.contains(8),
-            locked: frame.properties.contains(9),
-            removable: !frame.properties.contains(12),
-            rotation_degrees,
-            property_mask: frame.properties.bytes().to_vec(),
-            field_mask: frame.fields.bytes().to_vec(),
-            fixed_trailing_data: fixed
-                .read_bytes(fixed.remaining(), "fixed trailing data")?
-                .to_vec(),
+            properties: frame.properties,
+            fields: frame.fields,
+            fixed_trailing_data: fixed.read_bytes(fixed.remaining(), "fixed trailing data")?,
             flexible_trailing_data: flexible
-                .read_bytes(flexible.remaining(), "flexible trailing data")?
-                .to_vec(),
+                .read_bytes(flexible.remaining(), "flexible trailing data")?,
         })
+    }
+
+    fn into_owned(self) -> ObjectMetadata {
+        ObjectMetadata {
+            format_version: self.format_version,
+            uuid: self.uuid.to_owned(),
+            modified_time_raw: self.modified_time_raw,
+            bbox: self.placement.bbox,
+            replay_timestamp_raw: self.replay_timestamp_raw,
+            resize_mode_raw: self.resize_mode_raw,
+            rotatable: self.properties.contains(0),
+            selectable: self.properties.contains(1),
+            movable: self.properties.contains(2),
+            visible: self.properties.contains(3),
+            replayable: self.properties.contains(4),
+            out_of_canvas_enabled: self.properties.contains(5),
+            template: self.properties.contains(6),
+            flip_enabled: self.properties.contains(7),
+            float_drawn_rect: self.properties.contains(8),
+            locked: self.properties.contains(9),
+            removable: !self.properties.contains(12),
+            rotation_degrees: self.placement.rotation_degrees,
+            property_mask: self.properties.bytes().to_vec(),
+            field_mask: self.fields.bytes().to_vec(),
+            fixed_trailing_data: self.fixed_trailing_data.to_vec(),
+            flexible_trailing_data: self.flexible_trailing_data.to_vec(),
+        }
     }
 }
 
@@ -128,4 +161,60 @@ pub(crate) fn read_bbox(reader: &mut Reader<'_>) -> Result<BoundingBox> {
         return Err(Error::Format("non-finite bounding rectangle".into()));
     }
     Ok(bbox)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn base_frame(uuid: &[u8], left: f64, rotation: f32) -> Vec<u8> {
+        let mut fixed = 4000_u32.to_le_bytes().to_vec();
+        fixed.extend((uuid.len() as u16).to_le_bytes());
+        fixed.extend(uuid);
+        fixed.extend(123_i64.to_le_bytes());
+        for value in [left, 0.0, 20.0, 30.0] {
+            fixed.extend(value.to_le_bytes());
+        }
+        fixed.extend(0_i32.to_le_bytes());
+        fixed.push(0);
+        let flexible_offset = 14 + fixed.len();
+        let size = flexible_offset + 4;
+        [
+            (size as u32).to_le_bytes().to_vec(),
+            0_i16.to_le_bytes().to_vec(),
+            (flexible_offset as u32).to_le_bytes().to_vec(),
+            vec![1, 8, 1, 1],
+            fixed,
+            rotation.to_le_bytes().to_vec(),
+        ]
+        .concat()
+    }
+
+    #[test]
+    fn placement_projection_validates_discarded_identity_and_preserves_error_precedence() {
+        let cases = [
+            (
+                base_frame(&[0xff], f64::NAN, f32::NAN),
+                "format error: object base: invalid UTF-8 in UUID",
+            ),
+            (
+                base_frame(b"u", f64::NAN, f32::NAN),
+                "format error: non-finite bounding rectangle",
+            ),
+            (
+                base_frame(b"u", 0.0, f32::NAN),
+                "format error: non-finite object rotation",
+            ),
+        ];
+        for (frame, expected) in cases {
+            let bytes = [frame.as_slice(), &[99]].concat();
+            let mut reader = Reader::new(&bytes, "placement");
+            let Err(error) = ObjectPlacement::read(&mut reader) else {
+                panic!("invalid base accepted")
+            };
+            assert_eq!(error.to_string(), expected);
+            assert_eq!(reader.position(), frame.len());
+            assert_eq!(reader.read_u8("next frame").unwrap(), 99);
+        }
+    }
 }

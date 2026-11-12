@@ -9,7 +9,7 @@ use crate::types::{
     RichTextParagraphType, RichTextRun, RichTextSection, RichTextSpan, RichTextSpanType,
     RichTextTable, RichTextTableCell, RichTextTableRow, SpanIntervalType,
 };
-use crate::{ObjectMetadata, ParseLimits, TableStyle, TextAreaType};
+use crate::{ParseLimits, TableStyle, TextAreaType};
 
 /// Structured contents of `note.note` needed by the document model.
 #[derive(Debug, Clone)]
@@ -253,7 +253,7 @@ fn parse_text_frames(
         limits.max_object_nesting_depth,
         depth.saturating_add(1),
     )?;
-    let object_base = ObjectMetadata::read(reader)?;
+    let placement = ObjectPlacement::read(reader)?;
     let shape = Frame::read(reader)?;
     shape.expect_kind(6)?;
     let shape_text = Frame::read(reader)?;
@@ -287,7 +287,7 @@ fn parse_text_frames(
     {
         unsupported.push("shape-text extension fields");
     }
-    let mut decoded = finish_shape_text(common, object_base.placement(), unsupported);
+    let mut decoded = finish_shape_text(common, placement, unsupported);
     decoded.text_box.text_area_type = text_area_type;
     Ok(decoded)
 }
@@ -702,7 +702,7 @@ fn parse_code_block_object(
         depth.saturating_add(1),
     )?;
     let mut reader = Reader::new(data, context);
-    let object_base = ObjectMetadata::read(&mut reader)?;
+    let placement = ObjectPlacement::read(&mut reader)?;
     let frame = open_next_object_frame(&mut reader, 23, "code block")?;
     let mut flexible = Reader::new(frame.flexible, context);
     let title = if frame.fields.contains(0) {
@@ -729,8 +729,8 @@ fn parse_code_block_object(
     };
 
     Ok(RichTextCodeBlock {
-        bbox: object_base.bbox,
-        rotation_degrees: object_base.rotation_degrees,
+        bbox: placement.bbox,
+        rotation_degrees: placement.rotation_degrees,
         title,
         body,
     })
@@ -748,7 +748,7 @@ fn parse_table_object(
         depth.saturating_add(1),
     )?;
     let mut reader = Reader::new(data, context);
-    let object_base = ObjectMetadata::read(&mut reader)?;
+    let placement = ObjectPlacement::read(&mut reader)?;
     let frame = open_next_object_frame(&mut reader, 22, "table")?;
     let mut flexible = Reader::new(frame.flexible, context);
 
@@ -857,8 +857,8 @@ fn parse_table_object(
     };
     Ok(RichTextTable {
         style,
-        bbox: object_base.bbox,
-        rotation_degrees: object_base.rotation_degrees,
+        bbox: placement.bbox,
+        rotation_degrees: placement.rotation_degrees,
         column_widths,
         rows,
     })
@@ -1012,7 +1012,7 @@ mod tests {
     mod table_measurement_width;
 
     use super::{
-        ObjectMetadata, parse_code_block_object, parse_table_cell, parse_table_object,
+        ObjectPlacement, parse_code_block_object, parse_table_cell, parse_table_object,
         parse_table_row, parse_text_common,
     };
     use crate::{
@@ -1561,12 +1561,11 @@ mod tests {
         )
         .unwrap();
         let box_ = common.into_rich_text_box(
-            ObjectMetadata::read(&mut crate::binary::Reader::new(
+            ObjectPlacement::read(&mut crate::binary::Reader::new(
                 &object_base_frame(),
                 "test base",
             ))
-            .unwrap()
-            .placement(),
+            .unwrap(),
         );
 
         assert_eq!(box_.text, text);

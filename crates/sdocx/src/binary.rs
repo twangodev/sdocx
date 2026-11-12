@@ -170,10 +170,13 @@ impl<'a> Reader<'a> {
     }
 
     pub(crate) fn read_utf8_u16(&mut self, field: &'static str) -> Result<String> {
+        self.read_utf8_u16_borrowed(field).map(str::to_owned)
+    }
+
+    pub(crate) fn read_utf8_u16_borrowed(&mut self, field: &'static str) -> Result<&'a str> {
         let byte_count = usize::from(self.read_u16(field)?);
         let bytes = self.read_bytes(byte_count, field)?;
         std::str::from_utf8(bytes)
-            .map(str::to_owned)
             .map_err(|_| Error::Format(format!("{}: invalid UTF-8 in {field}", self.context)))
     }
 
