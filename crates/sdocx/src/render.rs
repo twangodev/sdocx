@@ -2451,7 +2451,7 @@ fn paint_text_foreground(
 enum ObjectDrawingPreparation<'a> {
     Code {
         code: &'a crate::RichTextCodeBlock,
-        result: Result<code::PreparedCode, ObjectDiagnosticKind>,
+        result: Result<Box<code::PreparedCode>, ObjectDiagnosticKind>,
     },
     Table {
         table: &'a crate::RichTextTable,
@@ -2622,7 +2622,8 @@ fn paint_line_objects(
                             theme,
                             &drawing_renderer,
                         )
-                    },
+                    }
+                    .map(Box::new),
                 },
                 (_, Some(RichTextObjectContent::Table(table))) => ObjectDrawingPreparation::Table {
                     table,
