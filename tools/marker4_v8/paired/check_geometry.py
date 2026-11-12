@@ -83,7 +83,8 @@ def native_module(runner, support, runtime_python):
     """Bind the exact validated support file; restore process import state."""
     old_path = sys.path[:]
     names = ('marker4_native', 'native_v8')
-    previous = {name: sys.modules.get(name) for name in names}
+    missing = object()
+    previous = {name: sys.modules.get(name, missing) for name in names}
     try:
         sys.path[:0] = [str(runner.parent.resolve()), str(support.parent.resolve()),
                         str(runtime_python.resolve())]
@@ -96,7 +97,7 @@ def native_module(runner, support, runtime_python):
     finally:
         sys.path[:] = old_path
         for name, module in previous.items():
-            if module is None:
+            if module is missing:
                 sys.modules.pop(name, None)
             else:
                 sys.modules[name] = module

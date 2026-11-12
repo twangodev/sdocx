@@ -7,7 +7,9 @@ from pathlib import Path
 import struct
 import sys
 import tempfile
+import types
 import unittest
+from unittest.mock import patch
 import zipfile
 
 import check_geometry as checked
@@ -117,6 +119,40 @@ class GeometryPreparationTests(unittest.TestCase):
         results = iter([{**expected, 'extra': 1}, {**expected, 'extra': 2}])
         with self.assertRaisesRegex(ValueError, 'full outputs differ'):
             checked.check_geometry(inputs, pressures, lambda raw: next(results), current_pressures=True)
+
+    def test_import_bindings_restore_absent_none_and_module_on_success_and_failure(self):
+        names = ('marker4_native', 'native_v8')
+        existing = types.ModuleType('existing_binding')
+        for initial in ('absent', None, existing):
+            for failing in (False, True):
+                with self.subTest(initial=initial, failing=failing), tempfile.TemporaryDirectory() as temporary:
+                    directory = Path(temporary)
+                    support = directory / 'support.py'
+                    support.write_text('VALUE = "bound"\n')
+                    runner = directory / 'runner.py'
+                    runner.write_text('import marker4_native\nVALUE = marker4_native.VALUE\n'
+                                      + ('raise RuntimeError("runner failed")\n' if failing else ''))
+                    with patch.dict(sys.modules):
+                        for name in names:
+                            if initial == 'absent':
+                                sys.modules.pop(name, None)
+                            else:
+                                sys.modules[name] = initial
+                        old_path = sys.path[:]
+                        if failing:
+                            with self.assertRaisesRegex(RuntimeError, 'runner failed'):
+                                with checked.native_module(runner, support, directory):
+                                    self.fail('failing import yielded a runner')
+                        else:
+                            with checked.native_module(runner, support, directory) as module:
+                                self.assertEqual(module.VALUE, 'bound')
+                        self.assertEqual(sys.path, old_path)
+                        for name in names:
+                            if initial == 'absent':
+                                self.assertNotIn(name, sys.modules)
+                            else:
+                                self.assertIn(name, sys.modules)
+                                self.assertIs(sys.modules[name], initial)
 
 
 if __name__ == '__main__':
