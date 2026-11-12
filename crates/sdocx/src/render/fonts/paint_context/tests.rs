@@ -2,6 +2,10 @@ use super::*;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
+fn byte_range(index: &TextIndex, range: &Range<usize>) -> Range<usize> {
+    index.char_to_byte(range.start).unwrap()..index.char_to_byte(range.end).unwrap()
+}
+
 #[derive(Deserialize)]
 struct Capture {
     separator_ranges_utf16: Vec<[u32; 2]>,

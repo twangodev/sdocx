@@ -1,7 +1,7 @@
 use std::ops::Range;
 use std::sync::Arc;
 
-use crate::text_index::TextIndex;
+use crate::text_index::{TextIndex, TextSource};
 
 const MAX_SOURCE_BYTES: usize = 262_144;
 const MAX_SOURCE_UTF16: usize = 65_536;
@@ -12,39 +12,35 @@ const MAX_WINDOWS: usize = 512;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PaintContextWindow {
     paragraph: Arc<str>,
-    context_bytes: Range<usize>,
-    context_scalars: Range<usize>,
-    context_utf16: Range<u32>,
-    selected_bytes: Range<usize>,
-    selected_scalars: Range<usize>,
-    selected_utf16: Range<u32>,
+    context: TextSource,
+    selected: TextSource,
 }
 
 impl PaintContextWindow {
     pub fn source(&self) -> &str {
-        &self.paragraph[self.context_bytes.clone()]
+        &self.paragraph[self.context.bytes().clone()]
     }
     pub fn context_byte_range(&self) -> Range<usize> {
-        self.context_bytes.clone()
+        self.context.bytes().clone()
     }
     pub fn context_scalar_range(&self) -> Range<usize> {
-        self.context_scalars.clone()
+        self.context.characters().clone()
     }
     pub fn context_range_utf16(&self) -> Range<u32> {
-        self.context_utf16.clone()
+        self.context.utf16().clone()
     }
     pub fn selected_byte_range(&self) -> Range<usize> {
-        self.selected_bytes.clone()
+        self.selected.bytes().clone()
     }
     pub fn selected_scalar_range(&self) -> Range<usize> {
-        self.selected_scalars.clone()
+        self.selected.characters().clone()
     }
     pub fn selected_range_utf16(&self) -> Range<u32> {
-        self.selected_utf16.clone()
+        self.selected.utf16().clone()
     }
     pub fn selected_range_in_window_utf16(&self) -> Range<u32> {
-        self.selected_utf16.start - self.context_utf16.start
-            ..self.selected_utf16.end - self.context_utf16.start
+        self.selected.utf16().start - self.context.utf16().start
+            ..self.selected.utf16().end - self.context.utf16().start
     }
 }
 
@@ -116,12 +112,12 @@ impl PaintContextWindows {
             let selected_scalars = scalar_range(&index, &selected_utf16)?;
             windows.push(PaintContextWindow {
                 paragraph: Arc::clone(&source),
-                context_bytes: byte_range(&index, &context_scalars),
-                selected_bytes: byte_range(&index, &selected_scalars),
-                context_scalars,
-                context_utf16,
-                selected_scalars,
-                selected_utf16,
+                context: index
+                    .source(context_scalars)
+                    .ok_or(PaintContextError::InvalidRange)?,
+                selected: index
+                    .source(selected_scalars)
+                    .ok_or(PaintContextError::InvalidRange)?,
             });
         }
         Ok(Self {
@@ -149,10 +145,6 @@ fn scalar_range(index: &TextIndex, range: &Range<u32>) -> Result<Range<usize>, P
         ..index
             .utf16_to_char(range.end)
             .ok_or(PaintContextError::InvalidRange)?)
-}
-
-fn byte_range(index: &TextIndex, range: &Range<usize>) -> Range<usize> {
-    index.char_to_byte(range.start).unwrap()..index.char_to_byte(range.end).unwrap()
 }
 
 fn separator(unit: u16) -> bool {

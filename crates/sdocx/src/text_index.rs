@@ -24,7 +24,6 @@ impl TextSource {
         &self.characters
     }
 
-    #[cfg(any(feature = "pdf", test))]
     pub fn bytes(&self) -> &Range<usize> {
         &self.bytes
     }
