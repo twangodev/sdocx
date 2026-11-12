@@ -42,14 +42,15 @@ struct Cell {
     backplate: Region,
 }
 
-pub(super) struct MaxAtlas {
+pub(super) struct MaxAtlas<'a> {
+    ink: &'a PreparedInkPen2V9,
     cells: Vec<Cell>,
     filter: Region,
     output: Region,
 }
 
-impl MaxAtlas {
-    pub(super) fn new(ink: &PreparedInkPen2V9) -> Result<Self, String> {
+impl<'a> MaxAtlas<'a> {
+    pub(super) fn new(ink: &'a PreparedInkPen2V9) -> Result<Self, String> {
         if ink.records.is_empty() || ink.records.len() > MAX_RECORDS {
             return Err("InkPen2 MAX atlas record count exceeds its staged range".into());
         }
@@ -146,19 +147,19 @@ impl MaxAtlas {
             })
             .collect();
         Ok(Self {
+            ink,
             cells,
             filter,
             output,
         })
     }
 
-    pub(super) fn emit(
-        &self,
-        svg: &mut Scene,
-        ink: &PreparedInkPen2V9,
-        mask: &Definition<Mask>,
-        replay: bool,
-    ) {
+    pub(super) fn ink(&self) -> &PreparedInkPen2V9 {
+        self.ink
+    }
+
+    pub(super) fn emit(&self, svg: &mut Scene, mask: &Definition<Mask>, replay: bool) {
+        let ink = self.ink;
         let filter_id = svg.definition::<Filter>();
         let region = self.filter;
         let mut filter =

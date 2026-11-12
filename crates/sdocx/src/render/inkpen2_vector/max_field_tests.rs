@@ -32,7 +32,7 @@ fn render_mask(ink: &PreparedInkPen2V9, width: u32, height: u32) -> resvg::tiny_
     let mut scene = Scene::new(Svg::new().width(width).height(height));
     let mask = scene.definition::<vector::Mask>();
     scene.scope(vector::Definitions::new(), |svg| {
-        atlas.emit(svg, ink, &mask, false);
+        atlas.emit(svg, &mask, false);
     });
     scene.scope(vector::Group::new().masked(&mask), |svg| {
         svg.push(

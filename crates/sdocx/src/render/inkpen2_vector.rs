@@ -114,7 +114,7 @@ fn render_per_stamp_rgb(svg: &mut Scene, ink: &PreparedInkPen2V9, replay: bool) 
 
     svg.scope(outer, |svg| {
         if let Some(atlas) = &max_atlas {
-            render_per_stamp_rgb_max(svg, ink, replay, atlas);
+            render_per_stamp_rgb_max(svg, replay, atlas);
         } else {
             render_per_stamp_rgb_direct(svg, ink, replay);
         }
@@ -174,12 +174,8 @@ fn render_per_stamp_rgb_direct(svg: &mut Scene, ink: &PreparedInkPen2V9, replay:
     }
 }
 
-fn render_per_stamp_rgb_max(
-    svg: &mut Scene,
-    ink: &PreparedInkPen2V9,
-    replay: bool,
-    atlas: &max_field::MaxAtlas,
-) {
+fn render_per_stamp_rgb_max(svg: &mut Scene, replay: bool, atlas: &max_field::MaxAtlas<'_>) {
+    let ink = atlas.ink();
     let (x, y, width, height) = field_region(ink);
     let mask = svg.definition::<Mask>();
     let color_filter = svg.definition::<Filter>();
@@ -193,7 +189,7 @@ fn render_per_stamp_rgb_max(
                 .region(x, y, width, height)
                 .add(identity_rgb_opaque_alpha),
         );
-        atlas.emit(svg, ink, &mask, replay);
+        atlas.emit(svg, &mask, replay);
     });
 
     svg.scope(Group::new().masked(&mask), |svg| {
