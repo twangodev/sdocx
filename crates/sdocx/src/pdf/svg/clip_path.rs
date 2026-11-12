@@ -34,7 +34,8 @@ pub(super) fn render(
     // of more complex clipping paths, even if this means that Safari will in some cases not
     // display them correctly.
     let is_simple_clip_path = is_simple_clip_path(clip_path.root());
-    let clip_rules = collect_clip_rules(clip_path.root());
+    let mut clip_rules = Vec::new();
+    collect_clip_rules(clip_path.root(), &mut clip_rules);
 
     let mut pop_count = 0;
 
@@ -170,22 +171,19 @@ fn is_simple_clip_path(group: &usvg::Group) -> bool {
 }
 
 /// Collect the filling rules used in the clip path.
-fn collect_clip_rules(group: &usvg::Group) -> Vec<usvg::FillRule> {
-    let mut clip_rules = vec![];
+fn collect_clip_rules(group: &usvg::Group, clip_rules: &mut Vec<usvg::FillRule>) {
     group.children().iter().for_each(|n| match n {
         usvg::Node::Path(path) => {
             if let Some(fill) = &path.fill() {
                 clip_rules.push(fill.rule());
             }
         }
-        usvg::Node::Text(text) => clip_rules.extend(collect_clip_rules(text.flattened())),
+        usvg::Node::Text(text) => collect_clip_rules(text.flattened(), clip_rules),
         usvg::Node::Group(group) => {
-            clip_rules.extend(collect_clip_rules(group));
+            collect_clip_rules(group, clip_rules);
         }
         _ => {}
     });
-
-    clip_rules
 }
 
 /// Render a clip path by using alpha masks.
@@ -217,4 +215,53 @@ fn render_complex(
 
     surface.push_mask(Mask::new(stream, MaskType::Alpha));
     1
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+
+    #[test]
+    fn clip_rules_keep_nested_path_and_flattened_text_order_including_hidden_paths() {
+        let mut fontdb = usvg::fontdb::Database::new();
+        fontdb.load_font_data(include_bytes!("../../../assets/fonts/Roboto-Regular.ttf").to_vec());
+        let tree = usvg::Tree::from_str(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+              <path d="M0 0H10V10Z"/>
+              <g opacity="0.5">
+                <path d="M10 10H20V20Z" fill-rule="evenodd"/>
+                <g opacity="0.4">
+                  <path d="M20 20H30V30Z" fill-rule="evenodd" visibility="hidden"/>
+                  <text x="0" y="50" font-family="Roboto" font-size="20">A</text>
+                </g>
+              </g>
+            </svg>"#,
+            &usvg::Options {
+                fontdb: Arc::new(fontdb),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let usvg::Node::Group(outer) = &tree.root().children()[1] else {
+            panic!("fixture must retain its outer group");
+        };
+        let usvg::Node::Group(inner) = &outer.children()[1] else {
+            panic!("fixture must retain its nested group");
+        };
+        assert!(matches!(&inner.children()[0], usvg::Node::Path(path) if !path.is_visible()));
+        assert!(matches!(&inner.children()[1], usvg::Node::Text(_)));
+
+        let mut rules = Vec::new();
+        collect_clip_rules(tree.root(), &mut rules);
+        assert_eq!(
+            rules,
+            [
+                usvg::FillRule::NonZero,
+                usvg::FillRule::EvenOdd,
+                usvg::FillRule::EvenOdd,
+                usvg::FillRule::NonZero,
+            ]
+        );
+    }
 }
