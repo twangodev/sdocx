@@ -911,6 +911,42 @@ fn formula_budgets_include_nested_labels_indices_relations_and_both_stroke_lists
 }
 
 #[test]
+fn formula_child_stroke_errors_keep_object_context_and_absolute_offsets() {
+    let base = base();
+    let stroke = stroke(0xff000000);
+    let malformed_children = [
+        (vec![0; 3], "formula stroke", 0),
+        (
+            [base.clone(), vec![0; 3]].concat(),
+            "stroke object",
+            base.len(),
+        ),
+        (
+            [stroke.clone(), vec![0; 3]].concat(),
+            "stroke object",
+            stroke.len(),
+        ),
+    ];
+    for bit in [7, 8] {
+        for (child, context, offset) in &malformed_children {
+            let list = [
+                1_u32.to_le_bytes().to_vec(),
+                (child.len() as u32).to_le_bytes().to_vec(),
+                child.clone(),
+            ]
+            .concat();
+            let error = FormulaMetadata::parse_bytes(&formula(1 << bit, &list)).unwrap_err();
+            assert!(
+                matches!(error, Error::Format(ref message) if message == &format!(
+                    "{context}: truncated frame size at offset 0x{offset:x} (need 4 bytes, have 3)"
+                )),
+                "field bit {bit}: {error}"
+            );
+        }
+    }
+}
+
+#[test]
 fn formula_counts_and_nested_stroke_sizes_are_bounded_before_allocation() {
     for bit in [0, 4, 7, 8, 14, 15] {
         let payload = formula(1 << bit, &u32::MAX.to_le_bytes());

@@ -518,9 +518,14 @@ impl FormulaDecoder<'_> {
         for _ in 0..count {
             let size = reader.read_u32("formula stroke object size")? as usize;
             let data = reader.read_bytes(size, "formula stroke object")?;
+            let mut base_reader = Reader::new(data, "formula stroke");
+            let base = ObjectMetadata::read(&mut base_reader)?;
+            let frames = Reader::at(data, base_reader.position(), "stroke object")?;
+            let stroke =
+                crate::decode::decode_stroke_after_base(base.clone(), frames, self.limits)?;
             strokes.push(FormulaStroke {
-                base: ObjectMetadata::read(&mut Reader::new(data, "formula stroke"))?,
-                stroke: crate::decode::decode_stroke(data, self.limits)?,
+                base,
+                stroke,
                 object_data: data.to_vec(),
             });
         }
