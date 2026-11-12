@@ -83,16 +83,14 @@
 		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
 		const x = ((event.clientX - rect.left) * replay.width) / rect.width,
 			y = ((event.clientY - rect.top) * replay.height) / rect.height;
-		const hit = [...replay.objects]
-			.reverse()
-			.find(
-				(o) =>
-					o.bbox &&
-					x >= o.bbox.x_min - 3 &&
-					x <= o.bbox.x_max + 3 &&
-					y >= o.bbox.y_min - 3 &&
-					y <= o.bbox.y_max + 3
-			);
+		const hit = replay.objects.findLast(
+			(o) =>
+				o.bbox &&
+				x >= o.bbox.x_min - 3 &&
+				x <= o.bbox.x_max + 3 &&
+				y >= o.bbox.y_min - 3 &&
+				y <= o.bbox.y_max + 3
+		);
 		if (hit) onselect(hit.offset);
 	}
 </script>
