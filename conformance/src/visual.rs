@@ -164,12 +164,14 @@ struct PageReport {
     difference: String,
     reference_png_sha256: String,
     sdk_png_sha256: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    sdk_pdf_size_points: Option<[f64; 2]>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    sdk_text_characters: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    sdk_text: Option<String>,
+    #[serde(flatten)]
+    sdk_pdf_details: Option<SdkPdfPageReport>,
+}
+#[derive(Clone, Debug, Serialize)]
+struct SdkPdfPageReport {
+    sdk_pdf_size_points: [f64; 2],
+    sdk_text_characters: usize,
+    sdk_text: String,
 }
 #[derive(Clone, Debug, Serialize)]
 struct FixtureReport {
@@ -488,25 +490,22 @@ pub fn run_visual(
             let diff_path = dir.join(format!("difference_page{i}.png"));
             reference.to_png(&ref_path)?;
             diff.to_png(&diff_path)?;
-            let (sdk_pdf_size_points, sdk_text_characters, sdk_text) =
-                if let Some(info) = sdk_pdf_info {
-                    pymupdf_version = info.version;
-                    let text = info.text;
-                    let text_path = dir.join(format!("sdk_page{i}.txt"));
-                    fs::write(&text_path, &text)?;
-                    (
-                        Some(info.points),
-                        Some(text.chars().count()),
-                        Some(
-                            text_path
-                                .strip_prefix(&config.output)?
-                                .to_string_lossy()
-                                .replace('\\', "/"),
-                        ),
-                    )
-                } else {
-                    (None, None, None)
-                };
+            let sdk_pdf_details = if let Some(info) = sdk_pdf_info {
+                pymupdf_version = info.version;
+                let text = info.text;
+                let text_path = dir.join(format!("sdk_page{i}.txt"));
+                fs::write(&text_path, &text)?;
+                Some(SdkPdfPageReport {
+                    sdk_pdf_size_points: info.points,
+                    sdk_text_characters: text.chars().count(),
+                    sdk_text: text_path
+                        .strip_prefix(&config.output)?
+                        .to_string_lossy()
+                        .replace('\\', "/"),
+                })
+            } else {
+                None
+            };
             pages.push(PageReport {
                 page: i + 1,
                 size: [candidate.width, candidate.height],
@@ -517,9 +516,7 @@ pub fn run_visual(
                 difference: relative(&diff_path, &config.output)?,
                 reference_png_sha256: sha256(&ref_path)?,
                 sdk_png_sha256: sha256(&candidates[i])?,
-                sdk_pdf_size_points,
-                sdk_text_characters,
-                sdk_text,
+                sdk_pdf_details,
             });
         }
         reports.push(FixtureReport {
@@ -1183,9 +1180,7 @@ mod tests {
                     difference: "d.png".into(),
                     reference_png_sha256: String::new(),
                     sdk_png_sha256: String::new(),
-                    sdk_pdf_size_points: None,
-                    sdk_text_characters: None,
-                    sdk_text: None,
+                    sdk_pdf_details: None,
                 }],
             }],
         };
