@@ -120,6 +120,7 @@ jobs:
       - name: Upload assets to release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: gh release upload "${{ needs.release-please.outputs.sdocx-cli--tag_name }}" artifacts/*
 
   publish:
