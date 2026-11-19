@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.2.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v1.1.0...sdocx-wasm-v1.2.0) (2026-11-12)
+
+
+### Features
+
+* expose explicit 2x marker2 wasm rendering ([90a0386](https://github.com/twangodev/sdocx/commit/90a038612ea2572210af5c2f31ffd306fe604782))
+* expose explicit wasm ink raster canvas ([41cc600](https://github.com/twangodev/sdocx/commit/41cc600c5ceddfb6bdc3932c1aa15d28b734d5f2))
+* **tapepen:** expose restricted pattern rasterization in Rust and WASM ([e5fd897](https://github.com/twangodev/sdocx/commit/e5fd897de66530c36cd67de10a58bc1c59e9c72a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 1.1.0 to 1.2.0
+
 ## [1.1.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v1.0.0...sdocx-wasm-v1.1.0) (2026-10-09)
 
 
