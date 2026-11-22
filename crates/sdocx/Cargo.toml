@@ -18,7 +18,7 @@ sha2 = "0.10.9"
 # Shape oracles use a fixed math implementation across host platforms.
 libm = "=0.2.16"
 imagesize = { version = "0.14.0", optional = true }
-zip = { version = "8.2.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.0.5", default-features = false, features = ["deflate"] }
 thiserror = "2.0.18"
 cesu8 = "1.1.0"
 serde = { version = "1.0.228", features = ["derive"], optional = true }
